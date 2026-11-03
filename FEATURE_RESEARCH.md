@@ -1,0 +1,50 @@
+# Ominaisuuskartoitus: oma talous ja FIRE
+
+Kartoitus 3.11.2026, versio 0.1.0. Tämä on kirjallisuuteen perustuva tuotesuunnitelma, ei järjestelmällinen kirjallisuuskatsaus tai ajantasaisen verolainsäädännön selvitys. Lähteiden bibliografiset tiedot ja soveltamisrajat ovat [tutkimusmuistiossa](RESEARCH_SOURCES.md). Tutkimustuloksesta johdettu ominaisuusehdotus ei ole tutkimuksessa testattu tuotevaikutus.
+
+Toteutuksen arvio perustuu `src/domain/calculations.ts`-, `src/domain/model.ts`- ja `src/main.tsx`-tiedostoihin sekä nykyisiin testeihin ja dokumentaatioon. **Toteutettu** tarkoittaa nykyistä käyttöliittymää ja laskentaa; **osittainen** tarkoittaa suppeaa toteutusta; **suunniteltu** tarkoittaa aiemmin dokumentoitua jatkokehitystä; **uusi ehdotus** tarkoittaa tässä kartoituksessa tunnistettua puutetta. Mikään ehdotus ei ole toteutuslupaus.
+
+## Johtopäätös
+
+Nykyinen sovellus on paikallinen kirjaus-, budjetti- ja laskurityökalu. Se tukee arjen näkyvyyttä mutta ei vielä luotettavaa FIRE-päätöksentekoa. Keskeisin puute ei ole 4 prosentin laskuri vaan kulutuksen, siirtojen, lainanlyhennysten ja sijoitusvirtojen erottelu. Ilman sitä säästöaste, sijoituskelpoinen pääoma ja tuleva rahoitustarve voivat näyttää vääriltä. Tämän jälkeen tarvitaan elinkaaren vaiheistus, eläketulot, verot sekä nostovaiheen epävarmuus.
+
+FIRE tarkoittaa tässä taloudellista riippumattomuutta ja mahdollisuutta vähentää ansiotyötä. Aikainen eläköityminen on yksi käyttötapa; korkea säästöaste ei ole tuotteen ainoa onnistumismittari. Maksuvalmius, välttämätön kulutus, riskinsietokyky ja koettu taloudellinen hyvinvointi kuuluvat samaan suunnitelmaan [R1–R4, R11].
+
+## Ominaisuusmatriisi
+
+Prioriteetit P0–P3 viittaavat [roadmapiin](ROADMAP.md). Lähde kertoo perustelun, ei ominaisuuden vaikuttavuusnäyttöä.
+
+| Kokonaisuus | Nykytila ja aiempi suunnitelma | Puute ja ehdotettu toiminta | Perusta / järjestys |
+| --- | --- | --- | --- |
+| Tulot ja menot | Toteutettu: manuaaliset kirjaukset, toistot ja tilat | Tilit, sisäiset siirrot, kulutus/säästäminen/lyhennys-erottelu; esiintymäkohtaiset toteumat jo suunniteltu | R1–R3; P1 |
+| Budjetti | Osittainen: kategoriat, inline-muokkaus, kuukauden kopiointi | Jo suunnitellut budjettitavat ja kuun lopun ennuste; lisäksi vuosimenojen varaukset ja epäsäännöllisten tulojen kassakalenteri | R2–R4; P1 |
+| Säästöaste | Osittainen: valittava kulutus/säästösiirto/sijoitussiirto, lisäksi yhteenvetoon kulutus, ylijäämä ja siirtosummat | Tapahtumaluokka tallentuu toistaiseksi tags-kenttään; ei pankista todennettua virtaa, eikä nettotulon laajempaa rajausta ole | R1, R3; P1 |
+| Hätävara | Osittainen: likvidi omaisuus / valitun kuun välttämättömät toteutuneet menot | 3/6/12 kk havaintopohja, puuttuvat kuukaudet, tiedossa olevat laskut, tulokatkos ja käyttäjän tavoiteväli | R2, R3; P1 |
+| Velat | Osittainen: manuaalinen saldo ja yhden velan takaisinmaksulaskuri | Korko-/lyhennys-/kulu-erittely, korkoshokki ja usean velan vyörytys korkojärjestyksessä tai pienimmästä saldosta; ei automaattista sijoittamissuositusta | R3, R4; P1–P2 |
+| Nettovarallisuus | Toteutettu nykyarvo; arvostushistoria suunniteltu | Erota kokonaisvarallisuus, likvidi puskuri ja FIRE-pääoma; oma asunto mukaan vain erillisessä myynti-/vuokraus-/muuttoskenaariossa | R1, R3; P1 |
+| Sijoitusten seuranta | Osittainen: EUR-hinta, määrä ja hankintahinta; tapahtumat/historia suunniteltu | Rahavirrat, kokonaistuotto, TWR/XIRR, omaisuuslajit, allokaatio ja tasapainotuksen kustannukset; ei tuottojen päättelemistä pelkästä saldoerosta | R5, R6; P2 |
+| Korkoa korolle | Toteutettu vakionimellistuotto, kulut, inflaatio, kuukausierä ja skenaariovertailu | Ei vielä työstä irtautumisen aikaa, muuttuvia säästöjä, veroja tai nostovaihetta; lisää reaalinen/nominaalinen yhtenäinen oletuskehikko | R1, R5–R8; P2 |
+| FI-tavoite ja FI-aika | Uusi ehdotus; nykyinen tavoite arvioi vain säästökuukaudet ilman tuottoa | Menoperusteinen pääomatavoite, sijoituskelpoinen pääoma, kattavuus ja ehdollinen FI-aika; herkkyystaulukko | R7–R9; P2 |
+| FIRE-vaihtoehdot | Uusi ehdotus | Lean/Fat käyttäjän menotasoina; Barista osa-aikatuloina; Coast säästämisen lopetuksena ennen nostovaihetta; nimet eivät omia tuottomalleja | R1, R7–R9; P2 |
+| Elinkaari ja eläke | Uusi ehdotus; eläkkeen voi nyt kirjata tuloksi ilman vaiheistusta | Työ, osatyö, varhainen nostovaihe ja eläkeaika; käyttäjän eläke-ennuste, alkamisaika, indeksioletus ja netotus; pitkän iän stressi | R1, R7–R9; P2 |
+| Nostot ja tuottojärjestys | Uusi ehdotus | Kiinteä reaalinosto, prosentti nykyarvosta ja rajattu joustava kulutus; samojen tuottojen eri järjestys; pääoman loppuminen ja kulutusvaje erikseen | R7–R10; P2–P3 |
+| Historia ja Monte Carlo | Uusi ehdotus; nykyiset raportit eivät simuloi markkinoita | Vasta auditoitavan deterministisen mallin jälkeen; historialliset jaksot ja lohko-otanta, siemen, aineiston alkuperä ja malliriski | R8–R10; P3 |
+| Verot, kulut ja valuutat | Kulut/inflaatio osittain; vain EUR, verot puuttuvat | Parametrisoitu veromalli, hankintameno ja realisoitu voitto erikseen, eläketulon erillinen käsittely, verovuosi ja lähde; valuuttamalli myöhemmin | R6, R9; P2–P3 |
+| Tavoitteet ja käyttäytyminen | Osittainen: tavoitesumma ja kuukausisäästö | Prioriteetit, automaattisen säästösuunnitelman muistilista, vapaaehtoinen kuukausikatsaus ja poikkeamien selitys; ei syyllistäviä pisteitä | R4, R11; P1–P2 |
+| Taloudellinen turva | Välttämättömyysluokitus olemassa | Tulokatkos, suuri kertameno, korkojen nousu ja vakuutusten/huollettavien tarkistuslista; ei vakuutusmyyntiä | R2, R3, R11; P1–P2 |
+| Raportointi | Osittainen 1/3/6/12 kk; oma aikaväli/historia suunniteltu | Toteuma vs ennuste, nimellinen vs reaalinen, rahoitusvaje ja oletusten muutos; jokaiselle luvulle laskentapohja | R1–R3, R7–R10; P1–P3 |
+| Yksityisyys ja saavutettavuus | Offline-HTML, JSON/CSV ja teemat toteutettu; salaus/synkronointi myöhempää suunnitelmaa | Pysyvyys-, palautus- ja saavutettavuusvarmennus ensin; arkaluonteiset tiedot eivät edellytä verkkoa | Tuotevaatimus; P0 |
+
+## Nykyisen tulkinnan erityiset riskit
+
+1. `Säästäminen` ja `Sijoittaminen` ovat nyt menokategorioita. Niihin kirjattu tilisiirto pienentää nykyistä säästöastetta, vaikka se kasvattaisi rahoitusvarallisuutta. Esimerkiksi 3 000 euron tulot, 2 000 euron kulutus ja 500 euron sijoitussiirto tuottavat nykylogiikalla 16,7 %; kulutuksesta johdettu ylijäämäaste olisi 33,3 %. Kumpikaan ei vielä todenna sijoitettua rahavirtaa.
+2. Lainan erä ei nyt vähennä velkaa eikä generoi menoa. Korko on kulutusta; lyhennys vähentää rahaa ja velkaa. Molempien käsittely menona vääristää kulutusperusteista mittaria, käsittelemättä jättäminen taas kassavirtaa.
+3. Hätävaran nimittäjä voi jäädä nollaan tai pieneksi puutteellisen kuukauden vuoksi. Puuttuva data ei tarkoita kulutonta kuukautta. Puskurin samaa euroa ei tule luvata samanaikaisesti kertamenoihin ja FIRE-salkun kulutukseen.
+4. Kuukausiraportin historiallinen nettovarallisuus ei ole rekonstruoitavissa nykyisistä saldoista. Tuotto, uudet sijoitukset ja arvostusmuutokset ovat eri asioita.
+5. Vakiotuoton reaalinen loppuarvo ei ole eläkkeen kestävyyden arvio. Sama keskimääräinen tuotto voi nostojen aikana tuottaa eri lopputuloksen eri järjestyksessä.
+
+## Rajaus ja onnistumisen mittaaminen
+
+Kaikki ydintoiminnot toimivat paikallisesti, käyttäjän omilla oletuksilla. Ei oletuksena pankkiyhteyttä, verkkokursseja, käyttäjätiliä tai yhtä kaikille sopivaa nostoprosenttia. Markkinadata voi myöhemmin olla versioitu paikallinen aineisto, jonka lisenssi ja kattavuus tunnetaan.
+
+Arvioi kehitystä laskentavirheiden ja kaksoislaskennan estolla, palautuksen onnistumisella sekä sillä, osaako käyttäjä erottaa kulutuksen siirroista, nimellisen reaalisesta ja skenaarion ennusteesta. Mittaa tätä vapaaehtoisissa käytettävyystesteissä fiktiivisillä talouksilla. Älä väitä säästöjen tai hyvinvoinnin kasvua ilman erillistä vaikutustutkimusta; älä lisää telemetriaa tämän suunnitelman perusteella.
