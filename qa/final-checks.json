@@ -1,0 +1,9 @@
+{
+  "lint-results.txt": 0,
+  "typecheck.txt": 0,
+  "unit-results.txt": 0,
+  "build-results.txt": 0,
+  "standalone-results.txt": 0,
+  "e2e-log.txt": 0,
+  "singleFileStaticCheck": 0
+}

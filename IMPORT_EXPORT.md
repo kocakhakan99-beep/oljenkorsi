@@ -1,0 +1,21 @@
+# Tuonti ja vienti
+
+## JSON
+
+Vienti sisältää wrapperin: format, schemaVersion, applicationVersion, createdAt, checksumAlgorithm, checksum ja data. Kaikki palautettava sovellustila on data-objektissa. Tyhjät investmentTransactions/themes-listat ovat mukana, mutta niiden käyttö ei ole vielä toteutettu.
+
+Palautus: tiedostokokoraja → paikallinen luku → JSON-parseri ja vaarallisten avainten esto → wrapper/versio/eheys → Zod ja domain-validointi → tietuemäärien esikatselu → nykyisen backupin vientipainike → vahvistus → tallennus → laskelmien uudelleenrenderöinti. Vienti ennen korvausta on tarjottu, ei pakotettu. Väärä tiedosto ei muuta nykyistä tilaa. Tuntematon skeema hylätään.
+
+FNV-1a-32 on ei-kryptografinen. JSON ei ole salattu. Varmuuskopioi ennen selaindatan poistoa, HTML:n siirtämistä tai selainvaihtoa.
+
+## CSV
+
+Kuusi tietotyyppiä: incomes, expenses, assets, liabilities, investments, goals. Tuonti lisää, ei korvaa. UTF-8 ja valinnainen Windows-1252, pilkku tai puolipiste, desimaalipilkku/piste, dd.mm.yyyy ja yyyy-mm-dd. UTF-8-dekoodaus on strict; virheessä valitse toinen merkistö. Ei täydellistä automaattista merkistötunnistusta.
+
+Vientipohjan sarakkeet: name, amount, category, date, recurrence, status, description, quantity, purchasePrice, ownership, liquid, rate, payment, target, monthly, endDate, tags, active, essential.
+
+Nimi ja summa pakollisia. Puuttuva kategoria on Muu ja päivämäärä tänään. Rahasarakkeet euroina. Toistuvuus: once/weekly/biweekly/monthly/bimonthly/quarterly/semiannual/yearly. Tila: actual/planned/skipped. Booleanit true/false.
+
+Tuonti näyttää sarakekartoituksen, viisi esimerkkiriviä, virheet ja duplikaattimäärät. Virheet voidaan ohittaa tai korjata alkuperäisessä CSV:ssä ja valita tiedosto uudelleen. Duplikaattiheuristiikka: sama nimi, päivä, summa ja kategoria, myös tuontierän sisällä. Ei pankkikohtaista parseria. Viimeisin tuonti voidaan kumota istunnon aikana; kumoaminen palauttaa koko aiemman tilan, joten tee se ennen muita muutoksia.
+
+CSV ei säilytä ID:tä tai koko sovellustilaa. Käytä JSON:ia täydelliseen palautukseen. Kaavasuoja voi lisätä tekstin alkuun apostrofin, joka voi jäädä näkyviin CSV:n takaisinluvussa.

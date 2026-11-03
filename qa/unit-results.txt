@@ -1,0 +1,11 @@
+
+ RUN  v4.1.11 /mnt/data/work
+
+ ✓ src/test/storage.test.ts (5 tests) 188ms
+ ✓ src/test/domain.test.ts (26 tests) 99ms
+
+ Test Files  2 passed (2)
+      Tests  31 passed (31)
+   Start at  11:23:25
+   Duration  45.80s (transform 6.31s, setup 0ms, import 43.90s, tests 287ms, environment 0ms)
+
