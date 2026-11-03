@@ -1,5 +1,22 @@
 import type { Entry, State, Scenario } from './model';
 export const MAX = 1000000000000;
+export type ExpenseType = 'consumption' | 'saving' | 'investment';
+const EXPENSE_TYPE_TAG = /^talous:expense-type=(consumption|saving|investment)$/;
+export function expenseType(e: Entry): ExpenseType {
+  const tag = e.tags.split(/[;,]/).map((value) => value.trim()).find((value) => EXPENSE_TYPE_TAG.test(value));
+  const explicit = tag?.match(EXPENSE_TYPE_TAG)?.[1] as ExpenseType | undefined;
+  if (explicit) return explicit;
+  if (e.category.trim().toLocaleLowerCase('fi-FI') === 'sijoittaminen') return 'investment';
+  if (e.category.trim().toLocaleLowerCase('fi-FI') === 'säästäminen') return 'saving';
+  return 'consumption';
+}
+export function setExpenseTypeTags(tags: string, type: ExpenseType) {
+  const retained = tags
+    .split(/[;,]/)
+    .map((value) => value.trim())
+    .filter((value) => value && !EXPENSE_TYPE_TAG.test(value));
+  return [...retained, `talous:expense-type=${type}`].join(';');
+}
 export function money(s: string): number {
   let t = s.trim().replace(/[€\s\u00a0]/g, '');
   if (!/^-?\d+(?:[.,]\d{1,2})?$/.test(t)) throw Error('Anna summa enintään kahdella desimaalilla.');
@@ -54,6 +71,9 @@ export const total = (es: Entry[], m: string, actual = false) =>
 export function metrics(s: State, m: string) {
   let income = total(s.incomes, m, true),
     expense = total(s.expenses, m, true),
+    consumption = total(s.expenses.filter((e) => expenseType(e) === 'consumption'), m, true),
+    savingTransfers = total(s.expenses.filter((e) => expenseType(e) === 'saving'), m, true),
+    investmentTransfers = total(s.expenses.filter((e) => expenseType(e) === 'investment'), m, true),
     planned = total(
       s.expenses.filter((e) => e.status === 'planned'),
       m,
@@ -73,9 +93,14 @@ export function metrics(s: State, m: string) {
   return {
     income,
     expense,
+    consumption,
+    earmarked: expense - consumption,
+    savingTransfers,
+    investmentTransfers,
+    surplus: income - consumption,
     cash: income - expense,
     available: income - expense - planned,
-    savingRate: income ? (100 * (income - expense)) / income : null,
+    savingRate: income ? (100 * (income - consumption)) / income : null,
     assets,
     investments,
     debts,
