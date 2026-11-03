@@ -69,3 +69,7 @@ Ei ajonaikaisia ulkoisia resursseja, analytiikkaa tai API-kutsuja. CSP estää v
 ## Rajaus
 
 Tämä on toimiva ensimmäinen toimitus, ei koko 61-kohdan määrittelyn valmis V1. Katso `KNOWN_LIMITATIONS.md` ja `ROADMAP.md`. Riippuvuuksien suorat versiot on kiinnitetty, mutta lukitustiedostoa ja puhtaalla koneella tehtyä asennuskoetta ei toimiteta. Transitiivisten riippuvuuksien täysin toistettava build on jatkotehtävä.
+
+## Ominaisuuskartoitus ja FIRE-jatkokehitys
+
+Tutkimuspohjainen [ominaisuuskartoitus](FEATURE_RESEARCH.md) erottaa toteutetut toiminnot, aiemmat suunnitelmat ja uudet puutteet. [Lähdemuistio](RESEARCH_SOURCES.md) kuvaa tutkimuksen soveltamisrajat; [FIRE-suunnitelma](FIRE_PLAN.md) määrittelee laskennan ja hyväksyntäesimerkit. Prioriteetit ovat [roadmapissa](ROADMAP.md). FIRE-laskenta on suunnitelma, ei nykyversion ominaisuus.
