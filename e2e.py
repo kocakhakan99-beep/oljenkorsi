@@ -1,0 +1,71 @@
+from pathlib import Path
+import json, shutil, os, tempfile
+from playwright.sync_api import sync_playwright, expect
+ROOT=Path(__file__).parent
+BROWSER=os.environ.get('TALOUS_BROWSER') or None
+PROFILE=Path(tempfile.gettempdir())/'talous-e2e-profile'
+URL=(ROOT/'dist/Taloussuunnittelu.html').as_uri()
+results=[]; errors=[]; network=[]; consoles=[]
+def mark(s):
+ results.append(s); print('PASS:',s,flush=True)
+def attach(page):
+ page.on('pageerror',lambda e:errors.append(str(e)))
+ page.on('request',lambda r:network.append(r.url) if not r.url.startswith(('file:','blob:','data:')) else None)
+ page.on('console',lambda m:consoles.append(m.text) if m.type=='error' else None)
+ page.on('dialog',lambda d:d.accept())
+def nav(page,name):page.get_by_role('navigation').get_by_role('button',name=name,exact=True).click()
+def state(page):return page.evaluate("JSON.parse(localStorage.getItem('taloussuunnittelu.v1')).data")
+def add(page,section,button,values,selects={}):
+ nav(page,section);page.get_by_role('button',name=button,exact=True).click();dlg=page.locator('dialog[open]')
+ for k,v in values.items():dlg.locator('[name="'+k+'"]').fill(str(v))
+ for k,v in selects.items():dlg.locator('[name="'+k+'"]').select_option(v)
+ dlg.get_by_role('button',name='Tallenna',exact=True).click();expect(dlg).not_to_be_visible()
+with sync_playwright() as p:
+ if PROFILE.exists():shutil.rmtree(PROFILE)
+ c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=True,accept_downloads=True,args=['--no-sandbox'],viewport={'width':1440,'height':1000})
+ page=c.pages[0];attach(page);page.goto(URL,wait_until='domcontentloaded')
+ expect(page.get_by_role('button',name='Aloita tyhjästä')).to_be_visible();page.get_by_role('button',name='Aloita tyhjästä').click();mark('Onboarding tyhjästä file:// offline')
+ page.get_by_label('Kuukausi',exact=True).fill('2026-11')
+ add(page,'Tulot','+ Lisää tulo',{'name':'Testipalkka','amount':'3000','date':'2026-11-01'},{'recurrence':'monthly'})
+ mark('Tulo lisätty')
+ add(page,'Menot','+ Lisää meno',{'name':'Testivuokra','amount':'1000','date':'2026-11-01','category':'Asuminen'},{'recurrence':'monthly'})
+ mark('Toistuva meno lisätty')
+ page.get_by_role('button',name='Muokkaa Testivuokra',exact=True).click();page.locator('dialog [name=amount]').fill('900');page.locator('dialog').get_by_role('button',name='Tallenna',exact=True).click();assert state(page)['expenses'][0]['amount']==90000;mark('Menon muokkaus')
+ nav(page,'Budjetti');page.get_by_label('Asuminen budjetti euroina').fill('1100');page.get_by_label('Asuminen budjetti euroina').press('Tab');assert state(page)['budgets']['2026-11']['Asuminen']==110000;mark('Budjetin inline-muokkaus')
+ add(page,'Omaisuus','+ Lisää omaisuuserä',{'name':'Testitili','amount':'6000','category':'Talletukset'})
+ add(page,'Velat','+ Lisää velka',{'name':'Testivelka','amount':'2000','rate':'0','payment':'100'})
+ add(page,'Sijoitukset','+ Lisää sijoitus',{'name':'Testirahasto','amount':'100','quantity':'2','purchasePrice':'80'})
+ add(page,'Tavoitteet','+ Lisää tavoite',{'name':'Testitavoite','amount':'500','target':'1000','monthly':'100'})
+ mark('Omaisuus, velka, sijoitus ja tavoite lisätty')
+ nav(page,'Yhteenveto');assert '2\u00a0100,00' in page.locator('.hero-value').inner_text();assert '4\u00a0200,00' in page.locator('main').inner_text();mark('Kassavirta 2100 EUR ja nettovarallisuus 4200 EUR')
+ nav(page,'Menot');page.get_by_role('button',name='Hallitse kategorioita').click();page.get_by_label('Kategorian Asuminen nimi',exact=True).fill('Koti');page.get_by_label('Kategorian Asuminen nimi',exact=True).press('Tab');assert state(page)['expenses'][0]['category']=='Koti';assert state(page)['budgets']['2026-11']['Koti']==110000;page.locator('dialog[open]').get_by_role('button',name='Sulje',exact=True).click();mark('Kategorian nimeaminen päivittää menot ja budjetit')
+ nav(page,'Asetukset');page.get_by_label('Teema',exact=True).select_option('blue');page.get_by_label('Väritila',exact=True).select_option('dark');assert page.locator('html').get_attribute('data-mode')=='dark';mark('Teema ja tumma tila')
+ page.get_by_role('button',name='Piilota summat',exact=True).click();nav(page,'Yhteenveto');assert page.locator('.hero-value').inner_text()=='•••••• €';page.get_by_role('button',name='Näytä summat',exact=True).click();mark('Summien piilotus')
+ page.keyboard.press('Control+k');expect(page.get_by_role('heading',name='Pikatoiminnot ja yleishaku')).to_be_visible();page.keyboard.press('Escape');expect(page.get_by_role('heading',name='Pikatoiminnot ja yleishaku')).not_to_be_visible();mark('Ctrl K ja Escape näppäimistöpolku')
+ nav(page,'Skenaariot')
+ for i in range(3):
+  page.get_by_label('Nimi',exact=True).fill('Vertailu '+str(i+1));page.get_by_role('button',name='Tallenna vertailuun',exact=True).click()
+ assert len(state(page)['scenarios'])==3;mark('Kolmen skenaarion tallennus')
+ nav(page,'Raportit');expect(page.get_by_role('table')).to_be_visible();mark('Raportti ja taulukkovastine')
+ nav(page,'Yhteenveto');page.screenshot(path=str(ROOT/'qa-dashboard.png'),full_page=True)
+ saved=state(page);c.close()
+ c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=True,accept_downloads=True,args=['--no-sandbox'])
+ page=c.pages[0];attach(page);page.goto(URL,wait_until='domcontentloaded');assert state(page)==saved;mark('Selainprosessi suljettu ja uudelleenavattu: data säilyi')
+ with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).first.click()
+ bfile=ROOT/'qa-backup.json';d.value.save_as(str(bfile));assert json.loads(bfile.read_text())['data']==saved;mark('JSON backup ladattu ja sisältö tarkistettu')
+ nav(page,'Tuonti ja vienti')
+ with page.expect_download() as d:page.get_by_role('button',name='Vie menot CSV:nä',exact=True).click()
+ d.value.save_as(str(ROOT/'qa-expenses.csv'));assert 'Testivuokra' in (ROOT/'qa-expenses.csv').read_text();mark('CSV vienti')
+ csv=ROOT/'qa-import.csv';csv.write_text('name;amount;category;date\nCSV ruoka;19,99;Ruoka;3.11.2026\nCSV ruoka;19,99;Ruoka;3.11.2026\nVirhe;NaN;Ruoka;3.11.2026\n',encoding='utf-8')
+ page.get_by_label('Valitse CSV',exact=True).set_input_files(str(csv));page.get_by_label('Ohita virheelliset rivit',exact=False).check();page.get_by_role('button',name='Vahvista ja tuo 1 tietuetta',exact=True).click();assert len(state(page)['expenses'])==2;mark('CSV tuonti, virherivin ja duplikaatin ohitus')
+ page.get_by_role('button',name='Kumoa',exact=True).click();assert len(state(page)['expenses'])==1;mark('CSV tuonnin kumoaminen')
+ nav(page,'Menot');page.get_by_role('button',name='Poista Testivuokra',exact=True).click();assert not state(page)['expenses'];page.get_by_role('button',name='Kumoa',exact=True).click();assert len(state(page)['expenses'])==1;mark('Tietueen poisto ja kumoaminen')
+ nav(page,'Asetukset');page.get_by_role('button',name='Poista kaikki tietoni',exact=True).click();page.get_by_label('Kirjoita POISTA',exact=True).fill('POISTA');page.get_by_role('button',name='Poista pysyvästi',exact=True).click();assert page.evaluate("localStorage.getItem('taloussuunnittelu.v1')") is None;mark('Kaiken datan poisto ja tarkistus')
+ page.locator('dialog[open] input[type=file]').set_input_files(str(bfile));expect(page.get_by_role('heading',name='Vahvista varmuuskopion palautus')).to_be_visible();page.get_by_role('button',name='Korvaa ja palauta',exact=True).click();assert state(page)==saved;mark('JSON restore onboardingista: kaikki tiedot palautettu')
+ bad=ROOT/'qa-bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.get_by_role('status')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
+ c.close()
+assert not errors,errors
+assert not network,network
+assert not consoles,consoles
+mark('Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä')
+(ROOT/'e2e-results.json').write_text(json.dumps({'browser':'Google Chrome for Testing 149.0.7827.55','offline':True,'protocol':'file://','passed':results,'pageErrors':errors,'consoleErrors':consoles,'networkRequests':network,'notes':'Linux headless persistent profile; ei Windows-kaksoisklikkausta, Edgeä tai Firefoxia.'},ensure_ascii=False,indent=2))

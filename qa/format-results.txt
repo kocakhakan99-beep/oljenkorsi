@@ -1,0 +1,31 @@
+src/data/storage.ts 784ms
+src/domain/calculations.ts 1180ms
+src/domain/model.ts 406ms
+src/main.tsx 3060ms
+src/services/csv.ts 207ms
+src/services/validation.ts 107ms
+src/styles.css 508ms
+src/test/domain.test.ts 197ms
+src/test/storage.test.ts 19ms
+[90mACCESSIBILITY.md[39m 147ms (unchanged)
+ARCHITECTURE.md 52ms
+CALCULATIONS.md 29ms
+CHANGELOG.md 6ms
+[90mCONTRIBUTING.md[39m 10ms (unchanged)
+DATA_MODEL.md 20ms
+DECISIONS.md 20ms
+IMPORT_EXPORT.md 9ms
+KNOWN_LIMITATIONS.md 16ms
+[90mOFFLINE_ARCHITECTURE.md[39m 6ms (unchanged)
+[90mPRIVACY.md[39m 6ms (unchanged)
+README.md 101ms
+ROADMAP.md 82ms
+SECURITY.md 11ms
+TESTING.md 19ms
+vite.config.ts 4ms
+eslint.config.mjs 69ms
+standalone.mjs 15ms
+.prettierrc.json 5ms
+e2e-results.json 7ms
+package.json 2ms
+tsconfig.json 9ms

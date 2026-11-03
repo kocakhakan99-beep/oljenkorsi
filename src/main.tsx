@@ -1,0 +1,2153 @@
+import { useForm } from 'react-hook-form';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import {
+  empty,
+  demo,
+  entry,
+  uid,
+  today,
+  kinds,
+  type State,
+  type Entry,
+  type Kind,
+  type Scenario,
+} from './domain/model';
+import {
+  metrics,
+  money,
+  total,
+  occurrences,
+  sum,
+  compound,
+  goalMonths,
+  payoff,
+  MAX,
+} from './domain/calculations';
+import { storage } from './data/storage';
+import { backup, restore, validate, validateEntry } from './services/validation';
+import { parseCSV, exportCSV, csvEntry, csvFields, download } from './services/csv';
+import './styles.css';
+const names: Record<string, string> = {
+  dashboard: 'Yhteenveto',
+  budget: 'Budjetti',
+  incomes: 'Tulot',
+  expenses: 'Menot',
+  assets: 'Omaisuus',
+  liabilities: 'Velat',
+  investments: 'Sijoitukset',
+  goals: 'Tavoitteet',
+  scenarios: 'Skenaariot',
+  reports: 'Raportit',
+  transfer: 'Tuonti ja vienti',
+  settings: 'Asetukset',
+  help: 'Ohje ja tietosuoja',
+};
+const singular: Record<Kind, string> = {
+  incomes: 'tulo',
+  expenses: 'meno',
+  assets: 'omaisuuserä',
+  liabilities: 'velka',
+  investments: 'sijoitus',
+  goals: 'tavoite',
+};
+const recNames = {
+  once: 'Kerran',
+  weekly: 'Viikoittain',
+  biweekly: 'Joka toinen viikko',
+  monthly: 'Kuukausittain',
+  bimonthly: 'Joka toinen kuukausi',
+  quarterly: 'Neljännesvuosittain',
+  semiannual: 'Puolivuosittain',
+  yearly: 'Vuosittain',
+};
+const otherCategories: Record<string, string[]> = {
+  assets: [
+    'Käteinen',
+    'Talletukset',
+    'Asunto',
+    'Sijoitusasunto',
+    'Vapaa-ajan asunto',
+    'Auto',
+    'Moottoripyörä',
+    'Vene',
+    'Metsä',
+    'Maa',
+    'Yritysomistus',
+    'Arvoesineet',
+    'Muu',
+  ],
+  liabilities: [
+    'Asuntolaina',
+    'Autolaina',
+    'Opintolaina',
+    'Kulutusluotto',
+    'Luottokorttivelka',
+    'Muu velka',
+  ],
+  investments: ['Osake', 'ETF', 'Rahasto', 'Korkosijoitus', 'Käteinen', 'Kryptovara', 'Muu'],
+  goals: [
+    'Hätävara',
+    'Loma',
+    'Auto',
+    'Asunnon käsiraha',
+    'Velan maksaminen',
+    'Eläkesäästäminen',
+    'Opiskelu',
+    'Muu',
+  ],
+};
+function load() {
+  try {
+    return { data: storage.get(), error: '' };
+  } catch (e) {
+    return {
+      data: empty(),
+      error:
+        'Tallennettua dataa ei voitu lukea. Sitä ei ylikirjoiteta automaattisesti. Vie alkuperäinen tallennus Asetuksista ja palauta kelvollinen varmuuskopio. ' +
+        String(e),
+    };
+  }
+}
+const loaded = load();
+function Modal({
+  title,
+  onClose,
+  children,
+  dismissible = true,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  dismissible?: boolean;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    let previous = document.activeElement as HTMLElement;
+    ref.current?.showModal();
+    return () => previous?.focus();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      onCancel={(e) => {
+        e.preventDefault();
+        if (dismissible) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && dismissible) onClose();
+      }}
+    >
+      <div className="dialog-head">
+        <h2>{title}</h2>
+        {dismissible && (
+          <button aria-label="Sulje" onClick={onClose}>
+            ×
+          </button>
+        )}
+      </div>
+      {children}
+    </dialog>
+  );
+}
+function App() {
+  const [s, setS] = useState<State>(loaded.data),
+    [page, setPage] = useState(location.hash.slice(1) || 'dashboard'),
+    [notice, setNotice] = useState(loaded.error),
+    [storageOk, setStorageOk] = useState(storage.healthCheck().ok),
+    [edit, setEdit] = useState<{ kind: Kind; item: Entry } | null>(null),
+    [quick, setQuick] = useState(false),
+    [search, setSearch] = useState(''),
+    [categoryFilter, setCategoryFilter] = useState(''),
+    [statusFilter, setStatusFilter] = useState(''),
+    [sort, setSort] = useState('date'),
+    [limit, setLimit] = useState(100),
+    [pending, setPending] = useState<State | null>(null),
+    [deleteOpen, setDeleteOpen] = useState(false),
+    [deleteText, setDeleteText] = useState(''),
+    [categoryEdit, setCategoryEdit] = useState(false),
+    [undo, setUndo] = useState<State | null>(null),
+    [reportMonths, setReportMonths] = useState(6);
+  const month = s.settings.month,
+    m = useMemo(() => metrics(s, month), [s, month]);
+  const euro = (n: number) =>
+    s.settings.private
+      ? '•••••• €'
+      : new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(n / 100);
+  const pct = (n: number | null) =>
+    n === null
+      ? 'Ei laskettavissa'
+      : s.settings.private
+        ? '••• %'
+        : new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 1 }).format(n) + ' %';
+  function commit(next: State) {
+    try {
+      let valid = validate(next);
+      try {
+        storage.update(valid);
+        setStorageOk(true);
+      } catch (e) {
+        setStorageOk(false);
+        setNotice(
+          'Tallennus epäonnistui. Tiedot ovat vain tämän välilehden muistissa: vie varmuuskopio nyt. ' +
+            String(e),
+        );
+      }
+      setS(valid);
+      return true;
+    } catch (e) {
+      setNotice(String(e));
+      return false;
+    }
+  }
+  function settings(v: Partial<State['settings']>) {
+    commit({ ...s, settings: { ...s.settings, ...v } });
+  }
+  function navigate(p: string) {
+    setPage(p);
+    location.hash = p;
+    setCategoryFilter('');
+    setStatusFilter('');
+    setLimit(100);
+    setQuick(false);
+    setTimeout(() => document.querySelector<HTMLElement>('main h1')?.focus(), 0);
+  }
+  useEffect(() => {
+    let f = () => setPage(location.hash.slice(1) || 'dashboard');
+    window.addEventListener('hashchange', f);
+    return () => window.removeEventListener('hashchange', f);
+  }, []);
+  useEffect(() => {
+    let f = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setQuick((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', f);
+    return () => window.removeEventListener('keydown', f);
+  }, []);
+  useEffect(() => {
+    let f = (e: BeforeUnloadEvent) => {
+      if (!storageOk) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', f);
+    return () => window.removeEventListener('beforeunload', f);
+  }, [storageOk]);
+  const dark =
+    s.settings.mode === 'dark' ||
+    (s.settings.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    document.documentElement.dataset.theme = s.settings.theme;
+    document.documentElement.dataset.mode = dark ? 'dark' : 'light';
+    document.documentElement.style.setProperty('--custom', s.settings.accent);
+  }, [s.settings.theme, dark, s.settings.accent]);
+  function saveEntry(kind: Kind, item: Entry) {
+    let exists = s[kind].some((e) => e.id === item.id);
+    if (
+      commit({
+        ...s,
+        [kind]: exists ? s[kind].map((e) => (e.id === item.id ? item : e)) : [...s[kind], item],
+      })
+    ) {
+      setEdit(null);
+      setNotice('Tiedot päivitetty.');
+    }
+  }
+  function remove(kind: Kind, id: string) {
+    if (confirm('Poistetaanko tietue? Voit kumota viimeisimmän poiston tämän istunnon aikana.')) {
+      setUndo(s);
+      commit({ ...s, [kind]: s[kind].filter((e) => e.id !== id) });
+      setNotice('Tietue poistettu.');
+    }
+  }
+  function exportBackup() {
+    download(backup(s), 'taloussuunnittelu-backup-' + today() + '.json');
+    setNotice('Varmuuskopio muodostettu. Tarkista, että tiedosto tallentui selaimen latauksiin.');
+  }
+  async function importBackup(file: File) {
+    try {
+      if (file.size > 10000000) throw Error('Enimmäiskoko on 10 Mt.');
+      setPending(restore(await file.text()));
+    } catch (e) {
+      setNotice('Palautus hylätty: ' + String(e));
+    }
+  }
+  function budgetChange(cat: string, text: string) {
+    try {
+      let n = money(text);
+      if (n < 0) throw Error('Budjetti ei voi olla negatiivinen.');
+      commit({ ...s, budgets: { ...s.budgets, [month]: { ...s.budgets[month], [cat]: n } } });
+    } catch (e) {
+      setNotice(String(e));
+    }
+  }
+  const cats = (kind: Kind) =>
+    kind === 'incomes' || kind === 'expenses'
+      ? s.categories.filter((c) => c.kind === kind && !c.archived).map((c) => c.name)
+      : otherCategories[kind];
+  const rows = kinds.includes(page as Kind)
+    ? s[page as Kind]
+        .filter(
+          (e) =>
+            (e.name + ' ' + e.category + ' ' + e.description + ' ' + e.tags)
+              .toLocaleLowerCase('fi')
+              .includes(search.toLocaleLowerCase('fi')) &&
+            (!categoryFilter || e.category === categoryFilter) &&
+            (!statusFilter || e.status === statusFilter),
+        )
+        .sort((a, b) =>
+          sort === 'amount'
+            ? b.amount - a.amount
+            : sort === 'name'
+              ? a.name.localeCompare(b.name, 'fi')
+              : b.date.localeCompare(a.date),
+        )
+    : [];
+  function stat(label: string, value: string, note?: string) {
+    return (
+      <article className="stat">
+        <span>{label}</span>
+        <strong>{value}</strong>
+        {note && <small>{note}</small>}
+      </article>
+    );
+  }
+  const history = Array.from({ length: reportMonths }, (_, i) => {
+    let [y, mo] = month.split('-').map(Number),
+      d = new Date(y, mo - reportMonths + i, 1),
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { key, ...metrics(s, key) };
+  });
+  const expCats = Array.from(
+    new Set([
+      ...s.categories.filter((c) => c.kind === 'expenses' && !c.archived).map((c) => c.name),
+      ...s.expenses.map((e) => e.category),
+      ...Object.keys(s.budgets[month] || {}),
+    ]),
+  );
+  return (
+    <>
+      <a
+        className="skip"
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+      >
+        Siirry sisältöön
+      </a>
+      <div className="shell">
+        <aside>
+          <div className="brand">
+            <span className="brand-mark">T</span>
+            <div>
+              Taloussuunnittelu<small>Oma talous. Omalla laitteella.</small>
+            </div>
+          </div>
+          <nav aria-label="Päänavigaatio">
+            {Object.entries(names).map(([key, name], i) => (
+              <button
+                key={key}
+                className={page === key ? 'selected' : ''}
+                aria-current={page === key ? 'page' : undefined}
+                onClick={() => navigate(key)}
+              >
+                <span className="nav-icon" aria-hidden="true">
+                  {['◫', '▤', '↙', '↗', '◇', '≋', '▥', '◎', '⌁', '▦', '⇅', '⚙', '?'][i]}
+                </span>
+                {name}
+              </button>
+            ))}
+          </nav>
+          <div className="aside-bottom">
+            <span className="dot" /> Täysin paikallinen<small>Ei tiliä. Ei seurantaa.</small>
+            <button onClick={() => setQuick(true)}>
+              Pikatoiminnot <kbd>Ctrl K</kbd>
+            </button>
+          </div>
+        </aside>
+        <div className="workspace">
+          <header>
+            <div className="header-label">RAUHALLISEMPI SUHDE RAHAAN</div>
+            <div className="toolbar">
+              <label>
+                Kuukausi
+                <input
+                  type="month"
+                  value={month}
+                  min="1900-01"
+                  max="2200-12"
+                  onChange={(e) => e.target.value && settings({ month: e.target.value })}
+                />
+              </label>
+              <button
+                aria-pressed={s.settings.private}
+                onClick={() => settings({ private: !s.settings.private })}
+              >
+                {s.settings.private ? 'Näytä summat' : 'Piilota summat'}
+              </button>
+              <button className="primary" onClick={exportBackup}>
+                Vie varmuuskopio
+              </button>
+            </div>
+          </header>
+          <main id="main" tabIndex={-1}>
+            <div className="page-head">
+              <div>
+                <p className="eyebrow">
+                  {s.settings.demo ? 'ESIMERKKIDATA · FIKTIIVINEN TALOUS' : 'SINUN TALOUDESI'}
+                </p>
+                <h1 tabIndex={-1}>{names[page] || 'Yhteenveto'}</h1>
+              </div>
+              {kinds.includes(page as Kind) && (
+                <button
+                  className="primary"
+                  onClick={() =>
+                    setEdit({
+                      kind: page as Kind,
+                      item: entry({ category: cats(page as Kind)[0] }),
+                    })
+                  }
+                >
+                  + Lisää {singular[page as Kind]}
+                </button>
+              )}
+            </div>
+            {(!storageOk || loaded.error) && (
+              <div className="alert warning">
+                {loaded.error ||
+                  'Selain ei takaa pysyvää tallennusta. Vie JSON-varmuuskopio ennen sulkemista.'}
+              </div>
+            )}
+            {notice && (
+              <div className="alert" role="status">
+                <span>{notice}</span>
+                <button aria-label="Sulje ilmoitus" onClick={() => setNotice('')}>
+                  ×
+                </button>
+              </div>
+            )}
+            {undo && (
+              <div className="alert">
+                Viimeisin poisto tai CSV-tuonti voidaan kumota.{' '}
+                <button
+                  onClick={() => {
+                    commit(undo);
+                    setUndo(null);
+                    setNotice('Muutos kumottu.');
+                  }}
+                >
+                  Kumoa
+                </button>
+              </div>
+            )}
+            {page === 'dashboard' && (
+              <>
+                <div className="hero">
+                  <div>
+                    <span className="eyebrow">KUUKAUDEN KASSAVIRTA</span>
+                    <div className="hero-value">{euro(m.cash)}</div>
+                    <p>Toteutuneet tulot − toteutuneet menot</p>
+                  </div>
+                  <div>
+                    <span>Käyttövara suunniteltujen menojen jälkeen</span>
+                    <strong>{euro(m.available)}</strong>
+                    <small>Ei sisällä erillistä säästövarausta.</small>
+                  </div>
+                </div>
+                <div className="stats">
+                  {stat('Tulot tässä kuussa', euro(m.income))}
+                  {stat('Menot tässä kuussa', euro(m.expense))}
+                  {stat('Säästöaste', pct(m.savingRate), 'Kassavirta / tulot')}
+                  {stat('Nettovarallisuus', euro(m.net), 'Omaisuus + sijoitukset − velat')}
+                  {stat('Omaisuus', euro(m.assets), 'Käyttäjän syöttämät arvot')}
+                  {stat('Velat', euro(m.debts))}
+                  {stat('Sijoitussalkku', euro(m.investments), 'Manuaaliset EUR-hinnat')}
+                  {stat(
+                    'Budjetista käytetty',
+                    m.budget ? pct((m.expense / m.budget) * 100) : 'Ei budjettia',
+                  )}
+                </div>
+                <div className="grid-two">
+                  <section className="panel">
+                    <h2>Menojen kokonaiskuva</h2>
+                    <p className="muted">Toteutuneet menot valitussa kuussa</p>
+                    {expCats
+                      .filter(
+                        (c) =>
+                          total(
+                            s.expenses.filter((e) => e.category === c),
+                            month,
+                            true,
+                          ) > 0,
+                      )
+                      .map((c) => {
+                        let n = total(
+                          s.expenses.filter((e) => e.category === c),
+                          month,
+                          true,
+                        );
+                        return (
+                          <div className="bar-row" key={c}>
+                            <div>
+                              <span>{c}</span>
+                              <strong>{euro(n)}</strong>
+                            </div>
+                            <progress max={m.expense || 1} value={n} aria-label={c} />
+                          </div>
+                        );
+                      })}
+                    {!m.expense && (
+                      <Empty text="Lisää ensimmäinen meno nähdäksesi, mihin rahat kuluvat." />
+                    )}
+                  </section>
+                  <section className="panel">
+                    <h2>Hätävara ja tavoitteet</h2>
+                    <div className="buffer">
+                      <strong>
+                        {m.buffer === null
+                          ? '—'
+                          : s.settings.private
+                            ? '•••'
+                            : m.buffer.toLocaleString('fi-FI', { maximumFractionDigits: 1 })}
+                      </strong>
+                      <span>kuukauden välttämättömät menot</span>
+                    </div>
+                    <p className="muted">
+                      Likvidiksi merkityt omaisuuserät / valitun kuukauden toteutuneet
+                      välttämättömät menot. Ei usean kuukauden keskiarvo.
+                    </p>
+                    {s.goals.map((e) => (
+                      <Goal key={e.id} e={e} euro={euro} privateMode={s.settings.private} />
+                    ))}
+                    {!s.goals.length && (
+                      <button
+                        onClick={() =>
+                          setEdit({ kind: 'goals', item: entry({ category: 'Hätävara' }) })
+                        }
+                      >
+                        Luo oma tavoite
+                      </button>
+                    )}
+                  </section>
+                </div>
+                <section className="panel">
+                  <h2>Tulevat suunnitellut menot</h2>
+                  <p>
+                    Valitussa kuussa yhteensä <strong>{euro(m.planned)}</strong>. Suunniteltuja
+                    tapahtumia ei lasketa toteutuneeseen kassavirtaan.
+                  </p>
+                  {s.expenses
+                    .filter((e) => e.status === 'planned' && occurrences(e, month).length)
+                    .map((e) => (
+                      <div className="simple-row" key={e.id}>
+                        <span>
+                          {e.name} ·{' '}
+                          {occurrences(e, month)
+                            .map((d) => d.split('-').reverse().join('.'))
+                            .join(', ')}
+                        </span>
+                        <strong>{euro(e.amount * occurrences(e, month).length)}</strong>
+                      </div>
+                    ))}
+                </section>
+              </>
+            )}
+            {page === 'budget' && (
+              <>
+                <div className="stats">
+                  {stat('Kuukauden tulot', euro(m.income))}
+                  {stat('Budjetti yhteensä', euro(m.budget))}
+                  {stat('Budjetista jäljellä', euro(m.budget - m.expense))}
+                  {stat(
+                    'Päiväkohtainen budjettivara',
+                    euro(
+                      Math.round(
+                        (m.budget - m.expense) /
+                          (month === today().slice(0, 7)
+                            ? new Date(
+                                Number(month.slice(0, 4)),
+                                Number(month.slice(5)),
+                                0,
+                              ).getDate() -
+                              Number(today().slice(8)) +
+                              1
+                            : new Date(
+                                Number(month.slice(0, 4)),
+                                Number(month.slice(5)),
+                                0,
+                              ).getDate()),
+                      ),
+                    ),
+                  )}
+                </div>
+                <section className="panel">
+                  <div className="section-head">
+                    <h2>Kategoriabudjetti</h2>
+                    <button
+                      onClick={() => {
+                        let [y, mo] = month.split('-').map(Number),
+                          d = new Date(y, mo - 2, 1),
+                          prev = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        if (!s.budgets[prev])
+                          setNotice('Edellisellä kuukaudella ei ole budjettia.');
+                        else if (
+                          confirm(
+                            'Korvataanko tämän kuukauden budjetti edellisen kuukauden kopiolla?',
+                          )
+                        )
+                          commit({
+                            ...s,
+                            budgets: { ...s.budgets, [month]: { ...s.budgets[prev] } },
+                          });
+                      }}
+                    >
+                      Kopioi edellinen kuukausi
+                    </button>
+                  </div>
+                  <p className="muted">
+                    Muokkaa summaa ja siirry seuraavaan kenttään. Tallennus tapahtuu kentästä
+                    poistuttaessa.
+                  </p>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Kategoria</th>
+                          <th>Suunniteltu €</th>
+                          <th>Toteutunut</th>
+                          <th>Jäljellä</th>
+                          <th>Toteuma</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {expCats.map((c) => {
+                          let b = s.budgets[month]?.[c] || 0,
+                            a = total(
+                              s.expenses.filter((e) => e.category === c),
+                              month,
+                              true,
+                            );
+                          return (
+                            <tr key={month + c}>
+                              <th scope="row">{c}</th>
+                              <td>
+                                <input
+                                  className="budget-input"
+                                  aria-label={c + ' budjetti euroina'}
+                                  key={b}
+                                  defaultValue={(b / 100).toFixed(2).replace('.', ',')}
+                                  onBlur={(e) => budgetChange(c, e.target.value)}
+                                  inputMode="decimal"
+                                />
+                              </td>
+                              <td>{euro(a)}</td>
+                              <td className={a > b ? 'negative' : ''}>{euro(b - a)}</td>
+                              <td>{b ? pct((a / b) * 100) : 'Ei budjettia'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p>
+                    Budjetoimaton osa tuloista: <strong>{euro(m.income - m.budget)}</strong>. Tämä
+                    versio tukee kategoriabudjettia; ei nollapohjaisen budjetin automaattista jakoa.
+                  </p>
+                </section>
+              </>
+            )}
+            {kinds.includes(page as Kind) && (
+              <>
+                <section className="panel">
+                  <div className="filters">
+                    <label>
+                      Hae
+                      <input
+                        type="search"
+                        placeholder="Nimi, kuvaus tai tunniste"
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value);
+                          setLimit(100);
+                        }}
+                      />
+                    </label>
+                    <label>
+                      Kategoria
+                      <select
+                        aria-label="Kategoria"
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                      >
+                        <option value="">Kaikki</option>
+                        {Array.from(
+                          new Set([
+                            ...cats(page as Kind),
+                            ...s[page as Kind].map((e) => e.category),
+                          ]),
+                        ).map((c) => (
+                          <option key={c}>{c}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Tila
+                      <select
+                        aria-label="Tila"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                      >
+                        <option value="">Kaikki</option>
+                        <option value="actual">Toteutunut</option>
+                        <option value="planned">Suunniteltu</option>
+                        <option value="skipped">Ohitettu</option>
+                      </select>
+                    </label>
+                    <label>
+                      Lajittelu
+                      <select
+                        aria-label="Lajittelu"
+                        value={sort}
+                        onChange={(e) => setSort(e.target.value)}
+                      >
+                        <option value="date">Uusin päivämäärä</option>
+                        <option value="amount">Suurin summa</option>
+                        <option value="name">Nimi</option>
+                      </select>
+                    </label>
+                  </div>
+                  {page === 'investments' && (
+                    <p className="muted">
+                      Sijoitushinnat syötetään käsin euroina. Sijoituksia ei tule kirjata uudelleen
+                      omaisuuteen. Salkun arvo {euro(m.investments)}; hankinta-arvo{' '}
+                      {euro(
+                        sum(s.investments.map((e) => Math.round(e.purchasePrice * e.quantity))),
+                      )}
+                      .
+                    </p>
+                  )}
+                  {page === 'assets' && (
+                    <p className="muted">
+                      Nykyarvo on käyttäjän syöttämä arvio. Nettovarallisuudessa huomioidaan
+                      omistusosuus.
+                    </p>
+                  )}
+                  {page === 'liabilities' && (
+                    <p className="muted">
+                      Saldo on manuaalinen. Kuukausierä ei luo automaattisesti menotapahtumaa;
+                      kirjaa maksut erikseen.
+                    </p>
+                  )}
+                  {rows.length ? (
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Nimi / kategoria</th>
+                            <th>{page === 'investments' ? 'Yksikköhinta' : 'Summa'}</th>
+                            <th>{page === 'goals' ? 'Tavoite' : 'Päivämäärä'}</th>
+                            <th>
+                              {page === 'incomes' || page === 'expenses'
+                                ? 'Toistuvuus / tila'
+                                : 'Lisätiedot'}
+                            </th>
+                            <th>Toiminnot</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.slice(0, limit).map((e) => (
+                            <tr key={e.id}>
+                              <td>
+                                <strong>{e.name}</strong>
+                                <small>
+                                  {e.category}
+                                  {e.tags ? ' · ' + e.tags : ''}
+                                </small>
+                              </td>
+                              <td>
+                                {euro(e.amount)}
+                                {page === 'investments' && (
+                                  <small>
+                                    {e.quantity} kpl · arvo{' '}
+                                    {euro(Math.round(e.amount * e.quantity))}
+                                  </small>
+                                )}
+                              </td>
+                              <td>
+                                {page === 'goals'
+                                  ? euro(e.target)
+                                  : e.date.split('-').reverse().join('.')}
+                              </td>
+                              <td>
+                                {page === 'incomes' || page === 'expenses' ? (
+                                  <>
+                                    {recNames[e.recurrence]}
+                                    <small>
+                                      {e.status === 'actual'
+                                        ? 'Toteutunut'
+                                        : e.status === 'planned'
+                                          ? 'Suunniteltu'
+                                          : 'Ohitettu'}
+                                      {!e.active ? ' · Keskeytetty' : ''}
+                                    </small>
+                                  </>
+                                ) : page === 'assets' ? (
+                                  `${e.ownership} % · ${e.liquid ? 'Likvidi' : 'Ei likvidi'}`
+                                ) : page === 'liabilities' ? (
+                                  `${e.rate} % · erä ${euro(e.payment)}`
+                                ) : page === 'goals' ? (
+                                  <Goal e={e} euro={euro} privateMode={s.settings.private} />
+                                ) : (
+                                  e.category
+                                )}
+                              </td>
+                              <td>
+                                <div className="row-actions">
+                                  <button
+                                    aria-label={'Muokkaa ' + e.name}
+                                    onClick={() => setEdit({ kind: page as Kind, item: e })}
+                                  >
+                                    Muokkaa
+                                  </button>
+                                  <button
+                                    aria-label={'Poista ' + e.name}
+                                    onClick={() => remove(page as Kind, e.id)}
+                                  >
+                                    Poista
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {rows.length > limit && (
+                        <button onClick={() => setLimit(limit + 100)}>Näytä seuraavat 100</button>
+                      )}
+                    </div>
+                  ) : (
+                    <Empty text="Ei tietueita. Lisää uusi tai muuta hakuehtoja." />
+                  )}
+                </section>
+                {(page === 'incomes' || page === 'expenses') && (
+                  <button onClick={() => setCategoryEdit(true)}>Hallitse kategorioita</button>
+                )}
+              </>
+            )}
+            {page === 'scenarios' && (
+              <ScenarioView
+                scenarios={s.scenarios}
+                euro={euro}
+                onSave={(q) => commit({ ...s, scenarios: [...s.scenarios, q] })}
+                onDelete={(id) =>
+                  commit({ ...s, scenarios: s.scenarios.filter((q) => q.id !== id) })
+                }
+                liabilities={s.liabilities}
+              />
+            )}
+            {page === 'reports' && (
+              <>
+                <section className="panel">
+                  <label>
+                    Raportin pituus (päättyy valittuun kuukauteen)
+                    <select
+                      aria-label="Raportin pituus (päättyy valittuun kuukauteen)"
+                      value={reportMonths}
+                      onChange={(e) => setReportMonths(Number(e.target.value))}
+                    >
+                      {[1, 3, 6, 12].map((n) => (
+                        <option key={n} value={n}>
+                          {n} kuukautta
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <h2>Tulot ja menot</h2>
+                  <div
+                    className="chart"
+                    role="img"
+                    aria-label="Kuukausittaiset tulot ja menot. Tarkat luvut alla taulukossa."
+                  >
+                    {history.map((h) => (
+                      <div className="chart-col" key={h.key}>
+                        <div className="chart-bars">
+                          <div
+                            className="income-bar"
+                            style={{
+                              height: Math.max(
+                                2,
+                                (h.income /
+                                  Math.max(
+                                    ...history.map((x) => Math.max(x.income, x.expense)),
+                                    1,
+                                  )) *
+                                  140,
+                              ),
+                            }}
+                          />
+                          <div
+                            className="expense-bar"
+                            style={{
+                              height: Math.max(
+                                2,
+                                (h.expense /
+                                  Math.max(
+                                    ...history.map((x) => Math.max(x.income, x.expense)),
+                                    1,
+                                  )) *
+                                  140,
+                              ),
+                            }}
+                          />
+                        </div>
+                        <small>{h.key.slice(5)}</small>
+                      </div>
+                    ))}
+                  </div>
+                  <p>Vihreä: tulot · sininen: menot</p>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Kuukausi</th>
+                          <th>Tulot</th>
+                          <th>Menot</th>
+                          <th>Kassavirta</th>
+                          <th>Säästöaste</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {history.map((h) => (
+                          <tr key={h.key}>
+                            <th>{h.key}</th>
+                            <td>{euro(h.income)}</td>
+                            <td>{euro(h.expense)}</td>
+                            <td>{euro(h.cash)}</td>
+                            <td>{pct(h.savingRate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="muted">
+                    Toistuvat toteutuneiksi merkityt tapahtumat lasketaan jokaiselle esiintymälle.
+                    Tämä ei ole pankkitapahtumien toteumavarmistus. Nettovarallisuuden
+                    historiaseuranta ei kuulu tähän versioon.
+                  </p>
+                </section>
+              </>
+            )}
+            {page === 'transfer' && (
+              <Transfer
+                s={s}
+                onBackup={exportBackup}
+                onRestore={importBackup}
+                onImport={(kind, es) => {
+                  setUndo(s);
+                  if (commit({ ...s, [kind]: [...s[kind], ...es] }))
+                    setNotice(`${es.length} tietuetta tuotu. Tuonnin voi kumota.`);
+                }}
+              />
+            )}
+            {page === 'settings' && (
+              <>
+                <section className="panel">
+                  <h2>Ulkoasu ja yksityisyys</h2>
+                  <div className="form-grid">
+                    <label>
+                      Teema
+                      <select
+                        aria-label="Teema"
+                        value={s.settings.theme}
+                        onChange={(e) => settings({ theme: e.target.value })}
+                      >
+                        <option value="neutral">Selkeä / neutraali</option>
+                        <option value="blue">Rauhallinen sininen</option>
+                        <option value="green">Luonnollinen vihreä</option>
+                        <option value="contrast">Korkea kontrasti</option>
+                        <option value="custom">Oma korostusväri</option>
+                      </select>
+                    </label>
+                    <label>
+                      Väritila
+                      <select
+                        aria-label="Väritila"
+                        value={s.settings.mode}
+                        onChange={(e) => settings({ mode: e.target.value })}
+                      >
+                        <option value="system">Järjestelmä</option>
+                        <option value="light">Vaalea</option>
+                        <option value="dark">Tumma</option>
+                      </select>
+                    </label>
+                    {s.settings.theme === 'custom' && (
+                      <label>
+                        Korostusväri
+                        <input
+                          type="color"
+                          value={s.settings.accent}
+                          onChange={(e) => settings({ accent: e.target.value })}
+                        />
+                        <small>
+                          Oman värin kontrastia ei ole automaattisesti tarkistettu. Käytä korkean
+                          kontrastin teemaa tarvittaessa.
+                        </small>
+                      </label>
+                    )}
+                  </div>
+                  <p>Valuutta EUR · kieli Suomi. Summat tallennetaan kokonaislukusentteinä.</p>
+                </section>
+                <section className="panel">
+                  <h2>Tallennus ja datan hallinta</h2>
+                  <p>
+                    {storageOk
+                      ? 'Paikallinen tallennus on käytettävissä.'
+                      : 'Tallennus ei ole käytettävissä.'}{' '}
+                    Selaimen asetukset, yksityinen selaus, tiedoston siirtäminen tai selaindatan
+                    poisto voivat hävittää tallennuksen. JSON-varmuuskopio on siirrettävä kopio
+                    tiedoistasi.
+                  </p>
+                  <div className="actions">
+                    <button onClick={exportBackup}>Vie varmuuskopio</button>
+                    <button
+                      onClick={() => {
+                        try {
+                          let t = localStorage.getItem(storage.key);
+                          if (t) download(t, 'talous-alkuperainen-tallennus.json');
+                          else setNotice('Alkuperäistä tallennusta ei löytynyt.');
+                        } catch (e) {
+                          setNotice('Selaintallennusta ei voi lukea: ' + String(e));
+                        }
+                      }}
+                    >
+                      Vie alkuperäinen selaintallennus
+                    </button>
+                    <button
+                      className="danger"
+                      onClick={() => {
+                        setDeleteText('');
+                        setDeleteOpen(true);
+                      }}
+                    >
+                      Poista kaikki tietoni
+                    </button>
+                  </div>
+                  {s.settings.demo && (
+                    <p>
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              'Poistetaanko koko esimerkkitalous? Myös siihen tekemäsi muutokset poistuvat.',
+                            )
+                          ) {
+                            let n = empty();
+                            n.settings.onboarded = true;
+                            commit(n);
+                          }
+                        }}
+                      >
+                        Poista esimerkkitalous
+                      </button>
+                    </p>
+                  )}
+                </section>
+              </>
+            )}
+            {page === 'help' && (
+              <section className="panel prose">
+                <h2>Talous haltuun ilman käyttäjätiliä</h2>
+                <p>
+                  Tämä sovellus toimii yhdestä HTML-tiedostosta. Talousdataasi ei lähetetä
+                  sovelluksesta verkkoon. Ei pankkiyhteyksiä, analytiikkaa, mainoksia tai
+                  käyttäjätiliä.
+                </p>
+                <h3>Aloita näin</h3>
+                <ol>
+                  <li>Lisää nettotulot ja menot. Valitse toistuvuus ja tila.</li>
+                  <li>Aseta kuukausikohtaiset kategoriabudjetit.</li>
+                  <li>Kirjaa omaisuus, velat ja sijoitukset ilman päällekkäisiä kirjauksia.</li>
+                  <li>Aseta tavoite ja kuukausisäästö.</li>
+                  <li>Vie varmuuskopio aina tärkeiden muutosten jälkeen.</li>
+                </ol>
+                <h3>Mitä laskelmat tarkoittavat?</h3>
+                <p>
+                  Kassavirta = toteutuneet tulot − toteutuneet menot. Käyttövara vähentää lisäksi
+                  suunnitellut menot. Säästöaste = kassavirta / toteutuneet tulot. Nettovarallisuus
+                  = omaisuuden omistusosuuden mukaiset arvot + sijoitusten määrä × hinta −
+                  velkasaldot.
+                </p>
+                <p>
+                  Toistuvuus lasketaan aloituspäivästä. Kuukauden 31. päivän tapahtuma siirtyy
+                  lyhyessä kuukaudessa sen viimeiselle päivälle. Toistuva toteutunut tietue
+                  oletetaan toteutuneeksi jokaisessa esiintymässä. Poikkeuspäivien hallinta ei vielä
+                  ole käytettävissä.
+                </p>
+                <h3>Yksityisyys ja turvallisuus</h3>
+                <p>
+                  Tiedot ja JSON-varmuuskopiot eivät ole salattuja. Laitteen muut käyttäjät,
+                  selainlaajennukset tai haittaohjelmat voivat päästä niihin. Käytä laitteen
+                  suojausta ja säilytä varmuuskopiot turvallisesti. Summien piilottaminen on
+                  näyttösuoja, ei salaus.
+                </p>
+                <h3>Arviot, eivät lupaukset</h3>
+                <p>
+                  Skenaariot perustuvat itse määrittämiisi oletuksiin. Ne eivät ole
+                  sijoitussuosituksia tai varmoja ennusteita. Verot, valuuttakurssit ja markkinoiden
+                  vaihtelu eivät sisälly laskelmiin.
+                </p>
+                <h3>Näppäimistö</h3>
+                <p>
+                  Tab siirtyy seuraavaan toimintoon. Enter aktivoi painikkeen. Escape sulkee
+                  valintaikkunan. Ctrl/Cmd + K avaa pikatoiminnot.
+                </p>
+                <h3>Version rajaus</h3>
+                <p>
+                  Versio 0.1.0 on toimiva paikallinen ensimmäinen toimitus, ei koko laajan
+                  V1-määrittelyn hyväksytty lopputulos. Edistyneet arvostushistoriat,
+                  sijoitustapahtumat, monivaluutat, kaikki budjetointitavat ja täydellinen
+                  saavutettavuusauditointi ovat jatkokehitystä.
+                </p>
+              </section>
+            )}
+          </main>
+          <footer>Yksityinen, paikallinen ja ilmainen · 0.1.0 · Muista varmuuskopioida</footer>
+        </div>
+      </div>
+      {!s.settings.onboarded && (
+        <Modal title="Talous haltuun ilman käyttäjätiliä" onClose={() => {}} dismissible={false}>
+          <p>
+            Kaikki tiedot käsitellään paikallisesti. Talousdataasi ei lähetetä sovelluksesta
+            mihinkään.
+          </p>
+          <p>Selaintallennus ei korvaa varmuuskopiota. Pidä JSON-kopio tallessa.</p>
+          {loaded.error && (
+            <>
+              <p className="negative">{loaded.error}</p>
+              <button
+                onClick={() => {
+                  try {
+                    let t = localStorage.getItem(storage.key);
+                    if (t) download(t, 'talous-alkuperainen-tallennus.json');
+                  } catch (e) {
+                    setNotice(String(e));
+                  }
+                }}
+              >
+                Pelasta alkuperäinen tallennus
+              </button>
+            </>
+          )}
+          <div className="actions">
+            <button
+              className="primary"
+              onClick={() => {
+                if (
+                  !loaded.error ||
+                  confirm(
+                    'Alkuperäinen tallennus on vioittunut. Aloittaminen korvaa sen. Oletko tallentanut siitä kopion?',
+                  )
+                )
+                  settings({ onboarded: true });
+              }}
+            >
+              Aloita tyhjästä
+            </button>
+            <button
+              onClick={() => {
+                if (
+                  !loaded.error ||
+                  confirm('Esimerkkidata korvaa alkuperäisen tallennuksen. Jatketaanko?')
+                )
+                  commit(demo());
+              }}
+            >
+              Kokeile esimerkkidatalla
+            </button>
+          </div>
+          <label className="file-label">
+            Palauta varmuuskopio
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={(e) => {
+                if (e.target.files?.[0]) importBackup(e.target.files[0]);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </Modal>
+      )}
+      {edit && (
+        <Modal title={'Muokkaa / lisää ' + singular[edit.kind]} onClose={() => setEdit(null)}>
+          <EntryForm
+            kind={edit.kind}
+            item={edit.item}
+            categories={cats(edit.kind)}
+            onSave={(e) => saveEntry(edit.kind, e)}
+            onCancel={() => setEdit(null)}
+          />
+        </Modal>
+      )}
+      {quick && (
+        <Modal title="Pikatoiminnot ja yleishaku" onClose={() => setQuick(false)}>
+          <label>
+            Hae kaikesta datasta
+            <input
+              autoFocus
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nimi, kategoria, tunniste"
+            />
+          </label>
+          <div className="quick-list">
+            {kinds.map((k) => (
+              <button
+                key={k}
+                onClick={() => {
+                  setQuick(false);
+                  setEdit({ kind: k, item: entry({ category: cats(k)[0] }) });
+                }}
+              >
+                + Lisää {singular[k]}
+              </button>
+            ))}
+            <button onClick={() => navigate('budget')}>Siirry budjettiin</button>
+            <button
+              onClick={() => {
+                exportBackup();
+                setQuick(false);
+              }}
+            >
+              Vie varmuuskopio
+            </button>
+            {search &&
+              kinds.flatMap((k) =>
+                s[k]
+                  .filter((e) =>
+                    (e.name + ' ' + e.category + ' ' + e.tags)
+                      .toLowerCase()
+                      .includes(search.toLowerCase()),
+                  )
+                  .slice(0, 20)
+                  .map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => {
+                        setQuick(false);
+                        navigate(k);
+                        setEdit({ kind: k, item: e });
+                      }}
+                    >
+                      {names[k]} · {e.name}
+                    </button>
+                  )),
+              )}
+          </div>
+        </Modal>
+      )}
+      {pending && (
+        <Modal title="Vahvista varmuuskopion palautus" onClose={() => setPending(null)}>
+          <p>
+            Palautus korvaa nykyiset tiedot. Vie nykyisestä tilanteesta varmuuskopio ennen
+            jatkamista.
+          </p>
+          <ul>
+            {kinds.map((k) => (
+              <li key={k}>
+                {names[k]}: {pending[k].length} tietuetta
+              </li>
+            ))}
+            <li>Budjettikuukausia: {Object.keys(pending.budgets).length}</li>
+            <li>Skenaarioita: {pending.scenarios.length}</li>
+          </ul>
+          <div className="actions">
+            <button onClick={exportBackup}>Vie nykyinen varmuuskopio</button>
+            <button
+              className="primary"
+              onClick={() => {
+                if (confirm('Korvataanko nykyinen talous vahvistetulla varmuuskopiolla?')) {
+                  let n = { ...pending, settings: { ...pending.settings, onboarded: true } };
+                  if (commit(n)) {
+                    setPending(null);
+                    setNotice('Varmuuskopio palautettu ja tietomalli validoitu.');
+                  }
+                }
+              }}
+            >
+              Korvaa ja palauta
+            </button>
+            <button onClick={() => setPending(null)}>Peruuta</button>
+          </div>
+        </Modal>
+      )}
+      {deleteOpen && (
+        <Modal title="Poista kaikki tietoni" onClose={() => setDeleteOpen(false)}>
+          <p>
+            Poistaa tämän sovelluksen selaintallennuksen. Ladatut varmuuskopiot eivät poistu. Ota
+            ensin varmuuskopio.
+          </p>
+          <button onClick={exportBackup}>Vie varmuuskopio</button>
+          <label>
+            Kirjoita POISTA
+            <input
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+          <button
+            className="danger"
+            disabled={deleteText !== 'POISTA'}
+            onClick={() => {
+              try {
+                storage.clear();
+                setS(empty());
+                setUndo(null);
+                setDeleteOpen(false);
+                setNotice('Paikallinen data poistettu ja poisto tarkistettu.');
+              } catch (e) {
+                setNotice(String(e));
+              }
+            }}
+          >
+            Poista pysyvästi
+          </button>
+        </Modal>
+      )}
+      {categoryEdit && (
+        <Modal title="Kategoriat" onClose={() => setCategoryEdit(false)}>
+          <Categories s={s} kind={page as 'incomes' | 'expenses'} commit={commit} />
+        </Modal>
+      )}
+    </>
+  );
+}
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="empty">
+      <span aria-hidden="true">◇</span>
+      <p>{text}</p>
+    </div>
+  );
+}
+function Goal({
+  e,
+  euro,
+  privateMode,
+}: {
+  e: Entry;
+  euro: (n: number) => string;
+  privateMode: boolean;
+}) {
+  let months = goalMonths(e),
+    progress = e.target ? Math.min(100, (e.amount / e.target) * 100) : 100;
+  return (
+    <div className="goal">
+      <div>
+        <strong>{e.name}</strong>
+        <span>
+          {privateMode
+            ? '••• %'
+            : progress.toLocaleString('fi-FI', { maximumFractionDigits: 0 }) + ' %'}
+        </span>
+      </div>
+      <progress value={progress} max={100} aria-label={e.name + ' eteneminen'} />
+      <small>
+        {euro(e.amount)} / {euro(e.target)} ·{' '}
+        {months === null
+          ? 'Aseta kuukausisäästö'
+          : months === 0
+            ? 'Tavoite saavutettu'
+            : `Arviolta ${months} kk ilman tuottoa`}
+      </small>
+    </div>
+  );
+}
+function EntryForm({
+  kind,
+  item,
+  categories,
+  onSave,
+  onCancel,
+}: {
+  kind: Kind;
+  item: Entry;
+  categories: string[];
+  onSave: (e: Entry) => void;
+  onCancel: () => void;
+}) {
+  const { register, handleSubmit } = useForm<Record<string, string>>();
+  const [error, setError] = useState('');
+  const recurring = kind === 'incomes' || kind === 'expenses';
+  function submit(ev: React.FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    try {
+      let f = new FormData(ev.target as HTMLFormElement),
+        v = { ...item, updatedAt: new Date().toISOString() };
+      for (let k of ['name', 'category', 'date', 'endDate', 'description', 'tags'] as const)
+        if (f.has(k)) v[k] = String(f.get(k));
+      for (let k of ['amount', 'purchasePrice', 'payment', 'target', 'monthly'] as const)
+        if (f.has(k)) v[k] = money(String(f.get(k)));
+      for (let k of ['quantity', 'ownership', 'rate'] as const)
+        if (f.has(k)) v[k] = Number(String(f.get(k)).replace(',', '.'));
+      if (recurring) {
+        v.recurrence = String(f.get('recurrence')) as Entry['recurrence'];
+        v.status = String(f.get('status')) as Entry['status'];
+        v.active = f.has('active');
+      }
+      if (kind === 'expenses') v.essential = f.has('essential');
+      if (kind === 'assets') v.liquid = f.has('liquid');
+      validateEntry(v);
+      onSave(v);
+    } catch (e) {
+      setError(String(e));
+    }
+  }
+  const field = (
+    label: string,
+    key: string,
+    value: string | number,
+    type = 'text',
+    required = false,
+  ) => (
+    <label>
+      {label}
+      <input
+        {...register(key)}
+        defaultValue={value}
+        type={type}
+        required={required}
+        maxLength={type === 'text' ? 200 : undefined}
+        inputMode={
+          ['amount', 'purchasePrice', 'payment', 'target', 'monthly'].includes(key)
+            ? 'decimal'
+            : undefined
+        }
+      />
+    </label>
+  );
+  return (
+    <form
+      onSubmit={handleSubmit((_values, event) => submit(event as React.FormEvent<HTMLFormElement>))}
+    >
+      {error && (
+        <div role="alert" className="alert warning">
+          {error}
+        </div>
+      )}
+      <div className="form-grid">
+        {field('Nimi', 'name', item.name, 'text', true)}
+        <label>
+          Kategoria
+          <input
+            name="category"
+            defaultValue={item.category}
+            list={'categories-' + kind}
+            required
+            maxLength={100}
+          />
+          <datalist id={'categories-' + kind}>
+            {categories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </label>
+        {field(
+          kind === 'investments'
+            ? 'Nykyinen yksikköhinta (€)'
+            : kind === 'goals'
+              ? 'Nykyinen säästösumma (€)'
+              : kind === 'liabilities'
+                ? 'Jäljellä oleva pääoma (€)'
+                : 'Summa / nykyarvo (€)',
+          'amount',
+          (item.amount / 100).toFixed(2),
+          'text',
+          true,
+        )}
+        {field(
+          kind === 'assets' || kind === 'investments'
+            ? 'Arvostuspäivä'
+            : kind === 'goals'
+              ? 'Tavoitepäivä (informatiivinen)'
+              : 'Päivämäärä / aloituspäivä',
+          'date',
+          item.date,
+          'date',
+          true,
+        )}
+        {recurring && (
+          <>
+            <label>
+              Toistuvuus
+              <select aria-label="Toistuvuus" name="recurrence" defaultValue={item.recurrence}>
+                {Object.entries(recNames).map(([v, n]) => (
+                  <option key={v} value={v}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Tila
+              <select aria-label="Tila" name="status" defaultValue={item.status}>
+                <option value="actual">Toteutunut</option>
+                <option value="planned">Suunniteltu</option>
+                <option value="skipped">Ohitettu</option>
+              </select>
+            </label>
+            {field('Lopetuspäivä (valinnainen)', 'endDate', item.endDate, 'date')}
+            <label className="check">
+              <input type="checkbox" name="active" defaultChecked={item.active} />
+              Aktiivinen
+            </label>
+          </>
+        )}
+        {kind === 'expenses' && (
+          <label className="check">
+            <input type="checkbox" name="essential" defaultChecked={item.essential} />
+            Välttämätön meno
+          </label>
+        )}
+        {kind === 'assets' && (
+          <>
+            {field('Omistusosuus (%)', 'ownership', item.ownership, 'number', true)}
+            <label className="check">
+              <input type="checkbox" name="liquid" defaultChecked={item.liquid} />
+              Likvidi vara (hätävaralaskuri)
+            </label>
+          </>
+        )}
+        {kind === 'investments' && (
+          <>
+            {field('Määrä', 'quantity', item.quantity, 'text', true)}
+            {field(
+              'Hankintahinta / yksikkö (€)',
+              'purchasePrice',
+              (item.purchasePrice / 100).toFixed(2),
+            )}
+          </>
+        )}
+        {kind === 'liabilities' && (
+          <>
+            {field('Vuosikorko (%)', 'rate', item.rate, 'text', true)}
+            {field('Kuukausierä (€)', 'payment', (item.payment / 100).toFixed(2))}
+          </>
+        )}
+        {kind === 'goals' && (
+          <>
+            {field('Tavoitesumma (€)', 'target', (item.target / 100).toFixed(2), 'text', true)}
+            {field('Kuukausisäästö (€)', 'monthly', (item.monthly / 100).toFixed(2))}
+          </>
+        )}
+        {field('Tunnisteet (pilkulla eroteltuna)', 'tags', item.tags)}
+      </div>
+      <label>
+        Kuvaus
+        <textarea name="description" defaultValue={item.description} maxLength={2000} />
+      </label>
+      {recurring && (
+        <p className="muted">
+          Toteutunut toistuva tietue lasketaan jokaiselle esiintymälle. Merkitse tulevat maksut
+          suunnitelluiksi tarvittaessa.
+        </p>
+      )}
+      <div className="actions">
+        <button type="submit" className="primary">
+          Tallenna
+        </button>
+        <button type="button" onClick={onCancel}>
+          Peruuta
+        </button>
+      </div>
+    </form>
+  );
+}
+function Categories({
+  s,
+  kind,
+  commit,
+}: {
+  s: State;
+  kind: 'incomes' | 'expenses';
+  commit: (s: State) => boolean;
+}) {
+  const [name, setName] = useState(''),
+    [error, setError] = useState('');
+  function rename(id: string, value: string) {
+    value = value.trim();
+    let old = s.categories.find((c) => c.id === id)!;
+    if (
+      !value ||
+      value.length > 100 ||
+      s.categories.some((c) => c.kind === kind && c.id !== id && c.name === value)
+    ) {
+      setError('Anna yksilöllinen nimi (1–100 merkkiä).');
+      return;
+    }
+    let budgets = { ...s.budgets };
+    if (kind === 'expenses')
+      for (let [m, b] of Object.entries(budgets)) {
+        let n = { ...b };
+        if (old.name in n) {
+          n[value] = n[old.name];
+          delete n[old.name];
+        }
+        budgets[m] = n;
+      }
+    commit({
+      ...s,
+      categories: s.categories.map((c) => (c.id === id ? { ...c, name: value } : c)),
+      [kind]: s[kind].map((e) => (e.category === old.name ? { ...e, category: value } : e)),
+      budgets,
+    });
+  }
+  return (
+    <>
+      <p>
+        Kategorian uudelleennimeäminen päivittää myös tietueet ja budjetit. Arkistointi piilottaa
+        kategorian valintalistasta, ei poista historiaa.
+      </p>
+      {error && <p role="alert">{error}</p>}
+      <div className="category-list">
+        {s.categories
+          .filter((c) => c.kind === kind)
+          .map((c) => (
+            <div className="simple-row" key={c.id}>
+              <input
+                aria-label={'Kategorian ' + c.name + ' nimi'}
+                defaultValue={c.name}
+                key={c.name}
+                onBlur={(e) => e.target.value !== c.name && rename(c.id, e.target.value)}
+              />
+              <button
+                onClick={() =>
+                  commit({
+                    ...s,
+                    categories: s.categories.map((x) =>
+                      x.id === c.id ? { ...x, archived: !x.archived } : x,
+                    ),
+                  })
+                }
+              >
+                {c.archived ? 'Palauta' : 'Arkistoi'}
+              </button>
+              <button
+                onClick={() => {
+                  if (
+                    s[kind].some((e) => e.category === c.name) ||
+                    Object.values(s.budgets).some((b) => c.name in b)
+                  ) {
+                    setError('Kategoria on käytössä. Arkistoi se poistamisen sijaan.');
+                    return;
+                  }
+                  commit({ ...s, categories: s.categories.filter((x) => x.id !== c.id) });
+                }}
+              >
+                Poista
+              </button>
+            </div>
+          ))}
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (
+            !name.trim() ||
+            name.length > 100 ||
+            s.categories.some((c) => c.kind === kind && c.name === name.trim())
+          ) {
+            setError('Anna yksilöllinen nimi.');
+            return;
+          }
+          if (
+            commit({
+              ...s,
+              categories: [
+                ...s.categories,
+                { id: uid(), name: name.trim(), kind, color: '#17604d', archived: false },
+              ],
+            })
+          )
+            setName('');
+        }}
+      >
+        <label>
+          Uusi kategoria
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+        </label>
+        <button>Lisää kategoria</button>
+      </form>
+    </>
+  );
+}
+function ScenarioView({
+  scenarios,
+  euro,
+  onSave,
+  onDelete,
+  liabilities,
+}: {
+  scenarios: Scenario[];
+  euro: (n: number) => string;
+  onSave: (q: Scenario) => boolean;
+  onDelete: (id: string) => boolean;
+  liabilities: Entry[];
+}) {
+  const [q, setQ] = useState<Scenario>({
+      id: uid(),
+      name: 'Oma skenaario',
+      initial: 100000,
+      monthly: 20000,
+      rate: 4,
+      fee: 0.5,
+      inflation: 2,
+      years: 10,
+    }),
+    [error, setError] = useState('');
+  let result = compound(q);
+  const update = (k: string, v: string) => {
+    try {
+      let n = ['initial', 'monthly'].includes(k) ? money(v) : Number(v.replace(',', '.'));
+      let next = { ...q, [k]: n };
+      validate({ ...empty(), scenarios: [next] });
+      setQ(next);
+      setError('');
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+  return (
+    <>
+      <section className="panel">
+        <h2>Korkoa korolle ja kulujen vaikutus</h2>
+        <p className="muted">
+          Oletukset ovat muokattavia arvioita, eivät historiallisia tuottoja tai
+          sijoitussuosituksia.
+        </p>
+        <div className="form-grid">
+          <label>
+            Nimi
+            <input
+              value={q.name}
+              maxLength={100}
+              onChange={(e) => setQ({ ...q, name: e.target.value })}
+            />
+          </label>
+          {[
+            ['Alkupääoma (€)', 'initial'],
+            ['Kuukausisijoitus (€)', 'monthly'],
+            ['Tuotto-oletus (% / vuosi)', 'rate'],
+            ['Vuosikulut (%)', 'fee'],
+            ['Inflaatio (% / vuosi)', 'inflation'],
+            ['Aika (vuotta, 1–50)', 'years'],
+          ].map(([label, k]) => (
+            <label key={k}>
+              {label}
+              <input
+                key={k + q.id}
+                defaultValue={
+                  ['initial', 'monthly'].includes(k)
+                    ? (q[k as 'initial'] / 100).toFixed(2)
+                    : q[k as 'rate']
+                }
+                onBlur={(e) => update(k, e.target.value)}
+                inputMode="decimal"
+              />
+            </label>
+          ))}
+        </div>
+        {error && (
+          <p role="alert" className="negative">
+            {error}
+          </p>
+        )}
+        <div className="stats">
+          {[
+            ['Sijoitettu pääoma', result.invested],
+            ['Laskennallinen kokonaisarvo', result.value],
+            ['Laskennallinen tuotto', result.gain],
+            ['Kulujen vaikutus', result.feeImpact],
+            ['Inflaatiokorjattu arvo', result.real],
+          ].map(([n, v]) => (
+            <article className="stat" key={String(n)}>
+              <span>{n}</span>
+              <strong>{euro(Number(v))}</strong>
+            </article>
+          ))}
+        </div>
+        <p className="muted">
+          Kuukausituotto = (1 + vuosituotto)^(1/12) − 1. Kulukerroin = (1 − vuosikulu)^(1/12).
+          Tuotto ja kulut lasketaan kuukauden alussa, lisäsijoitus lopussa; tulos pyöristetään
+          sentteihin kuukausittain. Reaaliarvo = loppuarvo / (1 + inflaatio)^vuodet. Verot ja
+          markkinavaihtelu eivät sisälly.
+        </p>
+        <button
+          className="primary"
+          disabled={!!error || !Number.isSafeInteger(result.value)}
+          onClick={() => {
+            if (onSave({ ...q, id: uid() })) setError('');
+          }}
+        >
+          Tallenna vertailuun
+        </button>
+      </section>
+      <section className="panel">
+        <h2>Skenaarioiden vertailu</h2>
+        <p>Voit tallentaa ja vertailla useita omia oletuksia.</p>
+        {scenarios.length ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nimi</th>
+                  <th>Oletukset</th>
+                  <th>Pääoma</th>
+                  <th>Nimellisarvo</th>
+                  <th>Reaaliarvo</th>
+                  <th>Toiminnot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scenarios.map((v) => {
+                  let r = compound(v);
+                  return (
+                    <tr key={v.id}>
+                      <th>{v.name}</th>
+                      <td>
+                        {v.years} v · tuotto {v.rate} % · kulut {v.fee} % · inflaatio {v.inflation}{' '}
+                        %
+                        <small>
+                          {euro(v.initial)} + {euro(v.monthly)} / kk
+                        </small>
+                      </td>
+                      <td>{euro(r.invested)}</td>
+                      <td>{euro(r.value)}</td>
+                      <td>{euro(r.real)}</td>
+                      <td>
+                        <button onClick={() => setQ({ ...v, id: uid() })}>Lataa laskuriin</button>
+                        <button onClick={() => onDelete(v.id)}>Poista</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty text="Tallenna ensimmäinen skenaario vertailuun." />
+        )}
+      </section>
+      <section className="panel">
+        <h2>Velanmaksuskenaariot</h2>
+        <p className="muted">
+          Vakioitu vuosikorko, kuukausittainen korko ja erä. Ei muita kuluja eikä koron muutoksia.
+          Ei luotonottosuositus.
+        </p>
+        {liabilities.map((e) => {
+          let r = payoff(e.amount, e.payment, e.rate);
+          return (
+            <p key={e.id}>
+              <strong>{e.name}</strong>:{' '}
+              {r
+                ? `${r.months} kuukautta, korkoja ${euro(r.interest)}`
+                : 'Erä ei riitä tai maksuaika ylittää 100 vuotta.'}
+            </p>
+          );
+        })}
+        {!liabilities.length && <p>Lisää velka ja kuukausierä nähdäksesi arvion.</p>}
+      </section>
+    </>
+  );
+}
+function Transfer({
+  s,
+  onBackup,
+  onRestore,
+  onImport,
+}: {
+  s: State;
+  onBackup: () => void;
+  onRestore: (f: File) => void;
+  onImport: (k: Kind, e: Entry[]) => void;
+}) {
+  const [kind, setKind] = useState<Kind>('expenses'),
+    [text, setText] = useState(''),
+    [delimiter, setDelimiter] = useState(';'),
+    [map, setMap] = useState<Record<string, number>>({}),
+    [error, setError] = useState(''),
+    [encoding, setEncoding] = useState('utf-8'),
+    [bytes, setBytes] = useState<ArrayBuffer | null>(null),
+    [skipErrors, setSkipErrors] = useState(false),
+    [skipDuplicates, setSkipDuplicates] = useState(true);
+  let rows: string[][] = [];
+  try {
+    rows = text ? parseCSV(text, delimiter) : [];
+  } catch (e) {
+    error || queueMicrotask(() => setError(String(e)));
+  }
+  const evaluated = rows.slice(1).map((r, i) => {
+    try {
+      let e = csvEntry(r, map),
+        duplicate = s[kind].some(
+          (x) =>
+            x.name === e.name &&
+            x.date === e.date &&
+            x.amount === e.amount &&
+            x.category === e.category,
+        );
+      return { e, duplicate, line: i + 2, error: '' };
+    } catch (e) {
+      return { e: null, duplicate: false, line: i + 2, error: String(e) };
+    }
+  });
+  let seen = new Set<string>();
+  for (let r of evaluated)
+    if (r.e) {
+      let key = JSON.stringify([r.e.name, r.e.date, r.e.amount, r.e.category]);
+      if (seen.has(key)) r.duplicate = true;
+      seen.add(key);
+    }
+  let errors = evaluated.filter((r) => r.error),
+    dups = evaluated.filter((r) => r.duplicate),
+    accepted = evaluated.filter((r) => r.e && (!skipDuplicates || !r.duplicate)).map((r) => r.e!);
+  function decode(b: ArrayBuffer, enc: string) {
+    try {
+      let t = new TextDecoder(enc, { fatal: enc === 'utf-8' }).decode(b).replace(/^\ufeff/, '');
+      setText(t);
+      let sep = t.split(/\r?\n/)[0].includes(';') ? ';' : ',';
+      setDelimiter(sep);
+      let header = parseCSV(t, sep)[0] || [];
+      setMap(
+        Object.fromEntries(
+          csvFields.map((k) => [k, header.findIndex((x) => x.trim().toLowerCase() === k)]),
+        ),
+      );
+      setError('');
+    } catch (e) {
+      setError('Merkistöä ei voitu lukea. Kokeile Windows-1252:ta. ' + String(e));
+    }
+  }
+  return (
+    <>
+      <section className="panel">
+        <h2>JSON-varmuuskopio</h2>
+        <p>
+          Varmuuskopio sisältää koko talouden. Palautus validoidaan ja vahvistetaan ennen nykyisten
+          tietojen korvaamista. Eheystarkistus tunnistaa tahattomia muutoksia, ei todista tiedoston
+          aitoutta.
+        </p>
+        <button className="primary" onClick={onBackup}>
+          Vie varmuuskopio
+        </button>
+        <label className="file-label">
+          Palauta varmuuskopio
+          <input
+            type="file"
+            accept=".json"
+            onChange={(e) => {
+              if (e.target.files?.[0]) onRestore(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
+        </label>
+      </section>
+      <section className="panel">
+        <h2>CSV-tuonti ja vienti</h2>
+        <p className="muted">
+          Tuonti lisää tietueita. Tuonnin voi kumota tämän istunnon aikana. Summat ovat CSV:ssä
+          euroina, sisäisesti sentteinä.
+        </p>
+        <div className="form-grid">
+          <label>
+            Tietotyyppi
+            <select
+              aria-label="Tietotyyppi"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as Kind)}
+            >
+              {kinds.map((k) => (
+                <option key={k} value={k}>
+                  {names[k]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Merkistö
+            <select
+              aria-label="Merkistö"
+              value={encoding}
+              onChange={(e) => {
+                setEncoding(e.target.value);
+                if (bytes) decode(bytes, e.target.value);
+              }}
+            >
+              <option value="utf-8">UTF-8</option>
+              <option value="windows-1252">Windows-1252</option>
+            </select>
+          </label>
+          <label>
+            Erotin
+            <select
+              aria-label="Erotin"
+              value={delimiter}
+              onChange={(e) => {
+                setDelimiter(e.target.value);
+                setError('');
+              }}
+            >
+              <option value=";">Puolipiste</option>
+              <option value=",">Pilkku</option>
+            </select>
+          </label>
+        </div>
+        <div className="actions">
+          <button
+            onClick={() =>
+              download(
+                exportCSV(s[kind]),
+                'talous-' + kind + '-' + today() + '.csv',
+                'text/csv;charset=utf-8',
+              )
+            }
+          >
+            Vie {names[kind].toLowerCase()} CSV:nä
+          </button>
+          <button
+            onClick={() =>
+              download(exportCSV([]), 'talous-csv-pohja.csv', 'text/csv;charset=utf-8')
+            }
+          >
+            Lataa CSV-pohja
+          </button>
+        </div>
+        <label className="file-label">
+          Valitse CSV
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={async (e) => {
+              let f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > 5000000) {
+                setError('Enimmäiskoko 5 Mt.');
+                return;
+              }
+              let b = await f.arrayBuffer();
+              setBytes(b);
+              decode(b, encoding);
+              e.target.value = '';
+            }}
+          />
+        </label>
+        {error && (
+          <p role="alert" className="negative">
+            {error}
+          </p>
+        )}
+        {rows.length > 0 && (
+          <>
+            <h3>Yhdistä sarakkeet</h3>
+            <p>
+              Nimi ja summa ovat pakollisia. Päivämäärä voi olla dd.mm.yyyy tai yyyy-mm-dd. Puuttuva
+              päivämäärä on tänään.
+            </p>
+            <div className="form-grid">
+              {csvFields.map((k) => (
+                <label key={k}>
+                  {k}
+                  {['name', 'amount'].includes(k) ? ' *' : ''}
+                  <select
+                    value={map[k] ?? -1}
+                    onChange={(e) => setMap({ ...map, [k]: Number(e.target.value) })}
+                  >
+                    <option value={-1}>Ei saraketta</option>
+                    {rows[0].map((h, i) => (
+                      <option key={i} value={i}>
+                        {h || 'Sarake ' + (i + 1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <h3>Esikatselu (enintään 5 riviä)</h3>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    {rows[0].map((h, i) => (
+                      <th key={i}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(1, 6).map((r, i) => (
+                    <tr key={i}>
+                      {r.map((v, j) => (
+                        <td key={j}>{v}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p>
+              {evaluated.length} riviä · {errors.length} virheellistä · {dups.length} mahdollista
+              duplikaattia · {accepted.length} tuotavaa.
+            </p>
+            {errors.slice(0, 10).map((r) => (
+              <p key={r.line} className="negative">
+                Rivi {r.line}: {r.error}
+              </p>
+            ))}
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={skipErrors}
+                onChange={(e) => setSkipErrors(e.target.checked)}
+              />
+              Ohita virheelliset rivit (tai korjaa CSV ja valitse uudelleen)
+            </label>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={skipDuplicates}
+                onChange={(e) => setSkipDuplicates(e.target.checked)}
+              />
+              Ohita mahdolliset duplikaatit
+            </label>
+            <button
+              className="primary"
+              disabled={
+                !accepted.length ||
+                !!error ||
+                (!!errors.length && !skipErrors) ||
+                !(map.name >= 0) ||
+                !(map.amount >= 0)
+              }
+              onClick={() => {
+                if (confirm(`Tuodaanko ${accepted.length} tietuetta?`)) {
+                  onImport(kind, accepted);
+                  setText('');
+                  setBytes(null);
+                }
+              }}
+            >
+              Vahvista ja tuo {accepted.length} tietuetta
+            </button>
+          </>
+        )}
+      </section>
+    </>
+  );
+}
+createRoot(document.getElementById('root')!).render(<App />);

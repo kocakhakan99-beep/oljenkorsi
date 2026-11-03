@@ -1,0 +1,23 @@
+PASS: Onboarding tyhjästä file:// offline
+PASS: Tulo lisätty
+PASS: Toistuva meno lisätty
+PASS: Menon muokkaus
+PASS: Budjetin inline-muokkaus
+PASS: Omaisuus, velka, sijoitus ja tavoite lisätty
+PASS: Kassavirta 2100 EUR ja nettovarallisuus 4200 EUR
+PASS: Kategorian nimeaminen päivittää menot ja budjetit
+PASS: Teema ja tumma tila
+PASS: Summien piilotus
+PASS: Ctrl K ja Escape näppäimistöpolku
+PASS: Kolmen skenaarion tallennus
+PASS: Raportti ja taulukkovastine
+PASS: Selainprosessi suljettu ja uudelleenavattu: data säilyi
+PASS: JSON backup ladattu ja sisältö tarkistettu
+PASS: CSV vienti
+PASS: CSV tuonti, virherivin ja duplikaatin ohitus
+PASS: CSV tuonnin kumoaminen
+PASS: Tietueen poisto ja kumoaminen
+PASS: Kaiken datan poisto ja tarkistus
+PASS: JSON restore onboardingista: kaikki tiedot palautettu
+PASS: Väärä varmuuskopio hylätty ilman datan muutosta
+PASS: Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä
