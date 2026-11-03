@@ -23,6 +23,8 @@ import {
   goalMonths,
   payoff,
   MAX,
+  expenseType,
+  setExpenseTypeTags,
 } from './domain/calculations';
 import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
@@ -463,7 +465,11 @@ function App() {
                 <div className="stats">
                   {stat('Tulot tässä kuussa', euro(m.income))}
                   {stat('Menot tässä kuussa', euro(m.expense))}
-                  {stat('Säästöaste', pct(m.savingRate), 'Kassavirta / tulot')}
+                  {stat('Kulutusmenot', euro(m.consumption), 'Säästäminen- ja Sijoittaminen-kategoriat sivuutetaan')}
+                  {stat('Tulot kulutuksen jälkeen', euro(m.surplus), 'Ei ole sama kuin todennettu sijoitussumma')}
+                  {stat('Säästöaste', pct(m.savingRate), 'Tulot kulutuksen jälkeen / tulot')}
+                  {stat('Säästösiirrot', euro(m.savingTransfers))}
+                  {stat('Sijoitussiirrot', euro(m.investmentTransfers))}
                   {stat('Nettovarallisuus', euro(m.net), 'Omaisuus + sijoitukset − velat')}
                   {stat('Omaisuus', euro(m.assets), 'Käyttäjän syöttämät arvot')}
                   {stat('Velat', euro(m.debts))}
@@ -1079,7 +1085,9 @@ function App() {
                 <h3>Mitä laskelmat tarkoittavat?</h3>
                 <p>
                   Kassavirta = toteutuneet tulot − toteutuneet menot. Käyttövara vähentää lisäksi
-                  suunnitellut menot. Säästöaste = kassavirta / toteutuneet tulot. Nettovarallisuus
+                  suunnitellut menot. Säästöaste = (tulot − kulutusmenot) / tulot; kategoriat
+                  Säästäminen ja Sijoittaminen jätetään siitä pois. Kassavirtaan ne sisältyvät.
+                  Nettovarallisuus
                   = omaisuuden omistusosuuden mukaiset arvot + sijoitusten määrä × hinta −
                   velkasaldot.
                 </p>
@@ -1403,6 +1411,8 @@ function EntryForm({
         v.active = f.has('active');
       }
       if (kind === 'expenses') v.essential = f.has('essential');
+      if (kind === 'expenses')
+        v.tags = setExpenseTypeTags(v.tags, String(f.get('expenseType')) as 'consumption' | 'saving' | 'investment');
       if (kind === 'assets') v.liquid = f.has('liquid');
       validateEntry(v);
       onSave(v);
@@ -1511,10 +1521,20 @@ function EntryForm({
           </>
         )}
         {kind === 'expenses' && (
-          <label className="check">
-            <input type="checkbox" name="essential" defaultChecked={item.essential} />
-            Välttämätön meno
-          </label>
+          <>
+            <label>
+              Menon tyyppi
+              <select aria-label="Menon tyyppi" name="expenseType" defaultValue={expenseType(item)}>
+                <option value="consumption">Kulutus</option>
+                <option value="saving">Säästösiirto</option>
+                <option value="investment">Sijoitussiirto</option>
+              </select>
+            </label>
+            <label className="check">
+              <input type="checkbox" name="essential" defaultChecked={item.essential} />
+              Välttämätön meno
+            </label>
+          </>
         )}
         {kind === 'assets' && (
           <>

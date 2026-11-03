@@ -8,11 +8,38 @@ import {
   payoff,
   depreciation,
   validDate,
+  expenseType,
+  setExpenseTypeTags,
 } from '../domain/calculations';
 import { empty, entry, demo, uid } from '../domain/model';
 import { backup, restore, validate } from '../services/validation';
 import { parseCSV, exportCSV, csvEntry, csvFields } from '../services/csv';
 describe('Raha ja laskelmat', () => {
+  it('kulutus, säästösiirto ja sijoitussiirto luokitellaan kategoriasta riippumatta', () => {
+    const dated = { date: '2026-11-01', amount: 50000 };
+    let s = empty();
+    s.incomes = [entry({ amount: 300000, date: '2026-11-01' })];
+    s.expenses = [
+      entry({ ...dated, category: 'Uusi nimi', name: 'Kulutus' }),
+      entry({ ...dated, category: 'Uusi nimi', name: 'Säästö', tags: setExpenseTypeTags('', 'saving') }),
+      entry({ ...dated, category: 'Uusi nimi', name: 'Sijoitus', tags: setExpenseTypeTags('oma tunniste', 'investment') }),
+    ];
+    const m = metrics(s, '2026-11');
+    expect(m.expense).toBe(150000);
+    expect(m.consumption).toBe(50000);
+    expect(m.savingTransfers).toBe(50000);
+    expect(m.investmentTransfers).toBe(50000);
+    expect(m.surplus).toBe(250000);
+    expect(m.savingRate).toBeCloseTo(83.333);
+    expect(expenseType(s.expenses[2])).toBe('investment');
+  });
+  it('vanhat oletuskategoriat tunnistetaan ja omat tunnisteet säilyvät', () => {
+    expect(expenseType(entry({ category: ' sääSTäminen ' }))).toBe('saving');
+    expect(expenseType(entry({ category: 'Sijoittaminen' }))).toBe('investment');
+    expect(setExpenseTypeTags('oma; talous:expense-type=saving', 'consumption')).toBe(
+      'oma;talous:expense-type=consumption',
+    );
+  });
   it('sentit ja suomalainen muoto', () => {
     expect(money('1 234,56 €')).toBe(123456);
     expect(money('19.99')).toBe(1999);

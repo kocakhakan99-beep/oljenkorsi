@@ -1,24 +1,39 @@
 # Roadmap
 
-## Ensimmäinen toimitus 0.1.0
+Päivitetty 3.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md) ja [FIRE-määrittely](FIRE_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
-Toimiva single-file file://-ydin, paikallinen tallennus, backup, kirjaukset, kategoriabudjetti, omaisuus/velat/sijoitukset/tavoitteet, rajatut skenaariot/raportit ja CSV. Ei koko määrittelyn valmis V1.
+## P0: toistettava ja turvallinen perusta
 
-## Seuraavat kolme tärkeintä kokonaisuutta
+Korjaa erillisessä kooditehtävässä puuttuva `index.html`, lisää lukitustiedosto ja varmista puhdas asennus/build sekä tuotetun HTML:n vastaavuus lähdekoodiin. Pilviympäristön tarkistuksessa typecheck, lint ja 31 yksikkötestiä läpäisivät; build epäonnistui puuttuvaan entryyn. Toimitetun HTML:n HTTP-smoke läpäisi, mutta hallittu Chromium esti file://-E2E:n. Aiemmat QA-raportit eivät korvaa uutta build- ja file://-näyttöä.
 
-1. Windows Edge/Chrome/Firefox file://-hyväksyntä, tallennus- ja kiintiöpolut, täysi näppäimistö- ja ruudunlukijatestaus.
-2. Toistuvien tapahtumien esiintymäkohtainen toteuma/poikkeukset, budjettitavat ja historiat ilman datan päällekkäistä laskentaa.
-3. Feature-moduuleihin jako, lukitustiedosto ja puhdas build, kattavammat komponentti-/suorituskykytestit sekä backupin kryptografinen tarkiste.
+Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
 
-## Versiopolku
+**Valmis kun:** puhtaasta asennuksesta syntyy lähdekoodia vastaava HTML, merkitykselliset testit suoritetaan ja ympäristökohtaiset rajoitukset raportoidaan. Ei julisteta yleistä selainyhteensopivuutta yhden selainajon perusteella.
 
-- V1: alkuperäisen määrittelyn offline single-file -ydin hyväksyttyine testeineen.
-- V1.1: käytettävyys, saavutettavuus ja suorituskyky.
-- V1.2: edistyneet raportit ja laskurit.
-- V2: valinnainen hosted/PWA-jakelu, ei korvaa HTML-versiota.
-- V3: valinnainen käyttäjätili ja salattu synkronointi.
-- V4: valinnaiset markkinadatapalvelut.
-- V5: mahdolliset pankki-integraatiot.
-- V6: eettiset yhteistyöt, edut ja ansaintamalli.
+## P1: luotettava arjen talous ja mittarit
 
-Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Tulevat ominaisuudet eivät saa vaarantaa offline-version hyödyllisyyttä.
+Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Lisää tilit, alkusaldot, täsmäytys ja esiintymäkohtainen toteuma/poikkeus ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
+
+Lisää epäsäännöllisten menojen varaukset, budjettipohjat ja vaihtoehtoiset budjettitavat, kassakalenteri/kuun lopun ennuste, 3/6/12 kk hätävarapohja kattavuustietoineen sekä tulokatkosstressi. Lisää oma raportointiaikaväli ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
+
+**Riippuvuus:** P0 ja tietomallimigraation suunnittelu. **Valmis kun:** FIRE_PLANin rahavirtaesimerkit täsmäävät, vanha backup palautuu ja puuttuva havaintodata erottuu nollasta.
+
+## P2: selitettävä FIRE ja elinkaarisuunnittelu
+
+Toteuta ensin yhteinen deterministinen moottori: reaalinen/nominaalinen arvo, sijoituskelpoinen pääoma erilleen puskurista ja asunnosta, menoperusteinen FI-tavoite, herkkyydet ja ehdollinen FI-aika. Käyttäjän osa-aikatulo, eläke-ennuste ja eläkkeen alkaminen muodostavat vaiheistetun suunnitelman. Lean/Fat/Coast/Barista ovat saman moottorin syöteprofiileja.
+
+Lisää lainojen korko- ja lyhennysvertailu, sijoitustapahtumat/allokaatio ja kassavirroista erotetut tuotot. Verot ensin eksplisiittisenä käyttäjän varauksena; tarkka Suomen veromalli vasta lähdekatselmoinnin ja oman määrittelyn jälkeen. Vertaile kiinteää reaalinostoa ja prosenttinostoa, raportoi sekä pääoman että kulutuksen riittävyys.
+
+**Riippuvuus:** P1:n rahavirrat ja historiat. **Valmis kun:** käsin tarkistettavat FI-/eläke-/nostopolut, migraatiot ja FIRE_PLANin hyväksyntäportit läpäisevät; oletukset ja rajaukset näkyvät tuloksissa. Ei ”turvallista nostoprosenttia” oletuslupauksena.
+
+## P3: epävarmuus ja edistyneet päätösvertailut
+
+Lisää joustavat nostorajat, pitkä elinikä ja samojen tuottojen eri järjestykset. Tämän jälkeen versioidut, lisensoidut historialliset aineistot ja Monte Carlo/lohko-otanta, oletusten herkkyys, verojen laajennus ja tarvittaessa valuutat. Vertaa kulutusleikkausten määrää ja kestoa, älä vain salkun nollautumista.
+
+**Riippuvuus:** hyväksytty deterministinen moottori ja aineisto-/mallikatselmointi. **Valmis kun:** tulokset toistuvat samoilla syötteillä, epävarmuuden lähteet selitetään ja mallin onnistumisosuus erottuu tulevaisuuden lupauksesta.
+
+## Myöhempi jakelu ja integraatiot
+
+Aiemman versiopolun suunta säilyy: V1 offline-ydin, V1.1 käytettävyys/saavutettavuus, V1.2 edistyneet raportit/laskurit, V2 valinnainen hosted/PWA, V3 valinnainen tili ja salattu synkronointi, V4 markkinadata, V5 pankki-integraatiot, V6 mahdolliset eettiset yhteistyöt. P0–P3:n työpaketit kohdistetaan versioihin vasta hyväksytyn laajuuden perusteella. Integraatio ei ole FI-laskennan edellytys eikä ohita laskennan laatua.
+
+Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Paikallinen HTML säilyy hyödyllisenä ilman verkkopalveluita. Tässä dokumentointityössä ei muuteta toteutusta, skeemaa tai nykyisiä laskentakaavoja.

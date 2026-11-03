@@ -36,3 +36,12 @@
 - Ei kaikkia alkuperäisen teknologialistan kirjastoja. Ei fake-toimintoja niiden tilalla.
 
 Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyksi V1:ksi tai auditoiduksi benchmark-tuotteeksi.
+
+## FIRE ja mittareiden tulkinta (kartoitus 3.11.2026)
+
+- Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit. Tyyppi tallentuu yhteensopivuuden vuoksi varattuna tags-merkintänä; vanhoissa tietueissa tulkinta perustuu oletuskategorioihin. Ei pankista todennettua siirtoa, eikä lainapääomaa erotella.
+- Ei FI-pääomatavoitetta, FI-aikaa, elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
+- Kokonaisnettovarallisuus ei tarkoita nostettavissa olevaa FIRE-pääomaa. Oma asunto ja puskuri vaativat erillisen rajauksen.
+- Pilviasennuksen tarkistuksessa `index.html` puuttui ja production build epäonnistui. Toimitetun HTML:n HTTP-smoke läpäisi; nykyisen lähdekoodin tuoretta koostetta tai file://-E2E:tä ei sillä varmennettu. Hallittu Chromium esti file://-navigoinnin.
+
+Katso [ominaisuuskartoitus](FEATURE_RESEARCH.md) ja [toteutussuunnitelma](FIRE_PLAN.md). Nämä eivät muuta nykyisiä laskentatuloksia.
