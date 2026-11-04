@@ -24,6 +24,8 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
 - FI-pääomatavoitteen yksivaiheinen havainnollistus, ehdollinen aika-arvio omalla säästö- ja reaalituotto-oletuksella sekä ±10 % kulutusherkkyys.
 - 1/3/6/12 kuukauden kassavirtaraportti ja taulukkovastine.
+- Raporteissa valittava pylväs-/viivakaavio, kulurakenne pylväs-/piirakkakaaviona sekä valittavien pisteiden, pylväiden ja sektoreiden tapahtumakohtaiset tietokortit.
+- Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus.
 - Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko sekä yhteenvedon ja suunnittelun erisävyiset mittari- ja sisältöalueet.
@@ -31,7 +33,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 
 ## Kehitysteknologiat
 
-React 19.2.1, TypeScript strict, Vite 8.0.16, React Hook Form 7.66.0, Zod 4.1.12, oma CSS design system, Vitest, ESLint ja Prettier. E2E käyttää Python Playwrightia vain kehitysympäristössä. Kaaviot on toteutettu paikallisella CSS:llä ja semanttisilla taulukoilla. Tailwind, Recharts, Lucide ja React Testing Library eivät ole tässä toimituksessa käytössä.
+React 19.2.1, TypeScript strict, Vite 8.0.16, React Hook Form 7.66.0, Zod 4.1.12, Tailwind CSS 4.3 ja Lucide React 1.68. Tailwind toimii vain build-vaiheessa: CSS kootaan suoraan itsenäiseen HTML-tiedostoon. Lucide-kuvakkeet sisällytetään samaan tiedostoon; sovellus ei hae kuvakkeita verkosta. Vanha design system on edelleen `src/styles.css`-tiedostossa, ja uusia sekä uudistettuja alueita voidaan siirtää Tailwind-luokkiin asteittain. Kaaviot ovat omia, paikallisia HTML/SVG-toteutuksia ja niiden rinnalla on taulukkomuotoinen tietosisältö. Testit: Vitest ja ESLint; E2E käyttää Python Playwrightia vain kehitysympäristössä.
 
 ## Kehittäjän asennus ja komennot
 
@@ -46,7 +48,7 @@ npm test
 npm run build
 ```
 
-Build suorittaa Viten ja `standalone.mjs`:n. Viten kehitysmalli on `src/index.html`. Valmis, itsenäinen sovellus kirjoitetaan projektin juuren `index.html`-tiedostoon. Väliaikainen `dist/` poistetaan koosteen lopuksi. Vite dev ei ole loppukäyttäjän käyttötapa.
+Build suorittaa Viten ja `standalone.mjs`:n. Viten kehitysmalli on `src/index.html`. Valmis, itsenäinen sovellus kirjoitetaan projektin juuren `index.html`-tiedostoon. Väliaikainen `dist/` poistetaan koosteen lopuksi. Vite dev ei ole loppukäyttäjän käyttötapa. Asenna lukitulla riippuvuuspuulla komennolla `npm ci`.
 
 E2E: asenna kehityskoneelle Python Playwright ja sen Chromium. Aja `python e2e.py`. Vaihtoehtoinen selainpolku annetaan `TALOUS_BROWSER`-ympäristömuuttujalla. Testit käyttävät erillistä tilapäistä selainprofiilia, eivät henkilökohtaista profiilia. Python ei ole sovelluksen ajonaikainen riippuvuus.
 
@@ -60,11 +62,11 @@ JSON on koko talouden siirrettävä kopio. CSV on tietuelistojen siirtomuoto, ei
 
 Testattu: Google Chrome for Testing 149.0.7827.55, Linux, headless, Playwrightin offline-tila, file://, pysyvä profiili. Selainprosessi suljettiin ja käynnistettiin uudelleen; data säilyi. Edge, Firefox ja Windows-työpöydän kaksoisklikkaus eivät ole testattuja. Koneen fyysistä verkkoliitäntää ei katkaistu.
 
-31 yksikkötestiä läpäisi. E2E testasi kirjaukset, budjetin, kategorian nimeämisen, skenaariot, teemat, JSON/CSV, poiston, palautuksen ja verkkopyyntöjen puuttumisen. Tarkat tulokset: `TESTING.md` ja `qa/`.
+Yksikkö- ja E2E-testien ajantasaiset tulokset ovat tiedostossa `TESTING.md` ja lokit hakemistossa `qa/`.
 
 ## Rakenne
 
-`src/domain/`: mallit ja laskenta. `src/data/`: StorageProvider. `src/services/`: validointi, JSON ja CSV. `src/main.tsx`: sovellus ja ominaisuusnäkymät. `src/styles.css`: design system. `src/test/`: yksikkötestit.
+`src/domain/`: mallit ja laskenta. `src/data/`: StorageProvider. `src/services/`: validointi, JSON ja CSV. `src/main.tsx`: sovellus ja ominaisuusnäkymät. `src/styles.css`: nykyinen design system sekä Tailwindin build-aikainen tuonti ja teematokenit. `src/test/`: yksikkötestit.
 
 ## Tietosuoja ja turvallisuus
 
@@ -72,7 +74,7 @@ Ei ajonaikaisia ulkoisia resursseja, analytiikkaa tai API-kutsuja. CSP estää v
 
 ## Rajaus
 
-Tämä on toimiva ensimmäinen toimitus, ei koko 61-kohdan määrittelyn valmis V1. Katso `KNOWN_LIMITATIONS.md` ja `ROADMAP.md`. Riippuvuuksien suorat versiot on kiinnitetty, mutta lukitustiedostoa ja puhtaalla koneella tehtyä asennuskoetta ei toimiteta. Transitiivisten riippuvuuksien täysin toistettava build on jatkotehtävä.
+Tämä on toimiva ensimmäinen toimitus, ei koko 61-kohdan määrittelyn valmis V1. Katso `KNOWN_LIMITATIONS.md` ja `ROADMAP.md`. Suorat ja transitiiviset npm-riippuvuudet on lukittu `package-lock.json`-tiedostoon; puhtaan ympäristön asennus toimii komennolla `npm ci`.
 
 ## Ominaisuuskartoitus ja FIRE-jatkokehitys
 

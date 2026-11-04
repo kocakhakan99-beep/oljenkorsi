@@ -32,8 +32,8 @@
 - CSV-kartoituksen tekniset kenttänimet ovat englanniksi; korjaus tapahtuu lähde-CSV:ssä. Ei pankkiformaatteja tai täydellistä merkistötunnistusta.
 - Ei täydellistä WCAG-auditointia, ruudunlukijakoetta, komponenttitestejä tai tuhansien rivien suorituskykymittausta.
 - main.tsx sisältää useita feature-näkymiä; modulaarisuus tulee parantaa.
-- Ei lukitustiedostoa, puhtaan koneen asennuskoetta tai riippuvuusauditointia.
-- Ei kaikkia alkuperäisen teknologialistan kirjastoja. Ei fake-toimintoja niiden tilalla.
+- Npm-lukitustiedosto on lisätty; täysin puhtaan ympäristön asennuskoe ja riippuvuusauditointi puuttuvat edelleen.
+- Tailwind-tyylit on otettu käyttöön asteittain, eikä vanhaa CSS-design systemiä ole vielä siirretty kokonaan. Ei kaikkia alkuperäisen teknologialistan kirjastoja. Ei fake-toimintoja niiden tilalla.
 
 Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyksi V1:ksi tai auditoiduksi benchmark-tuotteeksi.
 

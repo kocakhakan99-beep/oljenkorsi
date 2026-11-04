@@ -1,18 +1,19 @@
-# Testausraportti 3.11.2026
+# Testausraportti 4.11.2026
 
 ## Suoritetut tarkistukset
 
-- TypeScript strict `tsc --noEmit`: läpäisi.
-- ESLint: läpäisi. Käytössä rajattu syntaksi- ja virhesääntöjoukko, ei täydellinen React/a11y-lintaus.
-- Vitest: 31 testiä, 2 tiedostoa, kaikki läpäisivät.
-- Vite production build ja standalone-jälkikäsittely: onnistuivat.
-- Playwright E2E: file://, offline=True ennen sivun avaamista, Google Chrome for Testing 149.0.7827.55, Linux headless.
+- 4.11 lähdekoodista: TypeScript strict `tsc --noEmit`, ESLint ja 37 Vitest-testiä läpäisivät.
+- Vite production build ja standalone-jälkikäsittely tuottivat juureen itsenäisen `index.html`-tiedoston (noin 396 kB).
+- Standalone-build varmistaa, että CSP lisätään tuotettuun HTML:ään eikä dokumenttiin jää ulkoisia script/link-tageja. Tailwind-luokat ja Lucide-kuvakkeet ovat mukana samassa bundle-tiedostossa.
+- Hallitun työympäristön selain-E2E:n uudelleenajo estyi: Playwrightin oletus-Chromiumia ei ole asennettu. Ympäristön `/usr/bin/chromium` kaatuu `setsockopt: Operation not permitted` -virheeseen ja SIGTRAPiin myös `--no-sandbox`-tilassa. Siksi tämän muutoksen jälkeen ei ole uutta selainvarmennusta.
+- `e2e.py` sisältää nyt myös kuluraportin tietokortin, piirakkasektorin näppäimistöaktivoinnin, rahavirtapäivän ja kuukausipylvään avauspolut; ne odottavat selainympäristössä suoritusta.
+- `qa/e2e-results.json` sisältää 3.11.2026 tallennetun aiemman offline/file://-ajon (23 hyväksyttyä tarkistusta); se edeltää nykyisiä raporttien interaktioita ja Tailwind/Lucide-ulkoasumuutosta.
 
 ## E2E:n sisältö
 
-Onboarding tyhjästä; tulo; toistuva meno; menon muokkaus; budjetti; omaisuus; velka; sijoitus; tavoite; kassavirran ja nettovarallisuuden tarkistus; kategorian nimeäminen; teema ja tumma tila; summien piilotus; Ctrl K/Escape; kolme skenaariota; raporttitaulukko; selainprosessin sulkeminen ja uudelleenavaaminen samalla profiililla; JSON-vienti; CSV-vienti; CSV-tuonti virhe- ja duplikaattiohituksella; tuonnin kumoaminen; tietueen poisto/kumoaminen; kaiken datan poisto; JSON-palautus; väärän backupin hylkäys.
+Tallennetussa aiemmassa E2E-ajossa: onboarding tyhjästä; tulo; toistuva meno; menon muokkaus; budjetti; omaisuus; velka; sijoitus; tavoite; kassavirran ja nettovarallisuuden tarkistus; kategorian nimeäminen; teema ja tumma tila; summien piilotus; Ctrl K/Escape; kolme skenaariota; raporttitaulukko; selainprosessin sulkeminen ja uudelleenavaaminen samalla profiililla; JSON-vienti; CSV-vienti; CSV-tuonti virhe- ja duplikaattiohituksella; tuonnin kumoaminen; tietueen poisto/kumoaminen; kaiken datan poisto; JSON-palautus; väärän backupin hylkäys.
 
-Ei sovelluksen verkkopyyntöjä, pageerror-virheitä tai console-error-viestejä näissä poluissa. file://-dokumentin lataus ei ole verkkopyyntö. Selaimen taustapalvelujen liikennettä ei mitattu järjestelmätasolla.
+Ei sovelluksen verkkopyyntöjä, pageerror-virheitä tai console-error-viestejä tallennetussa aiemmassa ajossa. Nykyinen standalone-build säilyttää inline-tyylit, -kuvat ja -skriptin; staattinen lähdetagitarkistus ei korvaa selaimen verkkopyyntöjen mittausta. Selaimen taustapalvelujen liikennettä ei mitattu järjestelmätasolla.
 
 ## Yksikkötestit
 

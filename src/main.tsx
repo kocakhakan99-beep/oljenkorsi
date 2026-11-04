@@ -43,6 +43,23 @@ import loanIcon from './assets/loan.svg';
 import boatIcon from './assets/boat.svg';
 import motorcycleIcon from './assets/motorcycle.svg';
 import valuablesIcon from './assets/valuables.svg';
+import {
+  ArrowLeftRight,
+  CalendarClock,
+  ChartPie,
+  ChartNoAxesCombined,
+  CircleDollarSign,
+  CircleHelp,
+  FileChartColumn,
+  Goal as GoalIcon,
+  House,
+  Landmark,
+  LayoutDashboard,
+  PiggyBank,
+  ReceiptText,
+  Settings,
+  Wallet,
+} from 'lucide-react';
 const names: Record<string, string> = {
   dashboard: 'Yhteenveto',
   budget: 'Budjetti',
@@ -65,10 +82,20 @@ const navGroups = [
   { label: 'Tulevaisuus', pages: ['goals', 'scenarios', 'reports'] },
   { label: 'Hallinta', pages: ['transfer', 'settings', 'help'] },
 ];
-const navIcons: Record<string, string> = {
-  dashboard: '◫', budget: '▤', incomes: '↙', expenses: '↗', assets: '◇',
-  liabilities: '≋', investments: '▥', goals: '◎', scenarios: '⌁', reports: '▦',
-  transfer: '⇅', settings: '⚙', help: '?',
+const navIcons = {
+  dashboard: LayoutDashboard,
+  budget: Wallet,
+  incomes: CircleDollarSign,
+  expenses: ReceiptText,
+  assets: House,
+  liabilities: Landmark,
+  investments: ChartNoAxesCombined,
+  goals: GoalIcon,
+  scenarios: PiggyBank,
+  reports: FileChartColumn,
+  transfer: ArrowLeftRight,
+  settings: Settings,
+  help: CircleHelp,
 };
 type ReportSelection =
   | { type: 'month'; month: string; metric: 'income' | 'expense' }
@@ -509,17 +536,18 @@ function App() {
             {navGroups.map((group) => (
               <div className="nav-group" key={group.label} role="group" aria-label={group.label}>
                 <span className="nav-group-label">{group.label}</span>
-                {group.pages.map((key) => (
-                  <button
+                {group.pages.map((key) => {
+                  const Icon = navIcons[key as keyof typeof navIcons];
+                  return <button
                     key={key}
                     className={page === key ? 'selected' : ''}
                     aria-current={page === key ? 'page' : undefined}
                     onClick={() => navigate(key)}
                   >
-                    <span className="nav-icon" aria-hidden="true">{navIcons[key]}</span>
+                    <span className="nav-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
                     {names[key]}
                   </button>
-                ))}
+                })}
               </div>
             ))}
           </nav>
@@ -1105,11 +1133,14 @@ function App() {
               <>
                 <div className="report-tabs" role="tablist" aria-label="Raporttinäkymä">
                   {([
-                    ['overview', 'Kokonaiskuva'],
-                    ['categories', 'Kulurakenne'],
-                    ['flow', 'Rahavirran ajoitus'],
-                  ] as const).map(([view, label]) => (
-                    <button key={view} role="tab" aria-selected={reportView === view} onClick={() => { setReportView(view); setSelectedReport(null); }}>{label}</button>
+                    ['overview', 'Kokonaiskuva', ChartNoAxesCombined],
+                    ['categories', 'Kulurakenne', ChartPie],
+                    ['flow', 'Rahavirran ajoitus', CalendarClock],
+                  ] as const).map(([view, label, Icon]) => (
+                    <button className="inline-flex items-center gap-2 transition-colors duration-150 motion-reduce:transition-none" key={view} role="tab" aria-selected={reportView === view} onClick={() => { setReportView(view); setSelectedReport(null); }}>
+                      <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
+                      {label}
+                    </button>
                   ))}
                 </div>
                 {reportView === 'overview' && (
@@ -1294,8 +1325,8 @@ function App() {
                   </section>
                 )}
                 {selectedReport && (
-                  <section ref={reportDetailRef} className="panel report-panel report-detail" aria-live="polite">
-                    <div className="report-detail-head">
+                  <section ref={reportDetailRef} className="report-panel report-detail min-w-0 max-w-full overflow-clip rounded-2xl border border-emerald-200 bg-white p-5 text-slate-900 shadow-sm mb-6 transition-shadow duration-200 hover:shadow-md" aria-live="polite">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <p className="eyebrow">VALITTU RAPORTTIKOHTA</p>
                         <h2>{selectedReport.type === 'month'
@@ -1308,11 +1339,11 @@ function App() {
                     </div>
                     <p><strong>{euro(selectedReportEntries.reduce((sum, item) => sum + item.amount, 0))}</strong> · {selectedReportEntries.length} tietuetta</p>
                     {selectedReportEntries.length ? (
-                      <div className="report-detail-list">
+                      <div className="divide-y divide-slate-100">
                         {selectedReportEntries.map(({ entry: record, kind, amount }) => (
-                          <div className="report-detail-row" key={`${kind}-${record.id}`}>
-                            <span className={`report-kind-dot ${kind}`} aria-hidden="true" />
-                            <span><strong>{record.name}</strong><small>{record.category} · {record.date.split('-').reverse().join('.')}</small></span>
+                          <div className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-3 py-3" key={`${kind}-${record.id}`}>
+                            <span className={`h-2.5 w-2.5 rounded-full ${kind === 'income' ? 'bg-report-income' : 'bg-report-expense'}`} aria-hidden="true" />
+                            <span><strong>{record.name}</strong><small className="mt-1 block text-xs text-slate-500">{record.category} · {record.date.split('-').reverse().join('.')}</small></span>
                             <strong>{euro(amount)}</strong>
                           </div>
                         ))}

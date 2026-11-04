@@ -1,8 +1,10 @@
 # Navigaation ja visuaalisen ilmeen kehityssuunnitelma
 
-Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Toteutettu: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot, yhteenvedon kolme erisävyistä mittarialuetta sekä kirjaus-, budjetti-, skenaario- ja hallintanäkymien ensimmäiset pintaroolit. Tumman tilan korostustekstillä ja fokuksella on omat väritokenit, ja kaikkien tietojen poisto on erotettu vaara-alueeksi. Yläpalkin kuukausivalitsin on mitoitettu viereisten painikkeiden kanssa samaan linjaan; yhteenvedon 5/4/3 mittarin ryhmät täyttävät leveän ruudun tasaisesti ja kapealla ruudulla kortit asettuvat yhteen palstaan. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
+Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Toteutettu: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot, yhteenvedon kolme erisävyistä mittarialuetta sekä kirjaus-, budjetti-, skenaario- ja hallintanäkymien ensimmäiset pintaroolit. Tumman tilan korostustekstillä ja fokuksella on omat väritokenit, ja kaikkien tietojen poisto on erotettu vaara-alueeksi. Yläpalkin kuukausivalitsin on mitoitettu viereisten painikkeiden kanssa samaan linjaan; yhteenvedon 5/4/3 mittarin ryhmät täyttävät leveän ruudun tasaisesti ja kapealla ruudulla kortit asettuvat yhteen palstaan. Navigaatioon ja raporttivälilehtiin lisättiin paikalliseen bundleen sisältyvät Lucide-kuvakkeet. Tailwind CSS 4 on tuotu buildiin asteittaista siirtymää varten; vanha CSS-järjestelmä on yhä käytössä ja toimii nykyisten teemojen lähteenä.
 
-## Nykytilan ongelmat
+## Alkuperäisen suunnitelman havainnot
+
+Seuraavat ongelmat ja toteutusvaiheet ovat suunnitelman alkuvaiheen kartoitusta. Monet niistä on sittemmin ratkaistu yllä kuvatuilla muutoksilla; jäljelle jäävät työt ovat tiekartassa.
 
 - Sivupalkissa on 13 samanarvoista linkkiä. Arkikirjaukset, suunnittelu, raportit ja datan hallinta sekoittuvat yhdeksi pitkäksi listaksi. Mobiilissa lista muuttuu vaakasuunnassa vieritettäväksi nauhaksi, jossa osa kohteista jää helposti piiloon.
 - Yhteenvedon värillinen kassavirtanosto on selkeä, mutta muut mittarikortit ja lähes kaikki paneelit käyttävät samaa `--surface`-taustaa. Sisällön tärkeys ja eri tehtävät eivät erotu ennen tekstin lukemista.

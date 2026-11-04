@@ -17,10 +17,16 @@ h = h.replace(/<script>[\s\S]*?<\/script>/g, (s) => {
   return '';
 });
 h = h.replace('</body>', () => scripts.join('') + '</body>');
+const charsetTag = /<meta charset="UTF-8"\s*\/?>/i;
+if (!charsetTag.test(h)) throw new Error('Charset metadata missing from standalone HTML');
 h = h.replace(
-  '<meta charset="UTF-8">',
-  "<meta charset=\"UTF-8\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">",
+  charsetTag,
+  '<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src \'none\'; font-src \'none\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'">',
 );
+if (!h.includes('Content-Security-Policy')) throw new Error('CSP missing from standalone HTML');
+if (/<script\b[^>]*\bsrc=|<link\b[^>]*\bhref=/i.test(h)) {
+  throw new Error('Standalone HTML must not reference external scripts or stylesheets');
+}
 h = h.replace(/^[ \t]+$/gm, '');
 fs.writeFileSync('index.html', h);
 fs.rmSync('dist', { recursive: true });

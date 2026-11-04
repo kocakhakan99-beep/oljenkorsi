@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@theme {
+  --color-report-income: #087f5b;
+  --color-report-expense: #d9480f;
+}
 :root {
   --bg: #f5f6f3;
   --surface: #fff;
@@ -170,9 +175,10 @@ nav button.selected {
   box-shadow: inset 3px 0 0 var(--focus);
 }
 .nav-icon {
-  font-size: 20px;
+  display: grid;
+  place-items: center;
   width: 20px;
-  text-align: center;
+  flex: 0 0 20px;
 }
 .aside-bottom {
   margin-top: auto;
@@ -851,6 +857,14 @@ dialog::backdrop {
   border-color: var(--focus);
   color: var(--accent-ink);
   font-weight: 650;
+  box-shadow: 0 1px 2px rgb(16 24 20 / 8%);
+}
+.report-tabs svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.report-tabs [aria-selected='true'] svg {
+  color: var(--accent-ink);
 }
 .category-report-row {
   margin: 16px 0;
@@ -1033,45 +1047,8 @@ dialog::backdrop {
 .flow-bar.below-zero {
   background: #d9480f;
 }
-.report-detail {
-  border-color: #bdcfc4;
-  box-shadow: 0 4px 18px #1d352711;
-}
-.report-detail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-}
-.report-detail-head .eyebrow {
+.report-detail .eyebrow {
   margin-top: 0;
-}
-.report-detail-list {
-  border-top: 1px solid #dbe2dc;
-}
-.report-detail-row {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 4px;
-  border-bottom: 1px solid #e8ede9;
-}
-.report-detail-row small {
-  display: block;
-  margin-top: 2px;
-  font-size: 11px;
-}
-.report-kind-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-.report-kind-dot.income {
-  background: #087f5b;
-}
-.report-kind-dot.expense {
-  background: #d9480f;
 }
 .flow-visual {
   display: flex;

@@ -4,7 +4,7 @@
 
 - Ei evalia, vaarallista HTML-injektiota, ulkoisia skriptejä tai etäresursseja.
 - React esittää käyttäjän tekstit tekstinä, ei HTML:nä.
-- CSP: default-src none; connect-src none; script/style vain inline; ei objectia, fonttiverkkoa, base-uri-muutoksia tai lomakkeen verkkolähetystä.
+- CSP: default-src none; connect-src none; script/style vain inline; ei objectia, fonttiverkkoa, base-uri-muutoksia tai lomakkeen verkkolähetystä. Standalone-build tarkistaa CSP-metatagin ja hylkää ulkoiset script/link-tunnisteet.
 - Zod validoi tilan rakenteen; domain-tarkistukset validoivat tietueet, päivät, prosentit, kokonaislukusentit ja listakoot.
 - **proto**, constructor ja prototype hylätään JSON-tuonnissa ja validoinnissa.
 - JSON enintään 10 Mt; CSV enintään 5 Mt; enintään 20 000 tietuetta/lista, 500 kategoriaa ja 100 skenaariota. Selaimen kiintiö voi tulla vastaan aiemmin.
@@ -19,4 +19,4 @@ Haittaohjelmat, laitteen muut käyttäjät, selainlaajennukset, selaimen omat ve
 
 ## Jatkotehtävät
 
-Kryptografinen backup-tarkiste, valinnainen salasanasalaus, riippuvuusauditointi ja lukitustiedosto, kattava fuzz-testaus sekä manuaalinen tietoturvakatselmointi. Riippuvuuksien CVE-auditointia ei ole tehty tässä kierroksessa.
+Kryptografinen backup-tarkiste, valinnainen salasanasalaus, riippuvuusauditointi, kattava fuzz-testaus sekä manuaalinen tietoturvakatselmointi. Npm-lukitustiedosto on käytössä, mutta riippuvuuksien CVE-auditointia ei ole tehty tässä kierroksessa.
