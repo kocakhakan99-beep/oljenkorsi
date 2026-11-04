@@ -4,7 +4,7 @@ Päivitetty 4.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja eh
 
 ## P0: toistettava ja turvallinen perusta
 
-Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; tyyppitarkistus, linttaus, 37 yksikkötestiä ja standalone-build läpäisevät. `e2e.py` kattaa nyt raporttien kululuokan, piirakkasektorin näppäimistöpolun, rahavirtapäivän ja kuukausipylvään tapahtumakohtaiset tietokortit. Seuraavaksi aja laajennettu file://-E2E oikeassa selainympäristössä ja varmista `npm ci` uudessa ympäristössä. Tämän työtilan Chromium ei käynnisty `setsockopt: Operation not permitted` / SIGTRAP -virheestä, joten uutta selainajoa ei ole vahvistettu.
+Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; tyyppitarkistus, linttaus, 37 yksikkötestiä ja standalone-build läpäisevät. `e2e.py` kattaa nyt raporttien oman aikavälin rajat, jakson KPI-summat, välilehtien näppäimistöpolun sekä kaavioiden ja päivävalintojen tietokortit. Seuraavaksi aja laajennettu file://-E2E oikeassa selainympäristössä ja varmista `npm ci` uudessa ympäristössä. Tämän työtilan Chromium ei käynnisty `setsockopt: Operation not permitted` / SIGTRAP -virheestä, joten uutta selainajoa ei ole vahvistettu.
 
 Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
 
@@ -14,7 +14,7 @@ Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuu
 
 Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Lisää tilit, alkusaldot, täsmäytys ja esiintymäkohtainen toteuma/poikkeus ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
 
-Lisää epäsäännöllisten menojen varaukset, budjettipohjat ja vaihtoehtoiset budjettitavat sekä kassakalenteri/kuun lopun ennuste. Hätävaran 1/3/6/12 kk havaintopohjainen keskiarvo ja kirjauskuukausien määrä on toteutettu; seuraavaksi erota vahvistettu nollakuukausi puuttuvasta kuukaudesta, huomioi keskeneräinen kuukausi ja lisää oma menoarvio sekä tulokatkosstressi. Lisää oma raportointiaikaväli ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
+Lisää epäsäännöllisten menojen varaukset, budjettipohjat ja vaihtoehtoiset budjettitavat sekä kassakalenteri/kuun lopun ennuste. Hätävaran 1/3/6/12 kk havaintopohjainen keskiarvo ja kirjauskuukausien määrä on toteutettu; seuraavaksi erota vahvistettu nollakuukausi puuttuvasta kuukaudesta, huomioi keskeneräinen kuukausi ja lisää oma menoarvio sekä tulokatkosstressi. Raporttien 1/3/6/12 kk valintaa täydentää nyt oma enintään 120 kuukauden aikaväli. Seuraavaksi lisää kirjauksen kattavuuden vahvistus, budjetin manuaalisen toteuman lähde näkyviin kategoriaraporttiin sekä arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
 
 **Riippuvuus:** P0 ja tietomallimigraation suunnittelu. **Valmis kun:** FIRE_PLANin rahavirtaesimerkit täsmäävät, vanha backup palautuu ja puuttuva havaintodata erottuu nollasta.
 

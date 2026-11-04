@@ -106,8 +106,15 @@ const reportTabs = [
 type ReportView = (typeof reportTabs)[number]['id'];
 type ReportSelection =
   | { type: 'month'; month: string; metric: 'income' | 'expense' }
+  | { type: 'period'; from: string; to: string; metric: 'income' | 'expense' | 'cash' }
   | { type: 'category'; category: string }
   | { type: 'day'; date: string };
+type ReportDetailEntry = {
+  entry: Entry;
+  kind: 'income' | 'expense';
+  amount: number;
+  occurrences?: number;
+};
 function pieSlicePath(startPercent: number, endPercent: number) {
   const point = (percent: number, radius: number) => {
     const angle = (percent * 3.6 - 90) * Math.PI / 180;
@@ -255,6 +262,9 @@ function App() {
     [undo, setUndo] = useState<State | null>(null),
     [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
     [reportMonths, setReportMonths] = useState(6),
+    [customReportRange, setCustomReportRange] = useState(false),
+    [reportStart, setReportStart] = useState(''),
+    [reportEnd, setReportEnd] = useState(''),
     [reportView, setReportView] = useState<ReportView>('overview'),
     [overviewChart, setOverviewChart] = useState<'bars' | 'line'>('bars'),
     [categoryChart, setCategoryChart] = useState<'bars' | 'pie'>('bars'),
@@ -464,12 +474,56 @@ function App() {
       </article>
     );
   }
-  const history = Array.from({ length: reportMonths }, (_, i) => {
-    let [y, mo] = month.split('-').map(Number),
-      d = new Date(y, mo - reportMonths + i, 1),
-      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    return { key, ...metrics(s, key) };
-  });
+  const monthNumber = (value: string) => {
+    const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+    return match ? Number(match[1]) * 12 + Number(match[2]) - 1 : null;
+  };
+  const reportStartNumber = monthNumber(reportStart);
+  const reportEndNumber = monthNumber(reportEnd);
+  const customRangeLength = reportStartNumber !== null && reportEndNumber !== null
+    ? reportEndNumber - reportStartNumber + 1
+    : 0;
+  const customRangeValid = !customReportRange || (
+    reportStartNumber !== null &&
+    reportEndNumber !== null &&
+    customRangeLength >= 1 &&
+    customRangeLength <= 120
+  );
+  const presetHistory = customReportRange
+    ? []
+    : Array.from({ length: reportMonths }, (_, i) => {
+        const [y, mo] = month.split('-').map(Number);
+        const date = new Date(y, mo - reportMonths + i, 1);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return { key, ...metrics(s, key) };
+      });
+  const customHistory = customReportRange && customRangeValid
+    ? Array.from({ length: customRangeLength }, (_, i) => {
+        const index = reportStartNumber! + i;
+        const year = Math.floor(index / 12);
+        const monthIndex = index % 12;
+        const key = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+        return { key, ...metrics(s, key) };
+      })
+    : [];
+  const history = customReportRange ? customHistory : presetHistory;
+  const periodTotals = history.reduce(
+    (totals, current) => ({
+      income: totals.income + current.income,
+      expense: totals.expense + current.expense,
+      consumption: totals.consumption + current.consumption,
+      cash: totals.cash + current.cash,
+    }),
+    { income: 0, expense: 0, consumption: 0, cash: 0 },
+  );
+  const periodSavingRate = periodTotals.income
+    ? (100 * (periodTotals.income - periodTotals.consumption)) / periodTotals.income
+    : null;
+  const periodLabel = history.length === 0
+    ? 'Valitse voimassa oleva aikaväli'
+    : history.length === 1
+      ? history[0].key
+      : `${history[0].key}–${history[history.length - 1].key}`;
   const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
   const reportMax = Math.max(...history.flatMap((h) => [h.income, h.expense]), 1);
   const reportPoints = (key: 'income' | 'expense') => history.map((h, index) => {
@@ -509,10 +563,35 @@ function App() {
     ? dailyFlow.find((day) => day.date > firstShortfall.date && day.balance >= 0)
     : undefined;
   const maxFlowMagnitude = Math.max(...dailyFlow.map((day) => Math.abs(day.balance)), 1);
-  const selectedReportEntries = selectedReport?.type === 'month'
-    ? (selectedReport.metric === 'income' ? s.incomes : s.expenses)
-        .filter((e) => e.status === 'actual' && occurrences(e, selectedReport.month).length > 0)
-        .map((e) => ({ entry: e, kind: selectedReport.metric, amount: e.amount * occurrences(e, selectedReport.month).length }))
+  const periodEntries = (items: Entry[], kind: 'income' | 'expense'): ReportDetailEntry[] => {
+    const grouped = new Map<string, ReportDetailEntry>();
+    for (const period of history) {
+      for (const record of items) {
+        if (record.status !== 'actual') continue;
+        const count = occurrences(record, period.key).length;
+        if (!count) continue;
+        const key = `${kind}-${record.id}`;
+        const previous = grouped.get(key);
+        grouped.set(key, {
+          entry: record,
+          kind,
+          amount: (previous?.amount || 0) + record.amount * count,
+          occurrences: (previous?.occurrences || 0) + count,
+        });
+      }
+    }
+    return [...grouped.values()];
+  };
+  const selectedReportEntries: ReportDetailEntry[] = selectedReport?.type === 'period'
+    ? selectedReport.metric === 'income'
+      ? periodEntries(s.incomes, 'income')
+      : selectedReport.metric === 'expense'
+        ? periodEntries(s.expenses, 'expense')
+        : [...periodEntries(s.incomes, 'income'), ...periodEntries(s.expenses, 'expense')]
+    : selectedReport?.type === 'month'
+      ? (selectedReport.metric === 'income' ? s.incomes : s.expenses)
+          .filter((e) => e.status === 'actual' && occurrences(e, selectedReport.month).length > 0)
+          .map((e) => ({ entry: e, kind: selectedReport.metric, amount: e.amount * occurrences(e, selectedReport.month).length }))
     : selectedReport?.type === 'category'
       ? s.expenses.filter((e) => e.status === 'actual' && e.category === selectedReport.category && expenseType(e) === 'consumption' && occurrences(e, month).length > 0)
           .map((e) => ({ entry: e, kind: 'expense' as const, amount: e.amount * occurrences(e, month).length }))
@@ -520,6 +599,9 @@ function App() {
         ? [...s.incomes.filter((e) => e.status === 'actual' && occurrences(e, month).includes(selectedReport.date)).map((e) => ({ entry: e, kind: 'income' as const, amount: e.amount })),
            ...s.expenses.filter((e) => e.status === 'actual' && occurrences(e, month).includes(selectedReport.date)).map((e) => ({ entry: e, kind: 'expense' as const, amount: e.amount }))]
         : [];
+  const selectedReportTotal = selectedReport?.type === 'period' && selectedReport.metric === 'cash'
+    ? selectedReportEntries.reduce((value, item) => value + (item.kind === 'income' ? item.amount : -item.amount), 0)
+    : selectedReportEntries.reduce((value, item) => value + item.amount, 0);
   const expCats = Array.from(
     new Set([
       ...s.categories.filter((c) => c.kind === 'expenses' && !c.archived).map((c) => c.name),
@@ -594,7 +676,12 @@ function App() {
                   value={month}
                   min="1900-01"
                   max="2200-12"
-                  onChange={(e) => e.target.value && settings({ month: e.target.value })}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      settings({ month: e.target.value });
+                      setSelectedReport(null);
+                    }
+                  }}
                 />
               </label>
               <button
@@ -1233,21 +1320,105 @@ function App() {
                 </div>
                 {reportView === 'overview' && (
                 <section className="panel report-panel" id="report-panel-overview" role="tabpanel" aria-labelledby="report-tab-overview" tabIndex={0}>
-                  <label>
-                    Raportin pituus (päättyy valittuun kuukauteen)
+                  <label className="report-range-selector">
+                    Raportin aikaväli
                     <select
-                      aria-label="Raportin pituus (päättyy valittuun kuukauteen)"
-                      value={reportMonths}
-                      onChange={(e) => setReportMonths(Number(e.target.value))}
+                      aria-label="Raportin aikaväli"
+                      value={customReportRange ? 'custom' : reportMonths}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setReportStart(history[0]?.key || month);
+                          setReportEnd(history[history.length - 1]?.key || month);
+                          setCustomReportRange(true);
+                        } else {
+                          setCustomReportRange(false);
+                          setReportMonths(Number(e.target.value));
+                        }
+                        setSelectedReport(null);
+                      }}
                     >
                       {[1, 3, 6, 12].map((n) => (
                         <option key={n} value={n}>
                           {n} kuukautta
                         </option>
                       ))}
+                      <option value="custom">Oma aikaväli</option>
                     </select>
                   </label>
+                  {customReportRange && (
+                    <div className="report-range-fields">
+                      <label>
+                        Alku
+                        <input
+                          type="month"
+                          aria-label="Raportin alkukuukausi"
+                          min="1900-01"
+                          max="2200-12"
+                          value={reportStart}
+                          onChange={(e) => { setReportStart(e.target.value); setSelectedReport(null); }}
+                        />
+                      </label>
+                      <label>
+                        Loppu
+                        <input
+                          type="month"
+                          aria-label="Raportin loppukuukausi"
+                          min="1900-01"
+                          max="2200-12"
+                          value={reportEnd}
+                          onChange={(e) => { setReportEnd(e.target.value); setSelectedReport(null); }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  {customReportRange && !customRangeValid && (
+                    <p className="alert warning" role="alert">Valitse alku- ja loppukuukausi. Oma aikaväli voi olla enintään 120 kuukautta.</p>
+                  )}
                   <h2>Tulot ja menot</h2>
+                  {reportHasData && (
+                    <section className="report-period-summary" aria-labelledby="period-summary-title">
+                      <div className="report-period-summary-head">
+                        <div>
+                          <h3 id="period-summary-title">Valitun jakson yhteenveto</h3>
+                          <p className="muted">{periodLabel} · toteutuneiksi merkityt kirjaukset</p>
+                        </div>
+                        <div className="report-saving-rate">
+                          <ChartNoAxesCombined size={18} aria-hidden="true" />
+                          <span><small>Säästöaste</small><strong>{pct(periodSavingRate)}</strong></span>
+                        </div>
+                      </div>
+                      <div className="report-kpi-grid grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {([
+                          ['income', 'Tulot', euro(periodTotals.income), CircleDollarSign, 'Toteutuneet tulot'],
+                          ['expense', 'Menot', euro(periodTotals.expense), ReceiptText, 'Kaikki menot ja siirrot'],
+                          ['cash', 'Nettokassavirta', euro(periodTotals.cash), ArrowLeftRight, 'Tulot − kaikki menot'],
+                        ] as const).map(([metric, label, value, Icon, note]) => (
+                          <button
+                            className={`report-kpi ${metric}${selectedReport?.type === 'period' && selectedReport.metric === metric ? ' selected' : ''}${metric === 'cash' && periodTotals.cash < 0 ? ' negative' : ''}`}
+                            key={metric}
+                            type="button"
+                            aria-label={`${label}, ${value}. Avaa ${periodLabel} tietueet.`}
+                            aria-pressed={selectedReport?.type === 'period' && selectedReport.metric === metric}
+                            onClick={() => setSelectedReport({
+                              type: 'period',
+                              from: history[0].key,
+                              to: history[history.length - 1].key,
+                              metric,
+                            })}
+                          >
+                            <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
+                            <span className="report-kpi-copy">
+                              <small>{label}</small>
+                              <strong>{value}</strong>
+                              <small>{note}</small>
+                            </span>
+                            <ArrowRight className="report-kpi-arrow" size={16} aria-hidden="true" />
+                          </button>
+                        ))}
+                      </div>
+                      <p className="report-period-note">Säästöaste lasketaan kokonaistuloista ja kulutusmenoista, ei siirroista. Kirjausten puuttuminen ei tarkoita, että menoja ei olisi ollut.</p>
+                    </section>
+                  )}
                   <div className="chart-switch" role="group" aria-label="Kaavion tyyppi">
                     <button aria-pressed={overviewChart === 'bars'} onClick={() => setOverviewChart('bars')}>Pylväät</button>
                     <button aria-pressed={overviewChart === 'line'} onClick={() => setOverviewChart('line')}>Viiva</button>
@@ -1255,7 +1426,7 @@ function App() {
                   {reportHasData ? (
                     <>
                       {overviewChart === 'bars' ? <div
-                        className="chart report-canvas"
+                        className={`chart report-canvas${history.length > 12 ? ' chart-scroll' : ''}`}
                       >
                         {history.map((h) => (
                           <div
@@ -1300,11 +1471,11 @@ function App() {
                                 }}
                               />
                             </div>
-                            <small>{h.key.slice(5)}</small>
+                            <small>{history.length > 12 ? h.key : h.key.slice(5)}</small>
                           </div>
                         ))}
-                      </div> : <div className="line-chart-wrap">
-                        <svg className="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
+                      </div> : <div className={`line-chart-wrap${history.length > 12 ? ' line-chart-scroll' : ''}`}>
+                        <svg className="line-chart" style={history.length > 12 ? { minWidth: `${history.length * 68}px` } : undefined} viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
                           <line x1="0" y1="95" x2="100" y2="95" className="chart-axis" />
                           <polyline points={reportPoints('income')} className="income-line" />
                           <polyline points={reportPoints('expense')} className="expense-line" />
@@ -1313,7 +1484,7 @@ function App() {
                             return <React.Fragment key={h.key}><circle role="button" tabIndex={0} aria-label={`${h.key} tulot ${euro(h.income)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'income' })} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedReport({ type: 'month', month: h.key, metric: 'income' }); } }} cx={x} cy={95 - h.income / reportMax * 85} r="2.5" className={`income-point${selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'income' ? ' selected-point' : ''}`} /><circle role="button" tabIndex={0} aria-label={`${h.key} menot ${euro(h.expense)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'expense' })} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedReport({ type: 'month', month: h.key, metric: 'expense' }); } }} cx={x} cy={95 - h.expense / reportMax * 85} r="2.5" className={`expense-point${selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'expense' ? ' selected-point' : ''}`} /></React.Fragment>;
                           })}
                         </svg>
-                        <div className="line-chart-labels">{history.map((h) => <small key={h.key}>{h.key.slice(5)}</small>)}</div>
+                        <div className="line-chart-labels" style={history.length > 12 ? { minWidth: `${history.length * 68}px` } : undefined}>{history.map((h) => <small key={h.key}>{history.length > 12 ? h.key : h.key.slice(5)}</small>)}</div>
                       </div>}
                       <div className="chart-legend" aria-hidden="true">
                         <span><i className="legend-swatch income-bar" /> Tulot</span>
@@ -1321,7 +1492,7 @@ function App() {
                       </div>
                     </>
                   ) : (
-                    <div className="chart-empty">Ei toteutuneita tuloja tai menoja valitulla jaksolla.</div>
+                    <div className="chart-empty">{customReportRange && !customRangeValid ? 'Korjaa aikaväli yllä.' : 'Ei toteutuneita tuloja tai menoja valitulla jaksolla.'}</div>
                   )}
                   <div className="table-wrap">
                     <table>
@@ -1417,21 +1588,23 @@ function App() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <p className="eyebrow">VALITTU RAPORTTIKOHTA</p>
-                        <h2>{selectedReport.type === 'month'
-                          ? `${selectedReport.month} · ${selectedReport.metric === 'income' ? 'Tulot' : 'Menot'}`
-                          : selectedReport.type === 'category'
-                            ? `${selectedReport.category} · ${month}`
-                            : `${selectedReport.date.split('-').reverse().join('.')} · tapahtumat`}</h2>
+                        <h2>{selectedReport.type === 'period'
+                          ? `${selectedReport.from === selectedReport.to ? selectedReport.from : `${selectedReport.from}–${selectedReport.to}`} · ${selectedReport.metric === 'income' ? 'Tulot' : selectedReport.metric === 'expense' ? 'Menot' : 'Nettokassavirta'}`
+                          : selectedReport.type === 'month'
+                            ? `${selectedReport.month} · ${selectedReport.metric === 'income' ? 'Tulot' : 'Menot'}`
+                            : selectedReport.type === 'category'
+                              ? `${selectedReport.category} · ${month}`
+                              : `${selectedReport.date.split('-').reverse().join('.')} · tapahtumat`}</h2>
                       </div>
                       <button aria-label="Sulje raportin tietokortti" onClick={() => setSelectedReport(null)}>Sulje</button>
                     </div>
-                    <p><strong>{euro(selectedReportEntries.reduce((sum, item) => sum + item.amount, 0))}</strong> · {selectedReportEntries.length} tietuetta</p>
+                    <p><strong className={selectedReportTotal < 0 ? 'negative' : ''}>{euro(selectedReportTotal)}</strong> · {selectedReportEntries.length} tietuetta</p>
                     {selectedReportEntries.length ? (
                       <div className="divide-y divide-slate-100">
-                        {selectedReportEntries.map(({ entry: record, kind, amount }) => (
-                          <div className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-3 py-3" key={`${kind}-${record.id}`}>
+                        {selectedReportEntries.map(({ entry: record, kind, amount, occurrences: count }, index) => (
+                          <div className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-3 py-3" key={`${kind}-${record.id}-${index}`}>
                             <span className={`h-2.5 w-2.5 rounded-full ${kind === 'income' ? 'bg-report-income' : 'bg-report-expense'}`} aria-hidden="true" />
-                            <span><strong>{record.name}</strong><small className="mt-1 block text-xs text-slate-500">{record.category} · {record.date.split('-').reverse().join('.')}</small></span>
+                            <span><strong>{record.name}</strong><small className="mt-1 block text-xs text-slate-500">{selectedReport.type === 'period' ? `${kind === 'income' ? 'Tulo' : 'Meno'} · ${record.category} · ${count} ${count === 1 ? 'esiintymä' : 'esiintymää'} valitulla jaksolla` : `${record.category} · ${record.date.split('-').reverse().join('.')}`}</small></span>
                             <strong>{euro(amount)}</strong>
                           </div>
                         ))}
