@@ -23,8 +23,9 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
 - FI-pääomatavoitteen yksivaiheinen havainnollistus, ehdollinen aika-arvio omalla säästö- ja reaalituotto-oletuksella sekä ±10 % kulutusherkkyys.
-- 1/3/6/12 kuukauden tai itse rajatun enintään 120 kuukauden kassavirtaraportti ja taulukkovastine.
-- Raporteissa valittava pylväs-/viivakaavio, kulurakenne pylväs-/piirakkakaaviona sekä valittavien pisteiden, pylväiden ja sektoreiden tapahtumakohtaiset tietokortit.
+- 1/3/6/12/24 kuukauden, vuoden alusta tai itse rajatun enintään 120 kuukauden kassavirtaraportti ja taulukkovastine.
+- Raporteissa valittava pylväs-/viiva-/aluekaavio ja 70–180 % suurennus; kulurakenne pylväs-/piirakkakaaviona. Valittavat pisteet, pylväät ja sektorit avaavat tapahtumakohtaiset tietokortit.
+- Piilotettavat sivukohtaiset opastuslaatikot, joiden näyttämisen voi palauttaa asetuksista; summakenttien eurokohtaiset pikasäätimet.
 - Valitun raporttijakson tulot, menot, nettokassavirta ja kokonaisjakson säästöaste; tulot-, menot- ja kassavirtasummista pääsee suoraan niiden kirjauksiin.
 - Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
