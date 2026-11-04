@@ -11,6 +11,7 @@ import {
   expenseType,
   setExpenseTypeTags,
   fiTarget,
+  fiMonths,
 } from '../domain/calculations';
 import { empty, entry, demo, uid } from '../domain/model';
 import { backup, restore, validate } from '../services/validation';
@@ -30,6 +31,13 @@ describe('Raha ja laskelmat', () => {
       coverage: null,
     });
     expect(() => fiTarget(1000000, 0, 0, 0)).toThrow();
+  });
+  it('FI-aika käyttää kuun lopun lisäsijoitusta ja ilmoittaa saavuttamattoman tavoitteen', () => {
+    expect(fiMonths(0, 10000, 0, 120000, 1)).toBe(12);
+    expect(fiMonths(120000, 0, 0, 120000, 1)).toBe(0);
+    expect(fiMonths(0, 0, 0, 120000, 50)).toBeNull();
+    expect(fiMonths(100000, 0, -50, 120000, 1)).toBeNull();
+    expect(() => fiMonths(0, 10000, 0, 120000, 51)).toThrow();
   });
   it('kulutus, säästösiirto ja sijoitussiirto luokitellaan kategoriasta riippumatta', () => {
     const dated = { date: '2026-11-01', amount: 50000 };
