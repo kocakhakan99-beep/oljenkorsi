@@ -40,6 +40,9 @@ import bankIcon from './assets/bank.svg';
 import landIcon from './assets/land.svg';
 import portfolioIcon from './assets/portfolio.svg';
 import loanIcon from './assets/loan.svg';
+import boatIcon from './assets/boat.svg';
+import motorcycleIcon from './assets/motorcycle.svg';
+import valuablesIcon from './assets/valuables.svg';
 const names: Record<string, string> = {
   dashboard: 'Yhteenveto',
   budget: 'Budjetti',
@@ -202,6 +205,8 @@ function App() {
     [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
     [reportMonths, setReportMonths] = useState(6),
     [reportView, setReportView] = useState<'overview' | 'categories' | 'flow'>('overview'),
+    [overviewChart, setOverviewChart] = useState<'bars' | 'line'>('bars'),
+    [categoryChart, setCategoryChart] = useState<'bars' | 'pie'>('bars'),
     [bufferMonths, setBufferMonths] = useState(3);
   const menuButton = useRef<HTMLButtonElement>(null);
   const month = s.settings.month,
@@ -390,8 +395,21 @@ function App() {
     return { key, ...metrics(s, key) };
   });
   const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
+  const reportMax = Math.max(...history.flatMap((h) => [h.income, h.expense]), 1);
+  const reportPoints = (key: 'income' | 'expense') => history.map((h, index) => {
+    const x = history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1));
+    const y = 95 - h[key] / reportMax * 85;
+    return `${x},${y}`;
+  }).join(' ');
   const categoryReport = expCatsForReport(s, month);
   const maxCategoryExpense = Math.max(...categoryReport.map(([, value]) => value), 1);
+  const pieColors = ['#17604d', '#4476a8', '#8667aa', '#c27b3e', '#578c82', '#bd5960', '#7989a8', '#b19543'];
+  let pieCursor = 0;
+  const pieGradient = categoryReport.map(([, value], index) => {
+    const start = pieCursor;
+    pieCursor += m.consumption ? value * 100 / m.consumption : 0;
+    return `${pieColors[index % pieColors.length]} ${start}% ${pieCursor}%`;
+  }).join(', ');
   const flowByDate = new Map<string, { income: number; expense: number }>();
   for (const e of s.incomes.filter((e) => e.status === 'actual'))
     for (const date of occurrences(e, month)) {
@@ -410,6 +428,11 @@ function App() {
     runningFlow += value.income - value.expense;
     return { date, ...value, balance: runningFlow };
   });
+  const firstShortfall = dailyFlow.find((day) => day.balance < 0);
+  const recoveryDay = firstShortfall
+    ? dailyFlow.find((day) => day.date > firstShortfall.date && day.balance >= 0)
+    : undefined;
+  const maxFlowMagnitude = Math.max(...dailyFlow.map((day) => Math.abs(day.balance)), 1);
   const expCats = Array.from(
     new Set([
       ...s.categories.filter((c) => c.kind === 'expenses' && !c.archived).map((c) => c.name),
@@ -1070,9 +1093,13 @@ function App() {
                     </select>
                   </label>
                   <h2>Tulot ja menot</h2>
+                  <div className="chart-switch" role="group" aria-label="Kaavion tyyppi">
+                    <button aria-pressed={overviewChart === 'bars'} onClick={() => setOverviewChart('bars')}>Pylväät</button>
+                    <button aria-pressed={overviewChart === 'line'} onClick={() => setOverviewChart('line')}>Viiva</button>
+                  </div>
                   {reportHasData ? (
                     <>
-                      <div
+                      {overviewChart === 'bars' ? <div
                         className="chart"
                         role="img"
                         aria-label="Kuukausittaiset tulot ja menot. Tarkat luvut alla taulukossa."
@@ -1118,7 +1145,18 @@ function App() {
                             <small>{h.key.slice(5)}</small>
                           </div>
                         ))}
-                      </div>
+                      </div> : <div className="line-chart-wrap">
+                        <svg className="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
+                          <line x1="0" y1="95" x2="100" y2="95" className="chart-axis" />
+                          <polyline points={reportPoints('income')} className="income-line" />
+                          <polyline points={reportPoints('expense')} className="expense-line" />
+                          {history.map((h, index) => {
+                            const x = history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1));
+                            return <React.Fragment key={h.key}><circle cx={x} cy={95 - h.income / reportMax * 85} r="1.5" className="income-point" /><circle cx={x} cy={95 - h.expense / reportMax * 85} r="1.5" className="expense-point" /></React.Fragment>;
+                          })}
+                        </svg>
+                        <div className="line-chart-labels">{history.map((h) => <small key={h.key}>{h.key.slice(5)}</small>)}</div>
+                      </div>}
                       <div className="chart-legend" aria-hidden="true">
                         <span><i className="legend-swatch income-bar" /> Tulot</span>
                         <span><i className="legend-swatch expense-bar" /> Menot</span>
@@ -1166,12 +1204,24 @@ function App() {
                   <section className="panel">
                     <h2>Kulutusmenot kategorioittain</h2>
                     <p className="muted">Valittu kuukausi · toteutuneiksi merkityt kulutusmenot. Säästö- ja sijoitussiirrot on jätetty pois.</p>
-                    {categoryReport.length ? categoryReport.map(([category, value]) => (
+                    <div className="chart-switch" role="group" aria-label="Kulurakenteen kaavion tyyppi">
+                      <button aria-pressed={categoryChart === 'bars'} onClick={() => setCategoryChart('bars')}>Pylväät</button>
+                      <button aria-pressed={categoryChart === 'pie'} onClick={() => setCategoryChart('pie')}>Piirakka</button>
+                    </div>
+                    {categoryChart === 'pie' && categoryReport.length > 0 && (
+                      <div className="pie-layout">
+                        <div className="pie-chart" role="img" aria-label={`Kulurakenne piirakkana: ${categoryReport.map(([name, value]) => `${name} ${euro(value)}`).join(', ')}`} style={{ background: `conic-gradient(${pieGradient})` }}>
+                          <div><strong>{euro(m.consumption)}</strong><small>Kulutus yhteensä</small></div>
+                        </div>
+                        <div className="pie-legend">{categoryReport.map(([category, value], index) => <div key={category}><i style={{ backgroundColor: pieColors[index % pieColors.length] }} /><span>{category}</span><strong>{pct(m.consumption ? value * 100 / m.consumption : null)}</strong></div>)}</div>
+                      </div>
+                    )}
+                    {categoryChart === 'bars' && categoryReport.length ? categoryReport.map(([category, value]) => (
                       <div className="category-report-row" key={category}>
                         <div><span>{category}</span><strong>{euro(value)} · {pct(m.consumption ? value * 100 / m.consumption : null)}</strong></div>
                         <progress max={maxCategoryExpense} value={value} aria-label={`${category}: ${euro(value)}`} />
                       </div>
-                    )) : <Empty text="Valitussa kuussa ei ole toteutuneita kulutusmenoja." />}
+                    )) : categoryReport.length === 0 ? <Empty text="Valitussa kuussa ei ole toteutuneita kulutusmenoja." /> : null}
                   </section>
                 )}
                 {reportView === 'flow' && (
@@ -1180,9 +1230,21 @@ function App() {
                     <p className="muted">Kumulatiivinen kassavirta alkaa kuun alussa nollasta. Alkusaldoa ja maksujen kellonaikoja ei tunneta; saman päivän tapahtumia ei järjestetä keskenään.</p>
                     {dailyFlow.length ? <>
                       <div className="flow-summary">
-                        <strong>{dailyFlow.some((day) => day.balance < 0) ? 'Kuukauden aikana kassavirta käy miinuksella' : 'Kassavirta ei käy miinuksella kirjattuina tapahtumapäivinä'}</strong>
-                        <span>{dailyFlow.at(-1)!.balance < 0 ? `Jakson lopussa ${euro(Math.abs(dailyFlow.at(-1)!.balance))} alijäämää` : `Jakson lopun kertymä ${euro(dailyFlow.at(-1)!.balance)}`}</span>
+                        <strong>{firstShortfall ? `Kertymä käy miinuksella ${firstShortfall.date.split('-').reverse().join('.')}` : 'Kertymä ei käy miinuksella kirjattuina tapahtumapäivinä'}</strong>
+                        <span>{recoveryDay ? `Kertymä palautuu plussalle ${recoveryDay.date.split('-').reverse().join('.')}` : firstShortfall ? 'Kertymä jää negatiiviseksi kirjatuissa tapahtumapäivissä' : `Jakson lopun kertymä ${euro(dailyFlow.at(-1)!.balance)}`}</span>
                       </div>
+                      <div className="flow-visual" role="img" aria-label="Päiväkohtainen kumulatiivinen kassavirta. Alapuolella on tarkka päivätaulukko.">
+                        {dailyFlow.map((day) => (
+                          <div className="flow-day" key={day.date} title={`${day.date}: ${euro(day.balance)}`}>
+                            <div className="flow-day-plot">
+                              <span className={`flow-bar ${day.balance < 0 ? 'below-zero' : 'above-zero'}`} style={{ height: `${Math.max(2, Math.abs(day.balance) / maxFlowMagnitude * 46)}%`, ...(day.balance < 0 ? { top: '50%' } : { bottom: '50%' }) }} />
+                              <i />
+                            </div>
+                            <small>{Number(day.date.slice(-2))}</small>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="muted flow-caption">Päivän lopun kumulatiivinen tulojen ja menojen erotus · positiivinen ylös, alijäämä alas. Päivät, joina ei ole kirjauksia, eivät näy.</p>
                       <div className="table-wrap"><table><thead><tr><th>Päivä</th><th>Tulot</th><th>Menot</th><th>Kumulatiivinen kassavirta</th></tr></thead><tbody>
                         {dailyFlow.map((day) => <tr key={day.date}><th>{day.date.split('-').reverse().join('.')}</th><td>{euro(day.income)}</td><td>{euro(day.expense)}</td><td className={day.balance < 0 ? 'negative' : ''}>{euro(day.balance)}</td></tr>)}
                       </tbody></table></div>
@@ -1614,7 +1676,11 @@ function CategoryIcon({ category, debt }: { category: string; debt: boolean }) {
   const key = category.toLocaleLowerCase('fi-FI');
   const icon = /asunt|koti|asunto/.test(key)
     ? homeIcon
-    : /auto|ajoneuvo/.test(key)
+    : /vene|boat/.test(key)
+      ? boatIcon
+      : /moottoripyör|moottorikelkka|mopo/.test(key)
+        ? motorcycleIcon
+      : /auto|ajoneuvo/.test(key)
       ? carIcon
       : /käte|tallet|pankki/.test(key)
         ? bankIcon
@@ -1626,6 +1692,8 @@ function CategoryIcon({ category, debt }: { category: string; debt: boolean }) {
               ? loanIcon
               : debt
                 ? loanIcon
+              : /arvoesine|yritys|muu/.test(key)
+                ? valuablesIcon
                 : bankIcon;
   return <img className={`category-icon${debt ? ' category-icon-debt' : ''}`} src={icon} alt="" aria-hidden="true" />;
 }
