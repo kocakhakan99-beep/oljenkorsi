@@ -302,6 +302,57 @@ main {
 .hero span:not(.eyebrow) {
   font-size: 13px;
 }
+.dashboard-action {
+  width: 100%;
+  justify-content: space-between;
+  padding: 12px 15px;
+  border-color: var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+.dashboard-action:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 5px 16px rgb(22 44 34 / 9%);
+}
+.dashboard-action > svg:first-child {
+  flex: 0 0 auto;
+  box-sizing: content-box;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--accent-ink);
+}
+.dashboard-action-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.dashboard-action-copy strong {
+  font-size: 13px;
+}
+.dashboard-action-copy small {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 11px;
+}
+.dashboard-action-arrow {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 140ms ease;
+}
+.dashboard-action:hover .dashboard-action-arrow {
+  transform: translateX(2px);
+}
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
