@@ -355,6 +355,7 @@ function App() {
       key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     return { key, ...metrics(s, key) };
   });
+  const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
   const expCats = Array.from(
     new Set([
       ...s.categories.filter((c) => c.kind === 'expenses' && !c.archived).map((c) => c.name),
@@ -962,48 +963,63 @@ function App() {
                     </select>
                   </label>
                   <h2>Tulot ja menot</h2>
-                  <div
-                    className="chart"
-                    role="img"
-                    aria-label="Kuukausittaiset tulot ja menot. Tarkat luvut alla taulukossa."
-                  >
-                    {history.map((h) => (
-                      <div className="chart-col" key={h.key}>
-                        <div className="chart-bars">
+                  {reportHasData ? (
+                    <>
+                      <div
+                        className="chart"
+                        role="img"
+                        aria-label="Kuukausittaiset tulot ja menot. Tarkat luvut alla taulukossa."
+                      >
+                        {history.map((h) => (
                           <div
-                            className="income-bar"
-                            style={{
-                              height: Math.max(
-                                2,
-                                (h.income /
-                                  Math.max(
-                                    ...history.map((x) => Math.max(x.income, x.expense)),
-                                    1,
-                                  )) *
-                                  140,
-                              ),
-                            }}
-                          />
-                          <div
-                            className="expense-bar"
-                            style={{
-                              height: Math.max(
-                                2,
-                                (h.expense /
-                                  Math.max(
-                                    ...history.map((x) => Math.max(x.income, x.expense)),
-                                    1,
-                                  )) *
-                                  140,
-                              ),
-                            }}
-                          />
-                        </div>
-                        <small>{h.key.slice(5)}</small>
+                            className="chart-col"
+                            key={h.key}
+                            aria-label={`${h.key}: tulot ${euro(h.income)}, menot ${euro(h.expense)}`}
+                          >
+                            <div className="chart-bars">
+                              <div
+                                className="income-bar"
+                                title={`Tulot ${euro(h.income)}`}
+                                style={{
+                                  height: Math.max(
+                                    2,
+                                    (h.income /
+                                      Math.max(
+                                        ...history.map((x) => Math.max(x.income, x.expense)),
+                                        1,
+                                      )) *
+                                      140,
+                                  ),
+                                }}
+                              />
+                              <div
+                                className="expense-bar"
+                                title={`Menot ${euro(h.expense)}`}
+                                style={{
+                                  height: Math.max(
+                                    2,
+                                    (h.expense /
+                                      Math.max(
+                                        ...history.map((x) => Math.max(x.income, x.expense)),
+                                        1,
+                                      )) *
+                                      140,
+                                  ),
+                                }}
+                              />
+                            </div>
+                            <small>{h.key.slice(5)}</small>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <p>Vihreä: tulot · sininen: menot</p>
+                      <div className="chart-legend" aria-hidden="true">
+                        <span><i className="legend-swatch income-bar" /> Tulot</span>
+                        <span><i className="legend-swatch expense-bar" /> Menot</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="chart-empty">Ei toteutuneita tuloja tai menoja valitulla jaksolla.</div>
+                  )}
                   <div className="table-wrap">
                     <table>
                       <thead>
