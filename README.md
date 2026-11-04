@@ -4,7 +4,7 @@ Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus.
 
 ## Käyttö ilman asennusta
 
-1. Tallenna `Taloussuunnittelu.html` pysyvään paikkaan, esimerkiksi työpöydälle.
+1. Tallenna projektin juuren valmis `index.html` pysyvään paikkaan, esimerkiksi työpöydälle. Tiedoston voi nimetä uudelleen haluamakseen.
 2. Avaa se kaksoisklikkaamalla selaimessa. Osoite on `file://`.
 3. Aloita tyhjästä, kokeile selvästi merkittyä fiktiivistä esimerkkitaloutta tai palauta JSON.
 4. Vie varmuuskopio tärkeiden muutosten jälkeen ja ennen tiedoston siirtämistä.
@@ -42,7 +42,7 @@ npm test
 npm run build
 ```
 
-Build suorittaa Viten ja `standalone.mjs`:n. Lopullinen `dist/` sisältää vain `Taloussuunnittelu.html`:n, ja sama tuore tiedosto päivitetään myös projektin juureen. `index.html` on Viten kehityspalvelimen ja buildin aloitussivu. Vite dev ei ole loppukäyttäjän käyttötapa.
+Build suorittaa Viten ja `standalone.mjs`:n. Viten kehitysmalli on `src/index.html`. Valmis, itsenäinen sovellus kirjoitetaan projektin juuren `index.html`-tiedostoon. Väliaikainen `dist/` poistetaan koosteen lopuksi. Vite dev ei ole loppukäyttäjän käyttötapa.
 
 E2E: asenna kehityskoneelle Python Playwright ja sen Chromium. Aja `python e2e.py`. Vaihtoehtoinen selainpolku annetaan `TALOUS_BROWSER`-ympäristömuuttujalla. Testit käyttävät erillistä tilapäistä selainprofiilia, eivät henkilökohtaista profiilia. Python ei ole sovelluksen ajonaikainen riippuvuus.
 

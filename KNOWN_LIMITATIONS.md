@@ -42,6 +42,6 @@ Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyk
 - Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit. Tyyppi tallentuu yhteensopivuuden vuoksi varattuna tags-merkintänä; vanhoissa tietueissa tulkinta perustuu oletuskategorioihin. Ei pankista todennettua siirtoa, eikä lainapääomaa erotella.
 - Ei FI-pääomatavoitetta, FI-aikaa, elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
 - Kokonaisnettovarallisuus ei tarkoita nostettavissa olevaa FIRE-pääomaa. Oma asunto ja puskuri vaativat erillisen rajauksen.
-- Pilviasennuksen tarkistuksessa `index.html` puuttui ja production build epäonnistui. Toimitetun HTML:n HTTP-smoke läpäisi; nykyisen lähdekoodin tuoretta koostetta tai file://-E2E:tä ei sillä varmennettu. Hallittu Chromium esti file://-navigoinnin.
+- Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Hallittu Chromium esti aiemmassa pilviympäristössä file://-E2E:n; paikallinen HTTP-tarkistus ei varmista file://-pysyvyyttä kaikissa selaimissa.
 
 Katso [ominaisuuskartoitus](FEATURE_RESEARCH.md) ja [toteutussuunnitelma](FIRE_PLAN.md). Nämä eivät muuta nykyisiä laskentatuloksia.

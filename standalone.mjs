@@ -22,7 +22,5 @@ h = h.replace(
   "<meta charset=\"UTF-8\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">",
 );
 h = h.replace(/^[ \t]+$/gm, '');
+fs.writeFileSync('index.html', h);
 fs.rmSync('dist', { recursive: true });
-fs.mkdirSync('dist');
-fs.writeFileSync('dist/Taloussuunnittelu.html', h);
-fs.writeFileSync('Taloussuunnittelu.html', h);
