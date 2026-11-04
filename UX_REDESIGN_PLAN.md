@@ -1,6 +1,6 @@
 # Navigaation ja visuaalisen ilmeen kehityssuunnitelma
 
-Päivitetty 4.11.2026. Suunnitelma perustuu nykyiseen `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Tämä on toteutusehdotus, ei valmis käyttöliittymämuutos.
+Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Ensimmäinen toteutus on tehty: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot sekä yhteenvedon kolme erisävyistä mittarialuetta. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
 
 ## Nykytilan ongelmat
 
@@ -53,9 +53,9 @@ Värit ovat suunnittelun lähtöarvoja, eivät valmiiksi mitattuja kontrastipare
 
 ## Toteutusjärjestys
 
-1. **Perusrakenne:** määrittele navigaatioryhmät yhdessä tietorakenteessa ja renderöi niistä työpöytä- ja mobiilivalikko. Säilytä hash-reitit, sivuotsikot ja nykyinen `navigate`-toiminta. Tarkista suorat hash-linkit, selaimen taakse/eteen, Ctrl/Cmd K ja fokus siirtymän jälkeen.
-2. **Väritokenit:** lisää semanttiset tokenit vaaleaan, tummaan, korkean kontrastin ja nykyisiin väriteemoihin. Mittaa kontrasti tavalliselle ja suurelle tekstille sekä toiminta-/fokus-elementeille; tavoite on WCAG 2.2 AA. Näytä nykyinen väri myös ilman väritulkintaa.
-3. **Yhteenveto ja kirjausnäkymät:** sovella uutta hierarkiaa ensin niihin, koska ne ovat yleisimmät polut. Tarkista fiktiivisellä demo- ja tyhjällä taloudella, että negatiivinen kassavirta ja puuttuvat tiedot näkyvät selkeästi.
+1. **Perusrakenne — toteutettu:** navigaatioryhmät ovat yhdessä tietorakenteessa. Työpöytä näyttää ryhmät ja mobiili avattavan valikon; hash-reitit ja nykyinen `navigate`-toiminta säilyvät. Selaimessa tarkistettu sivulle siirtyminen, valikon Escape-sulku ja pikatoiminnot. Suorat hash-linkit ja selaimen taakse/eteen -polku jäävät erikseen varmistettaviksi.
+2. **Väritokenit — osittain toteutettu:** rahavirran, varallisuuden ja suunnittelun taustat on lisätty vaaleaan ja tummaan tilaan sekä neutraaleina korkean kontrastin tilaan. Mittaa vielä kontrasti tavalliselle ja suurelle tekstille sekä toiminta-/fokus-elementeille; tavoite on WCAG 2.2 AA. Lisää tarpeen mukaan omat teksti- ja reunustokenit.
+3. **Yhteenveto ja kirjausnäkymät — osittain toteutettu:** yhteenvedon mittarit on ryhmitetty kolmeen otsikoituun alueeseen. Seuraavaksi sovella hierarkiaa kirjausnäkymiin. Tarkista fiktiivisellä demo- ja tyhjällä taloudella, että negatiivinen kassavirta ja puuttuvat tiedot näkyvät selkeästi.
 4. **Budjetti, varallisuus, tulevaisuus ja hallinta:** viimeistele yhtenäiset paneeli-/mittarikomponentit, mutta pidä niiden sisältöroolit erilaisina. Poista vanha vain ulkoasua ohjaava tyylikoodi, kun vastaava uusi token on käytössä.
 5. **Viimeistely:** testaa 320 px mobiilileveys, 200/400 % suurennus, vaalea/tumma/korkean kontrastin tila, näppäimistö, näkyvä fokus ja ruudunlukijan ilmoitukset. Mittaa myös päänavigaation ja sivunvaihdon käyttö pienellä näytöllä.
 

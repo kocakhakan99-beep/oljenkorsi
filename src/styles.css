@@ -8,6 +8,9 @@
   --soft: #e9f2ed;
   --negative: #a82732;
   --custom: #17604d;
+  --cash-bg: #e6f3ee;
+  --wealth-bg: #f1edf8;
+  --plan-bg: #eaf1fa;
   color-scheme: light;
   font-family: 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 15px;
@@ -125,7 +128,25 @@ aside {
 }
 nav {
   display: grid;
+  gap: 19px;
+}
+.nav-group {
+  display: grid;
   gap: 4px;
+}
+.nav-group-label {
+  padding: 0 13px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mobile-menu-toggle {
+  display: none;
+}
+.mobile-quick {
+  display: none;
 }
 nav button {
   border: 0;
@@ -141,6 +162,7 @@ nav button.selected {
   background: var(--soft);
   color: var(--accent);
   font-weight: 650;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .nav-icon {
   font-size: 20px;
@@ -263,6 +285,27 @@ main {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 15px;
   margin: 22px 0;
+}
+.metric-group {
+  padding: 18px 20px 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+.metric-group .stats {
+  margin: 14px 0 18px;
+}
+.metric-group h2 {
+  margin: 0;
+}
+.metric-group-cash {
+  background: var(--cash-bg);
+}
+.metric-group-wealth {
+  background: var(--wealth-bg);
+}
+.metric-group-plan {
+  background: var(--plan-bg);
 }
 .stat {
   padding: 20px;
@@ -608,6 +651,9 @@ footer {
   --line: #555;
   --bg: #fff;
   --soft: #eee;
+  --cash-bg: #fff;
+  --wealth-bg: #fff;
+  --plan-bg: #fff;
 }
 [data-theme='custom'] {
   --accent: var(--custom);
@@ -620,6 +666,9 @@ footer {
   --line: #40564a;
   --soft: #2a3f34;
   --accent: #216b54;
+  --cash-bg: #203d34;
+  --wealth-bg: #342a44;
+  --plan-bg: #20334a;
   color-scheme: dark;
 }
 [data-mode='dark'][data-theme='blue'] {
@@ -637,6 +686,9 @@ footer {
   --line: #aaa;
   --accent: #333;
   --soft: #333;
+  --cash-bg: #111;
+  --wealth-bg: #111;
+  --plan-bg: #111;
 }
 [data-mode='dark'][data-theme='custom'] {
   --accent: var(--custom);
@@ -676,14 +728,25 @@ footer {
   .brand {
     margin-bottom: 14px;
   }
+  .mobile-menu-toggle {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-weight: 650;
+  }
   nav {
-    display: flex;
-    overflow: auto;
+    display: none;
+    margin-top: 14px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-bottom: 12px;
+  }
+  nav.menu-open {
+    display: grid;
   }
   nav button {
-    white-space: nowrap;
+    width: 100%;
   }
-  .nav-icon,
   .aside-bottom {
     display: none;
   }
@@ -693,6 +756,9 @@ footer {
   .toolbar {
     flex-wrap: wrap;
     gap: 8px;
+  }
+  .mobile-quick {
+    display: inline-block;
   }
   .toolbar button {
     font-size: 12px;
@@ -721,6 +787,9 @@ footer {
   }
   .panel {
     padding: 18px;
+  }
+  .metric-group {
+    padding: 16px 14px 1px;
   }
   .page-head {
     align-items: flex-start;
