@@ -2,18 +2,26 @@ from pathlib import Path
 import json, shutil, os, tempfile
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).parent
+QA=ROOT/'qa'
 BROWSER=os.environ.get('TALOUS_BROWSER') or None
 PROFILE=Path(tempfile.gettempdir())/'talous-e2e-profile'
-URL=(ROOT/'index.html').as_uri()
+ARTIFACTS=Path(tempfile.gettempdir())/'talous-e2e-artifacts'
+ARTIFACTS.mkdir(exist_ok=True)
+URL=os.environ.get('TALOUS_URL') or (ROOT/'index.html').as_uri()
+OFFLINE=os.environ.get('TALOUS_OFFLINE','1')!='0'
+LOCAL_BASE=URL.rsplit('/',1)[0]+'/' if URL.startswith(('http://127.0.0.1','http://localhost')) else ''
 results=[]; errors=[]; network=[]; consoles=[]
 def mark(s):
  results.append(s); print('PASS:',s,flush=True)
 def attach(page):
  page.on('pageerror',lambda e:errors.append(str(e)))
- page.on('request',lambda r:network.append(r.url) if not r.url.startswith(('file:','blob:','data:')) else None)
+ page.on('request',lambda r:network.append(r.url) if not r.url.startswith(('file:','blob:','data:')) and not (LOCAL_BASE and r.url.startswith(LOCAL_BASE)) else None)
  page.on('console',lambda m:consoles.append(m.text) if m.type=='error' else None)
  page.on('dialog',lambda d:d.accept())
-def nav(page,name):page.get_by_role('navigation').get_by_role('button',name=name,exact=True).click()
+def nav(page,name):
+ navigation=page.get_by_role('navigation')
+ if not navigation.is_visible():page.locator('.mobile-menu-toggle').click()
+ navigation.get_by_role('button',name=name,exact=True).click()
 def state(page):return page.evaluate("JSON.parse(localStorage.getItem('taloussuunnittelu.v1')).data")
 def add(page,section,button,values,selects={}):
  nav(page,section);page.get_by_role('button',name=button,exact=True).click();dlg=page.locator('dialog[open]')
@@ -22,18 +30,21 @@ def add(page,section,button,values,selects={}):
  dlg.get_by_role('button',name='Tallenna',exact=True).click();expect(dlg).not_to_be_visible()
 with sync_playwright() as p:
  if PROFILE.exists():shutil.rmtree(PROFILE)
- c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=True,accept_downloads=True,args=['--no-sandbox'],viewport={'width':1440,'height':1000})
+ c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=OFFLINE,accept_downloads=True,args=['--no-sandbox'],viewport={'width':1440,'height':1000})
+ browser_version=c.browser.version if c.browser else 'Chromium'
  page=c.pages[0];attach(page);page.goto(URL,wait_until='domcontentloaded')
- expect(page.get_by_role('button',name='Aloita tyhjästä')).to_be_visible();page.get_by_role('button',name='Aloita tyhjästä').click();mark('Onboarding tyhjästä file:// offline')
+ expect(page.get_by_role('button',name='Aloita tyhjästä')).to_be_visible();page.get_by_role('button',name='Aloita tyhjästä').click();mark('Onboarding tyhjästä paikallisessa yhden tiedoston sovelluksessa'+(' file/offline' if URL.startswith('file:') and OFFLINE else ' localhost-testipalvelimella'))
  page.get_by_role('button',name='Piilota ohje: Pääset alkuun pienin askelin').click();expect(page.locator('.help-box')).to_have_count(0);nav(page,'Asetukset');page.get_by_role('button',name='Palauta piilotetut ohjeet (1)').click();nav(page,'Yhteenveto');expect(page.locator('.help-box')).to_be_visible();mark('Ohjelaatikon voi piilottaa ja palauttaa asetuksista')
  page.get_by_role('button',name='Lisää tulo',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Lisää 10 euroa summasta').click();assert page.locator('dialog [name=amount]').input_value()=='10,00';page.get_by_role('button',name='Sulje',exact=True).click();mark('Summan pikasäätö toimii')
  page.get_by_role('button',name='Lisää meno',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Sulje',exact=True).click()
- page.get_by_role('button',name='Avaa budjetti',exact=True).click();expect(page.get_by_role('heading',name='Budjetti')).to_be_visible();nav(page,'Yhteenveto');mark('Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän')
+ page.get_by_role('button',name='Avaa budjetti',exact=True).click();expect(page.get_by_role('heading',name='Budjetti',exact=True)).to_be_visible();nav(page,'Yhteenveto');mark('Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän')
  page.get_by_label('Kuukausi',exact=True).fill('2026-11')
  add(page,'Tulot','+ Lisää tulo',{'name':'Testipalkka','amount':'3000','date':'2026-11-01'},{'recurrence':'monthly'})
  mark('Tulo lisätty')
  add(page,'Menot','+ Lisää meno',{'name':'Testivuokra','amount':'1000','date':'2026-11-01','category':'Asuminen'},{'recurrence':'monthly'})
  mark('Toistuva meno lisätty')
+ expand=page.locator('.row-expand')
+ expand.focus();expand.press('Enter');expect(expand).to_have_attribute('aria-expanded','true');expect(page.locator('#'+expand.get_attribute('aria-controls'))).to_be_visible();expand.press('Space');expect(expand).to_have_attribute('aria-expanded','false');mark('Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön')
  page.get_by_role('button',name='Muokkaa Testivuokra',exact=True).click();page.locator('dialog [name=amount]').fill('900');page.locator('dialog').get_by_role('button',name='Tallenna',exact=True).click();assert state(page)['expenses'][0]['amount']==90000;mark('Menon muokkaus')
  nav(page,'Budjetti');page.get_by_label('Asuminen budjetti euroina').fill('1100');page.get_by_label('Asuminen budjetti euroina').press('Tab');assert state(page)['budgets']['2026-11']['Asuminen']==110000;mark('Budjetin inline-muokkaus')
  add(page,'Omaisuus','+ Lisää omaisuuserä',{'name':'Testitili','amount':'6000','category':'Talletukset'})
@@ -79,29 +90,55 @@ with sync_playwright() as p:
  assert '2\u00a0100,00' in page.locator('.report-detail > p strong').inner_text()
  mark('Oma aikaväli, jakson KPI-kooste ja nettokassavirran tietokortti')
  overview_tab=page.get_by_role('tab',name='Kokonaiskuva');overview_tab.press('ArrowRight');category_tab=page.get_by_role('tab',name='Kulurakenne');expect(category_tab).to_have_attribute('aria-selected','true');expect(page.get_by_role('tabpanel')).to_be_visible();category_tab.press('ArrowRight');flow_tab=page.get_by_role('tab',name='Rahavirran ajoitus');expect(flow_tab).to_have_attribute('aria-selected','true');flow_tab.press('Home');expect(overview_tab).to_have_attribute('aria-selected','true');overview_tab.press('End');expect(flow_tab).to_have_attribute('aria-selected','true');mark('Raporttivälilehtien nuoli-, Home- ja End-näppäimet')
- page.get_by_role('tab',name='Kulurakenne').click();expect(page.locator('.pie-legend')).to_be_visible();page.locator('.category-report-row').first.click();expect(page.locator('.report-detail')).to_contain_text('Testivuokra');mark('Kuluraportin luokka avaa tapahtumakohtaisen tietokortin')
+ page.get_by_role('tab',name='Kulurakenne').click();page.get_by_role('button',name='Piirakka',exact=True).click();expect(page.locator('.pie-legend')).to_be_visible();page.locator('.pie-legend button').first.click();expect(page.locator('.report-detail')).to_contain_text('Testivuokra');mark('Kuluraportin luokka avaa tapahtumakohtaisen tietokortin')
  page.locator('.pie-slice').first.press('Enter');expect(page.locator('.report-detail')).to_be_visible();mark('Piirakkasektori toimii näppäimistöllä')
  page.get_by_role('tab',name='Rahavirran ajoitus').click();page.locator('.flow-day').first.click();expect(page.locator('.report-detail')).to_contain_text('Testivuokra');mark('Rahavirtapäivä avaa oikean tietokortin')
- page.get_by_role('tab',name='Kokonaiskuva').click();page.locator('.expense-bar').last.click();expect(page.locator('.report-detail')).to_contain_text('Testivuokra');mark('Kuukausipylväs avaa oikean tietokortin')
- nav(page,'Yhteenveto');page.screenshot(path=str(ROOT/'qa-dashboard.png'),full_page=True)
+ page.get_by_role('tab',name='Kokonaiskuva').click();page.get_by_role('button',name='Pylväät',exact=True).click();page.locator('.chart-mark.expense-bar').last.click();expect(page.locator('.report-detail')).to_contain_text('Testivuokra');mark('Kuukausipylväs avaa oikean tietokortin')
+ for width in (320,375,390,600,760,768):
+  page.set_viewport_size({'width':width,'height':900})
+  for section in ('Yhteenveto','Budjetti','Menot','Skenaariot','Raportit','Tuonti ja vienti'):
+   nav(page,section)
+   overflow,offenders=page.evaluate("""() => {
+    const width=window.innerWidth;
+    const nodes=[...document.querySelectorAll('body *')].map((el)=>{
+     const r=el.getBoundingClientRect();
+     return {tag:el.tagName,cls:typeof el.className==='string'?el.className:'',right:Math.round(r.right),width:Math.round(r.width)};
+    }).filter((el)=>el.width>0&&(el.right>width+1||el.right<0)).slice(0,12);
+    return [document.documentElement.scrollWidth-width,nodes];
+   }""")
+   assert overflow<=1,f'{section} aiheuttaa {overflow}px sivuttaisylivuodon {width}px leveydellä: {offenders}'
+   escaped=page.locator('.table-wrap').evaluate_all('(els)=>els.some((el)=>el.getBoundingClientRect().right>innerWidth+1)')
+   assert not escaped,f'{section} taulukkosäiliö ylittää näytön {width}px leveydellä'
+   if width<=600 and section in ('Budjetti','Menot','Skenaariot','Raportit'):
+    display=page.locator('.mobile-card-table tbody tr:not([hidden]),.mobile-entry-table tbody tr:not(.expanded-row)').first.evaluate('(el)=>getComputedStyle(el).display')
+    assert display=='grid',f'{section} ei tiivistynyt tietokorteiksi {width}px leveydellä'
+   if width==390 and section=='Raportit' and page.locator('.report-history-table tbody tr').count():
+    colors=page.locator('.report-history-table tbody tr').first.evaluate('(el)=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color})')
+    assert colors=={'background':'rgb(255, 255, 255)','color':'rgb(24, 39, 32)'},f'Raporttikortin kontrastivärit poikkeavat teemasta: {colors}'
+    mark('Tummassa teemassa raporttikortti käyttää vaaleaa pintaa ja luettavaa tekstiä')
+   if width==390 and section=='Budjetti':page.screenshot(path=str(Path(tempfile.gettempdir())/'oljenkorsi-mobile-budget.png'),full_page=True)
+   if width==390 and section=='Raportit':page.screenshot(path=str(Path(tempfile.gettempdir())/'oljenkorsi-mobile-report.png'),full_page=True)
+ mark('Mobiilileveydet 320–768 px: sivu ja taulukkosäiliöt eivät ylitä näkymää')
+ page.set_viewport_size({'width':1440,'height':1000})
+ nav(page,'Yhteenveto');page.screenshot(path=str(ARTIFACTS/'dashboard.png'),full_page=True)
  saved=state(page);c.close()
- c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=True,accept_downloads=True,args=['--no-sandbox'])
+ c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=OFFLINE,accept_downloads=True,args=['--no-sandbox'])
  page=c.pages[0];attach(page);page.goto(URL,wait_until='domcontentloaded');assert state(page)==saved;mark('Selainprosessi suljettu ja uudelleenavattu: data säilyi')
  with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).first.click()
- bfile=ROOT/'qa-backup.json';d.value.save_as(str(bfile));assert json.loads(bfile.read_text())['data']==saved;mark('JSON backup ladattu ja sisältö tarkistettu')
+ bfile=ARTIFACTS/'backup.json';d.value.save_as(str(bfile));assert json.loads(bfile.read_text())['data']==saved;mark('JSON backup ladattu ja sisältö tarkistettu')
  nav(page,'Tuonti ja vienti')
  with page.expect_download() as d:page.get_by_role('button',name='Vie menot CSV:nä',exact=True).click()
- d.value.save_as(str(ROOT/'qa-expenses.csv'));assert 'Testivuokra' in (ROOT/'qa-expenses.csv').read_text();mark('CSV vienti')
- csv=ROOT/'qa-import.csv';csv.write_text('name;amount;category;date\nCSV ruoka;19,99;Ruoka;3.11.2026\nCSV ruoka;19,99;Ruoka;3.11.2026\nVirhe;NaN;Ruoka;3.11.2026\n',encoding='utf-8')
+ d.value.save_as(str(ARTIFACTS/'expenses.csv'));assert 'Testivuokra' in (ARTIFACTS/'expenses.csv').read_text();mark('CSV vienti')
+ csv=ARTIFACTS/'import.csv';csv.write_text('name;amount;category;date\nCSV ruoka;19,99;Ruoka;3.11.2026\nCSV ruoka;19,99;Ruoka;3.11.2026\nVirhe;NaN;Ruoka;3.11.2026\n',encoding='utf-8')
  page.get_by_label('Valitse CSV',exact=True).set_input_files(str(csv));page.get_by_label('Ohita virheelliset rivit',exact=False).check();page.get_by_role('button',name='Vahvista ja tuo 1 tietuetta',exact=True).click();assert len(state(page)['expenses'])==2;mark('CSV tuonti, virherivin ja duplikaatin ohitus')
  page.get_by_role('button',name='Kumoa',exact=True).click();assert len(state(page)['expenses'])==1;mark('CSV tuonnin kumoaminen')
  nav(page,'Menot');page.get_by_role('button',name='Poista Testivuokra',exact=True).click();assert not state(page)['expenses'];page.get_by_role('button',name='Kumoa',exact=True).click();assert len(state(page)['expenses'])==1;mark('Tietueen poisto ja kumoaminen')
  nav(page,'Asetukset');page.get_by_role('button',name='Poista kaikki tietoni',exact=True).click();page.get_by_label('Kirjoita POISTA',exact=True).fill('POISTA');page.get_by_role('button',name='Poista pysyvästi',exact=True).click();assert page.evaluate("localStorage.getItem('taloussuunnittelu.v1')") is None;mark('Kaiken datan poisto ja tarkistus')
  page.locator('dialog[open] input[type=file]').set_input_files(str(bfile));expect(page.get_by_role('heading',name='Vahvista varmuuskopion palautus')).to_be_visible();page.get_by_role('button',name='Korvaa ja palauta',exact=True).click();assert state(page)==saved;mark('JSON restore onboardingista: kaikki tiedot palautettu')
- bad=ROOT/'qa-bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.get_by_role('status')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
+ bad=ARTIFACTS/'bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.get_by_role('status')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
  c.close()
 assert not errors,errors
 assert not network,network
 assert not consoles,consoles
 mark('Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä')
-(ROOT/'e2e-results.json').write_text(json.dumps({'browser':'Google Chrome for Testing 149.0.7827.55','offline':True,'protocol':'file://','passed':results,'pageErrors':errors,'consoleErrors':consoles,'networkRequests':network,'notes':'Linux headless persistent profile; ei Windows-kaksoisklikkausta, Edgeä tai Firefoxia.'},ensure_ascii=False,indent=2))
+(QA/'e2e-results.json').write_text(json.dumps({'browser':browser_version,'offline':OFFLINE,'protocol':'file://' if URL.startswith('file:') else 'localhost HTTP','passed':results,'pageErrors':errors,'consoleErrors':consoles,'networkRequests':network,'notes':'Linux headless persistent profile; localhost-ajossa sama valmis yhden HTML-tiedoston sovellus ilman ulkoisia pyyntöjä.'},ensure_ascii=False,indent=2))
