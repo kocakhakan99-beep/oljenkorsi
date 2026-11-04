@@ -4,7 +4,7 @@ Päivitetty 4.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja eh
 
 ## P0: toistettava ja turvallinen perusta
 
-Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on otettu käyttöön. Seuraavaksi lisää lukitustiedosto ja varmista puhdas asennus/build sekä tuotetun HTML:n vastaavuus lähdekoodiin myös uudessa ympäristössä. Hallittu Chromium esti aiemmin file://-E2E:n. Aiemmat QA-raportit eivät korvaa uutta file://-näyttöä.
+Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; tyyppitarkistus, linttaus, 37 yksikkötestiä ja standalone-build läpäisevät. `e2e.py` kattaa nyt raporttien kululuokan, piirakkasektorin näppäimistöpolun, rahavirtapäivän ja kuukausipylvään tapahtumakohtaiset tietokortit. Seuraavaksi aja laajennettu file://-E2E oikeassa selainympäristössä ja varmista `npm ci` uudessa ympäristössä. Tämän työtilan Chromium ei käynnisty `setsockopt: Operation not permitted` / SIGTRAP -virheestä, joten uutta selainajoa ei ole vahvistettu.
 
 Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
 
@@ -36,4 +36,4 @@ Lisää joustavat nostorajat, pitkä elinikä ja samojen tuottojen eri järjesty
 
 Aiemman versiopolun suunta säilyy: V1 offline-ydin, V1.1 käytettävyys/saavutettavuus, V1.2 edistyneet raportit/laskurit, V2 valinnainen hosted/PWA, V3 valinnainen tili ja salattu synkronointi, V4 markkinadata, V5 pankki-integraatiot, V6 mahdolliset eettiset yhteistyöt. P0–P3:n työpaketit kohdistetaan versioihin vasta hyväksytyn laajuuden perusteella. Integraatio ei ole FI-laskennan edellytys eikä ohita laskennan laatua.
 
-Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Paikallinen HTML säilyy hyödyllisenä ilman verkkopalveluita. Tässä dokumentointityössä ei muuteta toteutusta, skeemaa tai nykyisiä laskentakaavoja.
+Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Paikallinen HTML säilyy hyödyllisenä ilman verkkopalveluita. Tämä roadmap kuvaa seuraavia toimituksia; jokaisen muutoksen toteutus ja validointi kirjataan erikseen.

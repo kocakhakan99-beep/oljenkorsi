@@ -17,6 +17,8 @@ Muutos → validointi → serialisointi ja eheystarkistus → localStorage → t
 
 Sivupalkki, hash-navigointi, kuukausivalinta, näkyvä backup-painike ja sisältönäkymä. Native dialog tarjoaa modaalisen fokusrajan. Navigoinnin jälkeen fokus siirretään otsikkoon. Listat näyttävät aluksi 100 tietuetta ja tarjoavat lisää, eivät renderöi kaikkia rivejä heti.
 
+Tyylit on vaiheistettu: nykyinen design system elää `src/styles.css`-tiedostossa, ja Tailwind CSS 4 kokoaa uudet utility-luokat build-vaiheessa. `@tailwindcss/vite` ei lisää loppukäyttäjän ajonaikaista riippuvuutta. Lucide Reactista käytetyt SVG-kuvakkeet tree-shakataan bundleen; ulkoisia kuvake- tai fonttipyyntöjä ei tehdä. `standalone.mjs` upottaa tyylit, kuvat ja JavaScriptin juuren `index.html`-tiedostoon.
+
 ## Tarkoituksellinen rajaus
 
 Ominaisuusnäkymät ovat vielä samassa `main.tsx`-tiedostossa. Ne tulee erottaa feature-hakemistoihin ennen merkittävää laajentamista. MarketDataProvider, BankDataProvider, AuthenticationProvider, CloudSyncProvider, VehicleValuationProvider ja FeatureFlagProvider eivät ole vielä toteutettuja rajapintoja. Niitä ei esitetä valmiina. Offline-sovelluksessa ei ole niiden verkkototeutuksia.

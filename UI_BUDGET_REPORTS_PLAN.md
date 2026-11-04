@@ -1,8 +1,12 @@
 # Käyttöliittymän, budjetin ja raportoinnin toteutussuunnitelma
 
-Päivitetty 4.11.2026. Tämä suunnitelma vastaa viiteen käyttäjäpalautteeseen: listojen avauspainikkeet, budjetin manuaalinen toteuma, rahavirta- ja kulurakenneraportit, omaisuus- ja velkakategorioiden ikonit sekä sisältökorttien rauhallisempi ulkoasu. Toteutettu: listojen laajennuspainikkeet, budjetin manuaalinen toteuma, kulurakenne- ja päivän kassavirtanäkymä, pylväs-/viivakaavion ja pylväs-/piirakkakaavion valinta, klikattavat tulo- ja menomittarit, kululuokat, piirakan sektorit ja rahavirtapäivät tietokortteineen, alijäämän ja palautumisen päivä, yksittäiset SVG-kuvakkeet omaisuus- ja velkakategorioille sekä tiiviimmät vaaleat rivit. Raporttien visualisointipinta on valkoinen ja tulot/menot erottuvat vihreänä ja oranssina. Toteutus säilyttää nykyiset JSON-varmuuskopiot, laskentakaavat ja offline-käytön.
+Päivitetty 4.11.2026. Tämä suunnitelma vastaa listojen avauspainikkeisiin, budjetin manuaaliseen toteumaan, rahavirta- ja kuluraportteihin, omaisuus- ja velkakategorioiden kuvakkeisiin sekä sisältökorttien rauhallisempaan ulkoasuun. Nämä ydinkohdat on toteutettu: listojen laajennuspainikkeet, budjetin manuaalinen toteuma, kulurakenne- ja päivän kassavirtanäkymä, pylväs-/viivakaavion ja pylväs-/piirakkakaavion valinta, klikkailtavat mittarit, kululuokat, piirakan sektorit ja rahavirtapäivät tietokortteineen, alijäämän ja palautumisen päivä, omaisuus- ja velkakategorioiden SVG-kuvakkeet sekä tiiviimmät vaaleat rivit. Raporttien visualisointipinta on valkoinen, ja tulot/menot erottuvat vihreänä ja oranssina. Viimeistelyä jatketaan tämänhetkisen `ROADMAP.md`-tiedoston mukaan.
 
-## Nykyinen lähtökohta
+Ulkoasua päivitetään vaiheittain Tailwind CSS 4:n build-aikaisilla luokilla. Sivupalkissa ja raporttivälilehdissä käytetään paikalliseen bundleen sisältyviä Lucide React -SVG-kuvakkeita; omaisuus- ja velka-aiheiden kuvakkeet ovat edelleen tarkoitukseen piirrettyjä paikallisia SVG-tiedostoja. Uusi tyylipohja ei muuta sovelluksen yhden HTML-tiedoston jakelua tai offline-käyttöä.
+
+## Alkuperäisen suunnittelun lähtökohta
+
+Seuraavat kohdat kuvaavat tämän suunnitelman ensimmäistä versiota ja selittävät alkuperäiset vaatimukset. Ne eivät kuvaa nykyistä toteutustilaa.
 
 - Listan rivit ovat tällä hetkellä suoria `.simple-row`-rivejä. Lähdekoodissa ei ole yhteistä `details/summary`-rakennetta eikä toimivaa nuolipainiketta, joten avauskäyttäytyminen pitää määritellä ja toteuttaa yhtenäisenä komponenttina.
 - Budjetin `budgets` sisältää kuukauden ja kategorian suunnitellun summan. Budjetin toteuma lasketaan suoraan `expenses`-tapahtumista; sitä ei voi syöttää erillisenä kuukausikohtaisena havaintona.
@@ -67,7 +71,7 @@ Lisää semanttinen `categoryKey` tai normalisoitu ikonihakemisto, mutta säilyt
 | Metsä/maa | `land` | `other-loan` |
 | Muu | `asset` | `debt` |
 
-Asuntolaina ja asunto käyttävät samaa taloaihetta eri tilamerkillä. Ikonit toteutetaan inline-SVG:nä tai nykyisen offline-ratkaisun mukaisina tekstittöminä kuvakkeina; ulkoista kuvakekirjastoa ei lisätä vain koristeen vuoksi. Jokaisella ikonilla on tekstivastine tai `aria-hidden` silloin, kun kategoria näkyy vieressä tekstinä. Tuntematon käyttäjän oma kategoria saa neutraalin oletusikonin.
+Asuntolaina ja asunto käyttävät samaa taloaihetta eri tilamerkillä. Kategorioiden ikonit ovat paikallisia tarkoituskuvia. Navigoinnin ja raporttien kuvakkeet käyttävät tree-shakattua Lucide React -SVG:tä, joka sisältyy offline-bundleen. Jokaisella ikonilla on tekstivastine tai `aria-hidden` silloin, kun sama merkitys näkyy vieressä tekstinä. Tuntematon käyttäjän oma kategoria saa neutraalin oletusikonin.
 
 ### 5. Korttien ja rivien minimalistinen hierarkia
 
