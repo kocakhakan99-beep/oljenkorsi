@@ -61,6 +61,13 @@ const navIcons: Record<string, string> = {
   liabilities: '≋', investments: '▥', goals: '◎', scenarios: '⌁', reports: '▦',
   transfer: '⇅', settings: '⚙', help: '?',
 };
+function expCatsForReport(s: State, month: string): [string, number][] {
+  const categories = [...new Set(s.expenses.filter((e) => expenseType(e) === 'consumption').map((e) => e.category))];
+  return categories
+    .map((category) => [category, total(s.expenses.filter((e) => e.category === category && expenseType(e) === 'consumption'), month, true)] as [string, number])
+    .filter(([, value]) => value > 0)
+    .sort((a, b) => b[1] - a[1]);
+}
 const singular: Record<Kind, string> = {
   incomes: 'tulo',
   expenses: 'meno',
@@ -186,7 +193,9 @@ function App() {
     [deleteText, setDeleteText] = useState(''),
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
+    [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
     [reportMonths, setReportMonths] = useState(6),
+    [reportView, setReportView] = useState<'overview' | 'categories' | 'flow'>('overview'),
     [bufferMonths, setBufferMonths] = useState(3);
   const menuButton = useRef<HTMLButtonElement>(null);
   const month = s.settings.month,
@@ -318,6 +327,25 @@ function App() {
       setNotice(String(e));
     }
   }
+  function actualChange(cat: string, text: string) {
+    try {
+      if (!text.trim()) {
+        const actuals = { ...s.budgetActuals };
+        actuals[month] = { ...actuals[month] };
+        delete actuals[month][cat];
+        commit({ ...s, budgetActuals: actuals });
+        return;
+      }
+      const n = money(text);
+      if (n < 0) throw Error('Toteuma ei voi olla negatiivinen.');
+      commit({
+        ...s,
+        budgetActuals: { ...s.budgetActuals, [month]: { ...s.budgetActuals[month], [cat]: n } },
+      });
+    } catch (e) {
+      setNotice(String(e));
+    }
+  }
   const cats = (kind: Kind) =>
     kind === 'incomes' || kind === 'expenses'
       ? s.categories.filter((c) => c.kind === kind && !c.archived).map((c) => c.name)
@@ -356,6 +384,26 @@ function App() {
     return { key, ...metrics(s, key) };
   });
   const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
+  const categoryReport = expCatsForReport(s, month);
+  const maxCategoryExpense = Math.max(...categoryReport.map(([, value]) => value), 1);
+  const flowByDate = new Map<string, { income: number; expense: number }>();
+  for (const e of s.incomes.filter((e) => e.status === 'actual'))
+    for (const date of occurrences(e, month)) {
+      const value = flowByDate.get(date) || { income: 0, expense: 0 };
+      value.income += e.amount;
+      flowByDate.set(date, value);
+    }
+  for (const e of s.expenses.filter((e) => e.status === 'actual'))
+    for (const date of occurrences(e, month)) {
+      const value = flowByDate.get(date) || { income: 0, expense: 0 };
+      value.expense += e.amount;
+      flowByDate.set(date, value);
+    }
+  let runningFlow = 0;
+  const dailyFlow = [...flowByDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => {
+    runningFlow += value.income - value.expense;
+    return { date, ...value, balance: runningFlow };
+  });
   const expCats = Array.from(
     new Set([
       ...s.categories.filter((c) => c.kind === 'expenses' && !c.archived).map((c) => c.name),
@@ -700,9 +748,9 @@ function App() {
                     </button>
                   </div>
                   <p className="muted">
-                    Muokkaa summaa ja siirry seuraavaan kenttään. Tallennus tapahtuu kentästä
-                    poistuttaessa. Toteumaan lasketaan vain kulutusmenot; säästö- ja sijoitussiirrot
-                    näkyvät kassavirrassa.
+                    Syötä suunniteltu budjetti ja halutessasi toteutunut kulutus käsin. Jos toteumaa
+                    ei ole syötetty, näytetään tapahtumista laskettu summa. Budjetin toteuma ei muuta
+                    kassavirtaa.
                   </p>
                   <div className="table-wrap">
                     <table>
@@ -710,7 +758,7 @@ function App() {
                         <tr>
                           <th>Kategoria</th>
                           <th>Suunniteltu €</th>
-                          <th>Kulutus toteutunut</th>
+                          <th>Toteutunut kulutus €</th>
                           <th>Jäljellä</th>
                           <th>Toteuma</th>
                         </tr>
@@ -718,11 +766,13 @@ function App() {
                       <tbody>
                         {expCats.map((c) => {
                           let b = s.budgets[month]?.[c] || 0,
-                            a = total(
+                            observed = total(
                               s.expenses.filter((e) => e.category === c && expenseType(e) === 'consumption'),
                               month,
                               true,
-                            );
+                            ),
+                            hasManual = Object.hasOwn(s.budgetActuals[month] || {}, c),
+                            a = hasManual ? s.budgetActuals[month][c] : observed;
                           return (
                             <tr key={month + c}>
                               <th scope="row">{c}</th>
@@ -736,7 +786,18 @@ function App() {
                                   inputMode="decimal"
                                 />
                               </td>
-                              <td>{euro(a)}</td>
+                              <td>
+                                <input
+                                  className="budget-input"
+                                  aria-label={c + ' toteuma euroina'}
+                                  key={`${month}-${c}-${hasManual ? 'manual' : 'entries'}`}
+                                  defaultValue={hasManual ? (a / 100).toFixed(2).replace('.', ',') : ''}
+                                  placeholder={euro(observed)}
+                                  onBlur={(e) => actualChange(c, e.target.value)}
+                                  inputMode="decimal"
+                                />
+                                <small>{hasManual ? 'Manuaalinen toteuma' : 'Tapahtumista / syötä toteuma'}</small>
+                              </td>
                               <td className={a > b ? 'negative' : ''}>{euro(b - a)}</td>
                               <td>{b ? pct((a / b) * 100) : 'Ei budjettia'}</td>
                             </tr>
@@ -852,9 +913,25 @@ function App() {
                         </thead>
                         <tbody>
                           {rows.slice(0, limit).map((e) => (
-                            <tr key={e.id}>
+                            <React.Fragment key={e.id}>
+                            <tr>
                               <td>
-                                <strong>{e.name}</strong>
+                                <div className="row-title">
+                                  <button
+                                    className="row-expand"
+                                    aria-label={`${expandedRows.has(e.id) ? 'Piilota' : 'Näytä'} ${e.name} lisätiedot`}
+                                    aria-expanded={expandedRows.has(e.id)}
+                                    onClick={() => setExpandedRows((current) => {
+                                      const next = new Set(current);
+                                      next.has(e.id) ? next.delete(e.id) : next.add(e.id);
+                                      return next;
+                                    })}
+                                  >
+                                    <span aria-hidden="true">{expandedRows.has(e.id) ? '⌄' : '›'}</span>
+                                  </button>
+                                  {page === 'assets' || page === 'liabilities' ? <CategoryIcon category={e.category} debt={page === 'liabilities'} /> : null}
+                                  <strong>{e.name}</strong>
+                                </div>
                                 <small>
                                   {e.category}
                                   {userTags(e.tags) ? ' · ' + userTags(e.tags) : ''}
@@ -917,6 +994,20 @@ function App() {
                                 </div>
                               </td>
                             </tr>
+                            {expandedRows.has(e.id) && (
+                              <tr className="expanded-row">
+                                <td colSpan={5}>
+                                  <div className="expanded-content">
+                                    <span>Kuvaus: {e.description || 'Ei kuvausta'}</span>
+                                    <span>Päiväys: {e.date.split('-').reverse().join('.')}</span>
+                                    {(page === 'incomes' || page === 'expenses') && <span>Toistuvuus: {recNames[e.recurrence]}</span>}
+                                    {userTags(e.tags) && <span>Tunnisteet: {userTags(e.tags)}</span>}
+                                    <span>{page === 'assets' ? `Omistus ${e.ownership} % · ${e.liquid ? 'Likvidi' : 'Ei likvidi'}` : page === 'liabilities' ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)}` : e.status === 'planned' ? 'Suunniteltu' : e.status === 'skipped' ? 'Ohitettu' : 'Toteutuneeksi merkitty'}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>
@@ -947,6 +1038,16 @@ function App() {
             )}
             {page === 'reports' && (
               <>
+                <div className="report-tabs" role="tablist" aria-label="Raporttinäkymä">
+                  {([
+                    ['overview', 'Kokonaiskuva'],
+                    ['categories', 'Kulurakenne'],
+                    ['flow', 'Rahavirran ajoitus'],
+                  ] as const).map(([view, label]) => (
+                    <button key={view} role="tab" aria-selected={reportView === view} onClick={() => setReportView(view)}>{label}</button>
+                  ))}
+                </div>
+                {reportView === 'overview' && (
                 <section className="panel">
                   <label>
                     Raportin pituus (päättyy valittuun kuukauteen)
@@ -1054,6 +1155,34 @@ function App() {
                     historiaseuranta ei kuulu tähän versioon.
                   </p>
                 </section>
+                )}
+                {reportView === 'categories' && (
+                  <section className="panel">
+                    <h2>Kulutusmenot kategorioittain</h2>
+                    <p className="muted">Valittu kuukausi · toteutuneiksi merkityt kulutusmenot. Säästö- ja sijoitussiirrot on jätetty pois.</p>
+                    {categoryReport.length ? categoryReport.map(([category, value]) => (
+                      <div className="category-report-row" key={category}>
+                        <div><span>{category}</span><strong>{euro(value)} · {pct(m.consumption ? value * 100 / m.consumption : null)}</strong></div>
+                        <progress max={maxCategoryExpense} value={value} aria-label={`${category}: ${euro(value)}`} />
+                      </div>
+                    )) : <Empty text="Valitussa kuussa ei ole toteutuneita kulutusmenoja." />}
+                  </section>
+                )}
+                {reportView === 'flow' && (
+                  <section className="panel">
+                    <h2>Tulojen ja menojen ajoitus</h2>
+                    <p className="muted">Kumulatiivinen kassavirta alkaa kuun alussa nollasta. Alkusaldoa ja maksujen kellonaikoja ei tunneta; saman päivän tapahtumia ei järjestetä keskenään.</p>
+                    {dailyFlow.length ? <>
+                      <div className="flow-summary">
+                        <strong>{dailyFlow.some((day) => day.balance < 0) ? 'Kuukauden aikana kassavirta käy miinuksella' : 'Kassavirta ei käy miinuksella kirjattuina tapahtumapäivinä'}</strong>
+                        <span>{dailyFlow.at(-1)!.balance < 0 ? `Jakson lopussa ${euro(Math.abs(dailyFlow.at(-1)!.balance))} alijäämää` : `Jakson lopun kertymä ${euro(dailyFlow.at(-1)!.balance)}`}</span>
+                      </div>
+                      <div className="table-wrap"><table><thead><tr><th>Päivä</th><th>Tulot</th><th>Menot</th><th>Kumulatiivinen kassavirta</th></tr></thead><tbody>
+                        {dailyFlow.map((day) => <tr key={day.date}><th>{day.date.split('-').reverse().join('.')}</th><td>{euro(day.income)}</td><td>{euro(day.expense)}</td><td className={day.balance < 0 ? 'negative' : ''}>{euro(day.balance)}</td></tr>)}
+                      </tbody></table></div>
+                    </> : <Empty text="Valitussa kuussa ei ole toteutuneita tapahtumia." />}
+                  </section>
+                )}
               </>
             )}
             {page === 'transfer' && (
@@ -1474,6 +1603,25 @@ function App() {
       )}
     </>
   );
+}
+function CategoryIcon({ category, debt }: { category: string; debt: boolean }) {
+  const key = category.toLocaleLowerCase('fi-FI');
+  const icon = /asunt|koti|asunto/.test(key)
+    ? '⌂'
+    : /auto|ajoneuvo/.test(key)
+      ? '▰'
+      : /käte|tallet|pankki/.test(key)
+        ? '▣'
+        : /metsä|maa|tontti/.test(key)
+          ? '♧'
+          : /rahasto|osake|sijoit|etf/.test(key)
+            ? '▥'
+            : /opinto/.test(key)
+              ? '▤'
+              : /kortti|luotto/.test(key)
+                ? '▱'
+                : '◇';
+  return <span className={`category-icon${debt ? ' category-icon-debt' : ''}`} aria-hidden="true">{icon}</span>;
 }
 function Empty({ text }: { text: string }) {
   return (
