@@ -1021,6 +1021,31 @@ function App() {
                   <p>Valuutta EUR · kieli Suomi. Summat tallennetaan kokonaislukusentteinä.</p>
                 </section>
                 <section className="panel">
+                  <h2>Esimerkkitalous testailuun</h2>
+                  <p>
+                    Lataa fiktiiviset tulot, menot, budjetit, omaisuus, velka, sijoitus ja tavoite.
+                    Esimerkkitalous korvaa tämän selaimen nykyisen talouden. Vie omista tiedoista
+                    varmuuskopio ensin, jos haluat palauttaa ne myöhemmin.
+                  </p>
+                  <div className="actions">
+                    <button onClick={exportBackup}>Vie nykyisen talouden varmuuskopio</button>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'Korvataanko nykyinen talous fiktiivisellä esimerkkitaloudella? Nykyiset tiedot voi palauttaa vain aiemmin viedystä JSON-varmuuskopiosta.',
+                          ) && commit(demo())
+                        ) {
+                          navigate('dashboard');
+                          setNotice('Esimerkkitalous ladattu. Voit testata toimintoja fiktiivisillä tiedoilla.');
+                        }
+                      }}
+                    >
+                      Lataa esimerkkitalous
+                    </button>
+                  </div>
+                </section>
+                <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
                   <p>
                     {storageOk
