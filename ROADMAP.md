@@ -1,6 +1,6 @@
 # Roadmap
 
-Päivitetty 3.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md) ja [FIRE-määrittely](FIRE_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
+Päivitetty 4.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [FIRE-määrittely](FIRE_PLAN.md) ja [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
 ## P0: toistettava ja turvallinen perusta
 
