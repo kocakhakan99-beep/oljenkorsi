@@ -2,16 +2,17 @@
 
 ## Suoritetut tarkistukset
 
-- 4.11 lähdekoodista: TypeScript strict `tsc --noEmit`, ESLint ja 37 Vitest-testiä läpäisivät.
+- TypeScript strict `tsc --noEmit`, ESLint ja 37 Vitest-testiä läpäisivät.
 - Vite production build ja standalone-jälkikäsittely tuottivat juureen itsenäisen `index.html`-tiedoston (noin 396 kB).
 - Standalone-build varmistaa, että CSP lisätään tuotettuun HTML:ään eikä dokumenttiin jää ulkoisia script/link-tageja. Tailwind-luokat ja Lucide-kuvakkeet ovat mukana samassa bundle-tiedostossa.
-- Hallitun työympäristön selain-E2E:n uudelleenajo estyi: Playwrightin oletus-Chromiumia ei ole asennettu. Ympäristön `/usr/bin/chromium` kaatuu `setsockopt: Operation not permitted` -virheeseen ja SIGTRAPiin myös `--no-sandbox`-tilassa. Siksi tämän muutoksen jälkeen ei ole uutta selainvarmennusta.
-- `e2e.py` sisältää nyt myös yhteenvedon pikatoiminnot, raportin oman aikavälin valinnan, jakson KPI-summat ja säästöasteen, raporttivälilehtien nuoli/Home/End-näppäimet sekä kuluraportin tietokortin, piirakkasektorin näppäimistöaktivoinnin, rahavirtapäivän ja kuukausipylvään avauspolut; ne odottavat selainympäristössä suoritusta.
-- `qa/e2e-results.json` sisältää 3.11.2026 tallennetun aiemman offline/file://-ajon (23 hyväksyttyä tarkistusta); se edeltää nykyisiä raporttien interaktioita ja Tailwind/Lucide-ulkoasumuutosta.
+- Playwrightillä suoritettiin 35 selainvarmennusta system Chromium 155:llä tuotetusta standalone-HTML:stä paikallisen localhost-palvelun kautta. Kaikki pääpolut läpäisivät, eikä JavaScript-, console- tai ulkoisia verkkovirheitä havaittu.
+- Responsiivinen testi tarkisti yhteenvedon, budjetin, menot, skenaariot, raportit ja tuonnin/viennin 320, 375, 390, 600, 760 ja 768 pikselissä. Sivun leveys tai taulukkosäiliö ei ylittänyt näkymää, ja taulukkokortit aktivoituivat pienissä leveyksissä.
+- `e2e.py` kattaa ohjelaatikon piilotuksen/palautuksen, summapikanapit, rivin näppäimistöavauksen, raportin jakson/kaavion/zoomin, valittavat raporttitietokortit sekä talousdatan vienti-, tuonti- ja palautuspolut. Tulokset ovat `qa/e2e-results.json`-tiedostossa.
+- Suora `file://`-navigointi on hallitussa Chromiumissa estetty selaimen ylläpitokäytännöllä, joten tässä ajossa ei varmennettu offline-tilaa tai `file://`-tallennusta. Aiempi `qa`-ajon file/offline-tulos edeltää nykyisiä interaktioita ja ulkoasua.
 
 ## E2E:n sisältö
 
-Tallennetussa aiemmassa E2E-ajossa: onboarding tyhjästä; tulo; toistuva meno; menon muokkaus; budjetti; omaisuus; velka; sijoitus; tavoite; kassavirran ja nettovarallisuuden tarkistus; kategorian nimeäminen; teema ja tumma tila; summien piilotus; Ctrl K/Escape; kolme skenaariota; raporttitaulukko; selainprosessin sulkeminen ja uudelleenavaaminen samalla profiililla; JSON-vienti; CSV-vienti; CSV-tuonti virhe- ja duplikaattiohituksella; tuonnin kumoaminen; tietueen poisto/kumoaminen; kaiken datan poisto; JSON-palautus; väärän backupin hylkäys.
+Suoritetussa E2E-ajossa: tyhjä aloitus; ohjeen piilotus/palautus; summa-pikanapit; tulo; toistuva meno; Enter/Space-avattava rivitieto; menon muokkaus; budjetin tallennus; omaisuus; velka; sijoitus; tavoite; kassavirta ja nettovarallisuus; kategorian nimeäminen; tumma tila ja summien piilotus; Ctrl K/Escape; kolme skenaariota; raportin ajanjakso, zoom ja kaaviot; valittavat raporttitietokortit; välilehtien näppäimistö; kuuden reitin responsiivisuus; selaimen uudelleenkäynnistys samalla profiililla; JSON-vienti; CSV-vienti/-tuonti ja virhe-/duplikaattiohitus; kumoaminen; poisto; JSON-palautus; virheellisen varmuuskopion hylkäys.
 
 Ei sovelluksen verkkopyyntöjä, pageerror-virheitä tai console-error-viestejä tallennetussa aiemmassa ajossa. Nykyinen standalone-build säilyttää inline-tyylit, -kuvat ja -skriptin; staattinen lähdetagitarkistus ei korvaa selaimen verkkopyyntöjen mittausta. Selaimen taustapalvelujen liikennettä ei mitattu järjestelmätasolla.
 

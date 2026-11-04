@@ -1112,18 +1112,18 @@ function App() {
                     ei ole syötetty, näytetään tapahtumista laskettu summa. Budjetin toteuma ei muuta
                     kassavirtaa.
                   </p>
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Kategoria</th>
-                          <th>Suunniteltu €</th>
-                          <th>Toteutunut kulutus €</th>
-                          <th>Jäljellä</th>
-                          <th>Toteuma</th>
+                  <div className="table-wrap mobile-card-table budget-table">
+                    <table role="table">
+                      <thead role="rowgroup">
+                        <tr role="row">
+                          <th role="columnheader">Kategoria</th>
+                          <th role="columnheader">Suunniteltu €</th>
+                          <th role="columnheader">Toteutunut kulutus €</th>
+                          <th role="columnheader">Jäljellä</th>
+                          <th role="columnheader">Toteuma</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody role="rowgroup">
                         {expCats.map((c) => {
                           let b = s.budgets[month]?.[c] || 0,
                             observed = total(
@@ -1134,9 +1134,9 @@ function App() {
                             hasManual = Object.hasOwn(s.budgetActuals[month] || {}, c),
                             a = hasManual ? s.budgetActuals[month][c] : observed;
                           return (
-                            <tr key={month + c}>
-                              <th scope="row">{c}</th>
-                              <td>
+                            <tr role="row" key={month + c}>
+                              <th role="rowheader" scope="row" data-label="Kategoria">{c}</th>
+                              <td role="cell" data-label="Suunniteltu">
                                 <input
                                   className="budget-input"
                                   aria-label={c + ' budjetti euroina'}
@@ -1146,7 +1146,7 @@ function App() {
                                   inputMode="decimal"
                                 />
                               </td>
-                              <td>
+                              <td role="cell" data-label="Toteutunut kulutus">
                                 <input
                                   className="budget-input"
                                   aria-label={c + ' toteuma euroina'}
@@ -1158,8 +1158,8 @@ function App() {
                                 />
                                 <small>{hasManual ? 'Manuaalinen toteuma' : 'Tapahtumista / syötä toteuma'}</small>
                               </td>
-                              <td className={a > b ? 'negative' : ''}>{euro(b - a)}</td>
-                              <td>{b ? pct((a / b) * 100) : 'Ei budjettia'}</td>
+                              <td role="cell" data-label="Jäljellä" className={a > b ? 'negative' : ''}>{euro(b - a)}</td>
+                              <td role="cell" data-label="Toteuma">{b ? pct((a / b) * 100) : 'Ei budjettia'}</td>
                             </tr>
                           );
                         })}
@@ -1261,31 +1261,33 @@ function App() {
                     </p>
                   )}
                   {rows.length ? (
-                    <div className="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Nimi / kategoria</th>
-                            <th>{page === 'investments' ? 'Yksikköhinta' : 'Summa'}</th>
-                            <th>{page === 'goals' ? 'Tavoite' : 'Päivämäärä'}</th>
-                            <th>
+                    <div className="table-wrap mobile-entry-table">
+                      <table className="entry-table" role="table">
+                        <thead role="rowgroup">
+                          <tr role="row">
+                            <th role="columnheader">Nimi / kategoria</th>
+                            <th role="columnheader">{page === 'investments' ? 'Yksikköhinta' : 'Summa'}</th>
+                            <th role="columnheader">{page === 'goals' ? 'Tavoite' : 'Päivämäärä'}</th>
+                            <th role="columnheader">
                               {page === 'incomes' || page === 'expenses'
                                 ? 'Toistuvuus / tila'
                                 : 'Lisätiedot'}
                             </th>
-                            <th>Toiminnot</th>
+                            <th role="columnheader">Toiminnot</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                           {rows.slice(0, limit).map((e) => (
                             <React.Fragment key={e.id}>
-                            <tr>
-                              <td>
+                            <tr role="row">
+                              <td role="cell" data-label="Nimi ja kategoria">
                                 <div className="row-title">
                                   <button
                                     className="row-expand"
+                                    type="button"
                                     aria-label={`${expandedRows.has(e.id) ? 'Piilota' : 'Näytä'} ${e.name} lisätiedot`}
                                     aria-expanded={expandedRows.has(e.id)}
+                                    aria-controls={`entry-details-${e.id}`}
                                     onClick={() => setExpandedRows((current) => {
                                       const next = new Set(current);
                                       next.has(e.id) ? next.delete(e.id) : next.add(e.id);
@@ -1302,7 +1304,7 @@ function App() {
                                   {userTags(e.tags) ? ' · ' + userTags(e.tags) : ''}
                                 </small>
                               </td>
-                              <td>
+                              <td role="cell" data-label={page === 'investments' ? 'Yksikköhinta' : 'Summa'}>
                                 {euro(e.amount)}
                                 {page === 'investments' && (
                                   <small>
@@ -1311,12 +1313,12 @@ function App() {
                                   </small>
                                 )}
                               </td>
-                              <td>
+                              <td role="cell" data-label={page === 'goals' ? 'Tavoite' : 'Päivämäärä'}>
                                 {page === 'goals'
                                   ? euro(e.target)
                                   : e.date.split('-').reverse().join('.')}
                               </td>
-                              <td>
+                              <td role="cell" data-label={page === 'incomes' || page === 'expenses' ? 'Toistuvuus / tila' : 'Lisätiedot'}>
                                 {page === 'incomes' || page === 'expenses' ? (
                                   <>
                                     {recNames[e.recurrence]}
@@ -1342,7 +1344,7 @@ function App() {
                                   e.category
                                 )}
                               </td>
-                              <td>
+                              <td role="cell" data-label="Toiminnot">
                                 <div className="row-actions">
                                   <button
                                     aria-label={'Muokkaa ' + e.name}
@@ -1359,19 +1361,17 @@ function App() {
                                 </div>
                               </td>
                             </tr>
-                            {expandedRows.has(e.id) && (
-                              <tr className="expanded-row">
-                                <td colSpan={5}>
-                                  <div className="expanded-content">
-                                    <span>Kuvaus: {e.description || 'Ei kuvausta'}</span>
-                                    <span>Päiväys: {e.date.split('-').reverse().join('.')}</span>
-                                    {(page === 'incomes' || page === 'expenses') && <span>Toistuvuus: {recNames[e.recurrence]}</span>}
-                                    {userTags(e.tags) && <span>Tunnisteet: {userTags(e.tags)}</span>}
-                                    <span>{page === 'assets' ? `Omistus ${e.ownership} % · ${e.liquid ? 'Likvidi' : 'Ei likvidi'}` : page === 'liabilities' ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)}` : e.status === 'planned' ? 'Suunniteltu' : e.status === 'skipped' ? 'Ohitettu' : 'Toteutuneeksi merkitty'}</span>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
+                            <tr role="row" className="expanded-row" hidden={!expandedRows.has(e.id)}>
+                              <td role="cell" id={`entry-details-${e.id}`} colSpan={5}>
+                                <div className="expanded-content">
+                                  <span>Kuvaus: {e.description || 'Ei kuvausta'}</span>
+                                  <span>Päiväys: {e.date.split('-').reverse().join('.')}</span>
+                                  {(page === 'incomes' || page === 'expenses') && <span>Toistuvuus: {recNames[e.recurrence]}</span>}
+                                  {userTags(e.tags) && <span>Tunnisteet: {userTags(e.tags)}</span>}
+                                  <span>{page === 'assets' ? `Omistus ${e.ownership} % · ${e.liquid ? 'Likvidi' : 'Ei likvidi'}` : page === 'liabilities' ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)}` : e.status === 'planned' ? 'Suunniteltu' : e.status === 'skipped' ? 'Ohitettu' : 'Toteutuneeksi merkitty'}</span>
+                                </div>
+                              </td>
+                            </tr>
                             </React.Fragment>
                           ))}
                         </tbody>
@@ -1725,29 +1725,29 @@ function App() {
                   ) : (
                     <div className="chart-empty">{customReportRange && !customRangeValid ? 'Korjaa aikaväli yllä.' : 'Ei toteutuneita tuloja tai menoja valitulla jaksolla.'}</div>
                   )}
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Kuukausi</th>
-                          <th>Tulot</th>
-                          <th>Menot</th>
-                          <th>Kulutus</th>
-                          <th>Säästö- ja sijoitussiirrot</th>
-                          <th>Kassavirta</th>
-                          <th>Säästöaste</th>
+                  <div className="table-wrap mobile-card-table report-history-table">
+                    <table role="table">
+                      <thead role="rowgroup">
+                        <tr role="row">
+                          <th role="columnheader">Kuukausi</th>
+                          <th role="columnheader">Tulot</th>
+                          <th role="columnheader">Menot</th>
+                          <th role="columnheader">Kulutus</th>
+                          <th role="columnheader">Säästö- ja sijoitussiirrot</th>
+                          <th role="columnheader">Kassavirta</th>
+                          <th role="columnheader">Säästöaste</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody role="rowgroup">
                         {history.map((h) => (
-                          <tr key={h.key}>
-                            <th>{h.key}</th>
-                            <td>{euro(h.income)}</td>
-                            <td>{euro(h.expense)}</td>
-                            <td>{euro(h.consumption)}</td>
-                            <td>{euro(h.savingTransfers + h.investmentTransfers)}</td>
-                            <td>{euro(h.cash)}</td>
-                            <td>{pct(h.savingRate)}</td>
+                          <tr role="row" key={h.key}>
+                            <th role="rowheader" scope="row" data-label="Kuukausi">{h.key}</th>
+                            <td role="cell" data-label="Tulot">{euro(h.income)}</td>
+                            <td role="cell" data-label="Menot">{euro(h.expense)}</td>
+                            <td role="cell" data-label="Kulutus">{euro(h.consumption)}</td>
+                            <td role="cell" data-label="Siirrot">{euro(h.savingTransfers + h.investmentTransfers)}</td>
+                            <td role="cell" data-label="Kassavirta">{euro(h.cash)}</td>
+                            <td role="cell" data-label="Säästöaste">{pct(h.savingRate)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1764,7 +1764,7 @@ function App() {
                   <section className="panel report-panel" id="report-panel-categories" role="tabpanel" aria-labelledby="report-tab-categories" tabIndex={0}>
                     <h2>Kulutusmenot kategorioittain</h2>
                     <p className="muted">Valittu kuukausi · toteutuneiksi merkityt kulutusmenot. Säästö- ja sijoitussiirrot on jätetty pois.</p>
-                    <div className="chart-switch" role="group" aria-label="Kulurakenteen kaavion tyyppi">
+                    <div className="chart-switch category-chart-switch" role="group" aria-label="Kulurakenteen kaavion tyyppi">
                       <button aria-pressed={categoryChart === 'bars'} onClick={() => setCategoryChart('bars')}>Pylväät</button>
                       <button aria-pressed={categoryChart === 'pie'} onClick={() => setCategoryChart('pie')}>Piirakka</button>
                     </div>
@@ -1808,8 +1808,8 @@ function App() {
                         ))}
                       </div>
                       <p className="muted flow-caption">Päivän lopun kumulatiivinen tulojen ja menojen erotus · positiivinen ylös, alijäämä alas. Päivät, joina ei ole kirjauksia, eivät näy.</p>
-                      <div className="table-wrap"><table><thead><tr><th>Päivä</th><th>Tulot</th><th>Menot</th><th>Kumulatiivinen kassavirta</th></tr></thead><tbody>
-                        {dailyFlow.map((day) => <tr key={day.date}><th>{day.date.split('-').reverse().join('.')}</th><td>{euro(day.income)}</td><td>{euro(day.expense)}</td><td className={day.balance < 0 ? 'negative' : ''}>{euro(day.balance)}</td></tr>)}
+                      <div className="table-wrap mobile-card-table flow-table"><table role="table"><thead role="rowgroup"><tr role="row"><th role="columnheader">Päivä</th><th role="columnheader">Tulot</th><th role="columnheader">Menot</th><th role="columnheader">Kumulatiivinen kassavirta</th></tr></thead><tbody role="rowgroup">
+                        {dailyFlow.map((day) => <tr role="row" key={day.date}><th role="rowheader" scope="row" data-label="Päivä">{day.date.split('-').reverse().join('.')}</th><td role="cell" data-label="Tulot">{euro(day.income)}</td><td role="cell" data-label="Menot">{euro(day.expense)}</td><td role="cell" data-label="Kertymä" className={day.balance < 0 ? 'negative' : ''}>{euro(day.balance)}</td></tr>)}
                       </tbody></table></div>
                     </> : <Empty text="Valitussa kuussa ei ole toteutuneita tapahtumia." />}
                   </section>
@@ -2830,22 +2830,22 @@ function ScenarioView({
         </div>
         <h3>Vuosikulujen herkkyys</h3>
         <p className="muted">Samat muut nettotulot ja nostoprosentti kaikissa riveissä. Kulut muuttuvat ±10 %.</p>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Kulutusoletus</th><th>Vuosikulut</th><th>Rahoitusvaje</th><th>FI-pääomatavoite</th></tr>
+        <div className="table-wrap mobile-card-table fi-sensitivity-table">
+          <table role="table">
+            <thead role="rowgroup">
+              <tr role="row"><th role="columnheader">Kulutusoletus</th><th role="columnheader">Vuosikulut</th><th role="columnheader">Rahoitusvaje</th><th role="columnheader">FI-pääomatavoite</th></tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
               {([['−10 %', 0.9], ['Oma oletus', 1], ['+10 %', 1.1]] as const).map(([label, factor]) => {
                 const expenses = Math.round(fi.annualExpenses * factor);
                 const gap = Math.max(0, expenses - fi.annualOutsideIncome);
                 const target = Math.ceil(gap / (fi.withdrawalRate / 100));
                 return (
-                  <tr key={label}>
-                    <th scope="row">{label}</th>
-                    <td>{euro(expenses)}</td>
-                    <td>{euro(gap)}</td>
-                    <td>{target <= MAX ? euro(target) : 'Yli laskentarajan'}</td>
+                  <tr role="row" key={label}>
+                    <th role="rowheader" scope="row" data-label="Kulutusoletus">{label}</th>
+                    <td role="cell" data-label="Vuosikulut">{euro(expenses)}</td>
+                    <td role="cell" data-label="Rahoitusvaje">{euro(gap)}</td>
+                    <td role="cell" data-label="FI-pääomatavoite">{target <= MAX ? euro(target) : 'Yli laskentarajan'}</td>
                   </tr>
                 );
               })}
@@ -2937,35 +2937,35 @@ function ScenarioView({
         <h2>Skenaarioiden vertailu</h2>
         <p>Voit tallentaa ja vertailla useita omia oletuksia.</p>
         {scenarios.length ? (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nimi</th>
-                  <th>Oletukset</th>
-                  <th>Pääoma</th>
-                  <th>Nimellisarvo</th>
-                  <th>Reaaliarvo</th>
-                  <th>Toiminnot</th>
+          <div className="table-wrap mobile-card-table scenario-table">
+            <table role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader">Nimi</th>
+                  <th role="columnheader">Oletukset</th>
+                  <th role="columnheader">Pääoma</th>
+                  <th role="columnheader">Nimellisarvo</th>
+                  <th role="columnheader">Reaaliarvo</th>
+                  <th role="columnheader">Toiminnot</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {scenarios.map((v) => {
                   let r = compound(v);
                   return (
-                    <tr key={v.id}>
-                      <th>{v.name}</th>
-                      <td>
+                    <tr role="row" key={v.id}>
+                      <th role="rowheader" scope="row" data-label="Nimi">{v.name}</th>
+                      <td role="cell" data-label="Oletukset">
                         {v.years} v · tuotto {v.rate} % · kulut {v.fee} % · inflaatio {v.inflation}{' '}
                         %
                         <small>
                           {euro(v.initial)} + {euro(v.monthly)} / kk
                         </small>
                       </td>
-                      <td>{euro(r.invested)}</td>
-                      <td>{euro(r.value)}</td>
-                      <td>{euro(r.real)}</td>
-                      <td>
+                      <td role="cell" data-label="Pääoma">{euro(r.invested)}</td>
+                      <td role="cell" data-label="Nimellisarvo">{euro(r.value)}</td>
+                      <td role="cell" data-label="Reaaliarvo">{euro(r.real)}</td>
+                      <td role="cell" data-label="Toiminnot">
                         <button onClick={() => setQ({ ...v, id: uid() })}>Lataa laskuriin</button>
                         <button onClick={() => onDelete(v.id)}>Poista</button>
                       </td>
@@ -3214,7 +3214,7 @@ function Transfer({
               ))}
             </div>
             <h3>Esikatselu (enintään 5 riviä)</h3>
-            <div className="table-wrap">
+            <div className="table-wrap csv-preview-table" role="region" aria-label="CSV-esikatselu, vieritä sivusuunnassa tarvittaessa" tabIndex={0}>
               <table>
                 <thead>
                   <tr>

@@ -1,11 +1,15 @@
 {
-  "browser": "Google Chrome for Testing 149.0.7827.55",
-  "offline": true,
-  "protocol": "file://",
+  "browser": "155.0.8059.79",
+  "offline": false,
+  "protocol": "localhost HTTP",
   "passed": [
-    "Onboarding tyhjästä file:// offline",
+    "Onboarding tyhjästä paikallisessa yhden tiedoston sovelluksessa localhost-testipalvelimella",
+    "Ohjelaatikon voi piilottaa ja palauttaa asetuksista",
+    "Summan pikasäätö toimii",
+    "Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän",
     "Tulo lisätty",
     "Toistuva meno lisätty",
+    "Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön",
     "Menon muokkaus",
     "Budjetin inline-muokkaus",
     "Omaisuus, velka, sijoitus ja tavoite lisätty",
@@ -15,7 +19,15 @@
     "Summien piilotus",
     "Ctrl K ja Escape näppäimistöpolku",
     "Kolmen skenaarion tallennus",
-    "Raportti ja taulukkovastine",
+    "Raportin ajanjakso, aluekaavio ja zoomaus",
+    "Oma aikaväli, jakson KPI-kooste ja nettokassavirran tietokortti",
+    "Raporttivälilehtien nuoli-, Home- ja End-näppäimet",
+    "Kuluraportin luokka avaa tapahtumakohtaisen tietokortin",
+    "Piirakkasektori toimii näppäimistöllä",
+    "Rahavirtapäivä avaa oikean tietokortin",
+    "Kuukausipylväs avaa oikean tietokortin",
+    "Tummassa teemassa raporttikortti käyttää vaaleaa pintaa ja luettavaa tekstiä",
+    "Mobiilileveydet 320–768 px: sivu ja taulukkosäiliöt eivät ylitä näkymää",
     "Selainprosessi suljettu ja uudelleenavattu: data säilyi",
     "JSON backup ladattu ja sisältö tarkistettu",
     "CSV vienti",
@@ -30,5 +42,5 @@
   "pageErrors": [],
   "consoleErrors": [],
   "networkRequests": [],
-  "notes": "Linux headless persistent profile; ei Windows-kaksoisklikkausta, Edgeä tai Firefoxia."
+  "notes": "Linux headless persistent profile; localhost-ajossa sama valmis yhden HTML-tiedoston sovellus ilman ulkoisia pyyntöjä."
 }
