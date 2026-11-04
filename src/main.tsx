@@ -60,6 +60,13 @@ import {
   ReceiptText,
   Settings,
   Wallet,
+  ChartSpline,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Plus,
+  Minus,
+  X,
 } from 'lucide-react';
 const names: Record<string, string> = {
   dashboard: 'Yhteenveto',
@@ -103,6 +110,15 @@ const reportTabs = [
   { id: 'categories', label: 'Kulurakenne', Icon: ChartPie },
   { id: 'flow', label: 'Rahavirran ajoitus', Icon: CalendarClock },
 ] as const;
+const helpPreferencesKey = 'taloussuunnittelu.dismissed-help.v1';
+function readDismissedHelp() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(helpPreferencesKey) || '[]');
+    return new Set<string>(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : []);
+  } catch {
+    return new Set<string>();
+  }
+}
 type ReportView = (typeof reportTabs)[number]['id'];
 type ReportSelection =
   | { type: 'month'; month: string; metric: 'income' | 'expense' }
@@ -214,6 +230,7 @@ function Modal({
   dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = React.useId();
   useEffect(() => {
     let previous = document.activeElement as HTMLElement;
     ref.current?.showModal();
@@ -222,6 +239,7 @@ function Modal({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       onCancel={(e) => {
         e.preventDefault();
         if (dismissible) onClose();
@@ -231,7 +249,7 @@ function Modal({
       }}
     >
       <div className="dialog-head">
-        <h2>{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         {dismissible && (
           <button aria-label="Sulje" onClick={onClose}>
             ×
@@ -240,6 +258,30 @@ function Modal({
       </div>
       {children}
     </dialog>
+  );
+}
+function HelpBox({
+  id,
+  title,
+  children,
+  onDismiss,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  onDismiss: (id: string) => void;
+}) {
+  return (
+    <aside className="help-box" aria-labelledby={`help-${id}-title`}>
+      <CircleHelp size={20} aria-hidden="true" />
+      <div className="help-box-copy">
+        <strong id={`help-${id}-title`}>{title}</strong>
+        <p>{children}</p>
+      </div>
+      <button type="button" className="help-box-dismiss" aria-label={`Piilota ohje: ${title}`} onClick={() => onDismiss(id)}>
+        <X size={18} aria-hidden="true" />
+      </button>
+    </aside>
   );
 }
 function App() {
@@ -265,11 +307,14 @@ function App() {
     [customReportRange, setCustomReportRange] = useState(false),
     [reportStart, setReportStart] = useState(''),
     [reportEnd, setReportEnd] = useState(''),
+    [yearToDateReport, setYearToDateReport] = useState(false),
+    [reportZoom, setReportZoom] = useState(1),
     [reportView, setReportView] = useState<ReportView>('overview'),
-    [overviewChart, setOverviewChart] = useState<'bars' | 'line'>('bars'),
+    [overviewChart, setOverviewChart] = useState<'bars' | 'line' | 'area'>('bars'),
     [categoryChart, setCategoryChart] = useState<'bars' | 'pie'>('bars'),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(null),
-    [bufferMonths, setBufferMonths] = useState(3);
+    [bufferMonths, setBufferMonths] = useState(3),
+    [dismissedHelp, setDismissedHelp] = useState<Set<string>>(readDismissedHelp);
   const menuButton = useRef<HTMLButtonElement>(null);
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
@@ -307,6 +352,25 @@ function App() {
   }
   function settings(v: Partial<State['settings']>) {
     commit({ ...s, settings: { ...s.settings, ...v } });
+  }
+  function dismissHelp(id: string) {
+    setDismissedHelp((current) => {
+      const next = new Set(current).add(id);
+      try {
+        localStorage.setItem(helpPreferencesKey, JSON.stringify([...next]));
+      } catch {
+        // Dismissing a tip remains available for this session if storage is unavailable.
+      }
+      return next;
+    });
+  }
+  function restoreHelp() {
+    setDismissedHelp(new Set());
+    try {
+      localStorage.removeItem(helpPreferencesKey);
+    } catch {
+      // The visible tips are restored for this session.
+    }
   }
   function navigate(p: string) {
     setPage(p);
@@ -363,7 +427,11 @@ function App() {
   useEffect(() => {
     if (selectedReport) {
       const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(() => reportDetailRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' }), 0);
+      setTimeout(() => {
+        const detail = reportDetailRef.current;
+        detail?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+        detail?.focus({ preventScroll: true });
+      }, 0);
     }
   }, [selectedReport]);
   useEffect(() => {
@@ -489,11 +557,12 @@ function App() {
     customRangeLength >= 1 &&
     customRangeLength <= 120
   );
+  const presetMonths = yearToDateReport ? Number(month.slice(5)) : reportMonths;
   const presetHistory = customReportRange
     ? []
-    : Array.from({ length: reportMonths }, (_, i) => {
+    : Array.from({ length: presetMonths }, (_, i) => {
         const [y, mo] = month.split('-').map(Number);
-        const date = new Date(y, mo - reportMonths + i, 1);
+        const date = new Date(y, mo - presetMonths + i, 1);
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         return { key, ...metrics(s, key) };
       });
@@ -836,6 +905,11 @@ function App() {
                     <ArrowRight className="dashboard-action-arrow" size={17} aria-hidden="true" />
                   </button>
                 </section>
+                {!dismissedHelp.has('dashboard-start') && (
+                  <HelpBox id="dashboard-start" title="Pääset alkuun pienin askelin" onDismiss={dismissHelp}>
+                    Lisää ensin yksi tavallinen tulo ja muutama toistuva meno. Budjetti ja raportit tarkentuvat sitä mukaa kun kirjaat tietoja.
+                  </HelpBox>
+                )}
                 <section className="metric-group metric-group-cash" aria-labelledby="cash-heading">
                   <h2 id="cash-heading">Kuukauden rahavirta</h2>
                   <div className="stats">
@@ -978,6 +1052,11 @@ function App() {
             )}
             {page === 'budget' && (
               <>
+                {!dismissedHelp.has('budget-actuals') && (
+                  <HelpBox id="budget-actuals" title="Suunnitelma ja toteuma ovat eri asioita" onDismiss={dismissHelp}>
+                    Syötä budjetti ennakkoon. Toteumakentän voi jättää tyhjäksi, jolloin se seuraa kirjattuja kulutustapahtumia; oma käsin syötetty toteuma koskee vain valittua kuukautta.
+                  </HelpBox>
+                )}
                 <div className="stats summary-strip summary-strip-plan">
                   {stat('Kuukauden tulot', euro(m.income))}
                   {stat('Budjetti yhteensä', euro(m.budget))}
@@ -1096,6 +1175,11 @@ function App() {
             )}
             {kinds.includes(page as Kind) && (
               <>
+                {(page === 'incomes' || page === 'expenses') && !dismissedHelp.has('entry-basics') && (
+                  <HelpBox id="entry-basics" title="Kirjaa summa kerran, tarkenna tarvittaessa" onDismiss={dismissHelp}>
+                    Toistuva palkka tai lasku kirjataan yhdellä tietueella. Valitse tila oikein: suunniteltu ei vaikuta toteutuneeseen kassavirtaan.
+                  </HelpBox>
+                )}
                 <section className="panel entry-panel">
                   <div className="filters">
                     <label>
@@ -1319,6 +1403,11 @@ function App() {
             )}
             {page === 'reports' && (
               <>
+                {!dismissedHelp.has('reports-interaction') && (
+                  <HelpBox id="reports-interaction" title="Raportit ovat tutkittavia" onDismiss={dismissHelp}>
+                    Valitse jakso, vaihda kaaviotyyliä ja avaa pylväs, viivapiste tai kululuokka. Valintaan liittyvät kirjaukset avautuvat raporttikortiksi.
+                  </HelpBox>
+                )}
                 <div className="report-tabs" role="tablist" aria-label="Raporttinäkymä">
                   {reportTabs.map(({ id, label, Icon }) => (
                     <button
@@ -1340,31 +1429,58 @@ function App() {
                 </div>
                 {reportView === 'overview' && (
                 <section className="panel report-panel" id="report-panel-overview" role="tabpanel" aria-labelledby="report-tab-overview" tabIndex={0}>
-                  <label className="report-range-selector">
-                    Raportin aikaväli
-                    <select
-                      aria-label="Raportin aikaväli"
-                      value={customReportRange ? 'custom' : reportMonths}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setReportStart(history[0]?.key || month);
-                          setReportEnd(history[history.length - 1]?.key || month);
-                          setCustomReportRange(true);
-                        } else {
-                          setCustomReportRange(false);
-                          setReportMonths(Number(e.target.value));
-                        }
-                        setSelectedReport(null);
-                      }}
-                    >
-                      {[1, 3, 6, 12].map((n) => (
-                        <option key={n} value={n}>
-                          {n} kuukautta
-                        </option>
+                  <div className="report-range-control">
+                    <div className="report-range-heading">
+                      <div>
+                        <span className="eyebrow">RAPORTOINTIJAKSO</span>
+                        <strong>{periodLabel}</strong>
+                      </div>
+                      <small>Päättyy valittuun kuukauteen {month}</small>
+                    </div>
+                    <div className="report-period-rail" role="group" aria-label="Raportin aikaväli">
+                      {[1, 3, 6, 12, 24].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          aria-pressed={!customReportRange && !yearToDateReport && reportMonths === n}
+                          onClick={() => {
+                            setCustomReportRange(false);
+                            setYearToDateReport(false);
+                            setReportMonths(n);
+                            setSelectedReport(null);
+                          }}
+                        >
+                          {n} kk
+                        </button>
                       ))}
-                      <option value="custom">Oma aikaväli</option>
-                    </select>
-                  </label>
+                      <button
+                        type="button"
+                        aria-pressed={!customReportRange && yearToDateReport}
+                        onClick={() => {
+                          setCustomReportRange(false);
+                          setYearToDateReport(true);
+                          setSelectedReport(null);
+                        }}
+                      >
+                        Vuoden alusta
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={customReportRange}
+                        onClick={() => {
+                          if (!customReportRange) {
+                            setReportStart(history[0]?.key || month);
+                            setReportEnd(history[history.length - 1]?.key || month);
+                          }
+                          setYearToDateReport(false);
+                          setCustomReportRange(true);
+                          setSelectedReport(null);
+                        }}
+                      >
+                        Oma aikaväli
+                      </button>
+                    </div>
+                  </div>
                   {customReportRange && (
                     <div className="report-range-fields">
                       <label>
@@ -1439,9 +1555,61 @@ function App() {
                       <p className="report-period-note">Säästöaste lasketaan kokonaistuloista ja kulutusmenoista, ei siirroista. Kirjausten puuttuminen ei tarkoita, että menoja ei olisi ollut.</p>
                     </section>
                   )}
-                  <div className="chart-switch" role="group" aria-label="Kaavion tyyppi">
-                    <button aria-pressed={overviewChart === 'bars'} onClick={() => setOverviewChart('bars')}>Pylväät</button>
-                    <button aria-pressed={overviewChart === 'line'} onClick={() => setOverviewChart('line')}>Viiva</button>
+                  <div className="report-chart-controls">
+                    <div className="chart-switch" role="group" aria-label="Kaavion tyyppi">
+                      <button type="button" aria-pressed={overviewChart === 'bars'} onClick={() => setOverviewChart('bars')}>
+                        <FileChartColumn size={16} aria-hidden="true" /> Pylväät
+                      </button>
+                      <button type="button" aria-pressed={overviewChart === 'line'} onClick={() => setOverviewChart('line')}>
+                        <ChartSpline size={16} aria-hidden="true" /> Viiva
+                      </button>
+                      <button type="button" aria-pressed={overviewChart === 'area'} onClick={() => setOverviewChart('area')}>
+                        <ChartNoAxesCombined size={16} aria-hidden="true" /> Alue
+                      </button>
+                    </div>
+                    <div className="chart-zoom" role="group" aria-label="Kaavion suurennus">
+                      <button
+                        type="button"
+                        aria-label="Pienennä kaaviota"
+                        title="Pienennä kaaviota"
+                        disabled={reportZoom <= 0.7}
+                        onClick={() => setReportZoom((value) => Math.max(0.7, Math.round((value - 0.1) * 10) / 10))}
+                      >
+                        <ZoomOut size={17} aria-hidden="true" />
+                      </button>
+                      <label>
+                        Suurennus
+                        <input
+                          type="range"
+                          min="0.7"
+                          max="1.8"
+                          step="0.1"
+                          value={reportZoom}
+                          aria-label="Kaavion suurennusprosentti"
+                          aria-valuetext={`${Math.round(reportZoom * 100)} prosenttia`}
+                          onChange={(event) => setReportZoom(Number(event.target.value))}
+                        />
+                        <output>{Math.round(reportZoom * 100)} %</output>
+                      </label>
+                      <button
+                        type="button"
+                        aria-label="Suurenna kaaviota"
+                        title="Suurenna kaaviota"
+                        disabled={reportZoom >= 1.8}
+                        onClick={() => setReportZoom((value) => Math.min(1.8, Math.round((value + 0.1) * 10) / 10))}
+                      >
+                        <ZoomIn size={17} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Palauta kaavion oletuskoko"
+                        title="Palauta oletuskoko"
+                        disabled={reportZoom === 1}
+                        onClick={() => setReportZoom(1)}
+                      >
+                        <RotateCcw size={16} aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                   {reportHasData ? (
                     <>
@@ -1455,6 +1623,7 @@ function App() {
                           <div
                             className="chart-col"
                             key={h.key}
+                            style={{ flexBasis: `${64 * reportZoom}px`, minWidth: `${68 * reportZoom}px` }}
                           >
                             <div className="chart-bars">
                               <button
@@ -1503,8 +1672,8 @@ function App() {
                         aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Vieritä vaakasuunnassa, kun kaikki kuukaudet eivät mahdu näkymään."
                         tabIndex={0}
                       >
-                        <div className="line-chart-content" style={{ minWidth: `${history.length * 68}px` }}>
-                          <svg className="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
+                        <div className="line-chart-content" style={{ minWidth: `${history.length * 68 * reportZoom}px` }}>
+                          <svg className={`line-chart${overviewChart === 'area' ? ' area-chart' : ''}`} viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`Kuukausittainen tulojen ja menojen ${overviewChart === 'area' ? 'aluekaavio' : 'viivakaavio'}. Tarkat luvut alla taulukossa.`}>
                             <defs>
                               <linearGradient id="incomeArea" x1="0" x2="0" y1="0" y2="1">
                                 <stop offset="0%" stopColor="#087f5b" stopOpacity=".2" />
@@ -1646,11 +1815,11 @@ function App() {
                   </section>
                 )}
                 {selectedReport && (
-                  <section ref={reportDetailRef} className="report-panel report-detail min-w-0 max-w-full overflow-clip rounded-2xl border border-emerald-200 bg-white p-5 text-slate-900 shadow-sm mb-6 transition-shadow duration-200 hover:shadow-md" aria-live="polite">
+                  <section ref={reportDetailRef} tabIndex={-1} aria-labelledby="report-detail-title" className="report-panel report-detail min-w-0 max-w-full overflow-clip rounded-2xl border border-emerald-200 bg-white p-5 text-slate-900 shadow-sm mb-6 transition-shadow duration-200 hover:shadow-md" aria-live="polite">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                       <div>
                         <p className="eyebrow">VALITTU RAPORTTIKOHTA</p>
-                        <h2>{selectedReport.type === 'period'
+                        <h2 id="report-detail-title">{selectedReport.type === 'period'
                           ? `${selectedReport.from === selectedReport.to ? selectedReport.from : `${selectedReport.from}–${selectedReport.to}`} · ${selectedReport.metric === 'income' ? 'Tulot' : selectedReport.metric === 'expense' ? 'Menot' : 'Nettokassavirta'}`
                           : selectedReport.type === 'month'
                             ? `${selectedReport.month} · ${selectedReport.metric === 'income' ? 'Tulot' : 'Menot'}`
@@ -1735,6 +1904,17 @@ function App() {
                     )}
                   </div>
                   <p>Valuutta EUR · kieli Suomi. Summat tallennetaan kokonaislukusentteinä.</p>
+                </section>
+                <section className="panel help-settings" aria-labelledby="help-settings-title">
+                  <div>
+                    <h2 id="help-settings-title">Ohjelaatikot</h2>
+                    <p className="muted">
+                      Piilotetut opastukset eivät muuta taloustietojasi. Voit palauttaa ne näytettäväksi täällä.
+                    </p>
+                  </div>
+                  <button type="button" onClick={restoreHelp} disabled={!dismissedHelp.size}>
+                    Palauta piilotetut ohjeet ({dismissedHelp.size})
+                  </button>
                 </section>
                 <section className="panel panel-notice">
                   <h2>Esimerkkitalous testailuun</h2>
@@ -2178,6 +2358,20 @@ function EntryForm({
   const [error, setError] = useState('');
   const [categoryOpen, setCategoryOpen] = useState(false);
   const recurring = kind === 'incomes' || kind === 'expenses';
+  function adjustAmount(deltaEuros: number) {
+    const input = document.querySelector<HTMLInputElement>('dialog[open] input[name="amount"]');
+    let current = 0;
+    try {
+      current = input?.value.trim() ? money(input.value) : 0;
+    } catch {
+      current = 0;
+    }
+    const next = Math.max(0, current + deltaEuros * 100);
+    setValue('amount', (next / 100).toFixed(2).replace('.', ','), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }
   function submit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     try {
@@ -2210,11 +2404,11 @@ function EntryForm({
     value: string | number,
     type = 'text',
     required = false,
-  ) => (
-    <label>
-      {label}
+  ) => {
+    const input = (
       <input
         {...register(key)}
+        id={key === 'amount' ? 'entry-amount' : undefined}
         defaultValue={value}
         type={type}
         required={required}
@@ -2224,9 +2418,27 @@ function EntryForm({
             ? 'decimal'
             : undefined
         }
+        aria-describedby={key === 'amount' ? 'amount-adjust-hint' : undefined}
       />
-    </label>
-  );
+    );
+    if (key === 'amount') {
+      return (
+        <div className="amount-field">
+          <label htmlFor="entry-amount">{label}</label>
+          {input}
+          <div className="amount-adjusters" role="group" aria-label="Summan pikasäädöt euroina">
+            {[-100, -10, 10, 100].map((delta) => (
+              <button type="button" key={delta} aria-label={`${delta < 0 ? 'Vähennä' : 'Lisää'} ${Math.abs(delta)} euroa summasta`} onClick={() => adjustAmount(delta)}>
+                {delta > 0 ? '+' : '−'}{Math.abs(delta)} €
+              </button>
+            ))}
+          </div>
+          <small id="amount-adjust-hint">Voit kirjoittaa summan tai säätää sitä pikanapeilla.</small>
+        </div>
+      );
+    }
+    return <label>{label}{input}</label>;
+  };
   return (
     <form
       onSubmit={handleSubmit((_values, event) => submit(event as React.FormEvent<HTMLFormElement>))}

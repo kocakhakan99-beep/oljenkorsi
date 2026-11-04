@@ -92,6 +92,7 @@ button {
   color: var(--text);
   border: 1px solid var(--line);
   padding: 10px 14px;
+  min-height: 44px;
   border-radius: 9px;
   line-height: 1.35;
 }
@@ -750,9 +751,10 @@ td {
 }
 label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
   margin: 12px 0;
+  line-height: 1.45;
 }
 input,
 select,
@@ -765,7 +767,7 @@ textarea {
   background: var(--surface);
   color: var(--text);
   margin-top: 7px;
-  min-height: 40px;
+  min-height: 48px;
 }
 input[type="checkbox"] {
   width: 18px;
@@ -773,6 +775,16 @@ input[type="checkbox"] {
   min-height: 0;
   margin: 0;
   accent-color: var(--accent);
+}
+input[type="range"] {
+  min-height: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 input[type="color"] {
   padding: 4px;
@@ -834,6 +846,94 @@ textarea {
 }
 .alert button {
   padding: 3px 9px;
+}
+.help-box {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 16px 17px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: 15px;
+  background: linear-gradient(110deg, var(--soft), var(--surface));
+  color: var(--text);
+  box-shadow: 0 5px 18px rgb(19 43 31 / 4%);
+}
+.help-box > svg {
+  margin-top: 1px;
+  color: var(--accent-ink);
+}
+.help-box-copy strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 14px;
+}
+.help-box-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.help-box-dismiss {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.help-box-dismiss:hover {
+  background: var(--surface);
+}
+.help-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.help-settings h2 {
+  margin-bottom: 5px;
+}
+.help-settings p {
+  margin: 0;
+}
+.amount-field {
+  min-width: 0;
+  margin: 12px 0;
+}
+.amount-field > label {
+  margin: 0 0 7px;
+}
+.amount-field > input {
+  margin: 0;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.amount-adjusters {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 3px 2px 5px;
+  margin: 5px -2px 0;
+  scrollbar-width: thin;
+}
+.amount-adjusters button {
+  flex: 0 0 auto;
+  min-width: 58px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.amount-field > small {
+  margin-top: 2px;
 }
 .warning {
   border-color: #ad7100;
@@ -988,6 +1088,11 @@ dialog::backdrop {
   gap: 8px;
   margin: 0 0 16px;
 }
+.report-tabs button {
+  min-height: 46px;
+  border-radius: 13px;
+  padding-inline: 15px;
+}
 .report-tabs [aria-selected="true"] {
   background: var(--soft);
   border-color: var(--focus);
@@ -1070,6 +1175,68 @@ dialog::backdrop {
 .report-range-selector {
   max-width: 250px;
 }
+.report-range-control {
+  margin: 0 0 22px;
+  padding: 16px;
+  border: 1px solid var(--report-line);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgb(8 127 91 / 7%), transparent 13rem),
+    linear-gradient(145deg, #fff, #f7faf8);
+}
+.report-range-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  color: var(--report-text);
+}
+.report-range-heading > div {
+  display: grid;
+  gap: 2px;
+}
+.report-range-heading .eyebrow {
+  margin: 0;
+  font-size: 9px;
+}
+.report-range-heading strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.report-range-heading > small {
+  text-align: right;
+}
+.report-period-rail {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  margin: 0 -2px;
+  scrollbar-width: thin;
+  scrollbar-color: #9aafa3 #edf2ee;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+.report-period-rail button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 13px;
+  border-color: var(--report-line);
+  border-radius: 12px;
+  background: var(--report-surface);
+  color: var(--report-muted);
+  font-size: 12px;
+  scroll-snap-align: start;
+}
+.report-period-rail button[aria-pressed="true"] {
+  border-color: #8ab29c;
+  background: #eaf4ee;
+  color: #175a43;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgb(23 90 67 / 8%);
+}
 .report-range-fields {
   display: flex;
   flex-wrap: wrap;
@@ -1079,6 +1246,48 @@ dialog::backdrop {
 .report-range-fields label {
   width: min(190px, 100%);
   margin: 4px 0;
+}
+.report-chart-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 6px 0 10px;
+}
+.chart-zoom {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.chart-zoom > button {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border-color: var(--report-line);
+  border-radius: 10px;
+  background: var(--report-surface);
+}
+.chart-zoom > label {
+  display: grid;
+  grid-template-columns: auto minmax(76px, 120px) auto;
+  align-items: center;
+  gap: 7px;
+  margin: 0 3px;
+  color: var(--report-muted);
+  font-size: 11px;
+}
+.chart-zoom output {
+  min-width: 38px;
+  color: var(--report-text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.chart-zoom button:disabled {
+  opacity: 0.42;
 }
 .report-period-summary {
   margin: 18px 0 22px;
@@ -1338,6 +1547,15 @@ dialog::backdrop {
 .report-detail .eyebrow {
   margin-top: 0;
 }
+.report-detail {
+  scroll-margin-block: 24px;
+  border-color: #c7d9ce;
+  animation: report-detail-enter 260ms ease both;
+}
+@keyframes report-detail-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .flow-visual {
   display: flex;
   align-items: stretch;
@@ -1388,20 +1606,47 @@ dialog::backdrop {
 }
 .chart-switch {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 12px 0;
+  flex-wrap: nowrap;
+  gap: 3px;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px;
+  margin: 8px 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+  scrollbar-width: thin;
 }
 .chart-switch button {
-  min-height: 36px;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 7px 12px;
+  border-color: transparent;
+  border-radius: 10px;
+  background: transparent;
   font-size: 13px;
+  white-space: nowrap;
 }
 .chart-switch button[aria-pressed="true"] {
-  color: var(--accent-ink);
-  background: var(--soft);
-  border-color: var(--focus);
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line);
   font-weight: 650;
+  box-shadow: 0 1px 3px rgb(20 44 30 / 10%);
+}
+.report-panel .chart-switch {
+  border-color: var(--report-line);
+  background: #f2f6f3;
+}
+.report-panel .chart-switch button[aria-pressed="true"] {
+  border-color: #c8d9cd;
+  background: #fff;
+  color: #175a43;
 }
 .line-chart-wrap {
   width: 100%;
@@ -1445,9 +1690,17 @@ dialog::backdrop {
 }
 .line-chart .income-area {
   fill: url(#incomeArea);
+  opacity: 0.26;
 }
 .line-chart .expense-area {
   fill: url(#expenseArea);
+  opacity: 0.22;
+}
+.line-chart.area-chart .income-area {
+  opacity: 0.92;
+}
+.line-chart.area-chart .expense-area {
+  opacity: 0.82;
 }
 .line-chart .income-line,
 .line-chart .expense-line {
@@ -1850,6 +2103,31 @@ footer {
     grid-column: auto;
   }
   .report-period-summary-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 760px) {
+  .report-chart-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .chart-zoom {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .chart-zoom > label {
+    flex: 1;
+    grid-template-columns: auto minmax(64px, 1fr) auto;
+  }
+  .report-range-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .report-range-heading > small {
+    text-align: left;
+  }
+  .help-settings {
     align-items: flex-start;
     flex-direction: column;
   }
