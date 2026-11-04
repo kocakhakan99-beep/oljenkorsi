@@ -4,7 +4,7 @@ Päivitetty 3.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja eh
 
 ## P0: toistettava ja turvallinen perusta
 
-Korjaa erillisessä kooditehtävässä puuttuva `index.html`, lisää lukitustiedosto ja varmista puhdas asennus/build sekä tuotetun HTML:n vastaavuus lähdekoodiin. Pilviympäristön tarkistuksessa typecheck, lint ja 31 yksikkötestiä läpäisivät; build epäonnistui puuttuvaan entryyn. Toimitetun HTML:n HTTP-smoke läpäisi, mutta hallittu Chromium esti file://-E2E:n. Aiemmat QA-raportit eivät korvaa uutta build- ja file://-näyttöä.
+Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on otettu käyttöön. Seuraavaksi lisää lukitustiedosto ja varmista puhdas asennus/build sekä tuotetun HTML:n vastaavuus lähdekoodiin myös uudessa ympäristössä. Hallittu Chromium esti aiemmin file://-E2E:n. Aiemmat QA-raportit eivät korvaa uutta file://-näyttöä.
 
 Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
 

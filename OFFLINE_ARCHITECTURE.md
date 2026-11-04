@@ -2,7 +2,7 @@
 
 V1:n virallinen jakelutavoite on yksi itsenäinen HTML, jonka käyttäjä avaa paikallisesti file://-protokollalla. Tässä toimituksessa se on toteutettu. Kehityspalvelin ei ole loppukäyttäjän vaatimus.
 
-Vite tuottaa ensin JS:n ja CSS:n. `standalone.mjs` lukee ne, upottaa HTML:ään, sijoittaa skriptin root-elementin jälkeen ja poistaa erilliset build-resurssit. Tuotantohakemistossa on vain Taloussuunnittelu.html. Skriptin upotuksessa käytetään replacement-callbackia, jotta JavaScriptin dollarimerkit eivät muutu string-replacement-metamerkeiksi.
+`src/index.html` on Viten kehitysmalli. Vite tuottaa ensin JS:n ja CSS:n väliaikaiseen `dist/`-hakemistoon. `standalone.mjs` lukee ne, upottaa HTML:ään, sijoittaa skriptin root-elementin jälkeen ja kirjoittaa valmiin projektin juuren `index.html`-tiedoston. Sen jälkeen väliaikainen `dist/` poistetaan. Valmis `index.html` toimii ilman palvelinta. Skriptin upotuksessa käytetään replacement-callbackia, jotta JavaScriptin dollarimerkit eivät muutu string-replacement-metamerkeiksi.
 
 Ei PWA:ta, service workeria, manifestia, HTTPS-vaatimusta, backendia, tiliä, remote loggingia tai API:a. Ei dynaamisia importteja tai ajonaikaisia moduulilatauksia. CSS, React, lomakekirjasto ja Zod ovat HTML:n sisällä. Fontit ovat system font stack; symbolit paikallista tekstiä. Hash-navigointi ei tarvitse palvelimen fallbackia.
 

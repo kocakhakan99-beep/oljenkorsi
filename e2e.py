@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).parent
 BROWSER=os.environ.get('TALOUS_BROWSER') or None
 PROFILE=Path(tempfile.gettempdir())/'talous-e2e-profile'
-URL=(ROOT/'dist/Taloussuunnittelu.html').as_uri()
+URL=(ROOT/'index.html').as_uri()
 results=[]; errors=[]; network=[]; consoles=[]
 def mark(s):
  results.append(s); print('PASS:',s,flush=True)
