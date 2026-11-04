@@ -137,6 +137,21 @@ export function compound(s: Scenario) {
     real: Math.round(v / Math.pow(1 + s.inflation / 100, s.years)),
   };
 }
+export function fiTarget(annualExpenses: number, annualOutsideIncome: number, capital: number, withdrawalRate: number) {
+  if (
+    ![annualExpenses, annualOutsideIncome, capital].every((n) => Number.isSafeInteger(n) && n >= 0 && n <= MAX) ||
+    !Number.isFinite(withdrawalRate) || withdrawalRate <= 0 || withdrawalRate > 100
+  ) throw Error('Tarkista FI-laskurin oletukset.');
+  const gap = Math.max(0, annualExpenses - annualOutsideIncome);
+  const target = Math.ceil(gap / (withdrawalRate / 100));
+  if (!Number.isSafeInteger(target) || target > MAX) throw Error('FI-tavoite ylittää laskentarajan.');
+  return {
+    gap,
+    target,
+    shortfall: Math.max(0, target - capital),
+    coverage: target ? (100 * capital) / target : null,
+  };
+}
 export function depreciation(value: number, rate: number, years: number) {
   return Math.round(value * Math.pow(1 + rate / 100, years));
 }
