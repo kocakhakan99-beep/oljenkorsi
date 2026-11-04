@@ -21,9 +21,12 @@ const charsetTag = /<meta charset="UTF-8"\s*\/?>/i;
 if (!charsetTag.test(h)) throw new Error('Charset metadata missing from standalone HTML');
 h = h.replace(
   charsetTag,
-  '<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src \'none\'; font-src \'none\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'">',
+  '<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src \'none\'; font-src data:; object-src \'none\'; base-uri \'none\'; form-action \'none\'">',
 );
 if (!h.includes('Content-Security-Policy')) throw new Error('CSP missing from standalone HTML');
+if (!h.includes('font-src data:') || !/data:font\/woff2;base64,/.test(h)) {
+  throw new Error('Standalone HTML must embed its local font as a data URI');
+}
 if (/<script\b[^>]*\bsrc=|<link\b[^>]*\bhref=/i.test(h)) {
   throw new Error('Standalone HTML must not reference external scripts or stylesheets');
 }
