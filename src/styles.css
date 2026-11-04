@@ -562,18 +562,72 @@ td {
   color: var(--muted);
 }
 .category-icon {
-  display: inline-grid;
-  place-items: center;
+  display: inline-block;
   flex: 0 0 28px;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: var(--soft);
-  color: var(--accent-ink);
-  font-size: 17px;
+  object-fit: contain;
 }
 .category-icon-debt {
-  border: 1px solid currentColor;
+  border-radius: 50%;
+  outline: 1px solid var(--line);
+  outline-offset: 2px;
+}
+.category-picker {
+  position: relative;
+}
+.category-picker > input {
+  padding-right: 54px;
+}
+.category-picker-toggle {
+  position: absolute;
+  right: 2px;
+  top: 9px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 22px;
+}
+.category-picker-toggle:hover {
+  background: var(--soft);
+}
+.category-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0002;
+}
+.category-options button {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+}
+.category-options button:hover,
+.category-options button[aria-selected='true'] {
+  background: var(--soft);
+}
+.category-options-empty {
+  display: block;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 .budget-input {
   max-width: 130px;

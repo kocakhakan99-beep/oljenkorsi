@@ -34,6 +34,12 @@ import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
 import { parseCSV, exportCSV, csvEntry, csvFields, download } from './services/csv';
 import './styles.css';
+import homeIcon from './assets/home.svg';
+import carIcon from './assets/car.svg';
+import bankIcon from './assets/bank.svg';
+import landIcon from './assets/land.svg';
+import portfolioIcon from './assets/portfolio.svg';
+import loanIcon from './assets/loan.svg';
 const names: Record<string, string> = {
   dashboard: 'Yhteenveto',
   budget: 'Budjetti',
@@ -1607,21 +1613,21 @@ function App() {
 function CategoryIcon({ category, debt }: { category: string; debt: boolean }) {
   const key = category.toLocaleLowerCase('fi-FI');
   const icon = /asunt|koti|asunto/.test(key)
-    ? '⌂'
+    ? homeIcon
     : /auto|ajoneuvo/.test(key)
-      ? '▰'
+      ? carIcon
       : /käte|tallet|pankki/.test(key)
-        ? '▣'
+        ? bankIcon
         : /metsä|maa|tontti/.test(key)
-          ? '♧'
+          ? landIcon
           : /rahasto|osake|sijoit|etf/.test(key)
-            ? '▥'
-            : /opinto/.test(key)
-              ? '▤'
-              : /kortti|luotto/.test(key)
-                ? '▱'
-                : '◇';
-  return <span className={`category-icon${debt ? ' category-icon-debt' : ''}`} aria-hidden="true">{icon}</span>;
+            ? portfolioIcon
+            : /opinto|kortti|luotto/.test(key)
+              ? loanIcon
+              : debt
+                ? loanIcon
+                : bankIcon;
+  return <img className={`category-icon${debt ? ' category-icon-debt' : ''}`} src={icon} alt="" aria-hidden="true" />;
 }
 function Empty({ text }: { text: string }) {
   return (
@@ -1677,8 +1683,9 @@ function EntryForm({
   onSave: (e: Entry) => void;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit } = useForm<Record<string, string>>();
+  const { register, handleSubmit, setValue } = useForm<Record<string, string>>();
   const [error, setError] = useState('');
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const recurring = kind === 'incomes' || kind === 'expenses';
   function submit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
@@ -1742,18 +1749,49 @@ function EntryForm({
         {field('Nimi', 'name', item.name, 'text', true)}
         <label>
           Kategoria
-          <input
-            name="category"
-            defaultValue={item.category}
-            list={'categories-' + kind}
-            required
-            maxLength={100}
-          />
-          <datalist id={'categories-' + kind}>
-            {categories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
+          <div className="category-picker">
+            <input
+              {...register('category')}
+              defaultValue={item.category}
+              required
+              maxLength={100}
+              autoComplete="off"
+              aria-expanded={categoryOpen}
+              aria-controls={`category-options-${kind}`}
+              aria-autocomplete="list"
+              onFocus={() => setCategoryOpen(true)}
+            />
+            <button
+              type="button"
+              className="category-picker-toggle"
+              aria-label={categoryOpen ? 'Sulje kategoriat' : 'Avaa kategoriat'}
+              aria-expanded={categoryOpen}
+              aria-controls={`category-options-${kind}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => setCategoryOpen((open) => !open)}
+            >
+              <span aria-hidden="true">{categoryOpen ? '⌃' : '⌄'}</span>
+            </button>
+            {categoryOpen && (
+              <div id={`category-options-${kind}`} className="category-options" role="listbox" aria-label="Kategoriat">
+                {categories.length ? categories.map((category) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={category === item.category}
+                    key={category}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setValue('category', category, { shouldDirty: true, shouldValidate: true });
+                      setCategoryOpen(false);
+                    }}
+                  >
+                    {category}
+                  </button>
+                )) : <span className="category-options-empty">Ei ehdotuksia. Voit kirjoittaa oman kategorian.</span>}
+              </div>
+            )}
+          </div>
         </label>
         {field(
           kind === 'investments'
