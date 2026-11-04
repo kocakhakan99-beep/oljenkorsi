@@ -1119,6 +1119,10 @@ function App() {
                     >
                       Vie alkuperäinen selaintallennus
                     </button>
+                  </div>
+                  <div className="danger-zone">
+                    <h3>Kaikkien tietojen poisto</h3>
+                    <p>Poisto tyhjentää tämän selaimen talouden. Vie JSON-varmuuskopio ennen poistamista, jos haluat säilyttää tiedot.</p>
                     <button
                       className="danger"
                       onClick={() => {
