@@ -27,6 +27,7 @@ import {
   setExpenseTypeTags,
   userTags,
   fiTarget,
+  fiMonths,
 } from './domain/calculations';
 import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
@@ -1772,15 +1773,18 @@ function ScenarioView({
       years: 10,
     }),
     [error, setError] = useState(''),
-    [fi, setFi] = useState({ annualExpenses: 3000000, annualOutsideIncome: 0, capital: 0, withdrawalRate: 4 }),
+    [fi, setFi] = useState({ annualExpenses: 3000000, annualOutsideIncome: 0, capital: 0, withdrawalRate: 4, monthlySaving: 20000, realAnnualReturn: 3, maxYears: 50 }),
     [fiError, setFiError] = useState('');
   let result = compound(q);
   const fiResult = fiTarget(fi.annualExpenses, fi.annualOutsideIncome, fi.capital, fi.withdrawalRate);
+  const monthsToFi = fiMonths(fi.capital, fi.monthlySaving, fi.realAnnualReturn, fiResult.target, fi.maxYears);
   const updateFi = (key: keyof typeof fi, value: string) => {
     try {
-      const parsed = key === 'withdrawalRate' ? Number(value.replace(',', '.')) : money(value);
+      const parsed = ['withdrawalRate', 'realAnnualReturn', 'maxYears'].includes(key)
+        ? Number(value.replace(',', '.')) : money(value);
       const next = { ...fi, [key]: parsed };
-      fiTarget(next.annualExpenses, next.annualOutsideIncome, next.capital, next.withdrawalRate);
+      const target = fiTarget(next.annualExpenses, next.annualOutsideIncome, next.capital, next.withdrawalRate).target;
+      fiMonths(next.capital, next.monthlySaving, next.realAnnualReturn, target, next.maxYears);
       setFi(next);
       setFiError('');
     } catch (e) {
@@ -1813,11 +1817,15 @@ function ScenarioView({
             ['Muut nettotulot vuodessa (€)', 'annualOutsideIncome'],
             ['Nostettavissa oleva pääoma (€)', 'capital'],
             ['Alkunostoprosentti (% / vuosi)', 'withdrawalRate'],
+            ['Kuukausittainen lisäsijoitus (€)', 'monthlySaving'],
+            ['Reaalituotto kulujen jälkeen (% / vuosi)', 'realAnnualReturn'],
+            ['Tarkastelujakso (vuotta, 1–50)', 'maxYears'],
           ] as const).map(([label, key]) => (
             <label key={key}>
               {label}
               <input
-                defaultValue={key === 'withdrawalRate' ? fi[key] : (fi[key] / 100).toFixed(2)}
+                defaultValue={['withdrawalRate', 'realAnnualReturn', 'maxYears'].includes(key)
+                  ? fi[key] : (fi[key] / 100).toFixed(2)}
                 onBlur={(e) => updateFi(key, e.target.value)}
                 inputMode="decimal"
               />
@@ -1830,6 +1838,7 @@ function ScenarioView({
           <article className="stat"><span>FI-pääomatavoite</span><strong>{fiResult.target ? euro(fiResult.target) : 'Ei rahoitusvajetta'}</strong></article>
           <article className="stat"><span>Pääomaa puuttuu</span><strong>{euro(fiResult.shortfall)}</strong></article>
           <article className="stat"><span>Tavoitteen kattavuus</span><strong>{fiResult.coverage === null ? '—' : pct(fiResult.coverage)}</strong></article>
+          <article className="stat"><span>Arvioitu aika FI-tavoitteeseen</span><strong>{monthsToFi === null ? 'Ei saavuta jaksolla' : monthsToFi === 0 ? 'Tavoite saavutettu' : `${Math.floor(monthsToFi / 12)} v ${monthsToFi % 12} kk`}</strong></article>
         </div>
         <h3>Vuosikulujen herkkyys</h3>
         <p className="muted">Samat muut nettotulot ja nostoprosentti kaikissa riveissä. Kulut muuttuvat ±10 %.</p>
@@ -1859,6 +1868,8 @@ function ScenarioView({
           Tavoite = max(0, vuosikulut − muut nettotulot) / (alkunostoprosentti / 100).
           Nostoprosentti on käyttäjän oletus, ei turvallisuusraja tai ennuste. Verot,
           eläketulojen alkamisajat, tuottojärjestys ja kulujen muutokset eivät sisälly laskelmaan.
+          Aika-arviossa sama reaalituotto toistuu kuukausittain ja lisäsijoitus tehdään kuun lopussa.
+          Reaalituotto-oletuksen on sisällettävä sijoituskulut; tulos ei ole luvattu päivämäärä.
         </p>
       </section>
       <section className="panel">

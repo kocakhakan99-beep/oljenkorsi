@@ -152,6 +152,21 @@ export function fiTarget(annualExpenses: number, annualOutsideIncome: number, ca
     coverage: target ? (100 * capital) / target : null,
   };
 }
+export function fiMonths(capital: number, monthlySaving: number, realAnnualReturn: number, target: number, maxYears: number): number | null {
+  if (
+    ![capital, monthlySaving, target].every((n) => Number.isSafeInteger(n) && n >= 0 && n <= MAX) ||
+    !Number.isFinite(realAnnualReturn) || realAnnualReturn <= -100 || realAnnualReturn > 50 ||
+    !Number.isInteger(maxYears) || maxYears < 1 || maxYears > 50
+  ) throw Error('Tarkista FI-aika-arvion oletukset.');
+  if (capital >= target) return 0;
+  const monthlyReturn = Math.pow(1 + realAnnualReturn / 100, 1 / 12) - 1;
+  let value = capital;
+  for (let month = 1; month <= maxYears * 12; month++) {
+    value = Math.max(0, Math.round(value * (1 + monthlyReturn)) + monthlySaving);
+    if (value >= target) return month;
+  }
+  return null;
+}
 export function depreciation(value: number, rate: number, years: number) {
   return Math.round(value * Math.pow(1 + rate / 100, years));
 }
