@@ -42,7 +42,7 @@ npm test
 npm run build
 ```
 
-Build suorittaa Viten ja `standalone.mjs`:n. Lopullinen `dist/` sisältää vain `Taloussuunnittelu.html`:n. Vite dev ei ole loppukäyttäjän käyttötapa.
+Build suorittaa Viten ja `standalone.mjs`:n. Lopullinen `dist/` sisältää vain `Taloussuunnittelu.html`:n, ja sama tuore tiedosto päivitetään myös projektin juureen. `index.html` on Viten kehityspalvelimen ja buildin aloitussivu. Vite dev ei ole loppukäyttäjän käyttötapa.
 
 E2E: asenna kehityskoneelle Python Playwright ja sen Chromium. Aja `python e2e.py`. Vaihtoehtoinen selainpolku annetaan `TALOUS_BROWSER`-ympäristömuuttujalla. Testit käyttävät erillistä tilapäistä selainprofiilia, eivät henkilökohtaista profiilia. Python ei ole sovelluksen ajonaikainen riippuvuus.
 
