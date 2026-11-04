@@ -11,6 +11,7 @@
   --cash-bg: #e6f3ee;
   --wealth-bg: #f1edf8;
   --plan-bg: #eaf1fa;
+  --notice-bg: #fff4dc;
   color-scheme: light;
   font-family: 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 15px;
@@ -331,6 +332,41 @@ main {
   border-radius: 16px;
   padding: 25px;
   margin-bottom: 22px;
+}
+.panel-plan {
+  background: var(--plan-bg);
+}
+.panel-cash {
+  background: var(--cash-bg);
+}
+.panel-notice {
+  background: var(--notice-bg);
+}
+.panel-plan input,
+.panel-plan select,
+.panel-cash input,
+.panel-notice button,
+.panel-plan .stat,
+.panel-cash .stat {
+  background: var(--surface);
+}
+.summary-strip {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.summary-strip-plan {
+  background: var(--plan-bg);
+}
+.summary-strip .stat {
+  margin: 0;
+}
+.entry-panel .filters {
+  background: var(--plan-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
 }
 .grid-two {
   display: grid;
@@ -654,6 +690,7 @@ footer {
   --cash-bg: #fff;
   --wealth-bg: #fff;
   --plan-bg: #fff;
+  --notice-bg: #fff;
 }
 [data-theme='custom'] {
   --accent: var(--custom);
@@ -669,6 +706,7 @@ footer {
   --cash-bg: #203d34;
   --wealth-bg: #342a44;
   --plan-bg: #20334a;
+  --notice-bg: #45351f;
   color-scheme: dark;
 }
 [data-mode='dark'][data-theme='blue'] {
@@ -689,6 +727,7 @@ footer {
   --cash-bg: #111;
   --wealth-bg: #111;
   --plan-bg: #111;
+  --notice-bg: #111;
 }
 [data-mode='dark'][data-theme='custom'] {
   --accent: var(--custom);
