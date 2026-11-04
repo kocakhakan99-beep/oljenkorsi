@@ -48,6 +48,18 @@ const names: Record<string, string> = {
   settings: 'Asetukset',
   help: 'Ohje ja tietosuoja',
 };
+const navGroups = [
+  { label: 'Aloitus', pages: ['dashboard'] },
+  { label: 'Arki', pages: ['incomes', 'expenses', 'budget'] },
+  { label: 'Varallisuus', pages: ['assets', 'liabilities', 'investments'] },
+  { label: 'Tulevaisuus', pages: ['goals', 'scenarios', 'reports'] },
+  { label: 'Hallinta', pages: ['transfer', 'settings', 'help'] },
+];
+const navIcons: Record<string, string> = {
+  dashboard: '◫', budget: '▤', incomes: '↙', expenses: '↗', assets: '◇',
+  liabilities: '≋', investments: '▥', goals: '◎', scenarios: '⌁', reports: '▦',
+  transfer: '⇅', settings: '⚙', help: '?',
+};
 const singular: Record<Kind, string> = {
   incomes: 'tulo',
   expenses: 'meno',
@@ -162,6 +174,7 @@ function App() {
     [storageOk, setStorageOk] = useState(storage.healthCheck().ok),
     [edit, setEdit] = useState<{ kind: Kind; item: Entry } | null>(null),
     [quick, setQuick] = useState(false),
+    [menuOpen, setMenuOpen] = useState(false),
     [search, setSearch] = useState(''),
     [categoryFilter, setCategoryFilter] = useState(''),
     [statusFilter, setStatusFilter] = useState(''),
@@ -173,6 +186,7 @@ function App() {
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
     [reportMonths, setReportMonths] = useState(6);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
   const euro = (n: number) =>
@@ -215,6 +229,7 @@ function App() {
     setStatusFilter('');
     setLimit(100);
     setQuick(false);
+    setMenuOpen(false);
     setTimeout(() => document.querySelector<HTMLElement>('main h1')?.focus(), 0);
   }
   useEffect(() => {
@@ -224,6 +239,10 @@ function App() {
   }, []);
   useEffect(() => {
     let f = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && menuOpen) {
+        setMenuOpen(false);
+        menuButton.current?.focus();
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setQuick((v) => !v);
@@ -231,7 +250,7 @@ function App() {
     };
     window.addEventListener('keydown', f);
     return () => window.removeEventListener('keydown', f);
-  }, []);
+  }, [menuOpen]);
   useEffect(() => {
     let f = (e: BeforeUnloadEvent) => {
       if (!storageOk) {
@@ -354,19 +373,31 @@ function App() {
               Taloussuunnittelu<small>Oma talous. Omalla laitteella.</small>
             </div>
           </div>
-          <nav aria-label="Päänavigaatio">
-            {Object.entries(names).map(([key, name], i) => (
-              <button
-                key={key}
-                className={page === key ? 'selected' : ''}
-                aria-current={page === key ? 'page' : undefined}
-                onClick={() => navigate(key)}
-              >
-                <span className="nav-icon" aria-hidden="true">
-                  {['◫', '▤', '↙', '↗', '◇', '≋', '▥', '◎', '⌁', '▦', '⇅', '⚙', '?'][i]}
-                </span>
-                {name}
-              </button>
+          <button
+            ref={menuButton}
+            className="mobile-menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="main-navigation"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            Valikko · {names[page] || 'Yhteenveto'}
+          </button>
+          <nav id="main-navigation" aria-label="Päänavigaatio" className={menuOpen ? 'menu-open' : ''}>
+            {navGroups.map((group) => (
+              <div className="nav-group" key={group.label} role="group" aria-label={group.label}>
+                <span className="nav-group-label">{group.label}</span>
+                {group.pages.map((key) => (
+                  <button
+                    key={key}
+                    className={page === key ? 'selected' : ''}
+                    aria-current={page === key ? 'page' : undefined}
+                    onClick={() => navigate(key)}
+                  >
+                    <span className="nav-icon" aria-hidden="true">{navIcons[key]}</span>
+                    {names[key]}
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
           <div className="aside-bottom">
@@ -380,6 +411,7 @@ function App() {
           <header>
             <div className="header-label">RAUHALLISEMPI SUHDE RAHAAN</div>
             <div className="toolbar">
+              <button className="mobile-quick" onClick={() => setQuick(true)}>Pikatoiminnot</button>
               <label>
                 Kuukausi
                 <input
@@ -465,23 +497,33 @@ function App() {
                     <small>Ei sisällä erillistä säästövarausta.</small>
                   </div>
                 </div>
-                <div className="stats">
-                  {stat('Tulot tässä kuussa', euro(m.income))}
-                  {stat('Menot tässä kuussa', euro(m.expense))}
-                  {stat('Kulutusmenot', euro(m.consumption), 'Menon tyypiksi merkityt siirrot sivuutetaan')}
-                  {stat('Tulot kulutuksen jälkeen', euro(m.surplus), 'Ei ole sama kuin todennettu sijoitussumma')}
-                  {stat('Säästöaste', pct(m.savingRate), 'Tulot kulutuksen jälkeen / tulot')}
-                  {stat('Säästösiirrot', euro(m.savingTransfers))}
-                  {stat('Sijoitussiirrot', euro(m.investmentTransfers))}
-                  {stat('Nettovarallisuus', euro(m.net), 'Omaisuus + sijoitukset − velat')}
-                  {stat('Omaisuus', euro(m.assets), 'Käyttäjän syöttämät arvot')}
-                  {stat('Velat', euro(m.debts))}
-                  {stat('Sijoitussalkku', euro(m.investments), 'Manuaaliset EUR-hinnat')}
-                  {stat(
-                    'Budjetista käytetty',
-                    m.budget ? pct((m.consumption / m.budget) * 100) : 'Ei budjettia',
-                  )}
-                </div>
+                <section className="metric-group metric-group-cash" aria-labelledby="cash-heading">
+                  <h2 id="cash-heading">Kuukauden rahavirta</h2>
+                  <div className="stats">
+                    {stat('Tulot tässä kuussa', euro(m.income))}
+                    {stat('Menot tässä kuussa', euro(m.expense))}
+                    {stat('Kulutusmenot', euro(m.consumption), 'Menon tyypiksi merkityt siirrot sivuutetaan')}
+                    {stat('Tulot kulutuksen jälkeen', euro(m.surplus), 'Ei ole sama kuin todennettu sijoitussumma')}
+                    {stat('Säästöaste', pct(m.savingRate), 'Tulot kulutuksen jälkeen / tulot')}
+                  </div>
+                </section>
+                <section className="metric-group metric-group-wealth" aria-labelledby="wealth-heading">
+                  <h2 id="wealth-heading">Varallisuus</h2>
+                  <div className="stats">
+                    {stat('Nettovarallisuus', euro(m.net), 'Omaisuus + sijoitukset − velat')}
+                    {stat('Omaisuus', euro(m.assets), 'Käyttäjän syöttämät arvot')}
+                    {stat('Velat', euro(m.debts))}
+                    {stat('Sijoitussalkku', euro(m.investments), 'Manuaaliset EUR-hinnat')}
+                  </div>
+                </section>
+                <section className="metric-group metric-group-plan" aria-labelledby="plan-heading">
+                  <h2 id="plan-heading">Suunnitelma ja siirrot</h2>
+                  <div className="stats">
+                    {stat('Säästösiirrot', euro(m.savingTransfers))}
+                    {stat('Sijoitussiirrot', euro(m.investmentTransfers))}
+                    {stat('Budjetista käytetty', m.budget ? pct((m.consumption / m.budget) * 100) : 'Ei budjettia')}
+                  </div>
+                </section>
                 <div className="grid-two">
                   <section className="panel">
                     <h2>Kulutuksen kokonaiskuva</h2>

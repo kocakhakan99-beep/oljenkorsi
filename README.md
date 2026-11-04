@@ -26,6 +26,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - 1/3/6/12 kuukauden kassavirtaraportti ja taulukkovastine.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus.
+- Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko ja yhteenvedon erisävyiset mittarialueet.
 - Yleishaku Ctrl/Cmd + K, listojen haku, kategoria/tila-suodatus ja lajittelu.
 
 ## Kehitysteknologiat
