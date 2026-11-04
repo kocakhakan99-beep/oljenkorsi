@@ -233,13 +233,16 @@ function App() {
     setTimeout(() => document.querySelector<HTMLElement>('main h1')?.focus(), 0);
   }
   useEffect(() => {
-    let f = () => setPage(location.hash.slice(1) || 'dashboard');
+    let f = () => {
+      setPage(location.hash.slice(1) || 'dashboard');
+      setMenuOpen(false);
+    };
     window.addEventListener('hashchange', f);
     return () => window.removeEventListener('hashchange', f);
   }, []);
   useEffect(() => {
     let f = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && menuOpen) {
+      if (e.key === 'Escape' && menuOpen && !document.querySelector('dialog[open]')) {
         setMenuOpen(false);
         menuButton.current?.focus();
       }
@@ -250,6 +253,9 @@ function App() {
     };
     window.addEventListener('keydown', f);
     return () => window.removeEventListener('keydown', f);
+  }, [menuOpen]);
+  useEffect(() => {
+    if (menuOpen) document.querySelector<HTMLElement>('#main-navigation button')?.focus();
   }, [menuOpen]);
   useEffect(() => {
     let f = (e: BeforeUnloadEvent) => {
@@ -611,7 +617,7 @@ function App() {
             )}
             {page === 'budget' && (
               <>
-                <div className="stats">
+                <div className="stats summary-strip summary-strip-plan">
                   {stat('Kuukauden tulot', euro(m.income))}
                   {stat('Budjetti yhteensä', euro(m.budget))}
                   {stat('Budjetista jäljellä', euro(m.budget - m.consumption))}
@@ -716,7 +722,7 @@ function App() {
             )}
             {kinds.includes(page as Kind) && (
               <>
-                <section className="panel">
+                <section className="panel entry-panel">
                   <div className="filters">
                     <label>
                       Hae
@@ -1017,7 +1023,7 @@ function App() {
             )}
             {page === 'settings' && (
               <>
-                <section className="panel">
+                <section className="panel panel-plan">
                   <h2>Ulkoasu ja yksityisyys</h2>
                   <div className="form-grid">
                     <label>
@@ -1063,7 +1069,7 @@ function App() {
                   </div>
                   <p>Valuutta EUR · kieli Suomi. Summat tallennetaan kokonaislukusentteinä.</p>
                 </section>
-                <section className="panel">
+                <section className="panel panel-notice">
                   <h2>Esimerkkitalous testailuun</h2>
                   <p>
                     Lataa fiktiiviset tulot, menot, budjetit, omaisuus, velka, sijoitus ja tavoite.
@@ -1846,7 +1852,7 @@ function ScenarioView({
   };
   return (
     <>
-      <section className="panel">
+      <section className="panel panel-plan">
         <h2>FI-pääomatavoite</h2>
         <p className="muted">
           Yhden vaiheen havainnollistus omilla oletuksillasi. Syötä vuosikulut ja muut vuosittaiset
@@ -1914,7 +1920,7 @@ function ScenarioView({
           Reaalituotto-oletuksen on sisällettävä sijoituskulut; tulos ei ole luvattu päivämäärä.
         </p>
       </section>
-      <section className="panel">
+      <section className="panel panel-cash">
         <h2>Korkoa korolle ja kulujen vaikutus</h2>
         <p className="muted">
           Oletukset ovat muokattavia arvioita, eivät historiallisia tuottoja tai

@@ -1,6 +1,6 @@
 # Navigaation ja visuaalisen ilmeen kehityssuunnitelma
 
-Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Ensimmäinen toteutus on tehty: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot sekä yhteenvedon kolme erisävyistä mittarialuetta. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
+Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Toteutettu: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot, yhteenvedon kolme erisävyistä mittarialuetta sekä kirjaus-, budjetti-, skenaario- ja hallintanäkymien ensimmäiset pintaroolit. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
 
 ## Nykytilan ongelmat
 
@@ -53,10 +53,10 @@ Värit ovat suunnittelun lähtöarvoja, eivät valmiiksi mitattuja kontrastipare
 
 ## Toteutusjärjestys
 
-1. **Perusrakenne — toteutettu:** navigaatioryhmät ovat yhdessä tietorakenteessa. Työpöytä näyttää ryhmät ja mobiili avattavan valikon; hash-reitit ja nykyinen `navigate`-toiminta säilyvät. Selaimessa tarkistettu sivulle siirtyminen, valikon Escape-sulku ja pikatoiminnot. Suorat hash-linkit ja selaimen taakse/eteen -polku jäävät erikseen varmistettaviksi.
+1. **Perusrakenne — toteutettu:** navigaatioryhmät ovat yhdessä tietorakenteessa. Työpöytä näyttää ryhmät ja mobiili avattavan valikon; hash-reitit ja nykyinen `navigate`-toiminta säilyvät. Selaimessa tarkistettu sivulle siirtyminen, valikon Escape-sulku ja pikatoiminnot sekä suora hash-linkki ja taakse-siirtyminen. Eteen-siirtyminen jää vielä erikseen varmistettavaksi.
 2. **Väritokenit — osittain toteutettu:** rahavirran, varallisuuden ja suunnittelun taustat on lisätty vaaleaan ja tummaan tilaan sekä neutraaleina korkean kontrastin tilaan. Mittaa vielä kontrasti tavalliselle ja suurelle tekstille sekä toiminta-/fokus-elementeille; tavoite on WCAG 2.2 AA. Lisää tarpeen mukaan omat teksti- ja reunustokenit.
-3. **Yhteenveto ja kirjausnäkymät — osittain toteutettu:** yhteenvedon mittarit on ryhmitetty kolmeen otsikoituun alueeseen. Seuraavaksi sovella hierarkiaa kirjausnäkymiin. Tarkista fiktiivisellä demo- ja tyhjällä taloudella, että negatiivinen kassavirta ja puuttuvat tiedot näkyvät selkeästi.
-4. **Budjetti, varallisuus, tulevaisuus ja hallinta:** viimeistele yhtenäiset paneeli-/mittarikomponentit, mutta pidä niiden sisältöroolit erilaisina. Poista vanha vain ulkoasua ohjaava tyylikoodi, kun vastaava uusi token on käytössä.
+3. **Yhteenveto ja kirjausnäkymät — osittain toteutettu:** yhteenvedon mittarit on ryhmitetty kolmeen otsikoituun alueeseen ja kirjausnäkymien suodattimet omaan sävytettyyn kaistaan. Tarkista vielä fiktiivisellä demo- ja tyhjällä taloudella, että negatiivinen kassavirta ja puuttuvat tiedot näkyvät selkeästi.
+4. **Budjetti, varallisuus, tulevaisuus ja hallinta — osittain toteutettu:** budjetin yhteenveto, FI- ja korkoa korolle -laskurit sekä hallinnan esimerkkitalousalue saivat eri pintaroolit. Viimeistele muut paneelit ja mittarikomponentit niin, että niiden sisältöroolit pysyvät erilaisina. Poista vanha vain ulkoasua ohjaava tyylikoodi, kun vastaava uusi token on käytössä.
 5. **Viimeistely:** testaa 320 px mobiilileveys, 200/400 % suurennus, vaalea/tumma/korkean kontrastin tila, näppäimistö, näkyvä fokus ja ruudunlukijan ilmoitukset. Mittaa myös päänavigaation ja sivunvaihdon käyttö pienellä näytöllä.
 
 ## Hyväksymiskriteerit
