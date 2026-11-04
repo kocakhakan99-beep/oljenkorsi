@@ -874,6 +874,164 @@ dialog::backdrop {
 .flow-summary span {
   color: var(--muted);
 }
+.flow-visual {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: 190px;
+  overflow-x: auto;
+  padding: 10px 4px 0;
+  margin: 20px 0 0;
+  border-bottom: 1px solid var(--line);
+}
+.flow-day {
+  flex: 1 0 22px;
+  min-width: 22px;
+  text-align: center;
+}
+.flow-day-plot {
+  position: relative;
+  height: 155px;
+  border-bottom: 1px solid var(--line);
+}
+.flow-day-plot > i {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--muted);
+}
+.flow-bar {
+  position: absolute;
+  left: 25%;
+  width: 50%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+}
+.flow-bar.above-zero {
+  background: var(--accent);
+}
+.flow-bar.below-zero {
+  background: var(--negative);
+  border-radius: 0 0 4px 4px;
+}
+.flow-day small {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.flow-caption {
+  font-size: 12px;
+}
+.chart-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.chart-switch button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.chart-switch button[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--soft);
+  border-color: var(--focus);
+  font-weight: 650;
+}
+.line-chart-wrap {
+  height: 180px;
+  margin: 20px 0;
+}
+.line-chart {
+  display: block;
+  width: 100%;
+  height: 150px;
+  overflow: visible;
+}
+.chart-axis {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.line-chart polyline {
+  fill: none;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.income-line {
+  stroke: var(--accent);
+}
+.expense-line {
+  stroke: #4476a8;
+}
+.income-point {
+  fill: var(--accent);
+}
+.expense-point {
+  fill: #4476a8;
+}
+.line-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.pie-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr);
+  align-items: center;
+  gap: 28px;
+  max-width: 780px;
+  margin: 24px auto;
+}
+.pie-chart {
+  width: min(260px, 60vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin: auto;
+  border-radius: 50%;
+}
+.pie-chart > div {
+  width: 58%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  border-radius: 50%;
+  background: var(--surface);
+  text-align: center;
+}
+.pie-chart strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.pie-chart small {
+  font-size: 10px;
+}
+.pie-legend {
+  display: grid;
+  gap: 8px;
+}
+.pie-legend > div {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.pie-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+@media (max-width: 600px) {
+  .pie-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
 .prose {
   max-width: 900px;
 }
