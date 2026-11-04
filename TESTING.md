@@ -6,7 +6,7 @@
 - Vite production build ja standalone-jälkikäsittely tuottivat juureen itsenäisen `index.html`-tiedoston (noin 396 kB).
 - Standalone-build varmistaa, että CSP lisätään tuotettuun HTML:ään eikä dokumenttiin jää ulkoisia script/link-tageja. Tailwind-luokat ja Lucide-kuvakkeet ovat mukana samassa bundle-tiedostossa.
 - Hallitun työympäristön selain-E2E:n uudelleenajo estyi: Playwrightin oletus-Chromiumia ei ole asennettu. Ympäristön `/usr/bin/chromium` kaatuu `setsockopt: Operation not permitted` -virheeseen ja SIGTRAPiin myös `--no-sandbox`-tilassa. Siksi tämän muutoksen jälkeen ei ole uutta selainvarmennusta.
-- `e2e.py` sisältää nyt myös yhteenvedon pikatoiminnot sekä kuluraportin tietokortin, piirakkasektorin näppäimistöaktivoinnin, rahavirtapäivän ja kuukausipylvään avauspolut; ne odottavat selainympäristössä suoritusta.
+- `e2e.py` sisältää nyt myös yhteenvedon pikatoiminnot, raporttivälilehtien nuoli/Home/End-näppäimet sekä kuluraportin tietokortin, piirakkasektorin näppäimistöaktivoinnin, rahavirtapäivän ja kuukausipylvään avauspolut; ne odottavat selainympäristössä suoritusta.
 - `qa/e2e-results.json` sisältää 3.11.2026 tallennetun aiemman offline/file://-ajon (23 hyväksyttyä tarkistusta); se edeltää nykyisiä raporttien interaktioita ja Tailwind/Lucide-ulkoasumuutosta.
 
 ## E2E:n sisältö

@@ -98,6 +98,12 @@ const navIcons = {
   settings: Settings,
   help: CircleHelp,
 };
+const reportTabs = [
+  { id: 'overview', label: 'Kokonaiskuva', Icon: ChartNoAxesCombined },
+  { id: 'categories', label: 'Kulurakenne', Icon: ChartPie },
+  { id: 'flow', label: 'Rahavirran ajoitus', Icon: CalendarClock },
+] as const;
+type ReportView = (typeof reportTabs)[number]['id'];
 type ReportSelection =
   | { type: 'month'; month: string; metric: 'income' | 'expense' }
   | { type: 'category'; category: string }
@@ -249,7 +255,7 @@ function App() {
     [undo, setUndo] = useState<State | null>(null),
     [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
     [reportMonths, setReportMonths] = useState(6),
-    [reportView, setReportView] = useState<'overview' | 'categories' | 'flow'>('overview'),
+    [reportView, setReportView] = useState<ReportView>('overview'),
     [overviewChart, setOverviewChart] = useState<'bars' | 'line'>('bars'),
     [categoryChart, setCategoryChart] = useState<'bars' | 'pie'>('bars'),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(null),
@@ -301,6 +307,23 @@ function App() {
     setQuick(false);
     setMenuOpen(false);
     setTimeout(() => document.querySelector<HTMLElement>('main h1')?.focus(), 0);
+  }
+  function selectReportView(view: ReportView) {
+    setReportView(view);
+    setSelectedReport(null);
+  }
+  function onReportTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, view: ReportView) {
+    const current = reportTabs.findIndex((tab) => tab.id === view);
+    let next: number | null = null;
+    if (event.key === 'ArrowRight') next = (current + 1) % reportTabs.length;
+    if (event.key === 'ArrowLeft') next = (current + reportTabs.length - 1) % reportTabs.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = reportTabs.length - 1;
+    if (next === null) return;
+    event.preventDefault();
+    const nextView = reportTabs[next].id;
+    selectReportView(nextView);
+    document.getElementById(`report-tab-${nextView}`)?.focus();
   }
   useEffect(() => {
     let f = () => {
@@ -1190,19 +1213,26 @@ function App() {
             {page === 'reports' && (
               <>
                 <div className="report-tabs" role="tablist" aria-label="Raporttinäkymä">
-                  {([
-                    ['overview', 'Kokonaiskuva', ChartNoAxesCombined],
-                    ['categories', 'Kulurakenne', ChartPie],
-                    ['flow', 'Rahavirran ajoitus', CalendarClock],
-                  ] as const).map(([view, label, Icon]) => (
-                    <button className="inline-flex items-center gap-2 transition-colors duration-150 motion-reduce:transition-none" key={view} role="tab" aria-selected={reportView === view} onClick={() => { setReportView(view); setSelectedReport(null); }}>
+                  {reportTabs.map(({ id, label, Icon }) => (
+                    <button
+                      className="inline-flex items-center gap-2 transition-colors duration-150 motion-reduce:transition-none"
+                      id={`report-tab-${id}`}
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={reportView === id}
+                      aria-controls={reportView === id ? `report-panel-${id}` : undefined}
+                      tabIndex={reportView === id ? 0 : -1}
+                      onClick={() => selectReportView(id)}
+                      onKeyDown={(event) => onReportTabKeyDown(event, id)}
+                    >
                       <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
                       {label}
                     </button>
                   ))}
                 </div>
                 {reportView === 'overview' && (
-                <section className="panel report-panel">
+                <section className="panel report-panel" id="report-panel-overview" role="tabpanel" aria-labelledby="report-tab-overview" tabIndex={0}>
                   <label>
                     Raportin pituus (päättyy valittuun kuukauteen)
                     <select
@@ -1329,7 +1359,7 @@ function App() {
                 </section>
                 )}
                 {reportView === 'categories' && (
-                  <section className="panel report-panel">
+                  <section className="panel report-panel" id="report-panel-categories" role="tabpanel" aria-labelledby="report-tab-categories" tabIndex={0}>
                     <h2>Kulutusmenot kategorioittain</h2>
                     <p className="muted">Valittu kuukausi · toteutuneiksi merkityt kulutusmenot. Säästö- ja sijoitussiirrot on jätetty pois.</p>
                     <div className="chart-switch" role="group" aria-label="Kulurakenteen kaavion tyyppi">
@@ -1356,7 +1386,7 @@ function App() {
                   </section>
                 )}
                 {reportView === 'flow' && (
-                  <section className="panel report-panel">
+                  <section className="panel report-panel" id="report-panel-flow" role="tabpanel" aria-labelledby="report-tab-flow" tabIndex={0}>
                     <h2>Tulojen ja menojen ajoitus</h2>
                     <p className="muted">Kumulatiivinen kassavirta alkaa kuun alussa nollasta. Alkusaldoa ja maksujen kellonaikoja ei tunneta; saman päivän tapahtumia ei järjestetä keskenään.</p>
                     {dailyFlow.length ? <>
