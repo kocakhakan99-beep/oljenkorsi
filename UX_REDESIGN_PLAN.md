@@ -1,6 +1,6 @@
 # Navigaation ja visuaalisen ilmeen kehityssuunnitelma
 
-Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Toteutettu: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot, yhteenvedon kolme erisävyistä mittarialuetta sekä kirjaus-, budjetti-, skenaario- ja hallintanäkymien ensimmäiset pintaroolit. Tumman tilan korostustekstillä ja fokuksella on omat väritokenit, ja kaikkien tietojen poisto on erotettu vaara-alueeksi. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
+Päivitetty 4.11.2026. Suunnitelma perustuu `src/main.tsx`-navigaatioon ja `src/styles.css`-tyyleihin. Toteutettu: viisi navigaatioryhmää, avattava mobiilivalikko, mobiilin pikatoiminnot, yhteenvedon kolme erisävyistä mittarialuetta sekä kirjaus-, budjetti-, skenaario- ja hallintanäkymien ensimmäiset pintaroolit. Tumman tilan korostustekstillä ja fokuksella on omat väritokenit, ja kaikkien tietojen poisto on erotettu vaara-alueeksi. Yläpalkin kuukausivalitsin on mitoitettu viereisten painikkeiden kanssa samaan linjaan; yhteenvedon 5/4/3 mittarin ryhmät täyttävät leveän ruudun tasaisesti ja kapealla ruudulla kortit asettuvat yhteen palstaan. Alla olevat nykytilan havainnot kuvaavat muutosta edeltänyttä tilannetta; myöhemmät vaiheet ovat edelleen suunnitelmaa.
 
 ## Nykytilan ongelmat
 
