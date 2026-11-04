@@ -511,6 +511,70 @@ td {
   padding: 6px 9px;
   font-size: 12px;
 }
+.row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.row-expand {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted);
+}
+.row-expand:hover {
+  background: var(--soft);
+}
+.row-expand span {
+  font-size: 24px;
+}
+.entry-panel tbody tr:not(.expanded-row) {
+  background: var(--surface);
+}
+.entry-panel tbody td,
+.entry-panel tbody th {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.entry-panel tbody tr:not(.expanded-row):hover {
+  background: var(--soft);
+}
+.entry-panel tbody tr:not(.expanded-row):hover td {
+  background: var(--soft);
+}
+.expanded-row td {
+  background: var(--bg);
+  padding: 10px 16px;
+}
+.expanded-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.category-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-size: 17px;
+}
+.category-icon-debt {
+  border: 1px solid currentColor;
+}
 .budget-input {
   max-width: 130px;
 }
@@ -721,6 +785,40 @@ dialog::backdrop {
   border-radius: 12px;
   color: var(--muted);
   text-align: center;
+}
+.report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.report-tabs [aria-selected='true'] {
+  background: var(--soft);
+  border-color: var(--focus);
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+.category-report-row {
+  margin: 16px 0;
+}
+.category-report-row > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.flow-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  margin: 16px 0;
+  background: var(--plan-bg);
+  border-radius: 10px;
+}
+.flow-summary span {
+  color: var(--muted);
 }
 .prose {
   max-width: 900px;

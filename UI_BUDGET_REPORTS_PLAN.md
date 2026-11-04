@@ -1,6 +1,6 @@
 # Käyttöliittymän, budjetin ja raportoinnin toteutussuunnitelma
 
-Päivitetty 4.11.2026. Tämä suunnitelma vastaa viiteen käyttäjäpalautteeseen: listojen avauspainikkeet, budjetin manuaalinen toteuma, rahavirta- ja kulurakenneraportit, omaisuus- ja velkakategorioiden ikonit sekä sisältökorttien rauhallisempi ulkoasu. Toteutus tehdään vaiheittain, jotta nykyiset JSON-varmuuskopiot, laskentakaavat ja offline-käyttö säilyvät.
+Päivitetty 4.11.2026. Tämä suunnitelma vastaa viiteen käyttäjäpalautteeseen: listojen avauspainikkeet, budjetin manuaalinen toteuma, rahavirta- ja kulurakenneraportit, omaisuus- ja velkakategorioiden ikonit sekä sisältökorttien rauhallisempi ulkoasu. Ensimmäinen toteutuskierros on tehty: listojen laajennuspainikkeet, budjetin manuaalinen toteuma, kulurakenne- ja päivän kassavirtanäkymä, omaisuus- ja velkakategorioiden kuvakkeet sekä tiiviimmät vaaleat rivit. Toteutus säilyttää nykyiset JSON-varmuuskopiot, laskentakaavat ja offline-käytön.
 
 ## Nykyinen lähtökohta
 

@@ -24,6 +24,7 @@ const shellSchema = z.object({
   investments: z.array(z.unknown()).max(20000),
   goals: z.array(z.unknown()).max(20000),
   budgets: z.record(z.string(), z.record(z.string(), z.number().int().nonnegative().max(MAX))),
+  budgetActuals: z.record(z.string(), z.record(z.string(), z.number().int().nonnegative().max(MAX))).optional(),
   scenarios: z.array(z.unknown()).max(100),
   investmentTransactions: z.array(z.unknown()).max(0),
   themes: z.array(z.unknown()).max(0),
@@ -111,6 +112,17 @@ export function validate(raw: unknown): State {
       if (c.length > 100 || !Number.isSafeInteger(n) || n < 0 || n > MAX)
         throw Error('Virheellinen budjettisummaa.');
       s.budgets[m][c] = n;
+    }
+  }
+  s.budgetActuals = {};
+  for (let [m, b] of Object.entries(x.budgetActuals || {})) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m) || !b || typeof b !== 'object' || Array.isArray(b))
+      throw Error('Virheellinen toteutunut budjetti.');
+    s.budgetActuals[m] = {};
+    for (let [c, n] of Object.entries(b)) {
+      if (c.length > 100 || !Number.isSafeInteger(n) || n < 0 || n > MAX)
+        throw Error('Virheellinen toteumasumma.');
+      s.budgetActuals[m][c] = n;
     }
   }
   if (!Array.isArray(x.scenarios) || x.scenarios.length > 100)

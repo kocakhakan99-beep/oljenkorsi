@@ -73,6 +73,7 @@ export interface State {
   investments: Entry[];
   goals: Entry[];
   budgets: Record<string, Record<string, number>>;
+  budgetActuals: Record<string, Record<string, number>>;
   investmentTransactions: unknown[];
   scenarios: Scenario[];
   themes: unknown[];
@@ -170,6 +171,7 @@ export function empty(): State {
     investments: [],
     goals: [],
     budgets: {},
+    budgetActuals: {},
     investmentTransactions: [],
     scenarios: [],
     themes: [],
