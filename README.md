@@ -9,6 +9,8 @@ Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus.
 3. Aloita tyhjästä, kokeile selvästi merkittyä fiktiivistä esimerkkitaloutta tai palauta JSON.
 4. Vie varmuuskopio tärkeiden muutosten jälkeen ja ennen tiedoston siirtämistä.
 
+Esimerkkitalouden voi ladata uudelleen Asetukset-näkymästä. Lataus korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi.
+
 Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai internetiä. Älä käytä sähköpostin tai pilvitallennuksen HTML-esikatselua; lataa tiedosto ensin paikalliseksi. Älä käytä yksityistä selausta, jos odotat datan säilyvän.
 
 ## Toteutettu
