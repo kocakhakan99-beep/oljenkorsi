@@ -25,6 +25,7 @@ import {
   MAX,
   expenseType,
   setExpenseTypeTags,
+  userTags,
 } from './domain/calculations';
 import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
@@ -465,7 +466,7 @@ function App() {
                 <div className="stats">
                   {stat('Tulot tässä kuussa', euro(m.income))}
                   {stat('Menot tässä kuussa', euro(m.expense))}
-                  {stat('Kulutusmenot', euro(m.consumption), 'Säästäminen- ja Sijoittaminen-kategoriat sivuutetaan')}
+                  {stat('Kulutusmenot', euro(m.consumption), 'Menon tyypiksi merkityt siirrot sivuutetaan')}
                   {stat('Tulot kulutuksen jälkeen', euro(m.surplus), 'Ei ole sama kuin todennettu sijoitussumma')}
                   {stat('Säästöaste', pct(m.savingRate), 'Tulot kulutuksen jälkeen / tulot')}
                   {stat('Säästösiirrot', euro(m.savingTransfers))}
@@ -476,25 +477,25 @@ function App() {
                   {stat('Sijoitussalkku', euro(m.investments), 'Manuaaliset EUR-hinnat')}
                   {stat(
                     'Budjetista käytetty',
-                    m.budget ? pct((m.expense / m.budget) * 100) : 'Ei budjettia',
+                    m.budget ? pct((m.consumption / m.budget) * 100) : 'Ei budjettia',
                   )}
                 </div>
                 <div className="grid-two">
                   <section className="panel">
-                    <h2>Menojen kokonaiskuva</h2>
-                    <p className="muted">Toteutuneet menot valitussa kuussa</p>
+                    <h2>Kulutuksen kokonaiskuva</h2>
+                    <p className="muted">Toteutuneet kulutusmenot valitussa kuussa</p>
                     {expCats
                       .filter(
                         (c) =>
                           total(
-                            s.expenses.filter((e) => e.category === c),
+                            s.expenses.filter((e) => e.category === c && expenseType(e) === 'consumption'),
                             month,
                             true,
                           ) > 0,
                       )
                       .map((c) => {
                         let n = total(
-                          s.expenses.filter((e) => e.category === c),
+                          s.expenses.filter((e) => e.category === c && expenseType(e) === 'consumption'),
                           month,
                           true,
                         );
@@ -504,12 +505,12 @@ function App() {
                               <span>{c}</span>
                               <strong>{euro(n)}</strong>
                             </div>
-                            <progress max={m.expense || 1} value={n} aria-label={c} />
+                            <progress max={m.consumption || 1} value={n} aria-label={c} />
                           </div>
                         );
                       })}
-                    {!m.expense && (
-                      <Empty text="Lisää ensimmäinen meno nähdäksesi, mihin rahat kuluvat." />
+                    {!m.consumption && (
+                      <Empty text="Lisää ensimmäinen kulutusmeno nähdäksesi, mihin rahat kuluvat." />
                     )}
                   </section>
                   <section className="panel">
@@ -569,12 +570,12 @@ function App() {
                 <div className="stats">
                   {stat('Kuukauden tulot', euro(m.income))}
                   {stat('Budjetti yhteensä', euro(m.budget))}
-                  {stat('Budjetista jäljellä', euro(m.budget - m.expense))}
+                  {stat('Budjetista jäljellä', euro(m.budget - m.consumption))}
                   {stat(
                     'Päiväkohtainen budjettivara',
                     euro(
                       Math.round(
-                        (m.budget - m.expense) /
+                        (m.budget - m.consumption) /
                           (month === today().slice(0, 7)
                             ? new Date(
                                 Number(month.slice(0, 4)),
@@ -618,7 +619,8 @@ function App() {
                   </div>
                   <p className="muted">
                     Muokkaa summaa ja siirry seuraavaan kenttään. Tallennus tapahtuu kentästä
-                    poistuttaessa.
+                    poistuttaessa. Toteumaan lasketaan vain kulutusmenot; säästö- ja sijoitussiirrot
+                    näkyvät kassavirrassa.
                   </p>
                   <div className="table-wrap">
                     <table>
@@ -626,7 +628,7 @@ function App() {
                         <tr>
                           <th>Kategoria</th>
                           <th>Suunniteltu €</th>
-                          <th>Toteutunut</th>
+                          <th>Kulutus toteutunut</th>
                           <th>Jäljellä</th>
                           <th>Toteuma</th>
                         </tr>
@@ -635,7 +637,7 @@ function App() {
                         {expCats.map((c) => {
                           let b = s.budgets[month]?.[c] || 0,
                             a = total(
-                              s.expenses.filter((e) => e.category === c),
+                              s.expenses.filter((e) => e.category === c && expenseType(e) === 'consumption'),
                               month,
                               true,
                             );
@@ -773,7 +775,7 @@ function App() {
                                 <strong>{e.name}</strong>
                                 <small>
                                   {e.category}
-                                  {e.tags ? ' · ' + e.tags : ''}
+                                  {userTags(e.tags) ? ' · ' + userTags(e.tags) : ''}
                                 </small>
                               </td>
                               <td>
@@ -801,6 +803,9 @@ function App() {
                                           ? 'Suunniteltu'
                                           : 'Ohitettu'}
                                       {!e.active ? ' · Keskeytetty' : ''}
+                                      {page === 'expenses'
+                                        ? ' · ' + ({ consumption: 'Kulutus', saving: 'Säästösiirto', investment: 'Sijoitussiirto' } as const)[expenseType(e)]
+                                        : ''}
                                     </small>
                                   </>
                                 ) : page === 'assets' ? (
@@ -924,6 +929,8 @@ function App() {
                           <th>Kuukausi</th>
                           <th>Tulot</th>
                           <th>Menot</th>
+                          <th>Kulutus</th>
+                          <th>Säästö- ja sijoitussiirrot</th>
                           <th>Kassavirta</th>
                           <th>Säästöaste</th>
                         </tr>
@@ -934,6 +941,8 @@ function App() {
                             <th>{h.key}</th>
                             <td>{euro(h.income)}</td>
                             <td>{euro(h.expense)}</td>
+                            <td>{euro(h.consumption)}</td>
+                            <td>{euro(h.savingTransfers + h.investmentTransfers)}</td>
                             <td>{euro(h.cash)}</td>
                             <td>{pct(h.savingRate)}</td>
                           </tr>
@@ -1085,8 +1094,10 @@ function App() {
                 <h3>Mitä laskelmat tarkoittavat?</h3>
                 <p>
                   Kassavirta = toteutuneet tulot − toteutuneet menot. Käyttövara vähentää lisäksi
-                  suunnitellut menot. Säästöaste = (tulot − kulutusmenot) / tulot; kategoriat
-                  Säästäminen ja Sijoittaminen jätetään siitä pois. Kassavirtaan ne sisältyvät.
+                  suunnitellut menot. Säästöaste = (tulot − kulutusmenot) / tulot. Menon tyyppi
+                  ratkaisee, kuuluuko kirjaus kulutukseen vai säästö- tai sijoitussiirtoihin.
+                  Vanhojen kirjausten Säästäminen- ja Sijoittaminen-kategoriat tunnistetaan
+                  automaattisesti. Kaikki kirjaukset sisältyvät kassavirtaan.
                   Nettovarallisuus
                   = omaisuuden omistusosuuden mukaiset arvot + sijoitusten määrä × hinta −
                   velkasaldot.
@@ -1567,7 +1578,7 @@ function EntryForm({
             {field('Kuukausisäästö (€)', 'monthly', (item.monthly / 100).toFixed(2))}
           </>
         )}
-        {field('Tunnisteet (pilkulla eroteltuna)', 'tags', item.tags)}
+        {field('Tunnisteet (pilkulla eroteltuna)', 'tags', userTags(item.tags))}
       </div>
       <label>
         Kuvaus

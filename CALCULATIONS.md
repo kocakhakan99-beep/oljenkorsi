@@ -10,7 +10,7 @@ Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain a
 - Käyttövara = kassavirta − suunnitellut menot. Erillistä säästövarausta ei vähennetä.
 - Säästöaste = (tulot − kulutusmenot) / tulot × 100. Menon tyyppi tallentuu varattuna `talous:expense-type=...`-merkintänä olemassa olevaan tags-kenttään. Nollatuloilla ei laskettavissa. Muut kategoriat lasketaan kulutukseksi.
 - Kulutusmenojen jälkeinen ylijäämä = tulot − kulutusmenot. Tämä ei ole todennettu säästö- tai sijoitusvirta.
-- Budjetin jäljellä oleva summa = kategoriabudjetti − toteutuneet menot.
+- Budjetin jäljellä oleva summa = kategoriabudjetti − toteutuneet kulutusmenot. Säästö- ja sijoitussiirrot eivät vähennä kategoriabudjettia, vaikka ne näkyvät kassavirrassa.
 - Päiväkohtainen budjettivara = budjetista jäljellä / jäljellä olevat kalenteripäivät, nykykuukaudessa. Muussa kuukaudessa käytetään kaikkia kuukauden päiviä. Ei ennuste.
 - Nettovarallisuus = summa(omaisuus × omistusosuus) + summa(sijoituksen hinta × määrä) − velat.
 - Hätävara = likvidien omaisuuserien omistusosuuden mukainen summa / valitun kuukauden välttämättömät toteutuneet menot. Ei usean kuukauden keskiarvo.
