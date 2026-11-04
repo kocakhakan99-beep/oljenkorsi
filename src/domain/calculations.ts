@@ -11,11 +11,18 @@ export function expenseType(e: Entry): ExpenseType {
   return 'consumption';
 }
 export function setExpenseTypeTags(tags: string, type: ExpenseType) {
-  const retained = tags
+  const retained = userTags(tags)
     .split(/[;,]/)
     .map((value) => value.trim())
-    .filter((value) => value && !EXPENSE_TYPE_TAG.test(value));
+    .filter(Boolean);
   return [...retained, `talous:expense-type=${type}`].join(';');
+}
+export function userTags(tags: string) {
+  return tags
+    .split(/[;,]/)
+    .map((value) => value.trim())
+    .filter((value) => value && !EXPENSE_TYPE_TAG.test(value))
+    .join(';');
 }
 export function money(s: string): number {
   let t = s.trim().replace(/[€\s\u00a0]/g, '');
