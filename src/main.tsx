@@ -28,6 +28,7 @@ import {
   userTags,
   fiTarget,
   fiMonths,
+  emergencyFund,
 } from './domain/calculations';
 import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
@@ -185,10 +186,12 @@ function App() {
     [deleteText, setDeleteText] = useState(''),
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
-    [reportMonths, setReportMonths] = useState(6);
+    [reportMonths, setReportMonths] = useState(6),
+    [bufferMonths, setBufferMonths] = useState(3);
   const menuButton = useRef<HTMLButtonElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
+  const buffer = useMemo(() => emergencyFund(s, month, bufferMonths), [s, month, bufferMonths]);
   const euro = (n: number) =>
     s.settings.private
       ? '•••••• €'
@@ -565,19 +568,47 @@ function App() {
                   </section>
                   <section className="panel">
                     <h2>Hätävara ja tavoitteet</h2>
+                    <label className="buffer-period">
+                      Tarkastelujakso
+                      <select
+                        value={bufferMonths}
+                        onChange={(e) => setBufferMonths(Number(e.target.value))}
+                      >
+                        <option value={1}>1 kuukausi</option>
+                        <option value={3}>3 kuukautta</option>
+                        <option value={6}>6 kuukautta</option>
+                        <option value={12}>12 kuukautta</option>
+                      </select>
+                    </label>
                     <div className="buffer">
                       <strong>
-                        {m.buffer === null
+                        {buffer.buffer === null
                           ? '—'
                           : s.settings.private
                             ? '•••'
-                            : m.buffer.toLocaleString('fi-FI', { maximumFractionDigits: 1 })}
+                            : buffer.buffer.toLocaleString('fi-FI', { maximumFractionDigits: 1 })}
                       </strong>
-                      <span>kuukauden välttämättömät menot</span>
+                      <span>kuukautta välttämättömiä menoja</span>
                     </div>
                     <p className="muted">
-                      Likvidiksi merkityt omaisuuserät / valitun kuukauden toteutuneet
-                      välttämättömät menot. Ei usean kuukauden keskiarvo.
+                      Likvidiksi merkitty omaisuus / kirjattujen kuukausien välttämättömien
+                      kulutusmenojen keskiarvo. Havaintoja {buffer.observedMonths}/
+                      {buffer.requestedMonths} kuukaudelta.
+                    </p>
+                    {buffer.observedMonths < buffer.requestedMonths && (
+                      <p className="muted">
+                        Puuttuvia kuukausia ei lasketa nollamenoiksi. Tarkista kirjausten kattavuus
+                        ennen päätöksiä.
+                      </p>
+                    )}
+                    {buffer.averageEssential === 0 && (
+                      <p className="muted">
+                        Kirjattuja välttämättömiä menoja on 0 €. Hätävaran kestoa ei voi laskea.
+                      </p>
+                    )}
+                    <p className="muted">
+                      Valittu kuukausi voi olla vielä kesken; havainto ei takaa kaikkien menojen
+                      kirjaamista.
                     </p>
                     {s.goals.map((e) => (
                       <Goal key={e.id} e={e} euro={euro} privateMode={s.settings.private} />

@@ -75,6 +75,33 @@ export const total = (es: Entry[], m: string, actual = false) =>
       .filter((e) => !actual || e.status === 'actual')
       .map((e) => e.amount * occurrences(e, m).length),
   );
+export function emergencyFund(s: State, endMonth: string, requestedMonths: number) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(endMonth) || ![1, 3, 6, 12].includes(requestedMonths))
+    throw Error('Tarkista hätävaran tarkastelujakso.');
+  const [year, month] = endMonth.split('-').map(Number);
+  const essentialExpenses = s.expenses.filter(
+    (e) => e.status === 'actual' && e.essential && expenseType(e) === 'consumption',
+  );
+  const monthlyExpenses = Array.from({ length: requestedMonths }, (_, index) => {
+    const date = new Date(Date.UTC(year, month - 1 - index, 1));
+    const period = date.toISOString().slice(0, 7);
+    const observed = essentialExpenses.some((e) => occurrences(e, period).length > 0);
+    return observed ? total(essentialExpenses, period, true) : null;
+  });
+  const observedExpenses = monthlyExpenses.filter((value): value is number => value !== null);
+  const observedMonths = observedExpenses.length;
+  const averageEssential = observedMonths ? sum(observedExpenses) / observedMonths : null;
+  const liquid = sum(
+    s.assets.filter((e) => e.liquid).map((e) => Math.round((e.amount * e.ownership) / 100)),
+  );
+  return {
+    requestedMonths,
+    observedMonths,
+    averageEssential,
+    liquid,
+    buffer: averageEssential && averageEssential > 0 ? liquid / averageEssential : null,
+  };
+}
 export function metrics(s: State, m: string) {
   let income = total(s.incomes, m, true),
     expense = total(s.expenses, m, true),

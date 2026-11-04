@@ -15,7 +15,7 @@
 - Ei mukautettua toistuvuutta, poikkeuspäiviä, yksittäisten esiintymien toteumahallintaa tai vuosittaista hinnanmuutosta.
 - Actual-toistuva tapahtuma oletetaan toteutuneeksi jokaisella esiintymällä; käyttäjä vastaa tilasta.
 - Vain kategoriabudjetti; ei budjettipohjia, nollapohjaista/prosenttijakoa tai kuun lopun ennustetta.
-- Hätävara käyttää valittua kuukautta, ei menojen keskiarvoa.
+- Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain kuukausista, joilla on välttämättömiä kulutuskirjauksia. Havaintokattavuus ei todista kaikkien menojen kirjaamista; nykyinen kuukausi voi olla kesken. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
 - Omaisuuden manuaalinen nykyarvo ja omistusosuus; ei arvostushistoriaa, automaattista arvonalenemaa tai auton erillismallia.
 - Velkasaldo manuaalinen; erä ei generoi menoa eikä vähennä saldoa.
 - Sijoitukset vain EUR; ei ticker/ISIN/pörssi/valuutta-allokaatioita, erillisiä sijoitustapahtumia tai arvostushistoriaa. Hankinta-arvo näkyy, erilliset tuottoprosentit eivät.
