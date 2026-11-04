@@ -20,7 +20,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Manuaaliset sijoitushinnat euroina ja hankinta-arvo.
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
-- FI-pääomatavoitteen yksivaiheinen havainnollistus omilla vuosikulu-, nettotulo-, pääoma- ja nostoprosenttioletuksilla.
+- FI-pääomatavoitteen yksivaiheinen havainnollistus omilla vuosikulu-, nettotulo-, pääoma- ja nostoprosenttioletuksilla sekä ±10 % kulutusherkkyys.
 - 1/3/6/12 kuukauden kassavirtaraportti ja taulukkovastine.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus.
