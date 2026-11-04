@@ -26,6 +26,7 @@ import {
   expenseType,
   setExpenseTypeTags,
   userTags,
+  fiTarget,
 } from './domain/calculations';
 import { storage } from './data/storage';
 import { backup, restore, validate, validateEntry } from './services/validation';
@@ -855,6 +856,7 @@ function App() {
               <ScenarioView
                 scenarios={s.scenarios}
                 euro={euro}
+                pct={pct}
                 onSave={(q) => commit({ ...s, scenarios: [...s.scenarios, q] })}
                 onDelete={(id) =>
                   commit({ ...s, scenarios: s.scenarios.filter((q) => q.id !== id) })
@@ -1722,12 +1724,14 @@ function Categories({
 function ScenarioView({
   scenarios,
   euro,
+  pct,
   onSave,
   onDelete,
   liabilities,
 }: {
   scenarios: Scenario[];
   euro: (n: number) => string;
+  pct: (n: number | null) => string;
   onSave: (q: Scenario) => boolean;
   onDelete: (id: string) => boolean;
   liabilities: Entry[];
@@ -1742,8 +1746,22 @@ function ScenarioView({
       inflation: 2,
       years: 10,
     }),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [fi, setFi] = useState({ annualExpenses: 3000000, annualOutsideIncome: 0, capital: 0, withdrawalRate: 4 }),
+    [fiError, setFiError] = useState('');
   let result = compound(q);
+  const fiResult = fiTarget(fi.annualExpenses, fi.annualOutsideIncome, fi.capital, fi.withdrawalRate);
+  const updateFi = (key: keyof typeof fi, value: string) => {
+    try {
+      const parsed = key === 'withdrawalRate' ? Number(value.replace(',', '.')) : money(value);
+      const next = { ...fi, [key]: parsed };
+      fiTarget(next.annualExpenses, next.annualOutsideIncome, next.capital, next.withdrawalRate);
+      setFi(next);
+      setFiError('');
+    } catch (e) {
+      setFiError(String(e));
+    }
+  };
   const update = (k: string, v: string) => {
     try {
       let n = ['initial', 'monthly'].includes(k) ? money(v) : Number(v.replace(',', '.'));
@@ -1757,6 +1775,43 @@ function ScenarioView({
   };
   return (
     <>
+      <section className="panel">
+        <h2>FI-pääomatavoite</h2>
+        <p className="muted">
+          Yhden vaiheen havainnollistus omilla oletuksillasi. Syötä vuosikulut ja muut vuosittaiset
+          nettotulot nykyrahassa. Pääoma tarkoittaa nostettavissa olevaa sijoituspääomaa; jätä
+          hätävara ja asunto pois, ellei niitä aiota käyttää kulutukseen.
+        </p>
+        <div className="form-grid">
+          {([
+            ['Vuosikulut (€)', 'annualExpenses'],
+            ['Muut nettotulot vuodessa (€)', 'annualOutsideIncome'],
+            ['Nostettavissa oleva pääoma (€)', 'capital'],
+            ['Alkunostoprosentti (% / vuosi)', 'withdrawalRate'],
+          ] as const).map(([label, key]) => (
+            <label key={key}>
+              {label}
+              <input
+                defaultValue={key === 'withdrawalRate' ? fi[key] : (fi[key] / 100).toFixed(2)}
+                onBlur={(e) => updateFi(key, e.target.value)}
+                inputMode="decimal"
+              />
+            </label>
+          ))}
+        </div>
+        {fiError && <p role="alert" className="negative">{fiError}</p>}
+        <div className="stats">
+          <article className="stat"><span>Vuotuinen rahoitusvaje</span><strong>{euro(fiResult.gap)}</strong></article>
+          <article className="stat"><span>FI-pääomatavoite</span><strong>{fiResult.target ? euro(fiResult.target) : 'Ei rahoitusvajetta'}</strong></article>
+          <article className="stat"><span>Pääomaa puuttuu</span><strong>{euro(fiResult.shortfall)}</strong></article>
+          <article className="stat"><span>Tavoitteen kattavuus</span><strong>{fiResult.coverage === null ? '—' : pct(fiResult.coverage)}</strong></article>
+        </div>
+        <p className="muted">
+          Tavoite = max(0, vuosikulut − muut nettotulot) / (alkunostoprosentti / 100).
+          Nostoprosentti on käyttäjän oletus, ei turvallisuusraja tai ennuste. Verot,
+          eläketulojen alkamisajat, tuottojärjestys ja kulujen muutokset eivät sisälly laskelmaan.
+        </p>
+      </section>
       <section className="panel">
         <h2>Korkoa korolle ja kulujen vaikutus</h2>
         <p className="muted">

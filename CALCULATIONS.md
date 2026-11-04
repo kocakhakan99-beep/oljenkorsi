@@ -32,6 +32,8 @@ Tuottoprosenttien laskenta käyttää liukulukuja tarkoituksellisesti, mutta tul
 
 ## Tavoite ja velka
 
+FI-pääomatavoitteen yksivaiheinen havainnollistus: rahoitusvaje = max(0, vuosikulut − muut vuosittaiset nettotulot), tavoite = ceil(rahoitusvaje / (alkunostoprosentti / 100)) sentteinä. Puuttuva pääoma = max(0, tavoite − nostettavissa oleva pääoma). Kattavuus = pääoma / tavoite × 100; nollavajeella ei prosenttia. Prosentin on oltava yli 0 ja enintään 100. Tulos ei mallinna muuttuvia tuloja, veroja, tuottoja tai nostojen kestävyyttä.
+
 Tavoitteen säästökuukaudet = ceil(max(0, tavoite − nykyinen) / kuukausisäästö). Nollasäästöllä keskeneräiselle tavoitteelle ei arviota. Tavoitepäivä on tässä versiossa informatiivinen.
 Velan kuukausikorko = round(pääoma × vuosikorko/1200). Erä vähentää pääomaa koron jälkeen. Jos erä ei ylitä korkoa tai aika ylittää 1200 kuukautta, arviota ei näytetä. Velkasaldoa ei päivitetä automaattisesti.
 

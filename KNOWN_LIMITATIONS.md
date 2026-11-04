@@ -40,7 +40,7 @@ Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyk
 ## FIRE ja mittareiden tulkinta (kartoitus 3.11.2026)
 
 - Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit. Tyyppi tallentuu yhteensopivuuden vuoksi varattuna tags-merkintänä; vanhoissa tietueissa tulkinta perustuu oletuskategorioihin. Ei pankista todennettua siirtoa, eikä lainapääomaa erotella.
-- Ei FI-pääomatavoitetta, FI-aikaa, elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
+- FI-pääomatavoite on yksivaiheinen havainnollistus käyttäjän oletuksilla. Ei FI-aikaa, elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
 - Kokonaisnettovarallisuus ei tarkoita nostettavissa olevaa FIRE-pääomaa. Oma asunto ja puskuri vaativat erillisen rajauksen.
 - Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Hallittu Chromium esti aiemmassa pilviympäristössä file://-E2E:n; paikallinen HTTP-tarkistus ei varmista file://-pysyvyyttä kaikissa selaimissa.
 

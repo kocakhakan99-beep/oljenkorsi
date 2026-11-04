@@ -10,11 +10,27 @@ import {
   validDate,
   expenseType,
   setExpenseTypeTags,
+  fiTarget,
 } from '../domain/calculations';
 import { empty, entry, demo, uid } from '../domain/model';
 import { backup, restore, validate } from '../services/validation';
 import { parseCSV, exportCSV, csvEntry, csvFields } from '../services/csv';
 describe('Raha ja laskelmat', () => {
+  it('FI-tavoite käyttää vuotuista rahoitusvajetta ja erottaa pääoman kattavuuden', () => {
+    expect(fiTarget(3000000, 600000, 15000000, 4)).toEqual({
+      gap: 2400000,
+      target: 60000000,
+      shortfall: 45000000,
+      coverage: 25,
+    });
+    expect(fiTarget(1000000, 1200000, 0, 4)).toEqual({
+      gap: 0,
+      target: 0,
+      shortfall: 0,
+      coverage: null,
+    });
+    expect(() => fiTarget(1000000, 0, 0, 0)).toThrow();
+  });
   it('kulutus, säästösiirto ja sijoitussiirto luokitellaan kategoriasta riippumatta', () => {
     const dated = { date: '2026-11-01', amount: 50000 };
     let s = empty();
