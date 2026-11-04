@@ -13,7 +13,7 @@ Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain a
 - Budjetin jäljellä oleva summa = kategoriabudjetti − toteutuneet kulutusmenot. Säästö- ja sijoitussiirrot eivät vähennä kategoriabudjettia, vaikka ne näkyvät kassavirrassa.
 - Päiväkohtainen budjettivara = budjetista jäljellä / jäljellä olevat kalenteripäivät, nykykuukaudessa. Muussa kuukaudessa käytetään kaikkia kuukauden päiviä. Ei ennuste.
 - Nettovarallisuus = summa(omaisuus × omistusosuus) + summa(sijoituksen hinta × määrä) − velat.
-- Hätävara = likvidien omaisuuserien omistusosuuden mukainen summa / valitun kuukauden välttämättömät toteutuneet menot. Ei usean kuukauden keskiarvo.
+- Yhteenvedon hätävarakuukaudet = likvidien omaisuuserien omistusosuuden mukainen summa / valitun 1/3/6/12 kuukauden jakson **havaittujen** välttämättömien kulutusmenojen kuukausikeskiarvo. Jakso päättyy valittuun kuukauteen. Havainto on kuukausi, jolla on vähintään yksi toteutunut, välttämättömäksi merkitty kulutusmenon esiintymä. Puuttuvia kuukausia ei käsitellä nollina; havaintojen määrä näytetään. Jos keskiarvo puuttuu tai on nolla, kestoa ei näytetä. Kattavuus kertoo kirjauksista, ei varmista niiden täydellisyyttä; myös keskeneräinen nykykuukausi voi vääristää arviota. Vanhassa `metrics().buffer`-kentässä säilyy yhden kuukauden laskutapa sisäistä yhteensopivuutta varten.
 
 ## Toistuvuus
 

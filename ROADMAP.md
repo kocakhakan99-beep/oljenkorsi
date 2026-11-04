@@ -14,7 +14,7 @@ Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuu
 
 Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Lisää tilit, alkusaldot, täsmäytys ja esiintymäkohtainen toteuma/poikkeus ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
 
-Lisää epäsäännöllisten menojen varaukset, budjettipohjat ja vaihtoehtoiset budjettitavat, kassakalenteri/kuun lopun ennuste, 3/6/12 kk hätävarapohja kattavuustietoineen sekä tulokatkosstressi. Lisää oma raportointiaikaväli ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
+Lisää epäsäännöllisten menojen varaukset, budjettipohjat ja vaihtoehtoiset budjettitavat sekä kassakalenteri/kuun lopun ennuste. Hätävaran 1/3/6/12 kk havaintopohjainen keskiarvo ja kirjauskuukausien määrä on toteutettu; seuraavaksi erota vahvistettu nollakuukausi puuttuvasta kuukaudesta, huomioi keskeneräinen kuukausi ja lisää oma menoarvio sekä tulokatkosstressi. Lisää oma raportointiaikaväli ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
 
 **Riippuvuus:** P0 ja tietomallimigraation suunnittelu. **Valmis kun:** FIRE_PLANin rahavirtaesimerkit täsmäävät, vanha backup palautuu ja puuttuva havaintodata erottuu nollasta.
 

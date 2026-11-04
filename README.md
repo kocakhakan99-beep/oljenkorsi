@@ -18,7 +18,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Tulot, menot, omaisuus, velat, sijoitukset ja tavoitteet: lisäys, muokkaus, poisto.
 - Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, suunniteltu/toteutunut/ohitettu.
 - Kategoriabudjetti, inline-muokkaus, edellisen kuukauden kopiointi.
-- Kassavirta, käyttövara, säästöaste, nettovarallisuus ja valitun kuukauden hätävaramittari.
+- Kassavirta, käyttövara, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari havaintokattavuudella.
 - Manuaaliset sijoitushinnat euroina ja hankinta-arvo.
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.

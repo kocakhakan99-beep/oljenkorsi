@@ -410,6 +410,15 @@ progress::-webkit-progress-value {
   display: block;
   color: var(--accent-ink);
 }
+.buffer-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.buffer-period select {
+  width: auto;
+}
 .danger-zone {
   background: var(--danger-bg);
   border: 1px solid var(--danger-line);

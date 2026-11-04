@@ -12,6 +12,7 @@ import {
   setExpenseTypeTags,
   fiTarget,
   fiMonths,
+  emergencyFund,
 } from '../domain/calculations';
 import { empty, entry, demo, uid } from '../domain/model';
 import { backup, restore, validate } from '../services/validation';
@@ -93,6 +94,30 @@ describe('Raha ja laskelmat', () => {
   });
   it('nollatulot eivät aiheuta NaN-arvoa', () =>
     expect(metrics(empty(), '2026-11').savingRate).toBeNull());
+  it('hätävaran keskiarvo käyttää vain havaittuja välttämättömiä kulutuskuukausia', () => {
+    const s = empty();
+    s.assets = [entry({ amount: 600000, liquid: true })];
+    s.expenses = [
+      entry({ date: '2026-01-12', amount: 100000, essential: true }),
+      entry({ date: '2026-03-12', amount: 200000, essential: true }),
+      entry({ date: '2026-02-12', amount: 50000, essential: true, status: 'planned' }),
+      entry({ date: '2026-02-12', amount: 50000, essential: true, tags: setExpenseTypeTags('', 'saving') }),
+    ];
+    expect(emergencyFund(s, '2026-03', 3)).toEqual({
+      requestedMonths: 3,
+      observedMonths: 2,
+      averageEssential: 150000,
+      liquid: 600000,
+      buffer: 4,
+    });
+    expect(emergencyFund(s, '2026-02', 1).buffer).toBeNull();
+    expect(() => emergencyFund(s, '2026-03', 2)).toThrow();
+  });
+  it('toistuva välttämätön meno kattaa jokaisen toteutuneeksi merkityn kuukauden', () => {
+    const s = empty();
+    s.expenses = [entry({ date: '2026-01-01', recurrence: 'monthly', amount: 100000, essential: true })];
+    expect(emergencyFund(s, '2026-03', 3).observedMonths).toBe(3);
+  });
   it('arvonalenema', () => expect(depreciation(100000, -10, 2)).toBe(81000));
   it('tavoitteen kesto', () => {
     expect(goalMonths(entry({ target: 100000, amount: 10000, monthly: 30000 }))).toBe(3);
