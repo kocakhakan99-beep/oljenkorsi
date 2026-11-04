@@ -1806,6 +1806,30 @@ function ScenarioView({
           <article className="stat"><span>Pääomaa puuttuu</span><strong>{euro(fiResult.shortfall)}</strong></article>
           <article className="stat"><span>Tavoitteen kattavuus</span><strong>{fiResult.coverage === null ? '—' : pct(fiResult.coverage)}</strong></article>
         </div>
+        <h3>Vuosikulujen herkkyys</h3>
+        <p className="muted">Samat muut nettotulot ja nostoprosentti kaikissa riveissä. Kulut muuttuvat ±10 %.</p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Kulutusoletus</th><th>Vuosikulut</th><th>Rahoitusvaje</th><th>FI-pääomatavoite</th></tr>
+            </thead>
+            <tbody>
+              {([['−10 %', 0.9], ['Oma oletus', 1], ['+10 %', 1.1]] as const).map(([label, factor]) => {
+                const expenses = Math.round(fi.annualExpenses * factor);
+                const gap = Math.max(0, expenses - fi.annualOutsideIncome);
+                const target = Math.ceil(gap / (fi.withdrawalRate / 100));
+                return (
+                  <tr key={label}>
+                    <th scope="row">{label}</th>
+                    <td>{euro(expenses)}</td>
+                    <td>{euro(gap)}</td>
+                    <td>{target <= MAX ? euro(target) : 'Yli laskentarajan'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         <p className="muted">
           Tavoite = max(0, vuosikulut − muut nettotulot) / (alkunostoprosentti / 100).
           Nostoprosentti on käyttäjän oletus, ei turvallisuusraja tai ennuste. Verot,
