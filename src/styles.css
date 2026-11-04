@@ -846,6 +846,14 @@ dialog::backdrop {
   justify-content: space-around;
   margin-top: 20px;
 }
+.chart-scroll {
+  justify-content: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.chart-scroll .chart-col {
+  flex: 0 0 68px;
+}
 .chart-col {
   text-align: center;
   flex: 1;
@@ -954,6 +962,142 @@ dialog::backdrop {
 .report-panel .muted,
 .report-panel small {
   color: #596961;
+}
+.report-panel input,
+.report-panel select {
+  border-color: #dbe2dc;
+  background: #fff;
+  color: #202e29;
+}
+.report-range-selector {
+  max-width: 250px;
+}
+.report-range-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+.report-range-fields label {
+  width: min(190px, 100%);
+  margin: 4px 0;
+}
+.report-period-summary {
+  margin: 18px 0 22px;
+  padding: 18px;
+  border: 1px solid #e0e8e3;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fff 20%, #f8fbf9 100%);
+  box-shadow: 0 3px 14px rgb(24 48 36 / 5%);
+}
+.report-period-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.report-period-summary-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.report-period-summary-head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.report-saving-rate {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border: 1px solid #dce9e1;
+  border-radius: 12px;
+  background: #eff7f2;
+  color: #17604d;
+}
+.report-saving-rate span {
+  display: grid;
+  gap: 1px;
+}
+.report-saving-rate small {
+  color: #52655a;
+  font-size: 10px;
+}
+.report-saving-rate strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.report-kpi {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 11px;
+  padding: 13px;
+  border-color: #e1e8e3;
+  border-radius: 13px;
+  background: #fff;
+  text-align: left;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+.report-kpi:hover,
+.report-kpi.selected {
+  border-color: #94b3a1;
+  background: #fff;
+  box-shadow: 0 4px 13px rgb(24 48 36 / 8%);
+  transform: translateY(-1px);
+}
+.report-kpi > svg:first-child {
+  flex: 0 0 auto;
+  box-sizing: content-box;
+  padding: 8px;
+  border-radius: 10px;
+  background: #eff7f2;
+  color: #087f5b;
+}
+.report-kpi.expense > svg:first-child {
+  background: #fff1e9;
+  color: #d9480f;
+}
+.report-kpi.cash > svg:first-child {
+  background: #f2effb;
+  color: #7048e8;
+}
+.report-kpi-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+.report-kpi-copy small {
+  overflow-wrap: anywhere;
+  color: #596961;
+  font-size: 10px;
+}
+.report-kpi-copy strong {
+  overflow-wrap: anywhere;
+  color: #202e29;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.report-kpi.negative .report-kpi-copy strong {
+  color: #a82732;
+}
+.report-kpi-arrow {
+  flex: 0 0 auto;
+  color: #77867d;
+  transition: transform 140ms ease;
+}
+.report-kpi:hover .report-kpi-arrow {
+  transform: translateX(2px);
+}
+.report-period-note {
+  margin: 12px 0 0;
+  color: #64746b;
+  font-size: 11px;
+  line-height: 1.5;
 }
 .report-canvas {
   padding: 10px 12px 0;
@@ -1169,6 +1313,10 @@ dialog::backdrop {
 .line-chart-wrap {
   height: 180px;
   margin: 20px 0;
+}
+.line-chart-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 .line-chart {
   display: block;
@@ -1497,6 +1645,10 @@ footer {
   .metric-group-cash .stat:last-child,
   .metric-group-plan .stat:last-child {
     grid-column: auto;
+  }
+  .report-period-summary-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 @media (prefers-reduced-motion: reduce) {

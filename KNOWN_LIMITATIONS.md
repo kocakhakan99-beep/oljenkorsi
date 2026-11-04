@@ -21,7 +21,7 @@
 - Sijoitukset vain EUR; ei ticker/ISIN/pörssi/valuutta-allokaatioita, erillisiä sijoitustapahtumia tai arvostushistoriaa. Hankinta-arvo näkyy, erilliset tuottoprosentit eivät.
 - Tavoitepäivä informatiivinen; arvio on säästökuukausia ilman tuottoa. Ei prioriteettien optimointia.
 - Rajatut laskurit: korkoa korolle, kulut, inflaatio ja velanmaksu. Ei nettovarallisuus-/budjettiprojektioita tai tulo-/menomuutoksen erillislaskuria.
-- Raportti vain 1/3/6/12 kuukautta valittuun kuukauteen; ei omaa aikaväliä tai nettovarallisuuden historiakaaviota.
+- Raportti kattaa 1/3/6/12 kuukautta valittuun kuukauteen tai käyttäjän rajaaman enintään 120 kuukauden jakson; nettovarallisuuden historiakaaviota ei ole.
 
 ## UX ja laatu
 

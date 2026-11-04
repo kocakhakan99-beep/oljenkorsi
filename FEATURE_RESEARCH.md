@@ -32,7 +32,7 @@ Prioriteetit P0–P3 viittaavat [roadmapiin](ROADMAP.md). Lähde kertoo perustel
 | Verot, kulut ja valuutat | Kulut/inflaatio osittain; vain EUR, verot puuttuvat | Parametrisoitu veromalli, hankintameno ja realisoitu voitto erikseen, eläketulon erillinen käsittely, verovuosi ja lähde; valuuttamalli myöhemmin | R6, R9; P2–P3 |
 | Tavoitteet ja käyttäytyminen | Osittainen: tavoitesumma ja kuukausisäästö | Prioriteetit, automaattisen säästösuunnitelman muistilista, vapaaehtoinen kuukausikatsaus ja poikkeamien selitys; ei syyllistäviä pisteitä | R4, R11; P1–P2 |
 | Taloudellinen turva | Välttämättömyysluokitus olemassa | Tulokatkos, suuri kertameno, korkojen nousu ja vakuutusten/huollettavien tarkistuslista; ei vakuutusmyyntiä | R2, R3, R11; P1–P2 |
-| Raportointi | Osittainen 1/3/6/12 kk; oma aikaväli/historia suunniteltu | Toteuma vs ennuste, nimellinen vs reaalinen, rahoitusvaje ja oletusten muutos; jokaiselle luvulle laskentapohja | R1–R3, R7–R10; P1–P3 |
+| Raportointi | 1/3/6/12 kk ja oma enintään 120 kk aikaväli, interaktiivinen kulurakenne ja rahavirta | Kirjausten kattavuuden vahvistus, manuaalisen budjettitoteuman lähde, nettovarallisuuden arvostushistoria; toteuma vs ennuste ja nimellinen vs reaalinen | R1–R3, R7–R10; P1–P3 |
 | Yksityisyys ja saavutettavuus | Offline-HTML, JSON/CSV ja teemat toteutettu; salaus/synkronointi myöhempää suunnitelmaa | Pysyvyys-, palautus- ja saavutettavuusvarmennus ensin; arkaluonteiset tiedot eivät edellytä verkkoa | Tuotevaatimus; P0 |
 
 ## Nykyisen tulkinnan erityiset riskit
