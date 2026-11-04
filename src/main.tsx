@@ -45,6 +45,7 @@ import motorcycleIcon from './assets/motorcycle.svg';
 import valuablesIcon from './assets/valuables.svg';
 import {
   ArrowLeftRight,
+  ArrowRight,
   CalendarClock,
   ChartPie,
   ChartNoAxesCombined,
@@ -648,6 +649,63 @@ function App() {
                     <small>Ei sisällä erillistä säästövarausta.</small>
                   </div>
                 </div>
+                <section
+                  className="dashboard-actions grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6"
+                  aria-label="Pikatoiminnot"
+                >
+                  <button
+                    aria-label="Lisää tulo"
+                    className="dashboard-action group flex min-h-16 items-center gap-3"
+                    onClick={() =>
+                      setEdit({ kind: 'incomes', item: entry({ category: cats('incomes')[0] }) })
+                    }
+                  >
+                    <CircleDollarSign size={21} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="dashboard-action-copy">
+                      <strong>Lisää tulo</strong>
+                      <small>Palkka tai muu tulo</small>
+                    </span>
+                    <ArrowRight className="dashboard-action-arrow" size={17} aria-hidden="true" />
+                  </button>
+                  <button
+                    aria-label="Lisää meno"
+                    className="dashboard-action group flex min-h-16 items-center gap-3"
+                    onClick={() =>
+                      setEdit({ kind: 'expenses', item: entry({ category: cats('expenses')[0] }) })
+                    }
+                  >
+                    <ReceiptText size={21} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="dashboard-action-copy">
+                      <strong>Lisää meno</strong>
+                      <small>Kuukausittainen tai kertameno</small>
+                    </span>
+                    <ArrowRight className="dashboard-action-arrow" size={17} aria-hidden="true" />
+                  </button>
+                  <button
+                    aria-label="Avaa budjetti"
+                    className="dashboard-action group flex min-h-16 items-center gap-3"
+                    onClick={() => navigate('budget')}
+                  >
+                    <Wallet size={21} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="dashboard-action-copy">
+                      <strong>Avaa budjetti</strong>
+                      <small>Suunnittele kuukauden kulut</small>
+                    </span>
+                    <ArrowRight className="dashboard-action-arrow" size={17} aria-hidden="true" />
+                  </button>
+                  <button
+                    aria-label="Avaa raportit"
+                    className="dashboard-action group flex min-h-16 items-center gap-3"
+                    onClick={() => navigate('reports')}
+                  >
+                    <ChartNoAxesCombined size={21} strokeWidth={1.8} aria-hidden="true" />
+                    <span className="dashboard-action-copy">
+                      <strong>Avaa raportit</strong>
+                      <small>Tutki rahavirtaa ja kulurakennetta</small>
+                    </span>
+                    <ArrowRight className="dashboard-action-arrow" size={17} aria-hidden="true" />
+                  </button>
+                </section>
                 <section className="metric-group metric-group-cash" aria-labelledby="cash-heading">
                   <h2 id="cash-heading">Kuukauden rahavirta</h2>
                   <div className="stats">
