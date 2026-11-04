@@ -874,6 +874,205 @@ dialog::backdrop {
 .flow-summary span {
   color: var(--muted);
 }
+.report-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: clip;
+  background: #fff;
+  color: #202e29;
+}
+.report-panel .table-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+.report-panel .muted,
+.report-panel small {
+  color: #596961;
+}
+.report-canvas {
+  padding: 10px 12px 0;
+  border-radius: 12px;
+  background: #fff;
+}
+.income-bar {
+  background: #087f5b;
+}
+.expense-bar {
+  background: #d9480f;
+}
+.chart-bars .chart-mark {
+  flex: 0 0 28px;
+  width: 28px;
+  min-height: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px 4px 0 0;
+  transition: filter 120ms, transform 120ms;
+}
+.chart-bars .chart-mark:hover,
+.chart-bars .selected-mark {
+  filter: brightness(.82);
+  transform: scaleX(1.18);
+}
+.chart-bars .chart-mark:focus-visible {
+  outline-offset: 2px;
+}
+.expense-line {
+  stroke: #d9480f;
+}
+.expense-point {
+  fill: #d9480f;
+}
+.income-point,
+.expense-point {
+  cursor: pointer;
+  stroke: #fff;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+}
+.selected-point {
+  stroke: #17211d;
+  stroke-width: 3px;
+}
+.category-report-row {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #fff;
+  color: #202e29;
+  text-align: left;
+}
+.category-report-row:hover,
+.category-report-row.selected-report-row {
+  background: #f2f6f3;
+  border-color: #9aafa3;
+}
+.category-report-row progress {
+  pointer-events: none;
+}
+.pie-chart {
+  position: relative;
+  width: min(300px, 72vw);
+  background: #fff;
+}
+.pie-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.pie-slice {
+  cursor: pointer;
+  pointer-events: visiblePainted;
+  stroke: #fff;
+  stroke-width: 1.2px;
+  transition: filter 120ms, stroke-width 120ms;
+}
+.pie-slice:hover,
+.pie-slice.selected-slice {
+  filter: brightness(.82);
+  stroke: #17211d;
+  stroke-width: 2.4px;
+}
+.pie-slice:focus-visible {
+  outline: none;
+  stroke: #17211d;
+  stroke-width: 3px;
+}
+.pie-center {
+  position: absolute;
+  inset: 21%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  background: #fff;
+  text-align: center;
+  pointer-events: none;
+}
+.pie-legend button {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-color: transparent;
+  background: #fff;
+  color: #202e29;
+  text-align: left;
+}
+.pie-legend button:hover,
+.pie-legend button.selected-legend {
+  background: #f2f6f3;
+  border-color: #9aafa3;
+}
+.flow-visual {
+  background: #fff;
+}
+.flow-day {
+  position: relative;
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #202e29;
+}
+.flow-day:hover,
+.flow-day.selected-flow-day {
+  background: #eef4f0;
+}
+.flow-bar.above-zero {
+  background: #087f5b;
+}
+.flow-bar.below-zero {
+  background: #d9480f;
+}
+.report-detail {
+  border-color: #bdcfc4;
+  box-shadow: 0 4px 18px #1d352711;
+}
+.report-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.report-detail-head .eyebrow {
+  margin-top: 0;
+}
+.report-detail-list {
+  border-top: 1px solid #dbe2dc;
+}
+.report-detail-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #e8ede9;
+}
+.report-detail-row small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+}
+.report-kind-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.report-kind-dot.income {
+  background: #087f5b;
+}
+.report-kind-dot.expense {
+  background: #d9480f;
+}
 .flow-visual {
   display: flex;
   align-items: stretch;
@@ -962,13 +1161,13 @@ dialog::backdrop {
   stroke: var(--accent);
 }
 .expense-line {
-  stroke: #4476a8;
+  stroke: #d9480f;
 }
 .income-point {
-  fill: var(--accent);
+  fill: #087f5b;
 }
 .expense-point {
-  fill: #4476a8;
+  fill: #d9480f;
 }
 .line-chart-labels {
   display: flex;
