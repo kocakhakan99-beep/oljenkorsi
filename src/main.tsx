@@ -526,11 +526,31 @@ function App() {
       : `${history[0].key}–${history[history.length - 1].key}`;
   const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
   const reportMax = Math.max(...history.flatMap((h) => [h.income, h.expense]), 1);
-  const reportPoints = (key: 'income' | 'expense') => history.map((h, index) => {
-    const x = history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1));
-    const y = 95 - h[key] / reportMax * 85;
-    return `${x},${y}`;
-  }).join(' ');
+  const reportCoordinates = (key: 'income' | 'expense') => history.map((h, index) => ({
+    x: history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1)),
+    y: 95 - h[key] / reportMax * 85,
+  }));
+  const reportLine = (key: 'income' | 'expense') => {
+    const points = reportCoordinates(key);
+    if (points.length < 2) return points.length ? `M ${points[0].x} ${points[0].y}` : '';
+    return points.reduce((path, point, index) => {
+      if (index === 0) return `M ${point.x} ${point.y}`;
+      const previous = points[index - 1];
+      const before = points[index - 2] ?? previous;
+      const after = points[index + 1] ?? point;
+      const controlOne = { x: previous.x + (point.x - before.x) / 6, y: previous.y + (point.y - before.y) / 6 };
+      const controlTwo = { x: point.x - (after.x - previous.x) / 6, y: point.y - (after.y - previous.y) / 6 };
+      return `${path} C ${controlOne.x} ${controlOne.y}, ${controlTwo.x} ${controlTwo.y}, ${point.x} ${point.y}`;
+    }, '');
+  };
+  const reportArea = (key: 'income' | 'expense') => {
+    const points = reportCoordinates(key);
+    const line = reportLine(key);
+    if (!points.length) return '';
+    return `${line} L ${points[points.length - 1].x} 95 L ${points[0].x} 95 Z`;
+  };
+  const incomeReportCoordinates = reportCoordinates('income');
+  const expenseReportCoordinates = reportCoordinates('expense');
   const categoryReport = expCatsForReport(s, month);
   const maxCategoryExpense = Math.max(...categoryReport.map(([, value]) => value), 1);
   const pieColors = ['#087f5b', '#d9480f', '#7048e8', '#ae7c00', '#1971c2', '#c2255c', '#495057', '#5c940d'];
@@ -1426,7 +1446,10 @@ function App() {
                   {reportHasData ? (
                     <>
                       {overviewChart === 'bars' ? <div
-                        className={`chart report-canvas${history.length > 12 ? ' chart-scroll' : ''}`}
+                        className="chart report-canvas chart-scroll"
+                        role="region"
+                        aria-label="Tulot ja menot kuukausittain. Vieritä vaakasuunnassa, kun kaikki kuukaudet eivät mahdu näkymään."
+                        tabIndex={0}
                       >
                         {history.map((h) => (
                           <div
@@ -1474,17 +1497,56 @@ function App() {
                             <small>{history.length > 12 ? h.key : h.key.slice(5)}</small>
                           </div>
                         ))}
-                      </div> : <div className={`line-chart-wrap${history.length > 12 ? ' line-chart-scroll' : ''}`}>
-                        <svg className="line-chart" style={history.length > 12 ? { minWidth: `${history.length * 68}px` } : undefined} viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
-                          <line x1="0" y1="95" x2="100" y2="95" className="chart-axis" />
-                          <polyline points={reportPoints('income')} className="income-line" />
-                          <polyline points={reportPoints('expense')} className="expense-line" />
-                          {history.map((h, index) => {
-                            const x = history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1));
-                            return <React.Fragment key={h.key}><circle role="button" tabIndex={0} aria-label={`${h.key} tulot ${euro(h.income)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'income' })} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedReport({ type: 'month', month: h.key, metric: 'income' }); } }} cx={x} cy={95 - h.income / reportMax * 85} r="2.5" className={`income-point${selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'income' ? ' selected-point' : ''}`} /><circle role="button" tabIndex={0} aria-label={`${h.key} menot ${euro(h.expense)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'expense' })} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedReport({ type: 'month', month: h.key, metric: 'expense' }); } }} cx={x} cy={95 - h.expense / reportMax * 85} r="2.5" className={`expense-point${selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'expense' ? ' selected-point' : ''}`} /></React.Fragment>;
-                          })}
-                        </svg>
-                        <div className="line-chart-labels" style={history.length > 12 ? { minWidth: `${history.length * 68}px` } : undefined}>{history.map((h) => <small key={h.key}>{history.length > 12 ? h.key : h.key.slice(5)}</small>)}</div>
+                      </div> : <div
+                        className="line-chart-wrap"
+                        role="region"
+                        aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Vieritä vaakasuunnassa, kun kaikki kuukaudet eivät mahdu näkymään."
+                        tabIndex={0}
+                      >
+                        <div className="line-chart-content" style={{ minWidth: `${history.length * 68}px` }}>
+                          <svg className="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Kuukausittaiset tulojen ja menojen viivakaaviot. Tarkat luvut alla taulukossa.">
+                            <defs>
+                              <linearGradient id="incomeArea" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stopColor="#087f5b" stopOpacity=".2" />
+                                <stop offset="100%" stopColor="#087f5b" stopOpacity="0" />
+                              </linearGradient>
+                              <linearGradient id="expenseArea" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stopColor="#d9480f" stopOpacity=".16" />
+                                <stop offset="100%" stopColor="#d9480f" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            {[15, 35, 55, 75, 95].map((y) => <line key={y} x1="0" y1={y} x2="100" y2={y} className={`chart-axis${y === 95 ? ' chart-axis-baseline' : ''}`} />)}
+                            <path d={reportArea('income')} className="income-area" />
+                            <path d={reportArea('expense')} className="expense-area" />
+                            <path d={reportLine('income')} className="income-line" />
+                            <path d={reportLine('expense')} className="expense-line" />
+                            {history.map((h, index) => {
+                              const incomePoint = incomeReportCoordinates[index];
+                              const expensePoint = expenseReportCoordinates[index];
+                              const incomeSelected = selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'income';
+                              const expenseSelected = selectedReport?.type === 'month' && selectedReport.month === h.key && selectedReport.metric === 'expense';
+                              const handlePointKey = (event: React.KeyboardEvent<SVGGElement>, metric: 'income' | 'expense') => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setSelectedReport({ type: 'month', month: h.key, metric });
+                                }
+                              };
+                              return <React.Fragment key={h.key}>
+                                <g role="button" tabIndex={0} aria-pressed={incomeSelected} aria-label={`${h.key} tulot ${euro(h.income)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'income' })} onKeyDown={(event) => handlePointKey(event, 'income')} className={`chart-point income-point${incomeSelected ? ' selected-point' : ''}`}>
+                                  <title>{`${h.key} · Tulot ${euro(h.income)} · Avaa tietueet`}</title>
+                                  <circle className="chart-point-hit" cx={incomePoint.x} cy={incomePoint.y} r="5" />
+                                  <path className="chart-point-marker" d={`M ${incomePoint.x} ${incomePoint.y - 1.2} V ${incomePoint.y + 1.2}`} />
+                                </g>
+                                <g role="button" tabIndex={0} aria-pressed={expenseSelected} aria-label={`${h.key} menot ${euro(h.expense)}. Avaa tietueet.`} onClick={() => setSelectedReport({ type: 'month', month: h.key, metric: 'expense' })} onKeyDown={(event) => handlePointKey(event, 'expense')} className={`chart-point expense-point${expenseSelected ? ' selected-point' : ''}`}>
+                                  <title>{`${h.key} · Menot ${euro(h.expense)} · Avaa tietueet`}</title>
+                                  <circle className="chart-point-hit" cx={expensePoint.x} cy={expensePoint.y} r="5" />
+                                  <path className="chart-point-marker" d={`M ${expensePoint.x} ${expensePoint.y - 1.2} V ${expensePoint.y + 1.2}`} />
+                                </g>
+                              </React.Fragment>;
+                            })}
+                          </svg>
+                          <div className="line-chart-labels">{history.map((h) => <small key={h.key}>{history.length > 12 ? h.key : h.key.slice(5)}</small>)}</div>
+                        </div>
                       </div>}
                       <div className="chart-legend" aria-hidden="true">
                         <span><i className="legend-swatch income-bar" /> Tulot</span>

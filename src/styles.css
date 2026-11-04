@@ -1,4 +1,28 @@
 @import "tailwindcss";
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2")
+    format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
 @theme {
   --color-report-income: #087f5b;
   --color-report-expense: #d9480f;
@@ -21,23 +45,46 @@
   --notice-bg: #fff4dc;
   --danger-bg: #fdebec;
   --danger-line: #bd5960;
+  --report-surface: #fff;
+  --report-text: #182720;
+  --report-muted: #52635a;
+  --report-line: #dfe8e2;
+  --report-soft: #f4f8f5;
+  --report-income: #087f5b;
+  --report-expense: #d9480f;
+  --report-focus: #17604d;
   color-scheme: light;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: "Inter Variable", Inter, system-ui, sans-serif;
   font-size: 15px;
+  font-synthesis: none;
+  font-optical-sizing: auto;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(
+      ellipse at 74% -12%,
+      rgb(31 119 88 / 7%),
+      transparent 33rem
+    ),
+    var(--bg);
   color: var(--text);
+  font-feature-settings: "cv11", "ss01";
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
 }
 button,
 input,
 select,
 textarea {
   font: inherit;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 button {
   cursor: pointer;
@@ -70,17 +117,23 @@ button.danger {
   outline-offset: 3px;
 }
 h1 {
-  font-size: 32px;
-  letter-spacing: -0.8px;
+  font-size: clamp(27px, 2.2vw, 34px);
+  letter-spacing: -0.045em;
+  line-height: 1.14;
+  font-weight: 720;
   margin: 0;
 }
 h2 {
   font-size: 20px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.035em;
+  line-height: 1.3;
+  font-weight: 680;
   margin: 0 0 14px;
 }
 h3 {
   font-size: 17px;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
   margin-top: 24px;
 }
 p {
@@ -232,10 +285,10 @@ header {
   gap: 8px;
 }
 .toolbar button,
-.toolbar input[type='month'] {
+.toolbar input[type="month"] {
   min-height: 44px;
 }
-.toolbar input[type='month'] {
+.toolbar input[type="month"] {
   width: 160px;
   margin: 0;
   padding: 8px 10px;
@@ -243,7 +296,7 @@ header {
   font-weight: 400;
   line-height: 20px;
 }
-.toolbar input[type='month']::-webkit-datetime-edit {
+.toolbar input[type="month"]::-webkit-datetime-edit {
   font: inherit;
 }
 main {
@@ -261,7 +314,7 @@ main {
 .eyebrow {
   font-size: 10px;
   font-weight: 650;
-  letter-spacing: 1.7px;
+  letter-spacing: 0.13em;
   color: var(--muted);
   margin: 0 0 9px;
 }
@@ -283,7 +336,7 @@ main {
 .hero-value {
   font-size: 44px;
   font-weight: 650;
-  letter-spacing: -1px;
+  letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
 }
 .hero p {
@@ -407,9 +460,12 @@ main {
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 25px;
   margin-bottom: 22px;
+  box-shadow:
+    0 2px 8px rgb(24 48 36 / 3%),
+    0 14px 34px rgb(24 48 36 / 3%);
 }
 .panel-plan {
   background: var(--plan-bg);
@@ -677,7 +733,7 @@ td {
   text-align: left;
 }
 .category-options button:hover,
-.category-options button[aria-selected='true'] {
+.category-options button[aria-selected="true"] {
   background: var(--soft);
 }
 .category-options-empty {
@@ -711,14 +767,14 @@ textarea {
   margin-top: 7px;
   min-height: 40px;
 }
-input[type='checkbox'] {
+input[type="checkbox"] {
   width: 18px;
   height: 18px;
   min-height: 0;
   margin: 0;
   accent-color: var(--accent);
 }
-input[type='color'] {
+input[type="color"] {
   padding: 4px;
   height: 42px;
 }
@@ -840,6 +896,9 @@ dialog::backdrop {
 }
 .chart {
   display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   gap: 18px;
   align-items: flex-end;
   height: 180px;
@@ -850,20 +909,38 @@ dialog::backdrop {
   justify-content: flex-start;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9aafa3 #edf2ee;
+  scroll-snap-type: x proximity;
+  touch-action: pan-x pan-y;
 }
 .chart-scroll .chart-col {
-  flex: 0 0 68px;
+  flex: 1 0 64px;
+  scroll-snap-align: start;
 }
 .chart-col {
   text-align: center;
-  flex: 1;
+  flex: 1 0 64px;
+  min-width: 0;
+  color: var(--report-muted);
 }
 .chart-bars {
+  position: relative;
+  isolation: isolate;
   height: 150px;
   display: flex;
-  gap: 5px;
+  gap: 4px;
   align-items: flex-end;
   justify-content: center;
+  padding: 4px 3px 0;
+  border-radius: 9px 9px 0 0;
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0,
+    transparent 36px,
+    #e8efea 37px,
+    transparent 38px
+  );
 }
 .chart-bars div {
   width: min(28px, 40%);
@@ -880,7 +957,7 @@ dialog::backdrop {
   justify-content: center;
   gap: 18px;
   margin: 8px 0 18px;
-  color: var(--muted);
+  color: var(--report-muted);
   font-size: 13px;
 }
 .chart-legend span {
@@ -911,7 +988,7 @@ dialog::backdrop {
   gap: 8px;
   margin: 0 0 16px;
 }
-.report-tabs [aria-selected='true'] {
+.report-tabs [aria-selected="true"] {
   background: var(--soft);
   border-color: var(--focus);
   color: var(--accent-ink);
@@ -922,7 +999,7 @@ dialog::backdrop {
   flex: 0 0 auto;
   color: var(--muted);
 }
-.report-tabs [aria-selected='true'] svg {
+.report-tabs [aria-selected="true"] svg {
   color: var(--accent-ink);
 }
 .category-report-row {
@@ -941,18 +1018,39 @@ dialog::backdrop {
   gap: 10px;
   padding: 14px;
   margin: 16px 0;
-  background: var(--plan-bg);
+  border: 1px solid #d8e8df;
+  background: linear-gradient(110deg, #edf7f1, #f4f8fb);
   border-radius: 10px;
+  color: var(--report-text);
 }
 .flow-summary span {
-  color: var(--muted);
+  color: var(--report-muted);
 }
 .report-panel {
   min-width: 0;
   max-width: 100%;
   overflow: clip;
-  background: #fff;
-  color: #202e29;
+  background: var(--report-surface);
+  color: var(--report-text);
+  --focus: var(--report-focus);
+  --line: var(--report-line);
+}
+.report-panel button {
+  color: var(--report-text);
+}
+.report-panel .eyebrow,
+.report-panel thead th,
+.report-panel .report-tabs svg {
+  color: var(--report-muted);
+}
+.report-panel .report-tabs [aria-selected="true"],
+.report-panel .chart-switch button[aria-pressed="true"] {
+  background: var(--report-soft);
+  border-color: #82a28f;
+  color: #175a43;
+}
+.report-panel .report-tabs [aria-selected="true"] svg {
+  color: #175a43;
 }
 .report-panel .table-wrap {
   width: 100%;
@@ -961,13 +1059,13 @@ dialog::backdrop {
 }
 .report-panel .muted,
 .report-panel small {
-  color: #596961;
+  color: var(--report-muted);
 }
 .report-panel input,
 .report-panel select {
-  border-color: #dbe2dc;
-  background: #fff;
-  color: #202e29;
+  border-color: var(--report-line);
+  background: var(--report-surface);
+  color: var(--report-text);
 }
 .report-range-selector {
   max-width: 250px;
@@ -984,10 +1082,10 @@ dialog::backdrop {
 }
 .report-period-summary {
   margin: 18px 0 22px;
-  padding: 18px;
-  border: 1px solid #e0e8e3;
+  padding: 20px;
+  border: 1px solid var(--report-line);
   border-radius: 16px;
-  background: linear-gradient(145deg, #fff 20%, #f8fbf9 100%);
+  background: linear-gradient(145deg, #fff 12%, #f5f9f6 100%);
   box-shadow: 0 3px 14px rgb(24 48 36 / 5%);
 }
 .report-period-summary-head {
@@ -1021,7 +1119,7 @@ dialog::backdrop {
   gap: 1px;
 }
 .report-saving-rate small {
-  color: #52655a;
+  color: var(--report-muted);
   font-size: 10px;
 }
 .report-saving-rate strong {
@@ -1040,7 +1138,10 @@ dialog::backdrop {
   border-radius: 13px;
   background: #fff;
   text-align: left;
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 .report-kpi:hover,
 .report-kpi.selected {
@@ -1073,12 +1174,12 @@ dialog::backdrop {
 }
 .report-kpi-copy small {
   overflow-wrap: anywhere;
-  color: #596961;
+  color: var(--report-muted);
   font-size: 10px;
 }
 .report-kpi-copy strong {
   overflow-wrap: anywhere;
-  color: #202e29;
+  color: var(--report-text);
   font-size: 19px;
   font-variant-numeric: tabular-nums;
 }
@@ -1095,20 +1196,20 @@ dialog::backdrop {
 }
 .report-period-note {
   margin: 12px 0 0;
-  color: #64746b;
+  color: var(--report-muted);
   font-size: 11px;
   line-height: 1.5;
 }
 .report-canvas {
   padding: 10px 12px 0;
   border-radius: 12px;
-  background: #fff;
+  background: var(--report-surface);
 }
 .income-bar {
-  background: #087f5b;
+  background: var(--report-income);
 }
 .expense-bar {
-  background: #d9480f;
+  background: var(--report-expense);
 }
 .chart-bars .chart-mark {
   flex: 0 0 28px;
@@ -1116,33 +1217,23 @@ dialog::backdrop {
   min-height: 2px;
   padding: 0;
   border: 0;
-  border-radius: 4px 4px 0 0;
-  transition: filter 120ms, transform 120ms;
+  border-radius: 6px 6px 2px 2px;
+  box-shadow: 0 2px 5px rgb(24 48 36 / 12%);
+  animation: report-rise 420ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  transform-origin: center bottom;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .chart-bars .chart-mark:hover,
 .chart-bars .selected-mark {
-  filter: brightness(.82);
-  transform: scaleX(1.18);
+  filter: saturate(1.1) brightness(0.9);
+  transform: scaleX(1.13) translateY(-2px);
+  box-shadow: 0 5px 10px rgb(24 48 36 / 20%);
 }
 .chart-bars .chart-mark:focus-visible {
   outline-offset: 2px;
-}
-.expense-line {
-  stroke: #d9480f;
-}
-.expense-point {
-  fill: #d9480f;
-}
-.income-point,
-.expense-point {
-  cursor: pointer;
-  stroke: #fff;
-  stroke-width: 1.5px;
-  vector-effect: non-scaling-stroke;
-}
-.selected-point {
-  stroke: #17211d;
-  stroke-width: 3px;
 }
 .category-report-row {
   display: block;
@@ -1150,8 +1241,8 @@ dialog::backdrop {
   padding: 12px;
   border: 1px solid transparent;
   border-radius: 9px;
-  background: #fff;
-  color: #202e29;
+  background: var(--report-surface);
+  color: var(--report-text);
   text-align: left;
 }
 .category-report-row:hover,
@@ -1165,7 +1256,7 @@ dialog::backdrop {
 .pie-chart {
   position: relative;
   width: min(300px, 72vw);
-  background: #fff;
+  background: var(--report-surface);
 }
 .pie-svg {
   display: block;
@@ -1179,11 +1270,13 @@ dialog::backdrop {
   pointer-events: visiblePainted;
   stroke: #fff;
   stroke-width: 1.2px;
-  transition: filter 120ms, stroke-width 120ms;
+  transition:
+    filter 120ms,
+    stroke-width 120ms;
 }
 .pie-slice:hover,
 .pie-slice.selected-slice {
-  filter: brightness(.82);
+  filter: brightness(0.82);
   stroke: #17211d;
   stroke-width: 2.4px;
 }
@@ -1201,7 +1294,7 @@ dialog::backdrop {
   justify-content: center;
   padding: 8px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--report-surface);
   text-align: center;
   pointer-events: none;
 }
@@ -1212,8 +1305,8 @@ dialog::backdrop {
   gap: 8px;
   padding: 7px 8px;
   border-color: transparent;
-  background: #fff;
-  color: #202e29;
+  background: var(--report-surface);
+  color: var(--report-text);
   text-align: left;
 }
 .pie-legend button:hover,
@@ -1222,7 +1315,7 @@ dialog::backdrop {
   border-color: #9aafa3;
 }
 .flow-visual {
-  background: #fff;
+  background: var(--report-surface);
 }
 .flow-day {
   position: relative;
@@ -1230,17 +1323,17 @@ dialog::backdrop {
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: #202e29;
+  color: var(--report-text);
 }
 .flow-day:hover,
 .flow-day.selected-flow-day {
   background: #eef4f0;
 }
 .flow-bar.above-zero {
-  background: #087f5b;
+  background: var(--report-income);
 }
 .flow-bar.below-zero {
-  background: #d9480f;
+  background: var(--report-expense);
 }
 .report-detail .eyebrow {
   margin-top: 0;
@@ -1270,7 +1363,7 @@ dialog::backdrop {
   top: 50%;
   left: 0;
   right: 0;
-  border-top: 1px dashed var(--muted);
+  border-top: 1px dashed var(--report-muted);
 }
 .flow-bar {
   position: absolute;
@@ -1280,10 +1373,10 @@ dialog::backdrop {
   border-radius: 4px 4px 0 0;
 }
 .flow-bar.above-zero {
-  background: var(--accent);
+  background: var(--report-income);
 }
 .flow-bar.below-zero {
-  background: var(--negative);
+  background: var(--report-expense);
   border-radius: 0 0 4px 4px;
 }
 .flow-day small {
@@ -1304,51 +1397,161 @@ dialog::backdrop {
   padding: 6px 12px;
   font-size: 13px;
 }
-.chart-switch button[aria-pressed='true'] {
+.chart-switch button[aria-pressed="true"] {
   color: var(--accent-ink);
   background: var(--soft);
   border-color: var(--focus);
   font-weight: 650;
 }
 .line-chart-wrap {
-  height: 180px;
-  margin: 20px 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9aafa3 #edf2ee;
+  scroll-snap-type: x proximity;
+  touch-action: pan-x pan-y;
+  margin: 18px 0 12px;
+  padding: 14px 14px 10px;
+  border: 1px solid var(--report-line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff 0%, #fbfdfb 100%);
 }
 .line-chart-scroll {
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
+.line-chart-content {
+  width: 100%;
+  min-width: 100%;
+}
 .line-chart {
   display: block;
   width: 100%;
-  height: 150px;
+  height: 174px;
   overflow: visible;
 }
 .chart-axis {
-  stroke: var(--line);
-  stroke-width: 1;
+  stroke: #e7eee9;
+  stroke-width: 0.65;
+  stroke-dasharray: 1.5 1.8;
 }
-.line-chart polyline {
+.chart-axis-baseline {
+  stroke: #9aada1;
+  stroke-dasharray: none;
+}
+.line-chart .income-area {
+  fill: url(#incomeArea);
+}
+.line-chart .expense-area {
+  fill: url(#expenseArea);
+}
+.line-chart .income-line,
+.line-chart .expense-line {
   fill: none;
-  stroke-width: 2;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 .income-line {
-  stroke: var(--accent);
+  stroke: var(--report-income);
 }
 .expense-line {
-  stroke: #d9480f;
+  stroke: var(--report-expense);
 }
-.income-point {
-  fill: #087f5b;
+.chart-point {
+  cursor: pointer;
+  outline: none;
 }
-.expense-point {
-  fill: #d9480f;
+.chart-point-hit {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
+}
+.chart-point-marker {
+  fill: none;
+  stroke-width: 4.2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  transition:
+    stroke-width 150ms ease,
+    filter 150ms ease;
+}
+.income-point .chart-point-marker {
+  stroke: var(--report-income);
+}
+.expense-point .chart-point-marker {
+  stroke: var(--report-expense);
+}
+.chart-point:hover .chart-point-marker,
+.chart-point:focus-visible .chart-point-marker {
+  stroke-width: 6.5;
+  filter: drop-shadow(0 1px 3px rgb(23 42 32 / 32%));
+}
+.chart-point.selected-point .chart-point-marker {
+  stroke-width: 7;
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 1px 3px rgb(23 42 32 / 32%));
 }
 .line-chart-labels {
   display: flex;
   justify-content: space-between;
   gap: 4px;
+  color: var(--report-muted);
+}
+.line-chart-labels small {
+  flex: 1 0 0;
+  min-width: 0;
+  text-align: center;
+  font-size: 10px;
+}
+.line-chart .income-area,
+.line-chart .expense-area {
+  animation: report-fade 500ms ease both;
+}
+.line-chart .income-line,
+.line-chart .expense-line {
+  animation: report-fade 650ms ease both;
+}
+@keyframes report-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes report-rise {
+  from {
+    opacity: 0;
+    transform: scaleY(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+.chart-scroll::-webkit-scrollbar,
+.line-chart-wrap::-webkit-scrollbar {
+  height: 9px;
+}
+.chart-scroll::-webkit-scrollbar-track,
+.line-chart-wrap::-webkit-scrollbar-track {
+  border-radius: 99px;
+  background: #edf2ee;
+}
+.chart-scroll::-webkit-scrollbar-thumb,
+.line-chart-wrap::-webkit-scrollbar-thumb {
+  border: 2px solid #edf2ee;
+  border-radius: 99px;
+  background: #9aafa3;
+}
+.chart-scroll::-webkit-scrollbar-thumb:hover,
+.line-chart-wrap::-webkit-scrollbar-thumb:hover {
+  background: #6f8979;
 }
 .pie-layout {
   display: grid;
@@ -1430,19 +1633,19 @@ footer {
 .skip:focus {
   top: 10px;
 }
-[data-theme='blue'] {
+[data-theme="blue"] {
   --accent: #245c93;
   --accent-ink: #245c93;
   --focus: #245c93;
   --soft: #eaf1fa;
 }
-[data-theme='green'] {
+[data-theme="green"] {
   --accent: #376239;
   --accent-ink: #376239;
   --focus: #376239;
   --soft: #eaf1e7;
 }
-[data-theme='contrast'] {
+[data-theme="contrast"] {
   --accent: #111;
   --accent-ink: #000;
   --focus: #000;
@@ -1458,12 +1661,12 @@ footer {
   --danger-bg: #fff;
   --danger-line: #000;
 }
-[data-theme='custom'] {
+[data-theme="custom"] {
   --accent: var(--custom);
   --accent-ink: var(--custom);
   --focus: var(--custom);
 }
-[data-mode='dark'] {
+[data-mode="dark"] {
   --bg: #121c18;
   --surface: #1c2923;
   --text: #eaf0ec;
@@ -1482,18 +1685,18 @@ footer {
   --danger-line: #be7075;
   color-scheme: dark;
 }
-[data-mode='dark'][data-theme='blue'] {
+[data-mode="dark"][data-theme="blue"] {
   --accent: #2b6197;
   --accent-ink: #b1d9ff;
   --focus: #b1d9ff;
   --soft: #243b50;
 }
-[data-mode='dark'][data-theme='green'] {
+[data-mode="dark"][data-theme="green"] {
   --accent: #3c6740;
   --accent-ink: #b8e5bb;
   --focus: #b8e5bb;
 }
-[data-mode='dark'][data-theme='contrast'] {
+[data-mode="dark"][data-theme="contrast"] {
   --bg: #000;
   --surface: #111;
   --text: #fff;
@@ -1511,7 +1714,7 @@ footer {
   --danger-bg: #111;
   --danger-line: #fff;
 }
-[data-mode='dark'][data-theme='custom'] {
+[data-mode="dark"][data-theme="custom"] {
   --accent: var(--custom);
   --accent-ink: #a7e8c8;
   --focus: #a7e8c8;
@@ -1592,7 +1795,7 @@ footer {
     display: inline-block;
   }
   .toolbar button,
-  .toolbar input[type='month'] {
+  .toolbar input[type="month"] {
     font-size: 14px;
   }
   main {
