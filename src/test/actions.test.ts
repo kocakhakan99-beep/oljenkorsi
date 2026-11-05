@@ -168,6 +168,9 @@ describe("Talouden kompassi", () => {
       ),
     ).toBe(true);
     expect(
+      demos.every((scenario) => scenario.state.investments.length === 1),
+    ).toBe(true);
+    expect(
       planActions(demos[3].state, "2026-11").some(
         (action) => action.id === "cashflow-check-2026-11",
       ),
