@@ -1277,6 +1277,9 @@ function App() {
     [assetChangeRate, setAssetChangeRate] = useState(0),
     [withdrawalRate, setWithdrawalRate] = useState(4),
     [showCompletedActions, setShowCompletedActions] = useState(false),
+    [showAllCompassTasks, setShowAllCompassTasks] = useState(false),
+    [compassRefreshAt, setCompassRefreshAt] = useState<string | null>(null),
+    [compassRefreshMessage, setCompassRefreshMessage] = useState(""),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(
       null,
     ),
@@ -1333,6 +1336,21 @@ function App() {
           "Tallennus epäonnistui. Tiedot ovat vain tämän välilehden muistissa: vie varmuuskopio nyt. " +
             String(e),
         );
+      }
+      if (
+        next.incomes !== s.incomes ||
+        next.expenses !== s.expenses ||
+        next.assets !== s.assets ||
+        next.liabilities !== s.liabilities ||
+        next.investments !== s.investments ||
+        next.goals !== s.goals ||
+        next.budgets !== s.budgets ||
+        next.budgetActuals !== s.budgetActuals ||
+        next.categories !== s.categories ||
+        next.settings.month !== s.settings.month
+      ) {
+        setCompassRefreshAt(null);
+        setCompassRefreshMessage("");
       }
       setS(valid);
       return true;
@@ -1552,12 +1570,15 @@ function App() {
       setNotice(String(e));
     }
   }
-  function setCompassAction(id: string, status: "done" | "snoozed" | null) {
+  function setCompassAction(
+    id: string,
+    status: "done" | "snoozed" | "blocked" | null,
+  ) {
     const next = { ...s.actionStates };
     if (!status) delete next[id];
-    else if (status === "snoozed") {
+    else if (status === "snoozed" || status === "blocked") {
       const until = new Date(`${today()}T12:00:00`);
-      until.setDate(until.getDate() + 7);
+      until.setDate(until.getDate() + (status === "blocked" ? 30 : 7));
       next[id] = {
         status,
         updatedAt: new Date().toISOString(),
@@ -1565,6 +1586,35 @@ function App() {
       };
     } else next[id] = { status, updatedAt: new Date().toISOString() };
     commit({ ...s, actionStates: next });
+  }
+  function refreshCompass() {
+    const freshTasks = planActions(s, month);
+    const activeIds = new Set(freshTasks.map((task) => task.id));
+    const reopened = freshTasks.filter(
+      (task) =>
+        s.actionStates[task.id]?.status === "done" ||
+        s.actionStates[task.id]?.status === "blocked",
+    ).length;
+    const nextStates = Object.fromEntries(
+      Object.entries(s.actionStates).filter(
+        ([id, saved]) =>
+          activeIds.has(id) &&
+          saved.status !== "done" &&
+          saved.status !== "blocked",
+      ),
+    );
+    const changed =
+      Object.keys(nextStates).length !== Object.keys(s.actionStates).length;
+    const saved = changed ? commit({ ...s, actionStates: nextStates }) : true;
+    setShowAllCompassTasks(false);
+    if (saved) {
+      setCompassRefreshAt(new Date().toISOString());
+      setCompassRefreshMessage(
+        reopened
+          ? `Tilanne tarkistettu · ${reopened} aiemmin kuitattua tai siirrettyä askelta arvioitiin uudelleen.`
+          : "Tilanne tarkistettu tämänhetkisillä kirjauksilla.",
+      );
+    }
   }
   const cats = (kind: Kind) =>
     kind === "incomes" || kind === "expenses"
@@ -2040,6 +2090,9 @@ function App() {
   );
   const compassTasks = planActions(s, month);
   const visibleCompassTasks = visibleActions(s, month);
+  const displayedCompassTasks = showAllCompassTasks
+    ? visibleCompassTasks
+    : visibleCompassTasks.slice(0, 5);
   const compassDemos = useMemo(() => createCompassDemoCases(month), [month]);
   const activeCompassDemo =
     compassDemos.find(
@@ -2296,12 +2349,40 @@ function App() {
                       että puuttuva tieto tarkoittaa ongelmaa.
                     </p>
                   </div>
-                  <div className="compass-count">
-                    <strong>{visibleCompassTasks.length}</strong>
-                    <small>
-                      {visibleCompassTasks.length === 1
-                        ? "askel näkyvissä"
-                        : "askelta näkyvissä"}
+                  <div className="compass-hero-tools">
+                    <div className="compass-count">
+                      <strong>{visibleCompassTasks.length}</strong>
+                      <small>
+                        {visibleCompassTasks.length === 1
+                          ? "askel näkyvissä"
+                          : "askelta näkyvissä"}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      className="compass-refresh"
+                      onClick={refreshCompass}
+                      aria-label="Päivitä Talouden kompassin tilanne"
+                    >
+                      <RotateCcw size={16} aria-hidden="true" />
+                      Päivitä tilanne
+                    </button>
+                    <small
+                      className="compass-refresh-caption"
+                      aria-live="polite"
+                    >
+                      {compassRefreshMessage ||
+                        "Ehdotukset päivittyvät myös, kun muokkaat kirjauksia."}
+                      {compassRefreshAt && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          {new Intl.DateTimeFormat("fi-FI", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(compassRefreshAt))}
+                        </>
+                      )}
                     </small>
                   </div>
                 </div>
@@ -2314,7 +2395,7 @@ function App() {
                 </div>
                 {visibleCompassTasks.length ? (
                   <div className="compass-task-list">
-                    {visibleCompassTasks.map((task, index) => (
+                    {displayedCompassTasks.map((task, index) => (
                       <article
                         key={task.id}
                         className={`compass-task priority-${task.priority}`}
@@ -2354,7 +2435,7 @@ function App() {
                               onClick={() => {
                                 navigate(task.destination);
                                 if (task.destination === "reports")
-                                  selectReportView("flow");
+                                  selectReportView(task.reportView || "flow");
                               }}
                             >
                               {task.destinationLabel}{" "}
@@ -2373,6 +2454,15 @@ function App() {
                               }
                             >
                               Siirrä viikolla
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCompassAction(task.id, "blocked")
+                              }
+                              aria-label={`Ei onnistu nyt: ${task.title}`}
+                            >
+                              Ei onnistu nyt
                             </button>
                           </div>
                         </div>
@@ -2396,6 +2486,18 @@ function App() {
                       Avaa budjetti
                     </button>
                   </div>
+                )}
+                {visibleCompassTasks.length > 5 && (
+                  <button
+                    className="compass-toggle"
+                    type="button"
+                    aria-expanded={showAllCompassTasks}
+                    onClick={() => setShowAllCompassTasks((value) => !value)}
+                  >
+                    {showAllCompassTasks
+                      ? "Näytä vain 5 tärkeintä"
+                      : `Näytä kaikki ${visibleCompassTasks.length} askelta`}
+                  </button>
                 )}
                 <section
                   className="compass-scenario-lab"
@@ -2655,7 +2757,9 @@ function App() {
                           <small>
                             {s.actionStates[task.id].status === "done"
                               ? "Merkitty tehdyksi"
-                              : `Näkyy uudelleen ${s.actionStates[task.id].until}`}
+                              : s.actionStates[task.id].status === "blocked"
+                                ? `Ei mahdollista juuri nyt · palaa ${s.actionStates[task.id].until}`
+                                : `Siirretty · palaa ${s.actionStates[task.id].until}`}
                           </small>
                         </span>
                         <button

@@ -56,6 +56,206 @@ describe("Talouden kompassi", () => {
         (item) => item.id === "create-first-goal",
       ),
     ).toBe(false);
+    state.actionStates["create-first-goal"] = {
+      status: "blocked",
+      until: "2026-12-01",
+      updatedAt: "2026-11-01T09:00:00.000Z",
+    };
+    expect(
+      visibleActions(state, "2026-11", "2026-11-30").some(
+        (item) => item.id === "create-first-goal",
+      ),
+    ).toBe(false);
+    expect(
+      visibleActions(state, "2026-11", "2026-12-01").some(
+        (item) => item.id === "create-first-goal",
+      ),
+    ).toBe(true);
+  });
+
+  it("nostaa asumisosuuden ja oman kuluhistorian esiin varauksin", () => {
+    const state = empty();
+    state.incomes = [
+      entry({
+        id: "salary",
+        name: "Palkka",
+        category: "Palkka",
+        amount: 150000,
+        date: "2026-08-01",
+        recurrence: "monthly",
+      }),
+    ];
+    state.expenses = [
+      entry({
+        id: "rent",
+        name: "Vuokra",
+        category: "Asuminen",
+        amount: 70000,
+        date: "2026-08-02",
+        recurrence: "monthly",
+        essential: true,
+      }),
+      entry({
+        id: "food",
+        name: "Ruokaostokset",
+        category: "Ruoka",
+        amount: 10000,
+        date: "2026-08-03",
+        recurrence: "monthly",
+        essential: false,
+      }),
+      entry({
+        id: "food-extra",
+        name: "Juhlat",
+        category: "Ruoka",
+        amount: 8000,
+        date: "2026-11-03",
+        essential: false,
+      }),
+    ];
+
+    const actions = planActions(state, "2026-11");
+    const housing = actions.find(
+      (action) => action.id === "housing-cost-review-2026-11",
+    );
+    const ownBaseline = actions.find(
+      (action) => action.id === "spending-pattern-2026-11-Ruoka",
+    );
+    expect(housing?.evidence).toContain("46,7 %");
+    expect(housing?.sourceIds).toEqual(["R12"]);
+    expect(housing?.boundary).toContain("henkilökohtainen vuokrakatto");
+    expect(housing?.reportView).toBe("categories");
+    expect(ownBaseline?.evidence).toContain("180,00");
+    expect(ownBaseline?.reportView).toBe("categories");
+    expect(ownBaseline?.boundary).toContain("otos ei ole ennuste");
+  });
+
+  it("vertailuttaa FIRE-tavoitetta vain herkkyystestinä ja tarjoaa neuvontaa pitkittyneeseen alijäämään", () => {
+    const state = empty();
+    state.incomes = [
+      entry({
+        name: "Palkka",
+        category: "Palkka",
+        amount: 100000,
+        date: "2026-08-01",
+        recurrence: "monthly",
+      }),
+    ];
+    state.expenses = [
+      entry({
+        name: "Perusmenot",
+        category: "Asuminen",
+        amount: 120000,
+        date: "2026-08-02",
+        recurrence: "monthly",
+      }),
+    ];
+    state.goals = [entry({ name: "FIRE / taloudellinen riippumattomuus" })];
+    state.investments = [entry({ name: "Indeksisalkku", amount: 100000 })];
+    const actions = planActions(state, "2026-11");
+    expect(
+      actions.find((action) => action.id === "support-options-2026-11")
+        ?.sourceIds,
+    ).toEqual(["R13"]);
+    const fire = actions.find(
+      (action) => action.id === "fire-withdrawal-stress-test-2026-11",
+    );
+    expect(fire?.sourceIds).toEqual(["R7", "R8", "R9", "R10"]);
+    expect(fire?.boundary).toContain("ei turvallisen nostoprosentin lupaus");
+  });
+
+  it("tunnistaa tavoitesäästön ja toistuvat menot oman kassavirran taustaa vasten", () => {
+    const state = empty();
+    state.incomes = [
+      entry({
+        name: "Palkka",
+        category: "Palkka",
+        amount: 200000,
+        date: "2026-08-01",
+        recurrence: "monthly",
+      }),
+    ];
+    state.expenses = [
+      entry({
+        name: "Ruokaostokset",
+        category: "Ruoka",
+        amount: 180000,
+        date: "2026-08-04",
+        recurrence: "monthly",
+        essential: true,
+      }),
+      entry({
+        name: "Jäsenmaksu",
+        category: "Harrastus",
+        amount: 5000,
+        date: "2026-08-05",
+        recurrence: "monthly",
+        essential: false,
+      }),
+    ];
+    state.goals = [entry({ name: "Puskuri", monthly: 150000 })];
+    state.liabilities = [
+      entry({ name: "Korttiluotto", rate: 12, payment: 50000 }),
+      entry({ name: "Opintolaina", rate: 3, payment: 30000 }),
+    ];
+
+    const actions = planActions(state, "2026-11");
+    expect(
+      actions.find((action) => action.id === "essential-cost-review-2026-11")
+        ?.boundary,
+    ).toContain("90 % on kompassin varhainen tarkistusraja");
+    expect(
+      actions.find((action) => action.id === "goal-pace-review-2026-11")
+        ?.nextStep,
+    ).toContain("pienempää kuukausisummaa");
+    expect(
+      actions.find((action) => action.id === "recurring-spend-review-2026-11")
+        ?.boundary,
+    ).toContain("ei tarkoita turhaa menoa");
+    expect(
+      actions.find((action) => action.id === "compare-debt-costs-2026-11")
+        ?.boundary,
+    ).toContain("ei yksin ratkaise");
+    expect(
+      actions.find((action) => action.id === "debt-payment-review-2026-11")
+        ?.boundary,
+    ).toContain("ei yleispätevä velkakatto");
+  });
+
+  it("erottaa kassavirtaa kiristävät säästösiirrot kulutusmenoista", () => {
+    const state = empty();
+    state.incomes = [
+      entry({
+        name: "Palkka",
+        category: "Palkka",
+        amount: 200000,
+        date: "2026-08-01",
+        recurrence: "monthly",
+      }),
+    ];
+    state.expenses = [
+      entry({
+        name: "Arjen menot",
+        category: "Ruoka",
+        amount: 100000,
+        date: "2026-08-04",
+        recurrence: "monthly",
+        essential: false,
+      }),
+      entry({
+        name: "Automaattinen säästö",
+        category: "Säästäminen",
+        amount: 120000,
+        date: "2026-08-05",
+        recurrence: "monthly",
+        essential: false,
+      }),
+    ];
+    const action = planActions(state, "2026-11").find(
+      (item) => item.id === "transfer-cashflow-review-2026-11",
+    );
+    expect(action?.nextStep).toContain("lähiajan laskuihin");
+    expect(action?.boundary).toContain("ei tiedä muiden tilien saldoja");
   });
 
   it("nostaa esiin puskurin, tulovaihtelun ja vuosimenojen suunnittelun omilla rajauksillaan", () => {

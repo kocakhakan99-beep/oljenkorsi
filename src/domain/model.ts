@@ -66,7 +66,7 @@ export interface Scenario {
   years: number;
 }
 export interface ActionState {
-  status: "done" | "snoozed";
+  status: "done" | "snoozed" | "blocked";
   until?: string;
   updatedAt: string;
 }

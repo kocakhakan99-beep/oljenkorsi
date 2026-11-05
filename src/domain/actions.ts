@@ -19,6 +19,14 @@ export interface PlannedAction {
   score: number;
   destination: string;
   destinationLabel: string;
+  reportView?:
+    | "overview"
+    | "categories"
+    | "flow"
+    | "budget"
+    | "wealth"
+    | "debt"
+    | "fire";
   nextStep?: string;
   sourceIds?: GuidanceSourceId[];
   boundary?: string;
@@ -29,6 +37,15 @@ const formatCents = (cents: number) =>
   new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR" }).format(
     cents / 100,
   );
+const formatPercent = (value: number) =>
+  `${new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 1 }).format(value)} %`;
+
+function normalized(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("fi-FI");
+}
 
 function monthOffset(month: string, offset: number) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -42,9 +59,12 @@ function recentMonths(month: string, count: number, endOffset = -1) {
   );
 }
 
-function hasActualEntries(state: State, month: string) {
-  return [...state.incomes, ...state.expenses].some(
-    (item) => item.status === "actual" && occurrences(item, month).length > 0,
+function hasCashEntries(state: State, month: string) {
+  return (
+    total(state.incomes, month, true) > 0 &&
+    state.expenses.some(
+      (item) => item.status === "actual" && occurrences(item, month).length > 0,
+    )
   );
 }
 
@@ -113,10 +133,12 @@ export function planActions(state: State, month: string): PlannedAction[] {
   const completedMonths = [-3, -2, -1].map((offset) =>
     monthOffset(month, offset),
   );
-  const cashHistory = completedMonths.map((period) => ({
-    month: period,
-    ...metrics(state, period),
-  }));
+  const cashHistory = completedMonths
+    .filter((period) => hasCashEntries(state, period))
+    .map((period) => ({
+      month: period,
+      ...metrics(state, period),
+    }));
   const deficitMonths = cashHistory.filter((period) => period.cash < 0);
   if (deficitMonths.length >= 2) {
     const deficitTotal = deficitMonths.reduce(
@@ -130,7 +152,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       title: "Käy läpi viime kuukausien kassavirta",
       reason:
         "Usean kuukauden kirjattu menovirta ylittää tulot. Tarkista ensin tietojen kattavuus ja toistuvat erät.",
-      evidence: `${deficitMonths.length}/3 kuukautta miinuksella · kirjattu erotus yhteensä ${formatCents(deficitTotal)}`,
+      evidence: `${deficitMonths.length}/${cashHistory.length} havaintokuukautta miinuksella · kirjattu erotus yhteensä ${formatCents(deficitTotal)}`,
       privateEvidence: true,
       priority,
       score:
@@ -138,11 +160,191 @@ export function planActions(state: State, month: string): PlannedAction[] {
         Math.min(80, Math.round(deficitTotal / 25000)),
       destination: "reports",
       destinationLabel: "Avaa kassavirtaraportti",
+      reportView: "flow",
       nextStep:
         "Avaa tulot ja eräpäivät päivä kerrallaan. Varmista tietojen kattavuus ja merkitse lähiajan välttämättömät maksut ennen pitkän aikavälin päätöksiä.",
       sourceIds: ["R1", "R2", "R3"],
       boundary:
         "Kolmen kuukauden näkymä on lyhyt otos. Se ei ennusta tuloja tai osoita yksin, että menoja pitäisi leikata.",
+    });
+    if (cashHistory.length === 3 && deficitMonths.length === 3) {
+      actions.push({
+        id: `support-options-${month}`,
+        title: "Selvitä ulkopuolinen apu ja maksujärjestelyt",
+        reason:
+          "Kirjattu kassavirta on ollut miinuksella kaikissa kolmessa tarkastellussa kuussa.",
+        evidence: "3/3 havaintokuukautta miinuksella",
+        priority: "high",
+        score: 375,
+        destination: "liabilities",
+        destinationLabel: "Tarkista laskut ja velat",
+        nextStep:
+          "Jos maksut uhkaavat viivästyä, ota yhteyttä laskuttajaan ajoissa ja kysy maksusuunnitelmaa. Suomessa talous- ja velkaneuvonta auttaa maksutta tilanteen selvittämisessä.",
+        sourceIds: ["R13"],
+        boundary:
+          "Kompassi ei arvioi etuusoikeutta, maksuohjelman ehtoja eikä velkajärjestelyn soveltuvuutta. Varmista kirjaukset ja pyydä omaan tilanteeseen sopivaa neuvontaa.",
+      });
+    }
+  }
+
+  const housingExpenses = state.expenses.filter((item) => {
+    const label = normalized(`${item.category} ${item.name}`);
+    return (
+      item.status === "actual" &&
+      expenseType(item) === "consumption" &&
+      /(asumis|asunt|vuokra|vastike|housing|rent|mortgage)/.test(label)
+    );
+  });
+  const housingPeriods = completedMonths
+    .map((period) => ({
+      income: total(state.incomes, period, true),
+      housing: total(housingExpenses, period, true),
+    }))
+    .filter((period) => period.income > 0 && period.housing > 0);
+  if (housingPeriods.length >= 2) {
+    const housingShare =
+      (sum(housingPeriods.map((period) => period.housing)) /
+        sum(housingPeriods.map((period) => period.income))) *
+      100;
+    if (housingShare > 40) {
+      actions.push({
+        id: `housing-cost-review-${month}`,
+        title: "Tarkista asumismenojen osuus tuloista",
+        reason:
+          "Kirjatuissa kuukausissa asumiseksi tunnistetut menot ovat olleet suuri osuus kirjatuista tuloista.",
+        evidence: `${housingPeriods.length} kk · kirjattu osuus noin ${formatPercent(housingShare)}`,
+        privateEvidence: true,
+        priority: housingShare >= 50 ? "high" : "medium",
+        score: housingShare >= 50 ? 335 : 250,
+        destination: "reports",
+        destinationLabel: "Tarkista menot ja tulot",
+        reportView: "categories",
+        nextStep:
+          "Tarkista, mitä asumisen luokkaan on kirjattu. Erittele vuokra tai lainan kuukausierä, vastike, energia ja muut kulut; selvitä tarvittaessa etuudet tai sopimuksen vaihtoehdot ennen isoja päätöksiä.",
+        sourceIds: ["R12"],
+        boundary:
+          "Eurostatin yli 40 %:n indikaattori on väestötason mittari. Sovelluksen luokittelu ja tulokäsite eivät vastaa sen laskentaa, joten tämä on suuntaa-antava tarkistussignaali eikä henkilökohtainen vuokrakatto. Yli 50 % nostaa vain sovelluksen näyttöprioriteettia; sekään ei ole yksilöllinen riskiraja.",
+      });
+    }
+  }
+
+  const essentialPeriods = completedMonths
+    .map((period) => ({
+      month: period,
+      income: total(state.incomes, period, true),
+      essential: total(
+        state.expenses.filter(
+          (item) => item.essential && expenseType(item) === "consumption",
+        ),
+        period,
+        true,
+      ),
+    }))
+    .filter(
+      (period) => period.income > 0 && hasCashEntries(state, period.month),
+    );
+  if (essentialPeriods.length >= 2) {
+    const essentialShare =
+      (sum(essentialPeriods.map((period) => period.essential)) /
+        sum(essentialPeriods.map((period) => period.income))) *
+      100;
+    if (essentialShare >= 90) {
+      actions.push({
+        id: `essential-cost-review-${month}`,
+        title: "Tarkista välttämättömien menojen liikkumavara",
+        reason:
+          "Välttämättömiksi merkityt kirjaukset vievät suurimman osan kirjatuista tuloista.",
+        evidence: `${essentialPeriods.length} kk · kirjattu osuus noin ${formatPercent(essentialShare)}`,
+        privateEvidence: true,
+        priority: essentialShare >= 100 ? "high" : "medium",
+        score: essentialShare >= 100 ? 365 : 255,
+        destination: "expenses",
+        destinationLabel: "Tarkista välttämättömät menot",
+        nextStep:
+          "Tarkista ensin, että pakolliset laskut ja tulot on kirjattu oikein. Listaa seuraavan kuukauden eräpäivät ja selvitä, onko laskutukseen, sopimuksiin tai tukiin saatavilla omaan tilanteeseen sopivia vaihtoehtoja.",
+        sourceIds: ["R2", "R3"],
+        boundary:
+          "90 % on kompassin varhainen tarkistusraja, ei tutkimuksesta johdettu tavoite. Luokittelu, puuttuvat kirjaukset ja harvinaiset vuosimenot voivat muuttaa osuutta.",
+      });
+    }
+  }
+
+  const overPlanCategories = new Set(budgetCategories);
+  const unusualCategories = [
+    ...new Set(
+      state.expenses
+        .filter(
+          (item) =>
+            item.status === "actual" && expenseType(item) === "consumption",
+        )
+        .map((item) => item.category),
+    ),
+  ]
+    .filter((category) => !overPlanCategories.has(category))
+    .map((category) => {
+      const priorPeriods = completedMonths
+        .map((period) => ({
+          period,
+          hasExpense: state.expenses.some(
+            (item) =>
+              item.status === "actual" &&
+              item.category === category &&
+              expenseType(item) === "consumption" &&
+              occurrences(item, period).length > 0,
+          ),
+          amount: total(
+            state.expenses.filter(
+              (item) =>
+                item.category === category &&
+                expenseType(item) === "consumption",
+            ),
+            period,
+            true,
+          ),
+        }))
+        .filter((item) => item.hasExpense);
+      const currentAmount = total(
+        state.expenses.filter(
+          (item) =>
+            item.category === category && expenseType(item) === "consumption",
+        ),
+        month,
+        true,
+      );
+      const average =
+        priorPeriods.length > 0
+          ? sum(priorPeriods.map((item) => item.amount)) / priorPeriods.length
+          : 0;
+      return { category, priorPeriods, currentAmount, average };
+    })
+    .filter(
+      (item) =>
+        item.priorPeriods.length >= 2 &&
+        item.currentAmount - item.average >= 5000 &&
+        item.currentAmount >= item.average * 1.3,
+    )
+    .sort((a, b) => b.currentAmount - b.average - (a.currentAmount - a.average))
+    .slice(0, 2);
+  for (const item of unusualCategories) {
+    actions.push({
+      id: `spending-pattern-${month}-${item.category}`,
+      title: `Vertaa tämän kuun menoa: ${item.category}`,
+      reason:
+        "Kirjattu summa on tavallista suurempi verrattuna oman talouden aiempiin havaintokuukausiin.",
+      evidence: `Tässä kuussa ${formatCents(item.currentAmount)} · aiempi keskiarvo ${formatCents(item.average)}`,
+      privateEvidence: true,
+      priority: item.currentAmount >= item.average * 1.75 ? "medium" : "low",
+      score:
+        190 +
+        Math.min(50, Math.round((item.currentAmount - item.average) / 10000)),
+      destination: "reports",
+      destinationLabel: "Avaa kuluraportti",
+      reportView: "categories",
+      nextStep:
+        "Avaa erän kirjaukset ja erottele kertaluonteinen meno, hintamuutos ja mahdollinen kirjausvirhe. Päätä vasta sitten, tarvitaanko suunnitelmaan muutos.",
+      sourceIds: ["R11"],
+      boundary:
+        "50 €:n ja 30 %:n muutosrajat ovat sovelluksen omia huomiosääntöjä. Vertailu käyttää enintään kolmea havaittua kuukautta. Kuukausi ilman kyseisen kategorian kirjausta tulkitaan puuttuvaksi havainnoksi, ei nollakuluksi; otos ei ole ennuste.",
     });
   }
 
@@ -186,8 +388,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
     });
   }
 
-  const incomeHistory = recentMonths(month, 6).filter((period) =>
-    hasActualEntries(state, period),
+  const incomeHistory = recentMonths(month, 6).filter(
+    (period) => total(state.incomes, period, true) > 0,
   );
   if (incomeHistory.length >= 4) {
     const incomes = incomeHistory.map((period) =>
@@ -213,6 +415,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         score: 245,
         destination: "reports",
         destinationLabel: "Tarkastele tulovirtaa",
+        reportView: "flow",
         nextStep:
           "Kokeile kuukausibudjettia tavanomaista matalamman tulon varassa ja tarkista, mitkä kulut joustavat. Pidä satunnaiset tulot erillisenä skenaariona.",
         sourceIds: ["R2", "R3"],
@@ -220,6 +423,184 @@ export function planActions(state: State, month: string): PlannedAction[] {
           "30 % on tämän näkymän tunnistuskynnys, ei tutkimuksen riskiraja. Puuttuvat tulokirjaukset voivat näyttää vaihtelun todellista suurempana.",
       });
     }
+  }
+
+  const knownIncomeMonths = completedMonths.filter(
+    (period) => total(state.incomes, period, true) > 0,
+  );
+  const observedCashMonths = cashHistory.map((period) => period.month);
+  if (knownIncomeMonths.length >= 2) {
+    const monthMetrics = observedCashMonths.map((period) =>
+      metrics(state, period),
+    );
+    const averageSurplus =
+      monthMetrics.length > 0
+        ? sum(monthMetrics.map((period) => period.surplus)) /
+          monthMetrics.length
+        : null;
+    const plannedGoalSaving = sum(state.goals.map((goal) => goal.monthly));
+    if (
+      averageSurplus !== null &&
+      observedCashMonths.length >= 2 &&
+      plannedGoalSaving > 0 &&
+      plannedGoalSaving > Math.max(0, averageSurplus)
+    ) {
+      actions.push({
+        id: `goal-pace-review-${month}`,
+        title: "Sovita tavoitesäästö omaan kassavirtaan",
+        reason:
+          "Tavoitteisiin kirjattu kuukausisummaa on suurempi kuin viime kuukausien keskimääräinen tulojen ja kulutusmenojen erotus.",
+        evidence: `Tavoitteet ${formatCents(plannedGoalSaving)}/kk · havaittu erotus ${formatCents(averageSurplus)}/kk`,
+        privateEvidence: true,
+        priority: averageSurplus < 0 ? "high" : "medium",
+        score: averageSurplus < 0 ? 300 : 220,
+        destination: "goals",
+        destinationLabel: "Tarkista tavoitteet",
+        nextStep:
+          "Kokeile pienempää kuukausisummaa tai jätä tavoite hetkeksi ilman automaattista säästötahtia. Voit palata siihen, kun menot ja puskuri sallivat.",
+        sourceIds: ["R2", "R4"],
+        boundary:
+          "Vertailu käyttää kirjattuja tuloja ja kulutusmenoja, ei tulevia laskuja, veroennustetta tai tuloturvaa. Negatiivinen tai pieni erotus voi johtua puuttuvista kirjauksista.",
+      });
+    }
+
+    const recurringOptional = state.expenses.filter(
+      (item) =>
+        item.status === "actual" &&
+        item.active &&
+        item.recurrence !== "once" &&
+        !item.essential &&
+        expenseType(item) === "consumption",
+    );
+    const recurringAverage =
+      sum(
+        knownIncomeMonths.map((period) =>
+          total(recurringOptional, period, true),
+        ),
+      ) / knownIncomeMonths.length;
+    if (recurringOptional.length > 0 && recurringAverage >= 1000) {
+      actions.push({
+        id: `recurring-spend-review-${month}`,
+        title: "Käy läpi toistuvat ei-välttämättömät maksut",
+        reason:
+          "Sovelluksessa on kirjattuja toistuvia menoja, joiden tarve tai käyttö voi muuttua ajan myötä.",
+        evidence: `${recurringOptional.length} erää · kirjattu keskimäärin ${formatCents(recurringAverage)}/kk`,
+        privateEvidence: true,
+        priority: "low",
+        score: 165,
+        destination: "expenses",
+        destinationLabel: "Tarkista toistuvat menot",
+        nextStep:
+          "Tarkista jokaisen palvelun käyttö, hinta, seuraava uusimispäivä ja irtisanomisehdot. Poista tai vaihda vain ne, joita et itse enää arvosta.",
+        sourceIds: ["R11"],
+        boundary:
+          "10 €/kk on vain kompassin listauskynnys, ei suositus tai turhan menon raja. Toistuva kirjaus ei tarkoita turhaa menoa. Vuosiarvio on kuukausikeskiarvo kerrottuna kahdellatoista eikä huomioi hinnanmuutoksia tai sopimuskausia.",
+      });
+    }
+  }
+
+  const recentSavings = observedCashMonths.map((period) =>
+    metrics(state, period),
+  );
+  const savingDrivenDeficits = recentSavings.filter(
+    (period) => period.cash < 0 && period.surplus >= 0,
+  );
+  if (savingDrivenDeficits.length >= 2) {
+    actions.push({
+      id: `transfer-cashflow-review-${month}`,
+      title: "Tarkista säästö- ja sijoitussiirtojen ajoitus",
+      reason:
+        "Joissakin kuukausissa kulutusmenot jäivät tuloja pienemmiksi, mutta kaikki tililtä lähtevät siirrot tekivät kassavirrasta miinusmerkkisen.",
+      evidence: `${savingDrivenDeficits.length}/3 kuussa kulutusmenot alittivat tulot, vaikka kassavirta oli miinuksella`,
+      priority: "medium",
+      score: 235,
+      destination: "reports",
+      destinationLabel: "Erittele kassavirta",
+      reportView: "overview",
+      nextStep:
+        "Vertaa siirtoja lähiajan laskuihin ja heti käytettävissä olevaan puskurirahaan. Säästötahtia voi sovittaa, jos automaattinen siirto jättää maksutilin liian tiukalle.",
+      sourceIds: ["R2", "R4"],
+      boundary:
+        "Siirtojen muuttaminen vaikuttaa pitkän aikavälin suunnitelmaan. Kompassi ei tiedä muiden tilien saldoja tai tulevia menoja.",
+    });
+  }
+
+  const pricedDebts = state.liabilities.filter((item) => item.rate > 0);
+  if (
+    pricedDebts.length >= 2 &&
+    Math.max(...pricedDebts.map((item) => item.rate)) >
+      Math.min(...pricedDebts.map((item) => item.rate))
+  ) {
+    actions.push({
+      id: `compare-debt-costs-${month}`,
+      title: "Vertaa velkojen kirjattuja korkoja ja kuluja",
+      reason:
+        "Velkojen kirjatut korot eroavat toisistaan, joten lisälyhennyksen vaikutus voi vaihdella velasta toiseen.",
+      evidence: `${pricedDebts.length} velkaa · korot ${Math.min(...pricedDebts.map((item) => item.rate))}–${Math.max(...pricedDebts.map((item) => item.rate))} %`,
+      privateEvidence: true,
+      priority: "medium",
+      score: 225,
+      destination: "liabilities",
+      destinationLabel: "Vertaa velkoja",
+      nextStep:
+        "Tarkista todellinen vuosikorko, jäljellä oleva laina-aika, lisälyhennyksen kulut ja vähimmäiserät. Vertaa ehtoja ennen kuin päätät ylimääräisestä maksusta.",
+      sourceIds: ["R11"],
+      boundary:
+        "Sovelluksen korkokenttä ei välttämättä sisällä kaikkia maksuja. Korkein nimelliskorko ei yksin ratkaise, mikä sopimus kannattaa maksaa ensin.",
+    });
+  }
+
+  if (state.liabilities.length > 0 && knownIncomeMonths.length >= 2) {
+    const averageIncome =
+      sum(
+        knownIncomeMonths.map((period) => total(state.incomes, period, true)),
+      ) / knownIncomeMonths.length;
+    const debtPayments = sum(state.liabilities.map((item) => item.payment));
+    const paymentShare =
+      averageIncome > 0 ? (debtPayments / averageIncome) * 100 : 0;
+    if (debtPayments > 0 && paymentShare >= 35) {
+      actions.push({
+        id: `debt-payment-review-${month}`,
+        title: "Tarkista velkojen kuukausierien kuormitus",
+        reason:
+          "Velkoihin kirjattujen kuukausierien summa on suuri suhteessa viime kuukausien kirjattuihin tuloihin.",
+        evidence: `${formatCents(debtPayments)}/kk · noin ${formatPercent(paymentShare)} keskituloista`,
+        privateEvidence: true,
+        priority: paymentShare >= 50 ? "high" : "medium",
+        score: paymentShare >= 50 ? 320 : 230,
+        destination: "liabilities",
+        destinationLabel: "Tarkista velkaerät",
+        nextStep:
+          "Varmista, että maksuerät ovat ajan tasalla. Jos arki kiristyy, selvitä velkojalta mahdolliset järjestelyt ja kysy maksutonta talous- ja velkaneuvontaa.",
+        sourceIds: ["R13"],
+        boundary:
+          "35 % on sovelluksen huomioraja, ei yleispätevä velkakatto; 50 % nostaa vain näytön prioriteettia. Laskenta ei huomioi kotitalouden kokoa, asumismenoja, muita tuloja tai lainojen ehtoja.",
+      });
+    }
+  }
+
+  const fireGoal = state.goals.some((goal) =>
+    /(fire|taloudellinen riippumattomuus|taloudellinen vapaus)/.test(
+      normalized(goal.name),
+    ),
+  );
+  if (fireGoal && state.investments.length > 0) {
+    actions.push({
+      id: `fire-withdrawal-stress-test-${month}`,
+      title: "Stressitestaa FIRE-nostojen oletukset",
+      reason:
+        "FIRE-tavoite ja sijoitusvarallisuus on kirjattu, mutta nostotason vaikutus riippuu ajoituksesta, inflaatiosta ja joustosta.",
+      evidence: `${state.investments.length} sijoituserää · tavoite “${state.goals.find((goal) => /(fire|taloudellinen riippumattomuus|taloudellinen vapaus)/.test(normalized(goal.name)))?.name}”`,
+      priority: "low",
+      score: 180,
+      destination: "scenarios",
+      destinationLabel: "Avaa nostoskenaariot",
+      nextStep:
+        "Vertaa useita nosto-oletuksia ja pitkiä heikkojen tuottojen alkujaksoja. Lisää arvioon verot, kulut, eläke ja menojen jousto ennen johtopäätöksiä.",
+      sourceIds: ["R7", "R8", "R9", "R10"],
+      boundary:
+        "Skenaario on herkkyystesti, ei turvallisen nostoprosentin lupaus. Historiallinen Yhdysvaltain aineisto ei ole Suomen tulevaisuusennuste.",
+    });
   }
 
   const expenseHistory = recentMonths(month, 12).filter((period) =>
@@ -389,7 +770,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         priorityOrder[a.priority] - priorityOrder[b.priority] ||
         b.score - a.score,
     )
-    .slice(0, 16);
+    .slice(0, 20);
 }
 
 export function visibleActions(state: State, month: string, date = today()) {

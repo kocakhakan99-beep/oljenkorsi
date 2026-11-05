@@ -63,6 +63,18 @@ export const guidanceSources = {
     boundary:
       "Tietokortti tai laskuri ei yksin todista varallisuuden tai hyvinvoinnin kasvua.",
   },
+  R12: {
+    citation: "Eurostat, Housing cost overburden rate",
+    idea: "Eurostat käyttää yli 40 %:n asumiskustannusosuutta käytettävissä olevista tuloista väestötason ylikuormitusindikaattorissa.",
+    boundary:
+      "Tämä sovellus ei laske Eurostatin indikaattoria: luokitukset, asumistukien käsittely ja ekvivalentit käytettävissä olevat tulot voivat poiketa. 40 % on tarkistussignaali, ei henkilökohtainen enimmäisraja tai muutto-ohje.",
+  },
+  R13: {
+    citation: "Oikeuspalveluvirasto, talous- ja velkaneuvonta",
+    idea: "Suomessa julkinen talous- ja velkaneuvonta auttaa selvittämään maksuvaikeuksia ja velkatilannetta maksutta.",
+    boundary:
+      "Neuvonta arvioi tilanteen yksilöllisesti. Kompassi ei ratkaise etuuksia, velkajärjestelyä tai oikeudellisia kysymyksiä.",
+  },
 } as const;
 
 export type GuidanceSourceId = keyof typeof guidanceSources;
