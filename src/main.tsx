@@ -30,7 +30,13 @@ import {
   fiTarget,
   fiMonths,
   emergencyFund,
+  linkedAssetOutlook,
 } from "./domain/calculations";
+import {
+  planActions,
+  visibleActions,
+  type PlannedAction,
+} from "./domain/actions";
 import { storage } from "./data/storage";
 import {
   backup,
@@ -86,9 +92,14 @@ import {
   Plus,
   Minus,
   X,
+  Compass,
+  Blocks,
+  CircleGauge,
+  Scale,
 } from "lucide-react";
 const names: Record<string, string> = {
   dashboard: "Yhteenveto",
+  compass: "Talouden kompassi",
   budget: "Budjetti",
   incomes: "Tulot",
   expenses: "Menot",
@@ -103,7 +114,7 @@ const names: Record<string, string> = {
   help: "Ohje ja tietosuoja",
 };
 const navGroups = [
-  { label: "Aloitus", pages: ["dashboard"] },
+  { label: "Aloitus", pages: ["dashboard", "compass"] },
   { label: "Arki", pages: ["incomes", "expenses", "budget"] },
   { label: "Varallisuus", pages: ["assets", "liabilities", "investments"] },
   { label: "Tulevaisuus", pages: ["goals", "scenarios", "reports"] },
@@ -111,6 +122,7 @@ const navGroups = [
 ];
 const navIcons = {
   dashboard: LayoutDashboard,
+  compass: Compass,
   budget: Wallet,
   incomes: CircleDollarSign,
   expenses: ReceiptText,
@@ -125,9 +137,13 @@ const navIcons = {
   help: CircleHelp,
 };
 const reportTabs = [
-  { id: "overview", label: "Kokonaiskuva", Icon: ChartNoAxesCombined },
+  { id: "overview", label: "Tulot ja menot", Icon: ChartNoAxesCombined },
   { id: "categories", label: "Kulurakenne", Icon: ChartPie },
   { id: "flow", label: "Rahavirran ajoitus", Icon: CalendarClock },
+  { id: "budget", label: "Budjetti", Icon: Wallet },
+  { id: "wealth", label: "Varallisuus", Icon: Blocks },
+  { id: "debt", label: "Velat ja oma pääoma", Icon: Scale },
+  { id: "fire", label: "Säästöaste ja FIRE", Icon: CircleGauge },
 ] as const;
 const helpPreferencesKey = "taloussuunnittelu.dismissed-help.v1";
 function readDismissedHelp() {
@@ -143,15 +159,55 @@ function readDismissedHelp() {
   }
 }
 type ReportView = (typeof reportTabs)[number]["id"];
+const reportFormats: Record<ReportView, { value: string; label: string }[]> = {
+  overview: [
+    { value: "bars", label: "Pylväät" },
+    { value: "line", label: "Viiva" },
+    { value: "area", label: "Alue" },
+    { value: "table", label: "Taulukko" },
+  ],
+  categories: [
+    { value: "bars", label: "Pylväät" },
+    { value: "pie", label: "Piirakka" },
+    { value: "table", label: "Taulukko" },
+  ],
+  flow: [
+    { value: "timeline", label: "Aikajana" },
+    { value: "table", label: "Taulukko" },
+  ],
+  budget: [
+    { value: "bars", label: "Pylväät" },
+    { value: "table", label: "Taulukko" },
+  ],
+  wealth: [
+    { value: "breakdown", label: "Erittely" },
+    { value: "table", label: "Taulukko" },
+  ],
+  debt: [
+    { value: "outlook", label: "Laskelma" },
+    { value: "table", label: "Taulukko" },
+  ],
+  fire: [
+    { value: "bars", label: "Pylväät" },
+    { value: "table", label: "Taulukko" },
+  ],
+};
 type ReportSelection =
   | { type: "month"; month: string; metric: "income" | "expense" }
+  | {
+      type: "budget";
+      month: string;
+      planned: number;
+      actual: number;
+      manualCategories: string[];
+    }
   | {
       type: "period";
       from: string;
       to: string;
       metric: "income" | "expense" | "cash";
     }
-  | { type: "category"; category: string }
+  | { type: "category"; category: string; from: string; to: string }
   | { type: "day"; date: string };
 type ReportDetailEntry = {
   entry: Entry;
@@ -173,29 +229,21 @@ function pieSlicePath(startPercent: number, endPercent: number) {
   const large = end - startPercent > 50 ? 1 : 0;
   return `M ${x1} ${y1} A 48 48 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A 27 27 0 ${large} 0 ${x4} ${y4} Z`;
 }
-function expCatsForReport(s: State, month: string): [string, number][] {
-  const categories = [
-    ...new Set(
-      s.expenses
-        .filter((e) => expenseType(e) === "consumption")
-        .map((e) => e.category),
-    ),
-  ];
-  return categories
-    .map(
-      (category) =>
-        [
-          category,
-          total(
-            s.expenses.filter(
-              (e) =>
-                e.category === category && expenseType(e) === "consumption",
-            ),
-            month,
-            true,
-          ),
-        ] as [string, number],
-    )
+function expCatsForReport(s: State, months: string[]): [string, number][] {
+  const totals = new Map<string, number>();
+  const expenses = s.expenses.filter(
+    (item) => expenseType(item) === "consumption",
+  );
+  for (const month of months)
+    for (const item of expenses) {
+      const count = occurrences(item, month).length;
+      if (count)
+        totals.set(
+          item.category,
+          (totals.get(item.category) || 0) + item.amount * count,
+        );
+    }
+  return [...totals.entries()]
     .filter(([, value]) => value > 0)
     .sort((a, b) => b[1] - a[1]);
 }
@@ -720,6 +768,159 @@ function MonthPicker({
     </div>
   );
 }
+function ReportRangeControl({
+  start,
+  end,
+  startIndex,
+  endIndex,
+  valid,
+  length,
+  months,
+  firstMonthIndex,
+  lastMonthIndex,
+  onStart,
+  onEnd,
+  onShift,
+  onRailEnd,
+}: {
+  start: string;
+  end: string;
+  startIndex: number | null;
+  endIndex: number | null;
+  valid: boolean;
+  length: number;
+  months: string[];
+  firstMonthIndex: number;
+  lastMonthIndex: number;
+  onStart: (month: string) => void;
+  onEnd: (month: string) => void;
+  onShift: (offset: number) => void;
+  onRailEnd: (index: number) => void;
+}) {
+  const railRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!end) return;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(() =>
+      railRef.current
+        ?.querySelector<HTMLElement>('[aria-pressed="true"]')
+        ?.scrollIntoView({
+          behavior: reduced ? "auto" : "smooth",
+          block: "nearest",
+          inline: "center",
+        }),
+    );
+  }, [end]);
+  const monthNumber = (value: string) => {
+    const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
+    return match ? Number(match[1]) * 12 + Number(match[2]) - 1 : null;
+  };
+  const monthLabel = (value: string) => {
+    const [year, month] = value.split("-").map(Number);
+    return new Intl.DateTimeFormat("fi-FI", {
+      month: "long",
+      year: "numeric",
+    }).format(new Date(year, month - 1, 1));
+  };
+  return (
+    <div className="report-range-control">
+      <div className="report-range-heading">
+        <div>
+          <span className="eyebrow">RAPORTOINTIJAKSO</span>
+          <strong>
+            {valid
+              ? `${monthLabel(start)} – ${monthLabel(end)}`
+              : "Tarkista aikaväli"}
+          </strong>
+        </div>
+        <small>
+          {valid
+            ? `${length} ${length === 1 ? "kuukausi" : "kuukautta"}`
+            : "Valitse alku ja loppu"}
+        </small>
+      </div>
+      <div
+        className="report-range-navigator"
+        role="group"
+        aria-label="Valitse raportin alku ja loppu"
+      >
+        <button
+          type="button"
+          aria-label="Siirrä aikaväliä kuukausi taaksepäin"
+          title="Siirrä aikaväliä kuukausi taaksepäin"
+          disabled={
+            !valid || startIndex === null || startIndex <= firstMonthIndex
+          }
+          onClick={() => onShift(-1)}
+        >
+          <ChevronLeft size={19} aria-hidden="true" />
+        </button>
+        <div className="report-range-fields">
+          <MonthPicker
+            value={start}
+            label="Alku"
+            ariaLabel="Raportin alkukuukausi"
+            onChange={onStart}
+          />
+          <MonthPicker
+            value={end}
+            label="Loppu"
+            ariaLabel="Raportin loppukuukausi"
+            onChange={onEnd}
+          />
+        </div>
+        <button
+          type="button"
+          aria-label="Siirrä aikaväliä kuukausi eteenpäin"
+          title="Siirrä aikaväliä kuukausi eteenpäin"
+          disabled={!valid || endIndex === null || endIndex >= lastMonthIndex}
+          onClick={() => onShift(1)}
+        >
+          <ChevronRight size={19} aria-hidden="true" />
+        </button>
+      </div>
+      <div
+        className="report-month-rail"
+        role="group"
+        aria-label="Siirry raportin päättymiskuukauteen"
+        ref={railRef}
+      >
+        {months.map((key) => {
+          const [year, monthPart] = key.split("-").map(Number);
+          const date = new Date(year, monthPart - 1, 1);
+          const short = new Intl.DateTimeFormat("fi-FI", {
+            month: "short",
+          }).format(date);
+          const label = monthLabel(key);
+          const index = monthNumber(key);
+          return (
+            <button
+              type="button"
+              key={key}
+              aria-label={`Päättymiskuukausi ${label}`}
+              aria-pressed={key === end}
+              title={label}
+              onClick={() => index !== null && onRailEnd(index)}
+            >
+              <span>{short}</span>
+              <small>{year}</small>
+            </button>
+          );
+        })}
+      </div>
+      <p className="report-range-hint">
+        Valitse alku ja loppu, siirrä aikaväliä nuolilla tai vieritä
+        kuukausilistaa.
+      </p>
+      {!valid && (
+        <p className="alert warning" role="alert">
+          Aikavälin pitää olla enintään 120 kuukautta ja loppukuukausi ei voi
+          olla ennen alkua.
+        </p>
+      )}
+    </div>
+  );
+}
 function dateTextToIso(text: string) {
   const value = text.trim();
   let iso = value;
@@ -957,10 +1158,10 @@ function App() {
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
     [reportZoom, setReportZoom] = useState(1),
     [reportView, setReportView] = useState<ReportView>("overview"),
-    [overviewChart, setOverviewChart] = useState<"bars" | "line" | "area">(
-      "bars",
-    ),
-    [categoryChart, setCategoryChart] = useState<"bars" | "pie">("bars"),
+    [reportFormat, setReportFormat] = useState("bars"),
+    [assetChangeRate, setAssetChangeRate] = useState(0),
+    [withdrawalRate, setWithdrawalRate] = useState(4),
+    [showCompletedActions, setShowCompletedActions] = useState(false),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(
       null,
     ),
@@ -972,7 +1173,6 @@ function App() {
     );
   const menuButton = useRef<HTMLButtonElement>(null);
   const reportDetailRef = useRef<HTMLElement>(null);
-  const reportMonthRailRef = useRef<HTMLDivElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
   const [selectedYear, selectedMonthNumber] = month.split("-").map(Number);
@@ -1061,6 +1261,7 @@ function App() {
   }
   function selectReportView(view: ReportView) {
     setReportView(view);
+    setReportFormat(reportFormats[view][0].value);
     setSelectedReport(null);
   }
   function onReportTabKeyDown(
@@ -1124,19 +1325,6 @@ function App() {
     }
   }, [selectedReport]);
   useEffect(() => {
-    if (!reportEnd) return;
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    requestAnimationFrame(() =>
-      reportMonthRailRef.current
-        ?.querySelector<HTMLElement>('[aria-pressed="true"]')
-        ?.scrollIntoView({
-          behavior: reduced ? "auto" : "smooth",
-          block: "nearest",
-          inline: "center",
-        }),
-    );
-  }, [reportEnd]);
-  useEffect(() => {
     let f = (e: BeforeUnloadEvent) => {
       if (!storageOk) {
         e.preventDefault();
@@ -1176,6 +1364,15 @@ function App() {
     }
   }
   function remove(kind: Kind, id: string) {
+    if (
+      kind === "assets" &&
+      s.liabilities.some((item) => item.linkedAssetId === id)
+    ) {
+      setNotice(
+        "Omaisuuserää ei voi poistaa, koska siihen on linkitetty velkoja. Poista linkitys ensin velan muokkauksesta.",
+      );
+      return;
+    }
     if (
       confirm(
         "Poistetaanko tietue? Voit kumota viimeisimmän poiston tämän istunnon aikana.",
@@ -1233,6 +1430,20 @@ function App() {
     } catch (e) {
       setNotice(String(e));
     }
+  }
+  function setCompassAction(id: string, status: "done" | "snoozed" | null) {
+    const next = { ...s.actionStates };
+    if (!status) delete next[id];
+    else if (status === "snoozed") {
+      const until = new Date(`${today()}T12:00:00`);
+      until.setDate(until.getDate() + 7);
+      next[id] = {
+        status,
+        updatedAt: new Date().toISOString(),
+        until: until.toISOString().slice(0, 10),
+      };
+    } else next[id] = { status, updatedAt: new Date().toISOString() };
+    commit({ ...s, actionStates: next });
   }
   const cats = (kind: Kind) =>
     kind === "incomes" || kind === "expenses"
@@ -1317,15 +1528,102 @@ function App() {
               end >= firstMonthIndex + rangeWindow - 1 && end <= lastMonthIndex,
           )
           .map(monthIndexKey);
-  const history = customRangeValid
-    ? Array.from({ length: customRangeLength }, (_, i) => {
-        const index = reportStartNumber! + i;
-        const year = Math.floor(index / 12);
-        const monthIndex = index % 12;
-        const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-        return { key, ...metrics(s, key) };
-      })
-    : [];
+  const history = useMemo(
+    () =>
+      page === "reports" && customRangeValid
+        ? Array.from({ length: customRangeLength }, (_, i) => {
+            const index = reportStartNumber! + i;
+            const year = Math.floor(index / 12);
+            const monthIndex = index % 12;
+            const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+            return { key, ...metrics(s, key) };
+          })
+        : [],
+    [s, page, customRangeValid, customRangeLength, reportStartNumber],
+  );
+  const budgetReport = useMemo(
+    () =>
+      page === "reports" && reportView === "budget"
+        ? history
+            .map(({ key }) => {
+              const plannedByCategory = s.budgets[key] || {};
+              const actualByCategory: Record<string, number> = {};
+              for (const expense of s.expenses) {
+                if (
+                  expense.status !== "actual" ||
+                  expenseType(expense) !== "consumption"
+                )
+                  continue;
+                const count = occurrences(expense, key).length;
+                if (count)
+                  actualByCategory[expense.category] =
+                    (actualByCategory[expense.category] || 0) +
+                    expense.amount * count;
+              }
+              const categories = new Set([
+                ...Object.keys(plannedByCategory),
+                ...Object.keys(actualByCategory),
+                ...Object.keys(s.budgetActuals[key] || {}),
+              ]);
+              for (const category of categories) {
+                if (Object.hasOwn(s.budgetActuals[key] || {}, category))
+                  actualByCategory[category] = s.budgetActuals[key][category];
+              }
+              const planned = sum(Object.values(plannedByCategory));
+              const actual = sum(
+                [...categories].map(
+                  (category) => actualByCategory[category] || 0,
+                ),
+              );
+              return {
+                key,
+                planned,
+                hasPlan: Object.keys(plannedByCategory).length > 0,
+                actual,
+                categories: [...categories],
+                plannedByCategory,
+                actualByCategory,
+              };
+            })
+            .filter((row) => row.hasPlan || row.actual > 0)
+        : [],
+    [s, page, reportView, history],
+  );
+  const budgetTotals = budgetReport.reduce(
+    (totals, row) => ({
+      planned: totals.planned + row.planned,
+      actual: totals.actual + row.actual,
+    }),
+    { planned: 0, actual: 0 },
+  );
+  const currentAssets = s.assets.map((asset) => ({
+    ...asset,
+    ownedValue: Math.round((asset.amount * asset.ownership) / 100),
+  }));
+  const currentInvestments = s.investments.map((investment) => ({
+    ...investment,
+    marketValue: Math.round(investment.amount * investment.quantity),
+  }));
+  const currentDebts = s.liabilities;
+  const debtBalance = sum(currentDebts.map((debt) => debt.amount));
+  const assetBalance = sum(currentAssets.map((asset) => asset.ownedValue));
+  const investmentBalance = sum(
+    currentInvestments.map((investment) => investment.marketValue),
+  );
+  const netWorth = assetBalance + investmentBalance - debtBalance;
+  const linkedOutlooks = currentAssets
+    .map((asset) => ({
+      asset,
+      outlook: linkedAssetOutlook(asset, currentDebts, assetChangeRate),
+    }))
+    .filter((item) => item.outlook !== null);
+  const observedCashflowMonths = history.filter(
+    (item) => item.income !== 0 || item.expense !== 0,
+  );
+  const averageMonthlyConsumption = observedCashflowMonths.length
+    ? sum(observedCashflowMonths.map((item) => item.consumption)) /
+      observedCashflowMonths.length
+    : 0;
   const periodTotals = history.reduce(
     (totals, current) => ({
       income: totals.income + current.income,
@@ -1339,6 +1637,22 @@ function App() {
     ? (100 * (periodTotals.income - periodTotals.consumption)) /
       periodTotals.income
     : null;
+  const annualizedSpending = Math.round(averageMonthlyConsumption * 12);
+  const fireCalculation = (() => {
+    if (
+      observedCashflowMonths.length === 0 ||
+      !Number.isSafeInteger(annualizedSpending) ||
+      annualizedSpending > MAX ||
+      !Number.isSafeInteger(investmentBalance) ||
+      investmentBalance > MAX
+    )
+      return null;
+    try {
+      return fiTarget(annualizedSpending, 0, investmentBalance, withdrawalRate);
+    } catch {
+      return null;
+    }
+  })();
   const formatPeriodMonth = (key: string) => {
     const [year, monthPart] = key.split("-").map(Number);
     return new Intl.DateTimeFormat("fi-FI", {
@@ -1390,7 +1704,20 @@ function App() {
   };
   const incomeReportCoordinates = reportCoordinates("income");
   const expenseReportCoordinates = reportCoordinates("expense");
-  const categoryReport = expCatsForReport(s, month);
+  const categoryReport = useMemo(
+    () =>
+      page === "reports" && reportView === "categories"
+        ? expCatsForReport(
+            s,
+            history.map((item) => item.key),
+          )
+        : [],
+    [s, page, reportView, history],
+  );
+  const categoryTotal = categoryReport.reduce(
+    (value, [, amount]) => value + amount,
+    0,
+  );
   const maxCategoryExpense = Math.max(
     ...categoryReport.map(([, value]) => value),
     1,
@@ -1408,7 +1735,7 @@ function App() {
   let pieCursor = 0;
   const pieSlices = categoryReport.map(([category, value], index) => {
     const start = pieCursor;
-    pieCursor += m.consumption ? (value * 100) / m.consumption : 0;
+    pieCursor += categoryTotal ? (value * 100) / categoryTotal : 0;
     return {
       category,
       value,
@@ -1417,19 +1744,27 @@ function App() {
       color: pieColors[index % pieColors.length],
     };
   });
-  const flowByDate = new Map<string, { income: number; expense: number }>();
-  for (const e of s.incomes.filter((e) => e.status === "actual"))
-    for (const date of occurrences(e, month)) {
-      const value = flowByDate.get(date) || { income: 0, expense: 0 };
-      value.income += e.amount;
-      flowByDate.set(date, value);
+  const flowByDate = useMemo(() => {
+    const map = new Map<string, { income: number; expense: number }>();
+    if (page !== "reports" || reportView !== "flow") return map;
+    const incomes = s.incomes.filter((item) => item.status === "actual");
+    const expenses = s.expenses.filter((item) => item.status === "actual");
+    for (const period of history) {
+      for (const item of incomes)
+        for (const date of occurrences(item, period.key)) {
+          const value = map.get(date) || { income: 0, expense: 0 };
+          value.income += item.amount;
+          map.set(date, value);
+        }
+      for (const item of expenses)
+        for (const date of occurrences(item, period.key)) {
+          const value = map.get(date) || { income: 0, expense: 0 };
+          value.expense += item.amount;
+          map.set(date, value);
+        }
     }
-  for (const e of s.expenses.filter((e) => e.status === "actual"))
-    for (const date of occurrences(e, month)) {
-      const value = flowByDate.get(date) || { income: 0, expense: 0 };
-      value.expense += e.amount;
-      flowByDate.set(date, value);
-    }
+    return map;
+  }, [s, history, page, reportView]);
   let runningFlow = 0;
   const dailyFlow = [...flowByDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -1479,8 +1814,13 @@ function App() {
               ...periodEntries(s.incomes, "income"),
               ...periodEntries(s.expenses, "expense"),
             ]
-      : selectedReport?.type === "month"
-        ? (selectedReport.metric === "income" ? s.incomes : s.expenses)
+      : selectedReport?.type === "month" || selectedReport?.type === "budget"
+        ? (selectedReport.type === "budget"
+            ? s.expenses.filter((item) => expenseType(item) === "consumption")
+            : selectedReport.metric === "income"
+              ? s.incomes
+              : s.expenses
+          )
             .filter(
               (e) =>
                 e.status === "actual" &&
@@ -1488,7 +1828,10 @@ function App() {
             )
             .map((e) => ({
               entry: e,
-              kind: selectedReport.metric,
+              kind:
+                selectedReport.type === "budget"
+                  ? ("expense" as const)
+                  : selectedReport.metric,
               amount: e.amount * occurrences(e, selectedReport.month).length,
             }))
         : selectedReport?.type === "category"
@@ -1497,21 +1840,32 @@ function App() {
                 (e) =>
                   e.status === "actual" &&
                   e.category === selectedReport.category &&
-                  expenseType(e) === "consumption" &&
-                  occurrences(e, month).length > 0,
+                  expenseType(e) === "consumption",
               )
-              .map((e) => ({
-                entry: e,
-                kind: "expense" as const,
-                amount: e.amount * occurrences(e, month).length,
-              }))
+              .map((e) => {
+                const count = history.reduce(
+                  (sum, period) => sum + occurrences(e, period.key).length,
+                  0,
+                );
+                return {
+                  entry: e,
+                  kind: "expense" as const,
+                  amount: e.amount * count,
+                  occurrences: count,
+                };
+              })
+              .filter((item) => item.occurrences > 0)
           : selectedReport?.type === "day"
             ? [
                 ...s.incomes
                   .filter(
                     (e) =>
                       e.status === "actual" &&
-                      occurrences(e, month).includes(selectedReport.date),
+                      history.some((period) =>
+                        occurrences(e, period.key).includes(
+                          selectedReport.date,
+                        ),
+                      ),
                   )
                   .map((e) => ({
                     entry: e,
@@ -1522,7 +1876,11 @@ function App() {
                   .filter(
                     (e) =>
                       e.status === "actual" &&
-                      occurrences(e, month).includes(selectedReport.date),
+                      history.some((period) =>
+                        occurrences(e, period.key).includes(
+                          selectedReport.date,
+                        ),
+                      ),
                   )
                   .map((e) => ({
                     entry: e,
@@ -1532,13 +1890,15 @@ function App() {
               ]
             : [];
   const selectedReportTotal =
-    selectedReport?.type === "period" && selectedReport.metric === "cash"
-      ? selectedReportEntries.reduce(
-          (value, item) =>
-            value + (item.kind === "income" ? item.amount : -item.amount),
-          0,
-        )
-      : selectedReportEntries.reduce((value, item) => value + item.amount, 0);
+    selectedReport?.type === "budget"
+      ? selectedReport.actual
+      : selectedReport?.type === "period" && selectedReport.metric === "cash"
+        ? selectedReportEntries.reduce(
+            (value, item) =>
+              value + (item.kind === "income" ? item.amount : -item.amount),
+            0,
+          )
+        : selectedReportEntries.reduce((value, item) => value + item.amount, 0);
   const expCats = Array.from(
     new Set([
       ...s.categories
@@ -1548,6 +1908,15 @@ function App() {
       ...Object.keys(s.budgets[month] || {}),
     ]),
   );
+  const compassTasks = planActions(s, month);
+  const visibleCompassTasks = visibleActions(s, month);
+  const parkedCompassTasks = compassTasks.filter((task) => {
+    const saved = s.actionStates[task.id];
+    return (
+      saved &&
+      (saved.status === "done" || (saved.until && saved.until > today()))
+    );
+  });
   return (
     <>
       <a
@@ -1737,6 +2106,155 @@ function App() {
                   Kumoa
                 </button>
               </div>
+            )}
+            {page === "compass" && (
+              <section className="compass-page" aria-labelledby="compass-title">
+                <div className="compass-hero">
+                  <div className="compass-mark" aria-hidden="true">
+                    <Compass size={38} strokeWidth={1.6} />
+                  </div>
+                  <div>
+                    <span className="eyebrow">KURSSIN TARKISTUS · {month}</span>
+                    <h2 id="compass-title">Seuraava hyvä askel</h2>
+                    <p>
+                      Kompassi etsii kirjatuista tiedoista pieniä, perusteltuja
+                      tarkistuksia. Se ei tee päätöksiä puolestasi eikä oleta,
+                      että puuttuva tieto tarkoittaa ongelmaa.
+                    </p>
+                  </div>
+                  <div className="compass-count">
+                    <strong>{visibleCompassTasks.length}</strong>
+                    <small>
+                      {visibleCompassTasks.length === 1
+                        ? "askel näkyvissä"
+                        : "askelta näkyvissä"}
+                    </small>
+                  </div>
+                </div>
+                <div className="compass-route" aria-hidden="true">
+                  <span>Havainnot</span>
+                  <i />
+                  <span>Prioriteetti</span>
+                  <i />
+                  <span>Sinun päätöksesi</span>
+                </div>
+                {visibleCompassTasks.length ? (
+                  <div className="compass-task-list">
+                    {visibleCompassTasks.map((task, index) => (
+                      <article
+                        key={task.id}
+                        className={`compass-task priority-${task.priority}`}
+                      >
+                        <div className="compass-task-index">
+                          {String(index + 1).padStart(2, "0")}
+                        </div>
+                        <div className="compass-task-copy">
+                          <div className="compass-task-meta">
+                            <span>
+                              {task.priority === "high"
+                                ? "Korkea prioriteetti"
+                                : task.priority === "medium"
+                                  ? "Kannattaa tarkistaa"
+                                  : "Kun sinulle sopii"}
+                            </span>
+                            <span>{task.destinationLabel}</span>
+                          </div>
+                          <h3>{task.title}</h3>
+                          <p>{task.reason}</p>
+                          <small>
+                            {s.settings.private && task.privateEvidence
+                              ? "Summat piilotettu"
+                              : task.evidence}
+                          </small>
+                          <div className="compass-task-actions">
+                            <button
+                              type="button"
+                              className="primary"
+                              onClick={() => {
+                                navigate(task.destination);
+                                if (task.destination === "reports")
+                                  selectReportView("flow");
+                              }}
+                            >
+                              {task.destinationLabel}{" "}
+                              <ArrowRight size={15} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCompassAction(task.id, "done")}
+                            >
+                              Merkitse tehdyksi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCompassAction(task.id, "snoozed")
+                              }
+                            >
+                              Siirrä viikolla
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="compass-empty">
+                    <CircleGauge size={28} aria-hidden="true" />
+                    <h3>Reitti näyttää selkeältä</h3>
+                    <p>
+                      Tähän kuukauteen ei löytynyt automaattisia tarkistuksia.
+                      Kun lisäät budjetin, kirjauksia, tavoitteita tai
+                      omaisuustietoja, kompassi nostaa olennaisia asioita esiin.
+                    </p>
+                    <button
+                      type="button"
+                      className="primary"
+                      onClick={() => navigate("budget")}
+                    >
+                      Avaa budjetti
+                    </button>
+                  </div>
+                )}
+                {showCompletedActions && parkedCompassTasks.length > 0 && (
+                  <section className="compass-parked">
+                    <h3>Siirretyt ja valmiit</h3>
+                    {parkedCompassTasks.map((task) => (
+                      <article key={task.id}>
+                        <span>
+                          <strong>{task.title}</strong>
+                          <small>
+                            {s.actionStates[task.id].status === "done"
+                              ? "Merkitty tehdyksi"
+                              : `Näkyy uudelleen ${s.actionStates[task.id].until}`}
+                          </small>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCompassAction(task.id, null)}
+                        >
+                          Palauta kompassiin
+                        </button>
+                      </article>
+                    ))}
+                  </section>
+                )}
+                <button
+                  className="compass-toggle"
+                  type="button"
+                  onClick={() => setShowCompletedActions((value) => !value)}
+                >
+                  {showCompletedActions
+                    ? "Piilota siirretyt ja valmiit"
+                    : `Näytä siirretyt ja valmiit (${parkedCompassTasks.length})`}
+                </button>
+                <p className="compass-note">
+                  Prioriteetit muodostuvat paikallisesti tallennetuista
+                  budjeteista, tuloista, menoista, varoista, veloista ja
+                  tavoitteista. Säännöt ovat selittäviä ja muuttuvat, kun tiedot
+                  muuttuvat.
+                </p>
+              </section>
             )}
             {page === "dashboard" && (
               <>
@@ -2453,7 +2971,7 @@ function App() {
                                   ) : page === "assets" ? (
                                     `${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
                                   ) : page === "liabilities" ? (
-                                    `${e.rate} % · erä ${euro(e.payment)}`
+                                    `${e.rate} % · erä ${euro(e.payment)}${e.linkedAssetId ? ` · ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "Linkitetty omaisuus"}` : " · Ei omaisuuslinkkiä"}`
                                   ) : page === "goals" ? (
                                     <Goal
                                       e={e}
@@ -2516,7 +3034,7 @@ function App() {
                                       {page === "assets"
                                         ? `Omistus ${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
                                         : page === "liabilities"
-                                          ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)}`
+                                          ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
                                           : e.status === "planned"
                                             ? "Suunniteltu"
                                             : e.status === "skipped"
@@ -2600,6 +3118,50 @@ function App() {
                     </button>
                   ))}
                 </div>
+                {reportView !== "overview" && (
+                  <ReportRangeControl
+                    start={reportStart}
+                    end={reportEnd}
+                    startIndex={reportStartNumber}
+                    endIndex={reportEndNumber}
+                    valid={customRangeValid}
+                    length={customRangeLength}
+                    months={rangeNavigationMonths}
+                    firstMonthIndex={firstMonthIndex}
+                    lastMonthIndex={lastMonthIndex}
+                    onStart={(value) => {
+                      setReportStart(value);
+                      setSelectedReport(null);
+                    }}
+                    onEnd={(value) => {
+                      setReportEnd(value);
+                      setSelectedReport(null);
+                    }}
+                    onShift={shiftCustomRange}
+                    onRailEnd={setRangeEnd}
+                  />
+                )}
+                <div className="report-global-controls">
+                  <label>
+                    Esitysmuoto
+                    <select
+                      aria-label="Raportin esitysmuoto"
+                      value={reportFormat}
+                      onChange={(event) => setReportFormat(event.target.value)}
+                    >
+                      {reportFormats[reportView].map((format) => (
+                        <option key={format.value} value={format.value}>
+                          {format.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {reportView === "overview" && (
+                    <span className="report-selected-period">
+                      {periodLabel}
+                    </span>
+                  )}
+                </div>
                 {reportView === "overview" && (
                   <section
                     className="panel report-panel"
@@ -2676,7 +3238,6 @@ function App() {
                         className="report-month-rail"
                         role="group"
                         aria-label="Siirry raportin päättymiskuukauteen"
-                        ref={reportMonthRailRef}
                       >
                         {rangeNavigationMonths.map((key) => {
                           const [year, monthPart] = key.split("-").map(Number);
@@ -2810,35 +3371,6 @@ function App() {
                     )}
                     <div className="report-chart-controls">
                       <div
-                        className="chart-switch"
-                        role="group"
-                        aria-label="Kaavion tyyppi"
-                      >
-                        <button
-                          type="button"
-                          aria-pressed={overviewChart === "bars"}
-                          onClick={() => setOverviewChart("bars")}
-                        >
-                          <FileChartColumn size={16} aria-hidden="true" />{" "}
-                          Pylväät
-                        </button>
-                        <button
-                          type="button"
-                          aria-pressed={overviewChart === "line"}
-                          onClick={() => setOverviewChart("line")}
-                        >
-                          <ChartSpline size={16} aria-hidden="true" /> Viiva
-                        </button>
-                        <button
-                          type="button"
-                          aria-pressed={overviewChart === "area"}
-                          onClick={() => setOverviewChart("area")}
-                        >
-                          <ChartNoAxesCombined size={16} aria-hidden="true" />{" "}
-                          Alue
-                        </button>
-                      </div>
-                      <div
                         className="chart-zoom"
                         role="group"
                         aria-label="Kaavion suurennus"
@@ -2904,7 +3436,7 @@ function App() {
                     </div>
                     {reportHasData ? (
                       <>
-                        {overviewChart === "bars" ? (
+                        {reportFormat === "bars" ? (
                           <div
                             className="chart report-canvas chart-scroll"
                             role="region"
@@ -2980,7 +3512,7 @@ function App() {
                               </div>
                             ))}
                           </div>
-                        ) : (
+                        ) : reportFormat === "table" ? null : (
                           <div
                             className="line-chart-wrap"
                             role="region"
@@ -2994,11 +3526,11 @@ function App() {
                               }}
                             >
                               <svg
-                                className={`line-chart${overviewChart === "area" ? " area-chart" : ""}`}
+                                className={`line-chart${reportFormat === "area" ? " area-chart" : ""}`}
                                 viewBox="0 0 100 100"
                                 preserveAspectRatio="none"
                                 role="img"
-                                aria-label={`Kuukausittainen tulojen ja menojen ${overviewChart === "area" ? "aluekaavio" : "viivakaavio"}. Tarkat luvut alla taulukossa.`}
+                                aria-label={`Kuukausittainen tulojen ja menojen ${reportFormat === "area" ? "aluekaavio" : "viivakaavio"}. Tarkat luvut alla taulukossa.`}
                               >
                                 <defs>
                                   <linearGradient
@@ -3169,7 +3701,11 @@ function App() {
                             </div>
                           </div>
                         )}
-                        <div className="chart-legend" aria-hidden="true">
+                        <div
+                          className="chart-legend"
+                          aria-hidden="true"
+                          hidden={reportFormat === "table"}
+                        >
                           <span>
                             <i className="legend-swatch income-bar" /> Tulot
                           </span>
@@ -3253,28 +3789,10 @@ function App() {
                   >
                     <h2>Kulutusmenot kategorioittain</h2>
                     <p className="muted">
-                      Valittu kuukausi · toteutuneiksi merkityt kulutusmenot.
-                      Säästö- ja sijoitussiirrot on jätetty pois.
+                      {periodLabel} · toteutuneiksi merkityt kulutusmenot. Menot
+                      ja säästö- tai sijoitussiirrot ovat erillään.
                     </p>
-                    <div
-                      className="chart-switch category-chart-switch"
-                      role="group"
-                      aria-label="Kulurakenteen kaavion tyyppi"
-                    >
-                      <button
-                        aria-pressed={categoryChart === "bars"}
-                        onClick={() => setCategoryChart("bars")}
-                      >
-                        Pylväät
-                      </button>
-                      <button
-                        aria-pressed={categoryChart === "pie"}
-                        onClick={() => setCategoryChart("pie")}
-                      >
-                        Piirakka
-                      </button>
-                    </div>
-                    {categoryChart === "pie" && categoryReport.length > 0 && (
+                    {reportFormat === "pie" && categoryReport.length > 0 && (
                       <div className="pie-layout">
                         <div className="pie-chart">
                           <svg
@@ -3291,7 +3809,7 @@ function App() {
                                 className={`pie-slice${selectedReport?.type === "category" && selectedReport.category === slice.category ? " selected-slice" : ""}`}
                                 role="button"
                                 tabIndex={0}
-                                aria-label={`${slice.category}: ${euro(slice.value)}, ${pct(m.consumption ? (slice.value * 100) / m.consumption : null)}. Avaa kirjaukset.`}
+                                aria-label={`${slice.category}: ${euro(slice.value)}, ${pct(categoryTotal ? (slice.value * 100) / categoryTotal : null)}. Avaa kirjaukset.`}
                                 aria-pressed={
                                   selectedReport?.type === "category" &&
                                   selectedReport.category === slice.category
@@ -3300,6 +3818,8 @@ function App() {
                                   setSelectedReport({
                                     type: "category",
                                     category: slice.category,
+                                    from: history[0]?.key || reportStart,
+                                    to: history.at(-1)?.key || reportEnd,
                                   })
                                 }
                                 onKeyDown={(event) => {
@@ -3311,6 +3831,8 @@ function App() {
                                     setSelectedReport({
                                       type: "category",
                                       category: slice.category,
+                                      from: history[0]?.key || reportStart,
+                                      to: history.at(-1)?.key || reportEnd,
                                     });
                                   }
                                 }}
@@ -3318,7 +3840,7 @@ function App() {
                             ))}
                           </svg>
                           <div className="pie-center">
-                            <strong>{euro(m.consumption)}</strong>
+                            <strong>{euro(categoryTotal)}</strong>
                             <small>Kulutus yhteensä</small>
                           </div>
                         </div>
@@ -3336,6 +3858,8 @@ function App() {
                                 setSelectedReport({
                                   type: "category",
                                   category,
+                                  from: history[0]?.key || reportStart,
+                                  to: history.at(-1)?.key || reportEnd,
                                 })
                               }
                             >
@@ -3348,8 +3872,8 @@ function App() {
                               <span>{category}</span>
                               <strong>
                                 {pct(
-                                  m.consumption
-                                    ? (value * 100) / m.consumption
+                                  categoryTotal
+                                    ? (value * 100) / categoryTotal
                                     : null,
                                 )}
                               </strong>
@@ -3358,14 +3882,62 @@ function App() {
                         </div>
                       </div>
                     )}
-                    {categoryChart === "bars" && categoryReport.length ? (
+                    {reportFormat === "table" && categoryReport.length > 0 && (
+                      <div className="table-wrap mobile-card-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Kategoria</th>
+                              <th>Osuus</th>
+                              <th>Kulutus</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {categoryReport.map(([category, value]) => (
+                              <tr key={category}>
+                                <th scope="row" data-label="Kategoria">
+                                  <button
+                                    className="report-table-link"
+                                    onClick={() =>
+                                      setSelectedReport({
+                                        type: "category",
+                                        category,
+                                        from: history[0]?.key || reportStart,
+                                        to: history.at(-1)?.key || reportEnd,
+                                      })
+                                    }
+                                  >
+                                    {category}
+                                  </button>
+                                </th>
+                                <td data-label="Osuus">
+                                  {pct(
+                                    categoryTotal
+                                      ? (value * 100) / categoryTotal
+                                      : null,
+                                  )}
+                                </td>
+                                <td data-label="Kulutus">{euro(value)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {reportFormat === "bars" &&
+                      categoryReport.length > 0 &&
                       categoryReport.map(([category, value]) => (
                         <button
                           className={`category-report-row${selectedReport?.type === "category" && selectedReport.category === category ? " selected-report-row" : ""}`}
                           key={category}
                           aria-label={`${category}, ${euro(value)}. Avaa kirjaukset.`}
                           onClick={() =>
-                            setSelectedReport({ type: "category", category })
+                            setSelectedReport({
+                              type: "category",
+                              category,
+                              from: history[0]?.key || reportStart,
+                              to: history.at(-1)?.key || reportEnd,
+                            })
                           }
                         >
                           <div>
@@ -3373,8 +3945,8 @@ function App() {
                             <strong>
                               {euro(value)} ·{" "}
                               {pct(
-                                m.consumption
-                                  ? (value * 100) / m.consumption
+                                categoryTotal
+                                  ? (value * 100) / categoryTotal
                                   : null,
                               )}
                             </strong>
@@ -3385,10 +3957,10 @@ function App() {
                             aria-label={`${category}: ${euro(value)}`}
                           />
                         </button>
-                      ))
-                    ) : categoryReport.length === 0 ? (
-                      <Empty text="Valitussa kuussa ei ole toteutuneita kulutusmenoja." />
-                    ) : null}
+                      ))}
+                    {categoryReport.length === 0 && (
+                      <Empty text="Valitulla aikavälillä ei ole toteutuneita kulutusmenoja." />
+                    )}
                   </section>
                 )}
                 {reportView === "flow" && (
@@ -3401,9 +3973,9 @@ function App() {
                   >
                     <h2>Tulojen ja menojen ajoitus</h2>
                     <p className="muted">
-                      Kumulatiivinen kassavirta alkaa kuun alussa nollasta.
-                      Alkusaldoa ja maksujen kellonaikoja ei tunneta; saman
-                      päivän tapahtumia ei järjestetä keskenään.
+                      Kumulatiivinen kassavirta alkaa valitun aikavälin alussa
+                      nollasta. Alkusaldoa ja maksujen kellonaikoja ei tunneta;
+                      saman päivän tapahtumia ei järjestetä keskenään.
                     </p>
                     {dailyFlow.length ? (
                       <>
@@ -3423,8 +3995,9 @@ function App() {
                         </div>
                         <div
                           className="flow-visual"
-                          role="img"
-                          aria-label="Päiväkohtainen kumulatiivinen kassavirta. Alapuolella on tarkka päivätaulukko."
+                          role="group"
+                          aria-label="Päiväkohtainen kumulatiivinen kassavirta. Valitse päivä avataksesi sen kirjaukset."
+                          hidden={reportFormat !== "timeline"}
                         >
                           {dailyFlow.map((day) => (
                             <button
@@ -3452,16 +4025,26 @@ function App() {
                                 />
                                 <i />
                               </div>
-                              <small>{Number(day.date.slice(-2))}</small>
+                              <small>
+                                {history.length === 1
+                                  ? Number(day.date.slice(-2))
+                                  : day.date.slice(5, 10)}
+                              </small>
                             </button>
                           ))}
                         </div>
-                        <p className="muted flow-caption">
+                        <p
+                          className="muted flow-caption"
+                          hidden={reportFormat !== "timeline"}
+                        >
                           Päivän lopun kumulatiivinen tulojen ja menojen erotus
                           · positiivinen ylös, alijäämä alas. Päivät, joina ei
                           ole kirjauksia, eivät näy.
                         </p>
-                        <div className="table-wrap mobile-card-table flow-table">
+                        <div
+                          className="table-wrap mobile-card-table flow-table"
+                          hidden={reportFormat !== "table"}
+                        >
                           <table role="table">
                             <thead role="rowgroup">
                               <tr role="row">
@@ -3509,12 +4092,608 @@ function App() {
                     )}
                   </section>
                 )}
+                {reportView === "budget" && (
+                  <section
+                    className="panel report-panel"
+                    id="report-panel-budget"
+                    role="tabpanel"
+                    aria-labelledby="report-tab-budget"
+                    tabIndex={0}
+                  >
+                    <h2>Budjetti ja toteutuneet menot</h2>
+                    <p className="muted">
+                      {periodLabel}. Kunkin kategorian käsin syötetty toteuma
+                      korvaa kirjatut menot tässä raportissa; muuten käytetään
+                      toteutuneiksi merkittyjä kulutusmenoja. Kuukausia ilman
+                      suunnitelmaa ei tulkita nollabudjetiksi.
+                    </p>
+                    <div className="report-summary-strip">
+                      <article>
+                        <small>Suunnitelma yhteensä</small>
+                        <strong>{euro(budgetTotals.planned)}</strong>
+                      </article>
+                      <article>
+                        <small>Toteuma yhteensä</small>
+                        <strong>{euro(budgetTotals.actual)}</strong>
+                      </article>
+                      <article>
+                        <small>Erotus</small>
+                        <strong
+                          className={
+                            budgetTotals.actual > budgetTotals.planned
+                              ? "negative"
+                              : ""
+                          }
+                        >
+                          {euro(budgetTotals.planned - budgetTotals.actual)}
+                        </strong>
+                      </article>
+                    </div>
+                    {reportFormat === "bars" && budgetReport.length > 0 && (
+                      <div
+                        className="budget-report-chart"
+                        aria-label="Kuukausittainen budjetti ja toteuma"
+                      >
+                        {budgetReport.map((row) => (
+                          <button
+                            key={row.key}
+                            className="budget-report-month"
+                            type="button"
+                            onClick={() =>
+                              setSelectedReport({
+                                type: "budget",
+                                month: row.key,
+                                planned: row.planned,
+                                actual: row.actual,
+                                manualCategories: Object.keys(
+                                  s.budgetActuals[row.key] || {},
+                                ),
+                              })
+                            }
+                            aria-label={`${row.key}: ${row.hasPlan ? `suunnitelma ${euro(row.planned)}` : "ei budjettisuunnitelmaa"}, toteuma ${euro(row.actual)}. Avaa kirjaukset.`}
+                          >
+                            <span>{row.key}</span>
+                            <span className="budget-report-bars">
+                              <i
+                                title={
+                                  row.hasPlan
+                                    ? `Suunnitelma ${euro(row.planned)}`
+                                    : "Ei budjettisuunnitelmaa"
+                                }
+                                style={{
+                                  width: row.hasPlan
+                                    ? `${Math.min(100, (row.planned / Math.max(...budgetReport.flatMap((item) => [item.planned, item.actual]), 1)) * 100)}%`
+                                    : "0%",
+                                }}
+                              />
+                              <b
+                                title={`Toteuma ${euro(row.actual)}`}
+                                style={{
+                                  width: `${Math.min(100, (row.actual / Math.max(...budgetReport.flatMap((item) => [item.planned, item.actual]), 1)) * 100)}%`,
+                                }}
+                              />
+                            </span>
+                            <strong>
+                              {euro(row.actual)}{" "}
+                              <small>
+                                /{" "}
+                                {row.hasPlan
+                                  ? euro(row.planned)
+                                  : "ei suunnitelmaa"}
+                              </small>
+                            </strong>
+                          </button>
+                        ))}
+                        <p className="muted">
+                          <i className="legend-swatch planned-swatch" />{" "}
+                          Suunnitelma{" "}
+                          <i className="legend-swatch expense-bar" /> Toteuma
+                        </p>
+                      </div>
+                    )}
+                    {reportFormat === "table" && budgetReport.length > 0 && (
+                      <div className="table-wrap mobile-card-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Kuukausi</th>
+                              <th>Suunnitelma</th>
+                              <th>Toteuma</th>
+                              <th>Erotus</th>
+                              <th>Budjetoituja kategorioita</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {budgetReport.map((row) => (
+                              <tr key={row.key}>
+                                <th scope="row" data-label="Kuukausi">
+                                  <button
+                                    className="report-table-link"
+                                    onClick={() =>
+                                      setSelectedReport({
+                                        type: "budget",
+                                        month: row.key,
+                                        planned: row.planned,
+                                        actual: row.actual,
+                                        manualCategories: Object.keys(
+                                          s.budgetActuals[row.key] || {},
+                                        ),
+                                      })
+                                    }
+                                  >
+                                    {row.key}
+                                  </button>
+                                </th>
+                                <td data-label="Suunnitelma">
+                                  {row.hasPlan
+                                    ? euro(row.planned)
+                                    : "Ei suunnitelmaa"}
+                                </td>
+                                <td data-label="Toteuma">{euro(row.actual)}</td>
+                                <td
+                                  data-label="Erotus"
+                                  className={
+                                    row.hasPlan && row.actual > row.planned
+                                      ? "negative"
+                                      : ""
+                                  }
+                                >
+                                  {row.hasPlan
+                                    ? euro(row.planned - row.actual)
+                                    : "—"}
+                                </td>
+                                <td data-label="Kategorioita">
+                                  {Object.keys(row.plannedByCategory).length}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {!budgetReport.some((row) => row.planned || row.actual) && (
+                      <Empty text="Aikavälillä ei ole budjettisuunnitelmia tai toteumia." />
+                    )}
+                  </section>
+                )}
+                {reportView === "wealth" && (
+                  <section
+                    className="panel report-panel"
+                    id="report-panel-wealth"
+                    role="tabpanel"
+                    aria-labelledby="report-tab-wealth"
+                    tabIndex={0}
+                  >
+                    <h2>Nykyinen varallisuuskuva</h2>
+                    <p className="muted">
+                      Tämä on nykytilan tilannekuva, ei historiaseuranta.
+                      Omaisuusarvot perustuvat itse syöttämiisi arvoihin ja
+                      arvostuspäiviin.
+                    </p>
+                    <div className="report-summary-strip wealth-summary">
+                      <article>
+                        <small>Omaisuus</small>
+                        <strong>{euro(assetBalance)}</strong>
+                      </article>
+                      <article>
+                        <small>Sijoitukset</small>
+                        <strong>{euro(investmentBalance)}</strong>
+                      </article>
+                      <article>
+                        <small>Velat</small>
+                        <strong>{euro(debtBalance)}</strong>
+                      </article>
+                      <article>
+                        <small>Nettovarallisuus</small>
+                        <strong>{euro(netWorth)}</strong>
+                      </article>
+                    </div>
+                    {reportFormat === "breakdown" ? (
+                      <div className="wealth-report-grid">
+                        <section>
+                          <h3>Omaisuuserät</h3>
+                          {currentAssets.length ? (
+                            currentAssets.map((asset) => (
+                              <article key={asset.id}>
+                                <span>
+                                  {asset.name}
+                                  <small>
+                                    {asset.category} · arvostettu{" "}
+                                    {asset.date.split("-").reverse().join(".")}
+                                  </small>
+                                </span>
+                                <strong>{euro(asset.ownedValue)}</strong>
+                              </article>
+                            ))
+                          ) : (
+                            <p className="muted">Omaisuutta ei ole kirjattu.</p>
+                          )}
+                        </section>
+                        <section>
+                          <h3>Sijoitukset</h3>
+                          {currentInvestments.length ? (
+                            currentInvestments.map((investment) => (
+                              <article key={investment.id}>
+                                <span>
+                                  {investment.name}
+                                  <small>
+                                    {investment.category} ·{" "}
+                                    {investment.quantity} kpl
+                                  </small>
+                                </span>
+                                <strong>{euro(investment.marketValue)}</strong>
+                              </article>
+                            ))
+                          ) : (
+                            <p className="muted">
+                              Sijoituksia ei ole kirjattu.
+                            </p>
+                          )}
+                        </section>
+                        <section>
+                          <h3>Velat</h3>
+                          {currentDebts.length ? (
+                            currentDebts.map((debt) => (
+                              <article key={debt.id}>
+                                <span>
+                                  {debt.name}
+                                  <small>{debt.category}</small>
+                                </span>
+                                <strong>−{euro(debt.amount)}</strong>
+                              </article>
+                            ))
+                          ) : (
+                            <p className="muted">Velkoja ei ole kirjattu.</p>
+                          )}
+                        </section>
+                      </div>
+                    ) : (
+                      <div className="table-wrap mobile-card-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Tietue</th>
+                              <th>Kategoria</th>
+                              <th>Arvo / saldo</th>
+                              <th>Päivä</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentAssets.map((asset) => (
+                              <tr key={`asset-${asset.id}`}>
+                                <th scope="row" data-label="Tietue">
+                                  {asset.name}
+                                </th>
+                                <td data-label="Kategoria">
+                                  Omaisuus · {asset.category}
+                                </td>
+                                <td data-label="Arvo">
+                                  {euro(asset.ownedValue)}
+                                </td>
+                                <td data-label="Päivä">
+                                  {asset.date.split("-").reverse().join(".")}
+                                </td>
+                              </tr>
+                            ))}
+                            {currentInvestments.map((investment) => (
+                              <tr key={`investment-${investment.id}`}>
+                                <th scope="row" data-label="Tietue">
+                                  {investment.name}
+                                </th>
+                                <td data-label="Kategoria">
+                                  Sijoitus · {investment.category}
+                                </td>
+                                <td data-label="Arvo">
+                                  {euro(investment.marketValue)}
+                                </td>
+                                <td data-label="Päivä">
+                                  {investment.date
+                                    .split("-")
+                                    .reverse()
+                                    .join(".")}
+                                </td>
+                              </tr>
+                            ))}
+                            {currentDebts.map((debt) => (
+                              <tr key={`debt-${debt.id}`}>
+                                <th scope="row" data-label="Tietue">
+                                  {debt.name}
+                                </th>
+                                <td data-label="Kategoria">
+                                  Velka · {debt.category}
+                                </td>
+                                <td data-label="Saldo">−{euro(debt.amount)}</td>
+                                <td data-label="Päivä">
+                                  {debt.date.split("-").reverse().join(".")}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+                )}
+                {reportView === "debt" && (
+                  <section
+                    className="panel report-panel"
+                    id="report-panel-debt"
+                    role="tabpanel"
+                    aria-labelledby="report-tab-debt"
+                    tabIndex={0}
+                  >
+                    <h2>Velat, vakuutena oleva omaisuus ja oma pääoma</h2>
+                    <p className="muted">
+                      Linkitä laina omaisuuserään velan muokkauksessa. Arvio
+                      olettaa nykyisen lainasaldon, koron ja maksuerän pysyvän
+                      voimassa eikä huomioi kuluja, lyhennysvapaita tai uusia
+                      nostoja.
+                    </p>
+                    <div className="report-assumption">
+                      <PercentField
+                        label="Omaisuuden oletettu vuotuinen arvonmuutos"
+                        value={assetChangeRate}
+                        min={-99.9}
+                        max={100}
+                        step={0.1}
+                        onChange={setAssetChangeRate}
+                      />
+                      <small>
+                        Oletus vaikuttaa vain tulevan arvon suuntaa-antavaan
+                        arvioon. Nykyinen oma pääoma = omaisuuden omistusosuus −
+                        siihen linkitetyt velat.
+                      </small>
+                    </div>
+                    {reportFormat === "table" ? (
+                      <div className="table-wrap mobile-card-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Omaisuus / laina</th>
+                              <th>Velkasaldo</th>
+                              <th>Oma pääoma nyt</th>
+                              <th>Maksuaika-arvio</th>
+                              <th>Arvioitu korko</th>
+                              <th>Oma pääoma maksuajan lopussa</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {linkedOutlooks.map(({ asset, outlook }) => (
+                              <tr key={asset.id}>
+                                <th scope="row" data-label="Omaisuus / laina">
+                                  {asset.name}
+                                </th>
+                                <td data-label="Velkasaldo">
+                                  {euro(outlook!.debtBalance)}
+                                </td>
+                                <td data-label="Oma pääoma nyt">
+                                  {euro(outlook!.currentEquity)}
+                                </td>
+                                <td data-label="Maksuaika">
+                                  {outlook!.payoffMonths === null
+                                    ? "Ei laskettavissa"
+                                    : `${outlook!.payoffMonths} kk`}
+                                </td>
+                                <td data-label="Korkoarvio">
+                                  {outlook!.estimatedInterest === null
+                                    ? "Ei laskettavissa"
+                                    : euro(outlook!.estimatedInterest)}
+                                </td>
+                                <td data-label="Arvio lopussa">
+                                  {outlook!.estimatedEquityAtPayoff === null
+                                    ? "Ei laskettavissa"
+                                    : euro(outlook!.estimatedEquityAtPayoff)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="debt-outlook-list">
+                        {linkedOutlooks.map(({ asset, outlook }) => (
+                          <article key={asset.id} className="debt-outlook-card">
+                            <header>
+                              <h3>{asset.name}</h3>
+                              <span>{asset.category}</span>
+                            </header>
+                            <div className="debt-outlook-values">
+                              <span>
+                                <small>Omaisuuden omistusosuus</small>
+                                <strong>{euro(outlook!.ownedValue)}</strong>
+                              </span>
+                              <span>
+                                <small>Linkitetty velka</small>
+                                <strong>−{euro(outlook!.debtBalance)}</strong>
+                              </span>
+                              <span>
+                                <small>Oma pääoma nyt</small>
+                                <strong>{euro(outlook!.currentEquity)}</strong>
+                              </span>
+                            </div>
+                            <p>
+                              {outlook!.payoffMonths === null
+                                ? "Maksuaikaa ei voi arvioida: tarkista lainan korko ja kuukausierä."
+                                : `Velat maksettu arviolta ${outlook!.payoffMonths} kuukaudessa; korkoja maksetaan arviolta ${euro(outlook!.estimatedInterest || 0)}. Omaisuuden arvioitu arvo silloin: ${euro(outlook!.projectedValueAtPayoff || 0)}.`}
+                            </p>
+                            <strong className="debt-equity-result">
+                              Oma pääoma velkojen maksun jälkeen:{" "}
+                              {outlook!.estimatedEquityAtPayoff === null
+                                ? "Ei laskettavissa"
+                                : euro(outlook!.estimatedEquityAtPayoff)}
+                            </strong>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    {currentDebts.some((debt) => !debt.linkedAssetId) && (
+                      <div className="alert report-alert">
+                        Linkittämättömiä lainoja:{" "}
+                        {currentDebts
+                          .filter((debt) => !debt.linkedAssetId)
+                          .map((debt) => debt.name)
+                          .join(", ")}
+                        . Linkitä ne velan muokkausnäkymässä, jos niillä on
+                        omaisuuserä vastinparina.
+                      </div>
+                    )}
+                    {linkedOutlooks.length === 0 && currentDebts.length > 0 && (
+                      <Empty text="Yhtään velkaa ei ole vielä linkitetty omaisuuserään." />
+                    )}
+                    {currentDebts.length === 0 && (
+                      <Empty text="Lisää velka ja omaisuuserä, jotta voit tarkastella pääomaa ja takaisinmaksuarviota." />
+                    )}
+                  </section>
+                )}
+                {reportView === "fire" && (
+                  <section
+                    className="panel report-panel"
+                    id="report-panel-fire"
+                    role="tabpanel"
+                    aria-labelledby="report-tab-fire"
+                    tabIndex={0}
+                  >
+                    <h2>Säästöaste ja taloudellinen riippumattomuus</h2>
+                    <p className="muted">
+                      Säästöaste käyttää valitun aikavälin tuloja ja
+                      kulutusmenoja. FIRE-tavoite annualisoi vain kuukaudet,
+                      joissa on kirjattuja tuloja tai menoja; tyhjää kuukautta
+                      ei tulkita kuluttomaksi. Arvio olettaa havaittujen
+                      kuukausien kuvaavan tulevaa kulutusta. Havaintoja on{" "}
+                      {observedCashflowMonths.length} / {history.length}{" "}
+                      kuukaudelta.
+                    </p>
+                    <div className="report-assumption">
+                      <PercentField
+                        label="Esimerkin nostoprosentti vuodessa"
+                        value={withdrawalRate}
+                        min={2}
+                        max={10}
+                        step={0.1}
+                        onChange={setWithdrawalRate}
+                      />
+                      <small>
+                        Nostoprosentti on laskennan oletus, ei lupaus tuoton
+                        riittävyydestä eikä henkilökohtainen sijoitussuositus.
+                      </small>
+                    </div>
+                    <div className="report-summary-strip">
+                      <article>
+                        <small>Jakson säästöaste</small>
+                        <strong>{pct(periodSavingRate)}</strong>
+                      </article>
+                      <article>
+                        <small>Keskimääräinen kulutus / kk</small>
+                        <strong>{euro(averageMonthlyConsumption)}</strong>
+                      </article>
+                      <article>
+                        <small>Annualisoitu kulutus</small>
+                        <strong>{euro(annualizedSpending)}</strong>
+                      </article>
+                      <article>
+                        <small>Kirjatut sijoitukset nykyarvossa</small>
+                        <strong>{euro(investmentBalance)}</strong>
+                      </article>
+                    </div>
+                    {reportFormat === "bars" &&
+                      observedCashflowMonths.length > 0 && (
+                        <div
+                          className="fire-trend"
+                          role="group"
+                          aria-label="Kuukausittaiset säästöasteet"
+                        >
+                          {observedCashflowMonths.map((item) => (
+                            <button
+                              type="button"
+                              key={item.key}
+                              onClick={() =>
+                                setSelectedReport({
+                                  type: "month",
+                                  month: item.key,
+                                  metric: "income",
+                                })
+                              }
+                              aria-label={`${item.key}: säästöaste ${pct(item.savingRate)}. Avaa tulot.`}
+                            >
+                              <span
+                                style={{
+                                  height: `${Math.max(4, Math.min(100, Math.max(0, item.savingRate || 0)))}%`,
+                                }}
+                              />
+                              <small>
+                                {observedCashflowMonths.length > 12
+                                  ? item.key
+                                  : item.key.slice(5)}
+                              </small>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    {reportFormat === "table" && (
+                      <div className="table-wrap mobile-card-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Kuukausi</th>
+                              <th>Tulot</th>
+                              <th>Kulutus</th>
+                              <th>Säästöaste</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {observedCashflowMonths.map((item) => (
+                              <tr key={item.key}>
+                                <th scope="row" data-label="Kuukausi">
+                                  {item.key}
+                                </th>
+                                <td data-label="Tulot">{euro(item.income)}</td>
+                                <td data-label="Kulutus">
+                                  {euro(item.consumption)}
+                                </td>
+                                <td data-label="Säästöaste">
+                                  {pct(item.savingRate)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    <div className="fire-target-card">
+                      <div>
+                        <span className="eyebrow">ESIMERKKILASKELMA</span>
+                        <h3>Arvioitu sijoitusvarallisuuden tavoite</h3>
+                      </div>
+                      {fireCalculation ? (
+                        <>
+                          <strong>{euro(fireCalculation.target)}</strong>
+                          <p>
+                            Perustuu {euro(annualizedSpending)} vuotuiseen
+                            kulutukseen ja {pct(withdrawalRate)}{" "}
+                            nostoprosenttiin. Nykyisistä kirjatuista
+                            sijoituksista puuttuu arviolta{" "}
+                            {euro(fireCalculation.shortfall)}.
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          Tavoitetta ei voi laskea tämän aikavälin tiedoilla.
+                        </p>
+                      )}
+                    </div>
+                    <p className="muted">
+                      Tämä karkea laskelma jättää pois verot, inflaation,
+                      kulujen muutokset, sijoitustuotot ja nostojen ajoituksen.
+                      Säästöaste on kuvaus kirjatuista tiedoista, ei ennuste.
+                    </p>
+                  </section>
+                )}
                 {selectedReport && (
                   <section
                     ref={reportDetailRef}
                     tabIndex={-1}
                     aria-labelledby="report-detail-title"
-                    className="report-panel report-detail min-w-0 max-w-full overflow-clip rounded-2xl border border-emerald-200 bg-white p-5 text-slate-900 shadow-sm mb-6 transition-shadow duration-200 hover:shadow-md"
+                    className="report-panel report-detail min-w-0 max-w-full overflow-clip rounded-2xl border p-5 shadow-sm mb-6 transition-shadow duration-200 hover:shadow-md"
                     aria-live="polite"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
@@ -3523,11 +4702,13 @@ function App() {
                         <h2 id="report-detail-title">
                           {selectedReport.type === "period"
                             ? `${selectedReport.from === selectedReport.to ? selectedReport.from : `${selectedReport.from}–${selectedReport.to}`} · ${selectedReport.metric === "income" ? "Tulot" : selectedReport.metric === "expense" ? "Menot" : "Nettokassavirta"}`
-                            : selectedReport.type === "month"
-                              ? `${selectedReport.month} · ${selectedReport.metric === "income" ? "Tulot" : "Menot"}`
-                              : selectedReport.type === "category"
-                                ? `${selectedReport.category} · ${month}`
-                                : `${selectedReport.date.split("-").reverse().join(".")} · tapahtumat`}
+                            : selectedReport.type === "budget"
+                              ? `${selectedReport.month} · Budjetti ja toteuma`
+                              : selectedReport.type === "month"
+                                ? `${selectedReport.month} · ${selectedReport.metric === "income" ? "Tulot" : "Menot"}`
+                                : selectedReport.type === "category"
+                                  ? `${selectedReport.category} · ${selectedReport.from}–${selectedReport.to}`
+                                  : `${selectedReport.date.split("-").reverse().join(".")} · tapahtumat`}
                         </h2>
                       </div>
                       <button
@@ -3545,6 +4726,16 @@ function App() {
                       </strong>{" "}
                       · {selectedReportEntries.length} tietuetta
                     </p>
+                    {selectedReport.type === "budget" && (
+                      <p className="muted">
+                        Suunnitelma {euro(selectedReport.planned)} · toteuma{" "}
+                        {euro(selectedReport.actual)}.{" "}
+                        {selectedReport.manualCategories.length
+                          ? `Käsin syötetty toteuma korvaa kirjaukset kategorioissa ${selectedReport.manualCategories.join(", ")}. `
+                          : "Toteuma lasketaan kirjatuista kulutusmenoista. "}
+                        Alla näkyvät toteutuneiksi merkityt kulutustapahtumat.
+                      </p>
+                    )}
                     {selectedReportEntries.length ? (
                       <div className="divide-y divide-slate-100">
                         {selectedReportEntries.map(
@@ -3925,6 +5116,7 @@ function App() {
             kind={edit.kind}
             item={edit.item}
             categories={cats(edit.kind)}
+            assets={s.assets}
             onSave={(e) => saveEntry(edit.kind, e)}
             onCancel={() => setEdit(null)}
           />
@@ -4170,12 +5362,14 @@ function EntryForm({
   kind,
   item,
   categories,
+  assets,
   onSave,
   onCancel,
 }: {
   kind: Kind;
   item: Entry;
   categories: string[];
+  assets: Entry[];
   onSave: (e: Entry) => void;
   onCancel: () => void;
 }) {
@@ -4222,6 +5416,8 @@ function EntryForm({
           const raw = String(f.get(k));
           v[k] = k === "date" || k === "endDate" ? dateTextToIso(raw) : raw;
         }
+      if (kind === "liabilities")
+        v.linkedAssetId = String(f.get("linkedAssetId") || "");
       for (let k of [
         "amount",
         "purchasePrice",
@@ -4553,6 +5749,24 @@ function EntryForm({
           <>
             {field("Vuosikorko (%)", "rate", item.rate, "percent", true)}
             {field("Kuukausierä (€)", "payment", item.payment)}
+            <label>
+              Linkitetty omaisuuserä
+              <select
+                name="linkedAssetId"
+                defaultValue={item.linkedAssetId || ""}
+              >
+                <option value="">Ei linkitettyä omaisuutta</option>
+                {assets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.name} · {asset.category}
+                  </option>
+                ))}
+              </select>
+              <small>
+                Laina vähennetään tästä omaisuudesta laskettaessa nykyistä omaa
+                pääomaa.
+              </small>
+            </label>
           </>
         )}
         {kind === "goals" && (
@@ -4613,15 +5827,25 @@ function Categories({
       return;
     }
     let budgets = { ...s.budgets };
-    if (kind === "expenses")
+    let budgetActuals = { ...s.budgetActuals };
+    if (kind === "expenses") {
       for (let [m, b] of Object.entries(budgets)) {
         let n = { ...b };
         if (old.name in n) {
-          n[value] = n[old.name];
+          n[value] = (n[value] || 0) + n[old.name];
           delete n[old.name];
         }
         budgets[m] = n;
       }
+      for (let [m, actuals] of Object.entries(budgetActuals)) {
+        let n = { ...actuals };
+        if (old.name in n) {
+          n[value] = (n[value] || 0) + n[old.name];
+          delete n[old.name];
+        }
+        budgetActuals[m] = n;
+      }
+    }
     commit({
       ...s,
       categories: s.categories.map((c) =>
@@ -4631,13 +5855,15 @@ function Categories({
         e.category === old.name ? { ...e, category: value } : e,
       ),
       budgets,
+      budgetActuals,
     });
   }
   return (
     <>
       <p>
-        Kategorian uudelleennimeäminen päivittää myös tietueet ja budjetit.
-        Arkistointi piilottaa kategorian valintalistasta, ei poista historiaa.
+        Kategorian uudelleennimeäminen päivittää tietueet, budjetit ja käsin
+        syötetyt toteumat. Arkistointi piilottaa kategorian valintalistasta, ei
+        poista historiaa.
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="category-list">
@@ -5253,7 +6479,9 @@ function Transfer({
         <h2>CSV-tuonti ja vienti</h2>
         <p className="muted">
           Tuonti lisää tietueita. Tuonnin voi kumota tämän istunnon aikana.
-          Summat ovat CSV:ssä euroina, sisäisesti sentteinä.
+          Summat ovat CSV:ssä euroina, sisäisesti sentteinä. CSV ei säilytä
+          velkojen ja omaisuuserien välisiä linkkejä; käytä JSON-varmuuskopiota
+          koko tietomallin siirtämiseen.
         </p>
         <div className="form-grid">
           <label>

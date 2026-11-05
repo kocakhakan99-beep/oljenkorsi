@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { empty, kinds, type State, type Entry } from '../domain/model';
+import { empty, kinds, type State, type Entry, type ActionState } from '../domain/model';
 import { MAX, validDate } from '../domain/calculations';
 const shellSchema = z.object({
   schemaVersion: z.literal(1),
@@ -25,6 +25,7 @@ const shellSchema = z.object({
   goals: z.array(z.unknown()).max(20000),
   budgets: z.record(z.string(), z.record(z.string(), z.number().int().nonnegative().max(MAX))),
   budgetActuals: z.record(z.string(), z.record(z.string(), z.number().int().nonnegative().max(MAX))).optional(),
+  actionStates: z.record(z.string(), z.unknown()).optional(),
   scenarios: z.array(z.unknown()).max(100),
   investmentTransactions: z.array(z.unknown()).max(0),
   themes: z.array(z.unknown()).max(0),
@@ -72,15 +73,23 @@ export function validate(raw: unknown): State {
   for (let k of kinds) {
     if (!Array.isArray(x[k]) || x[k].length > 20000) throw Error('Virheellinen tietuelista: ' + k);
     s[k] = x[k].map((e) => {
-      validateEntry(e);
+      const normalized = { ...e, linkedAssetId: e.linkedAssetId ?? '' } as Entry;
+      validateEntry(normalized);
       if (ids.has(e.id)) throw Error('Päällekkäinen tunniste.');
       ids.add(e.id);
       let allowed = Object.keys(defaultsEntry);
       return Object.fromEntries(
-        allowed.map((key) => [key, e[key as keyof Entry]]),
+        allowed.map((key) => [key, normalized[key as keyof Entry] ?? defaultsEntry[key as keyof Entry]]),
       ) as unknown as Entry;
     });
   }
+  const assetIds = new Set(s.assets.map((asset) => asset.id));
+  for (const liability of s.liabilities)
+    if (liability.linkedAssetId && !assetIds.has(liability.linkedAssetId))
+      throw Error('Velka viittaa puuttuvaan omaisuuserään.');
+  for (const kind of kinds.filter((kind) => kind !== 'liabilities'))
+    if (s[kind].some((item) => item.linkedAssetId))
+      throw Error('Omaisuuslinkki kuuluu vain velkatietueelle.');
   if (!Array.isArray(x.categories) || x.categories.length > 500)
     throw Error('Virheelliset kategoriat.');
   s.categories = x.categories.map((c) => {
@@ -124,6 +133,22 @@ export function validate(raw: unknown): State {
         throw Error('Virheellinen toteumasumma.');
       s.budgetActuals[m][c] = n;
     }
+  }
+  s.actionStates = {};
+  for (const [id, rawState] of Object.entries(x.actionStates || {})) {
+    if (id.length < 1 || id.length > 200 || !rawState || typeof rawState !== 'object' || Array.isArray(rawState))
+      throw Error('Virheellinen Talouden kompassin tehtävätila.');
+    const value = rawState as unknown as Record<string, unknown>;
+    if (
+      !['done', 'snoozed'].includes(String(value.status)) ||
+      typeof value.updatedAt !== 'string' || value.updatedAt.length > 50 ||
+      (value.status === 'snoozed' && (typeof value.until !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.until) || !validDate(value.until)))
+    ) throw Error('Virheellinen Talouden kompassin tehtävätila.');
+    s.actionStates[id] = {
+      status: value.status as ActionState['status'],
+      updatedAt: value.updatedAt,
+      ...(value.status === 'snoozed' ? { until: String(value.until) } : {}),
+    };
   }
   if (!Array.isArray(x.scenarios) || x.scenarios.length > 100)
     throw Error('Virheelliset skenaariot.');
@@ -201,6 +226,7 @@ const defaultsEntry = {
   purchasePrice: 0,
   ownership: 100,
   liquid: false,
+  linkedAssetId: '',
   rate: 0,
   payment: 0,
   target: 0,
@@ -211,6 +237,8 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error('Virheellinen tietue.');
+  if (typeof e.linkedAssetId !== 'string' || e.linkedAssetId.length > 200)
+    throw Error('Virheellinen omaisuuslinkki.');
   for (let k of [
     'id',
     'name',
