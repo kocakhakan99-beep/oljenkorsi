@@ -26,7 +26,7 @@
 ## UX ja laatu
 
 - Kategoriat: nimeäminen/lisäys/arkistointi/poisto; ei yhdistämistä, järjestystä tai väri/kuvake-editoria.
-- Teemat: neljä valmista, tumma/vaalea/järjestelmä ja oma korostusväri. Ei kaikkien tokenien editoria tai automaattista kontrastilaskentaa. Järjestelmätilan vaihtuminen ei päivity välttämättä ennen seuraavaa renderöintiä.
+- Teemat: neljä valmista, tumma/vaalea/järjestelmä ja oma korostusväri. Järjestelmän vaalea/tumma-asetuksen muutosta seurataan sovelluksen ollessa auki. Ei kaikkien tokenien editoria tai automaattista kontrastilaskentaa.
 - Summien piilotus ei salaa dataa eikä piilota muokkauslomakkeita tai kaikkia johdettuja tietoja.
 - Haku ja kategoria/tila/lajittelu; ei kaikkia summa/aikaväli/toistuvuus-suodattimia tai tallennettuja suodattimia.
 - CSV-kartoituksen tekniset kenttänimet ovat englanniksi; korjaus tapahtuu lähde-CSV:ssä. Ei pankkiformaatteja tai täydellistä merkistötunnistusta.
@@ -42,6 +42,6 @@ Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyk
 - Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit. Tyyppi tallentuu yhteensopivuuden vuoksi varattuna tags-merkintänä; vanhoissa tietueissa tulkinta perustuu oletuskategorioihin. Ei pankista todennettua siirtoa, eikä lainapääomaa erotella.
 - FI-pääomatavoite ja aika-arvio ovat yksivaiheisia havainnollistuksia tasaisella reaalituotolla ja käyttäjän oletuksilla. Ei elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
 - Kokonaisnettovarallisuus ei tarkoita nostettavissa olevaa FIRE-pääomaa. Oma asunto ja puskuri vaativat erillisen rajauksen.
-- Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Hallittu Chromium esti aiemmassa pilviympäristössä file://-E2E:n; paikallinen HTTP-tarkistus ei varmista file://-pysyvyyttä kaikissa selaimissa.
+- Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Chromium-pääpolku on testattu loopback HTTP -palvelun kautta; hallittu selain esti suoran file://-avauksen. Testi ei varmista file://-pysyvyyttä tai offline-tilaa eri selaimissa.
 
 Katso [ominaisuuskartoitus](FEATURE_RESEARCH.md) ja [toteutussuunnitelma](FIRE_PLAN.md). Nämä eivät muuta nykyisiä laskentatuloksia.
