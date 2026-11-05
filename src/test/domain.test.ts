@@ -339,6 +339,18 @@ describe("Varmuuskopio ja validointi", () => {
       migrated.liabilities.every((item) => item.linkedAssetId === ""),
     ).toBe(true);
   });
+  it("tallentaa Ei onnistu nyt -tilan varmuuskopioon", () => {
+    const state = empty();
+    state.actionStates["one-step"] = {
+      status: "blocked",
+      until: "2026-12-05",
+      updatedAt: "2026-11-05T10:00:00.000Z",
+    };
+    const restored = restore(backup(state));
+    expect(restored.actionStates["one-step"]).toEqual(
+      state.actionStates["one-step"],
+    );
+  });
   it("kategorioilla on yhtenäiset kuvat ja vanhat kategoriat saavat ikonin palautuksessa", () => {
     expect(defaultCategoryDefinitions.length).toBeLessThanOrEqual(20);
     expect(optionalCategoryDefinitions.length).toBeGreaterThan(10);

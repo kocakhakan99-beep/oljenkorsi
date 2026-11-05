@@ -29,8 +29,8 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Valitun raporttijakson tulot, menot, nettokassavirta ja kokonaisjakson säästöaste; tulot-, menot- ja kassavirtasummista pääsee suoraan niiden kirjauksiin.
 - Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
 - Raporttien yhteinen alkamis- ja päättymiskuukausi sekä aihekohtaiset esitysmuodot: tulot ja menot, kulurakenne, rahavirran ajoitus, budjetti vs toteuma, nykyinen varallisuus, velka ja oma pääoma sekä säästöaste/FIRE.
-- Talouden kompassi: paikallisesti ja selittävillä säännöillä priorisoidut seuraavat tarkistukset, jotka voi merkitä valmiiksi tai siirtää viikolla.
-- Kompassin kattavuus sisältää budjetti- ja kassavirran tarkistusten lisäksi puskurin havaintopohjaisen keston, tulovaihtelun ja epäsäännöllisten menojen kuukausivarauksen. Jokainen vinkki kertoo pienen seuraavan askeleen, tutkimusviitteen ja laskennan rajauksen; tutkimusta ei esitetä yksilöllisenä neuvona.
+- Talouden kompassi: paikallinen päätössääntömoottori, jossa ehdotukset päivittyvät kirjauksia muuttaessa ja tilanteen voi päivittää käsin. Näkyvissä on viisi kiireellisintä askelta kerrallaan, enintään 20; askelen voi merkitä tehdyksi, siirtää viikolla tai piilottaa 30 päiväksi valinnalla ”Ei onnistu nyt”.
+- Kompassi tarkistaa budjetti- ja kassavirran lisäksi asumismenojen osuuden, oman kuluhistorian muutokset, välttämättömät menot, puskurin, tulovaihtelun, säästötavoitteiden tahdin, toistuvat menot, velkojen korot ja kuukausierät, epäsäännölliset menot sekä FIRE-nostoskenaarion. Jokainen ehdotus näyttää seuraavan konkreettisen askeleen, lähteen ja rajauksen; sovelluskohtaisia kynnyksiä ei esitetä tutkimuksen määrittäminä henkilökohtaisina rajoina.
 - Kompassin neljä kahden aikuisen ja yhden lapsen demotaloutta ovat ladattavissa myös käyttöönotossa ja asetuksissa. Esimerkit ovat samat kaikkialla: alijäämä, keskivertoarki, vakaa eteneminen ja yhden palkkatulon äkillinen katkos. Kuuden kuukauden tulot, menot, tarina ja kompassivinkit vaihtuvat valinnan mukaan.
 - Uudessa taloudessa näkyy 4 tulon ja 14 menon peruskategoriaa. Valinnaisia kategorioita lisätään tarvittaessa, ja omalle kategorialle valitaan kuvake esikatselun kanssa. Paikalliset Lucide-viivakuvat käyttävät yhtenäistä, teeman mukaan kontrastoitua tyyliä; sama aihe käyttää samaa kuvaketta omaisuudessa ja siihen linkitetyssä velassa.
 - Velan voi linkittää omaisuuserään; velkaraportti näyttää nykyisen oman pääoman ja oletuksiin perustuvan takaisinmaksu- ja arvoarvion.
@@ -90,3 +90,5 @@ Tämä on toimiva ensimmäinen toimitus, ei koko 61-kohdan määrittelyn valmis 
 ## Ominaisuuskartoitus ja FIRE-jatkokehitys
 
 Tutkimuspohjainen [ominaisuuskartoitus](FEATURE_RESEARCH.md) erottaa toteutetut toiminnot, aiemmat suunnitelmat ja uudet puutteet. [Lähdemuistio](RESEARCH_SOURCES.md) kuvaa tutkimuksen soveltamisrajat; [FIRE-suunnitelma](FIRE_PLAN.md) määrittelee laskennan ja hyväksyntäesimerkit. [Käyttöliittymän benchmark-muistio](UI_BENCHMARK.md) vertaa julkisia käyttömalleja YNABista, Monarchista ja Copilotista sekä priorisoi jatkokehityksen. Prioriteetit ovat [roadmapissa](ROADMAP.md). FIRE-laskenta on suunnitelma, ei nykyversion ominaisuus.
+
+Kompassin nykyiset havaintoperheet, käyttörajat ja kynnysten tulkinta kuvataan [kompassin päätössäännöissä](COMPASS_ENGINE.md).

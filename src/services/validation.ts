@@ -169,14 +169,14 @@ export function validate(raw: unknown): State {
       throw Error('Virheellinen Talouden kompassin tehtävätila.');
     const value = rawState as unknown as Record<string, unknown>;
     if (
-      !['done', 'snoozed'].includes(String(value.status)) ||
+      !['done', 'snoozed', 'blocked'].includes(String(value.status)) ||
       typeof value.updatedAt !== 'string' || value.updatedAt.length > 50 ||
-      (value.status === 'snoozed' && (typeof value.until !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.until) || !validDate(value.until)))
+      ((value.status === 'snoozed' || value.status === 'blocked') && (typeof value.until !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.until) || !validDate(value.until)))
     ) throw Error('Virheellinen Talouden kompassin tehtävätila.');
     s.actionStates[id] = {
       status: value.status as ActionState['status'],
       updatedAt: value.updatedAt,
-      ...(value.status === 'snoozed' ? { until: String(value.until) } : {}),
+      ...(value.status === 'snoozed' || value.status === 'blocked' ? { until: String(value.until) } : {}),
     };
   }
   if (!Array.isArray(x.scenarios) || x.scenarios.length > 100)

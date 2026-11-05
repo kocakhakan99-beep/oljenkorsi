@@ -3382,6 +3382,28 @@ footer {
   color: var(--muted);
   font-size: 10px;
 }
+.compass-hero-tools {
+  display: grid;
+  justify-items: stretch;
+  gap: 8px;
+  min-width: 150px;
+}
+.compass-refresh {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+.compass-refresh-caption {
+  max-width: 28ch;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
 .compass-route {
   display: flex;
   align-items: center;
@@ -3524,9 +3546,25 @@ footer {
     border-radius: 15px;
   }
   .compass-count {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    justify-self: stretch;
+  }
+  .compass-hero-tools {
     grid-column: 1 / -1;
     grid-row: 2;
-    justify-self: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    align-items: center;
+  }
+  .compass-hero-tools .compass-count {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .compass-refresh-caption {
+    grid-column: 1 / -1;
+    max-width: none;
+    text-align: left;
   }
   .compass-task {
     grid-template-columns: 32px minmax(0, 1fr);

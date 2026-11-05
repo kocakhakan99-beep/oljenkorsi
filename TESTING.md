@@ -1,5 +1,12 @@
 # Testausraportti 4.11.2026
 
+## Lisävarmennus 5.11.2026: kompassin päätössäännöt
+
+- TypeScript-tarkistus ja ESLint läpäisivät; Vitestissä läpäisi 53 testiä neljästä tiedostosta.
+- `npm run build` läpäisi ja tuotti päivitetyn itsenäisen `index.html`-tiedoston.
+- `python -m py_compile e2e.py` läpäisi. Päivitettyä selainpolkua ei saatu ajettua: Playwrightin oma Chromium puuttui ympäristöstä, ja `/usr/bin/chromium` sulkeutui käynnistyksessä virheeseen `setsockopt: Operation not permitted`. Kompassin uudet klikkauspolut eivät siten ole vielä E2E-varmennettuja tässä ympäristössä.
+- Uudet yksikkötestit tarkistavat asumisosuuden rajauksen, vertailun oman kuluhistorian perusteella, FIRE-nostojen lähderajauksen, neuvontavinkin sekä `Ei onnistu nyt` -tilan tallentumisen ja määräajan. Käyttöliittymän testiin lisättiin myös siirto-, palautus- ja manuaalisen uudelleenarvioinnin polut.
+
 ## Suoritetut tarkistukset
 
 - TypeScript strict `tsc --noEmit`, ESLint ja 37 Vitest-testiä läpäisivät.
