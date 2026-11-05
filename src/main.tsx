@@ -47,10 +47,16 @@ import {
   ArrowLeftRight,
   ArrowRight,
   CalendarClock,
+  CalendarDays,
   ChartPie,
   ChartNoAxesCombined,
   CircleDollarSign,
   CircleHelp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
   FileChartColumn,
   Goal as GoalIcon,
   House,
@@ -64,6 +70,9 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  ShieldCheck,
+  TriangleAlert,
+  Zap,
   Plus,
   Minus,
   X,
@@ -319,6 +328,18 @@ function App() {
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
+  const [selectedYear, selectedMonthNumber] = month.split('-').map(Number);
+  const monthLabel = new Intl.DateTimeFormat('fi-FI', { month: 'long', year: 'numeric' }).format(
+    new Date(selectedYear, selectedMonthNumber - 1, 1),
+  );
+  const canGoPreviousMonth = month > '1900-01';
+  const canGoNextMonth = month < '2200-12';
+  const changeMonth = (offset: number) => {
+    const next = new Date(selectedYear, selectedMonthNumber - 1 + offset, 1);
+    settings({ month: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}` });
+    setSelectedReport(null);
+  };
+  const storageReady = storageOk && !loaded.error;
   const buffer = useMemo(() => emergencyFund(s, month, bufferMonths), [s, month, bufferMonths]);
   const euro = (n: number) =>
     s.settings.private
@@ -757,31 +778,89 @@ function App() {
           <header>
             <div className="header-label">RAUHALLISEMPI SUHDE RAHAAN</div>
             <div className="toolbar">
-              <button className="mobile-quick" onClick={() => setQuick(true)}>Pikatoiminnot</button>
-              <label>
-                Kuukausi
-                <input
-                  type="month"
-                  value={month}
-                  min="1900-01"
-                  max="2200-12"
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      settings({ month: e.target.value });
-                      setSelectedReport(null);
-                    }
-                  }}
-                />
-              </label>
+              <div className="month-picker" role="group" aria-label="Kuukauden valinta">
+                <button
+                  type="button"
+                  className="month-step"
+                  aria-label="Edellinen kuukausi"
+                  title="Edellinen kuukausi"
+                  disabled={!canGoPreviousMonth}
+                  onClick={() => changeMonth(-1)}
+                >
+                  <ChevronLeft size={19} aria-hidden="true" />
+                </button>
+                <label className="month-choice">
+                  <CalendarDays size={18} aria-hidden="true" />
+                  <span className="month-choice-copy">
+                    <small>VALITTU KUUKAUSI</small>
+                    <strong>{monthLabel}</strong>
+                  </span>
+                  <ChevronDown className="month-choice-chevron" size={15} aria-hidden="true" />
+                  <input
+                    className="month-native-input"
+                    type="month"
+                    value={month}
+                    min="1900-01"
+                    max="2200-12"
+                    aria-label="Valitse kuukausi"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        settings({ month: e.target.value });
+                        setSelectedReport(null);
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="month-step"
+                  aria-label="Seuraava kuukausi"
+                  title="Seuraava kuukausi"
+                  disabled={!canGoNextMonth}
+                  onClick={() => changeMonth(1)}
+                >
+                  <ChevronRight size={19} aria-hidden="true" />
+                </button>
+              </div>
               <button
+                type="button"
+                className="toolbar-icon-button"
+                aria-label="Pikatoiminnot"
+                title="Pikatoiminnot · Ctrl K"
+                onClick={() => setQuick(true)}
+              >
+                <Zap size={19} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="toolbar-icon-button"
                 aria-pressed={s.settings.private}
+                aria-label={s.settings.private ? 'Näytä summat' : 'Piilota summat'}
+                title={s.settings.private ? 'Näytä summat' : 'Piilota summat'}
                 onClick={() => settings({ private: !s.settings.private })}
               >
-                {s.settings.private ? 'Näytä summat' : 'Piilota summat'}
+                {s.settings.private ? (
+                  <Eye size={19} aria-hidden="true" />
+                ) : (
+                  <EyeOff size={19} aria-hidden="true" />
+                )}
               </button>
-              <button className="primary" onClick={exportBackup}>
-                Vie varmuuskopio
-              </button>
+              <span
+                className={`toolbar-status${storageReady ? '' : ' warning'}`}
+                role="status"
+                title={
+                  storageReady
+                    ? 'Muutokset tallentuvat tähän selaimeen automaattisesti.'
+                    : loaded.error || 'Selaimen tallennustila ei ole käytettävissä.'
+                }
+              >
+                {storageReady ? (
+                  <ShieldCheck size={16} aria-hidden="true" />
+                ) : (
+                  <TriangleAlert size={16} aria-hidden="true" />
+                )}
+                <span>{storageReady ? 'Tallentuu tässä selaimessa' : 'Tallennusongelma'}</span>
+              </span>
             </div>
           </header>
           <main id="main" tabIndex={-1}>

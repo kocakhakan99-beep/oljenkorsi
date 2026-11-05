@@ -38,7 +38,13 @@ with sync_playwright() as p:
  page.get_by_role('button',name='Lisää tulo',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Lisää 10 euroa summasta').click();assert page.locator('dialog [name=amount]').input_value()=='10,00';page.get_by_role('button',name='Sulje',exact=True).click();mark('Summan pikasäätö toimii')
  page.get_by_role('button',name='Lisää meno',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Sulje',exact=True).click()
  page.get_by_role('button',name='Avaa budjetti',exact=True).click();expect(page.get_by_role('heading',name='Budjetti',exact=True)).to_be_visible();nav(page,'Yhteenveto');mark('Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän')
- page.get_by_label('Kuukausi',exact=True).fill('2026-11')
+ month_input=page.get_by_label('Valitse kuukausi',exact=True)
+ month_input.fill('2026-11');expect(page.locator('.month-choice')).to_contain_text('marraskuu 2026')
+ page.get_by_role('button',name='Edellinen kuukausi',exact=True).click();assert month_input.input_value()=='2026-10'
+ page.get_by_role('button',name='Seuraava kuukausi',exact=True).click();assert month_input.input_value()=='2026-11'
+ expect(page.get_by_role('button',name='Pikatoiminnot',exact=True)).to_be_visible()
+ expect(page.locator('.toolbar-status')).to_contain_text('Tallentuu tässä selaimessa')
+ mark('Kuukausivalitsin, nuolisiirtymät ja kompakti yläpalkki')
  add(page,'Tulot','+ Lisää tulo',{'name':'Testipalkka','amount':'3000','date':'2026-11-01'},{'recurrence':'monthly'})
  mark('Tulo lisätty')
  add(page,'Menot','+ Lisää meno',{'name':'Testivuokra','amount':'1000','date':'2026-11-01','category':'Asuminen'},{'recurrence':'monthly'})
@@ -124,6 +130,7 @@ with sync_playwright() as p:
  saved=state(page);c.close()
  c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=OFFLINE,accept_downloads=True,args=['--no-sandbox'])
  page=c.pages[0];attach(page);page.goto(URL,wait_until='domcontentloaded');assert state(page)==saved;mark('Selainprosessi suljettu ja uudelleenavattu: data säilyi')
+ nav(page,'Asetukset')
  with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).first.click()
  bfile=ARTIFACTS/'backup.json';d.value.save_as(str(bfile));assert json.loads(bfile.read_text())['data']==saved;mark('JSON backup ladattu ja sisältö tarkistettu')
  nav(page,'Tuonti ja vienti')
@@ -135,7 +142,7 @@ with sync_playwright() as p:
  nav(page,'Menot');page.get_by_role('button',name='Poista Testivuokra',exact=True).click();assert not state(page)['expenses'];page.get_by_role('button',name='Kumoa',exact=True).click();assert len(state(page)['expenses'])==1;mark('Tietueen poisto ja kumoaminen')
  nav(page,'Asetukset');page.get_by_role('button',name='Poista kaikki tietoni',exact=True).click();page.get_by_label('Kirjoita POISTA',exact=True).fill('POISTA');page.get_by_role('button',name='Poista pysyvästi',exact=True).click();assert page.evaluate("localStorage.getItem('taloussuunnittelu.v1')") is None;mark('Kaiken datan poisto ja tarkistus')
  page.locator('dialog[open] input[type=file]').set_input_files(str(bfile));expect(page.get_by_role('heading',name='Vahvista varmuuskopion palautus')).to_be_visible();page.get_by_role('button',name='Korvaa ja palauta',exact=True).click();assert state(page)==saved;mark('JSON restore onboardingista: kaikki tiedot palautettu')
- bad=ARTIFACTS/'bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.get_by_role('status')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
+ bad=ARTIFACTS/'bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.locator('.alert[role="status"]')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
  c.close()
 assert not errors,errors
 assert not network,network

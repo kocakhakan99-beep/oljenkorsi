@@ -214,9 +214,6 @@ nav {
 .mobile-menu-toggle {
   display: none;
 }
-.mobile-quick {
-  display: none;
-}
 nav button {
   border: 0;
   text-align: left;
@@ -273,6 +270,7 @@ header {
   align-items: center;
   border-bottom: 1px solid var(--line);
   gap: 20px;
+  min-width: 0;
 }
 .header-label {
   font-size: 10px;
@@ -281,30 +279,158 @@ header {
 }
 .toolbar {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.month-picker {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.month-step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 13px;
+  color: var(--accent-ink);
+  background: transparent;
+}
+.month-step:hover {
+  background: var(--soft);
+}
+.month-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 174px;
+  height: 48px;
+  margin: 0;
+  padding: 5px 11px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+.month-choice:hover {
+  border-color: var(--focus);
+  background: var(--soft);
+}
+.month-choice > svg:first-child {
+  flex: 0 0 auto;
+}
+.month-choice-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  line-height: 1.2;
+}
+.month-choice-copy small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+.month-choice-copy strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.month-choice-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+}
+.month-choice:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.month-native-input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.toolbar-icon-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: var(--soft);
+  color: var(--accent-ink);
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
+}
+.toolbar-icon-button:hover {
+  background: var(--soft-strong, var(--line));
+  transform: translateY(-1px);
+}
+.toolbar-icon-button[aria-pressed="true"] {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.toolbar-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  max-width: 220px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.toolbar-status svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.toolbar-status.warning {
+  border-color: var(--negative);
+  color: var(--negative);
+}
+.toolbar-status.warning svg {
+  color: var(--negative);
+}
+.toolbar button {
+  min-height: 44px;
+}
+.toolbar-icon-button:focus-visible,
+.month-step:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 .toolbar label {
   font-size: 13px;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.toolbar button,
-.toolbar input[type="month"] {
-  min-height: 44px;
-}
-.toolbar input[type="month"] {
-  width: 160px;
-  margin: 0;
-  padding: 8px 10px;
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 20px;
-}
-.toolbar input[type="month"]::-webkit-datetime-edit {
-  font: inherit;
 }
 main {
   padding: 32px 36px;
@@ -2079,41 +2205,30 @@ footer {
     min-width: 0;
     gap: 8px;
   }
-  .toolbar > label {
-    display: grid;
+  .month-picker {
     grid-column: 1 / -1;
     grid-row: 1;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 10px;
+    justify-self: center;
+    width: min(100%, 300px);
+  }
+  .month-choice {
+    flex: 1 1 auto;
     min-width: 0;
   }
-  .toolbar input[type="month"] {
-    width: 100%;
-    min-width: 0;
-  }
-  .toolbar > .mobile-quick {
+  .toolbar > .toolbar-icon-button:first-of-type {
     grid-column: 1;
     grid-row: 2;
+    justify-self: end;
   }
-  .toolbar > button:not(.mobile-quick):not(.primary) {
+  .toolbar > .toolbar-icon-button:last-of-type {
     grid-column: 2;
     grid-row: 2;
+    justify-self: start;
   }
-  .toolbar > button.primary {
+  .toolbar-status {
     grid-column: 1 / -1;
     grid-row: 3;
-  }
-  .toolbar > button {
-    width: 100%;
-    padding-inline: 9px;
-    overflow-wrap: anywhere;
-  }
-  .mobile-quick {
-    display: inline-block;
-  }
-  .toolbar button,
-  .toolbar input[type="month"] {
-    font-size: 14px;
+    justify-self: center;
   }
   main {
     padding: 20px 14px;
@@ -2507,9 +2622,6 @@ footer {
 @media (max-width: 360px) {
   header {
     padding-inline: 12px;
-  }
-  .toolbar > button {
-    font-size: 12px;
   }
   .hero-value {
     font-size: 28px;
