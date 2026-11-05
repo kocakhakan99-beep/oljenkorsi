@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
   empty,
-  demo,
   entry,
   uid,
   today,
@@ -52,6 +51,7 @@ import {
   compassDemoProfiles,
   createCompassDemoCases,
   type CompassDemoId,
+  type CompassDemoCase,
 } from "./domain/compass-demos";
 import { storage } from "./data/storage";
 import {
@@ -379,6 +379,103 @@ function Modal({
       </div>
       {children}
     </dialog>
+  );
+}
+function DemoCashflowSparkline({
+  timeline,
+}: {
+  timeline: CompassDemoCase["timeline"];
+}) {
+  const maxCash = Math.max(1, ...timeline.map((point) => Math.abs(point.cash)));
+  const points = timeline
+    .map((point, index) => {
+      const x = 10 + (index * 200) / Math.max(1, timeline.length - 1);
+      const y = 24 - (point.cash / maxCash) * 17;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      className="demo-cashflow-sparkline"
+      viewBox="0 0 220 48"
+      role="img"
+      aria-label="Kuuden kuukauden kassavirran suunta"
+      preserveAspectRatio="none"
+    >
+      <line x1="7" y1="24" x2="213" y2="24" />
+      <polyline points={points} />
+      {timeline.length > 0 && (
+        <circle
+          cx="210"
+          cy={24 - (timeline[timeline.length - 1].cash / maxCash) * 17}
+          r="3.5"
+        />
+      )}
+    </svg>
+  );
+}
+function DemoHouseholdGrid({
+  scenarios,
+  hideNumbers,
+  onChoose,
+  buttonText = "Käytä tätä esimerkkiä",
+}: {
+  scenarios: CompassDemoCase[];
+  hideNumbers: boolean;
+  onChoose: (id: CompassDemoId) => void;
+  buttonText?: string;
+}) {
+  return (
+    <div className="demo-household-grid">
+      {scenarios.map(({ profile, timeline }) => {
+        const WeatherIcon = compassWeatherIcons[profile.icon];
+        const latest = timeline[timeline.length - 1];
+        const cashLabel = hideNumbers
+          ? "•••• €"
+          : new Intl.NumberFormat("fi-FI", {
+              style: "currency",
+              currency: "EUR",
+              maximumFractionDigits: 0,
+            }).format(latest.cash / 100);
+        return (
+          <article
+            className={`demo-household-card weather-${profile.weather}${latest.cash < 0 ? " has-deficit" : ""}`}
+            key={profile.id}
+          >
+            <header className="demo-household-header">
+              <span className="demo-household-emblem" aria-hidden="true">
+                <WeatherIcon size={23} strokeWidth={1.8} />
+              </span>
+              <div>
+                <span className="demo-household-kicker">
+                  REITTI {profile.rank} / 4 · {profile.label}
+                </span>
+                <h3>{profile.title}</h3>
+              </div>
+            </header>
+            <p>{profile.story}</p>
+            <div className="demo-household-snapshot">
+              <span>
+                <small>Viimeisin kuukausi</small>
+                <strong className={latest.cash < 0 ? "negative" : "positive"}>
+                  {cashLabel}
+                </strong>
+              </span>
+              <DemoCashflowSparkline timeline={timeline} />
+            </div>
+            <button
+              type="button"
+              className="primary demo-household-load"
+              aria-label={`Lataa esimerkkitalous: ${profile.label}`}
+              onClick={() => onChoose(profile.id)}
+            >
+              {buttonText}
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 function HelpBox({
@@ -1167,6 +1264,7 @@ function App() {
     [limit, setLimit] = useState(100),
     [pending, setPending] = useState<State | null>(null),
     [deleteOpen, setDeleteOpen] = useState(false),
+    [demoPickerOpen, setDemoPickerOpen] = useState(false),
     [deleteText, setDeleteText] = useState(""),
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
@@ -1957,6 +2055,35 @@ function App() {
     activeCompassDemo.state,
     month,
   ).slice(0, 3);
+  function loadDemoHousehold(id: CompassDemoId) {
+    const scenario = compassDemos.find((item) => item.profile.id === id);
+    if (!scenario) return;
+    if (
+      (s.settings.onboarded || loaded.error) &&
+      !confirm(
+        `Ladataanko “${scenario.profile.title}” tähän selaimeen? Nykyinen talous korvataan. Voit palauttaa sen vain varmuuskopiosta.`,
+      )
+    )
+      return;
+    const household = {
+      ...scenario.state,
+      settings: {
+        ...scenario.state.settings,
+        theme: s.settings.theme,
+        mode: s.settings.mode,
+        private: s.settings.private,
+        accent: s.settings.accent,
+      },
+    };
+    if (commit(household)) {
+      setDemoPickerOpen(false);
+      setSelectedCompassDemo(id);
+      navigate("dashboard");
+      setNotice(
+        `“${scenario.profile.title}” ladattu. Tämä on sama demotalous kuin Talouden kompassissa.`,
+      );
+    }
+  }
   const parkedCompassTasks = compassTasks.filter((task) => {
     const saved = s.actionStates[task.id];
     return (
@@ -2281,7 +2408,8 @@ function App() {
                     </h2>
                     <p>
                       Valitse esimerkkitalous ja seuraa sen kassavirtaa sekä
-                      kompassin huomioita. Esimerkit eivät muuta omia tietojasi.
+                      kompassin huomioita. Voit myös ladata valitun reitin
+                      samana demotaloutena muihin näkymiin.
                     </p>
                   </div>
                   <div
@@ -2487,6 +2615,34 @@ function App() {
                         </p>
                       )}
                     </section>
+                    <div className="compass-demo-load">
+                      <div>
+                        <span className="eyebrow">
+                          KOKEILE KOKO SOVELLUKSESSA
+                        </span>
+                        <strong>
+                          Sama{" "}
+                          {activeCompassDemo.profile.label.toLocaleLowerCase(
+                            "fi-FI",
+                          )}{" "}
+                          esimerkki kuin tässä näkymässä
+                        </strong>
+                        <p>
+                          Lataa tämän reitin tulot, menot, budjetti, omaisuus ja
+                          velat sovelluksen muihin näkymiin.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="primary"
+                        onClick={() =>
+                          loadDemoHousehold(activeCompassDemo.profile.id)
+                        }
+                      >
+                        Lataa demotalous
+                        <ArrowRight size={16} aria-hidden="true" />
+                      </button>
+                    </div>
                   </article>
                 </section>
                 {showCompletedActions && parkedCompassTasks.length > 0 && (
@@ -5164,38 +5320,32 @@ function App() {
                     Palauta piilotetut ohjeet ({dismissedHelp.size})
                   </button>
                 </section>
-                <section className="panel panel-notice">
-                  <h2>Esimerkkitalous testailuun</h2>
+                <section className="panel demo-household-section">
+                  <div className="demo-household-section-heading">
+                    <span className="eyebrow">
+                      NELJÄ TILANNETTA · SAMA DATA KUIN KOMPASSISSA
+                    </span>
+                    <h2>Valitse demotalous testailuun</h2>
+                  </div>
                   <p>
-                    Fiktiivinen kahden aikuisen ja yhden lapsen talous sisältää
-                    palkat, lapsilisän, satunnaisia sivutuloja sekä 12 kuukauden
-                    vaihtelevat menot ja budjetit. Mukana on myös omaisuutta,
-                    velkaa, sijoituksia ja tavoite. Lataus korvaa tämän selaimen
-                    nykyisen talouden. Vie omista tiedoista varmuuskopio ensin,
-                    jos haluat palauttaa ne myöhemmin.
+                    Nämä neljä kahden aikuisen ja yhden lapsen taloutta ovat
+                    samat fiktiiviset reitit kuin Talouden kompassissa. Voit
+                    testata valitun tilanteen tuloissa, menoissa, budjetissa,
+                    varallisuudessa ja raporteissa. Lataus korvaa selaimen
+                    nykyisen talouden; tee varmuuskopio ensin, jos haluat
+                    palauttaa omat tietosi myöhemmin.
                   </p>
                   <div className="actions">
                     <button onClick={exportBackup}>
                       Vie nykyisen talouden varmuuskopio
                     </button>
-                    <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Korvataanko nykyinen talous fiktiivisellä esimerkkitaloudella? Nykyiset tiedot voi palauttaa vain aiemmin viedystä JSON-varmuuskopiosta.",
-                          ) &&
-                          commit(demo())
-                        ) {
-                          navigate("dashboard");
-                          setNotice(
-                            "Esimerkkitalous ladattu. Voit testata toimintoja fiktiivisillä tiedoilla.",
-                          );
-                        }
-                      }}
-                    >
-                      Lataa esimerkkitalous
-                    </button>
                   </div>
+                  <DemoHouseholdGrid
+                    scenarios={compassDemos}
+                    hideNumbers={s.settings.private}
+                    onChoose={loadDemoHousehold}
+                    buttonText="Lataa tämä talous"
+                  />
                 </section>
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
@@ -5388,16 +5538,10 @@ function App() {
             </button>
             <button
               onClick={() => {
-                if (
-                  !loaded.error ||
-                  confirm(
-                    "Esimerkkidata korvaa alkuperäisen tallennuksen. Jatketaanko?",
-                  )
-                )
-                  commit(demo());
+                setDemoPickerOpen(true);
               }}
             >
-              Kokeile esimerkkidatalla
+              Valitse demotalous
             </button>
           </div>
           <label className="file-label">
@@ -5411,6 +5555,22 @@ function App() {
               }}
             />
           </label>
+        </Modal>
+      )}
+      {demoPickerOpen && (
+        <Modal
+          title="Valitse esimerkkitalous"
+          onClose={() => setDemoPickerOpen(false)}
+        >
+          <p className="demo-picker-intro">
+            Nämä ovat samat neljä kahden aikuisen ja yhden lapsen esimerkkiä,
+            joita voit tutkia Talouden kompassissa.
+          </p>
+          <DemoHouseholdGrid
+            scenarios={compassDemos}
+            hideNumbers={s.settings.private}
+            onChoose={loadDemoHousehold}
+          />
         </Modal>
       )}
       {edit && (
@@ -5594,14 +5754,19 @@ function CategoryImage({
   size?: number;
 }) {
   return (
-    <img
-      className="category-icon"
-      src={categoryIconSources[icon]}
-      width={size}
-      height={size}
-      alt=""
+    <span
+      className="category-icon-frame"
+      style={{ width: size, height: size }}
       aria-hidden="true"
-    />
+    >
+      <img
+        className="category-icon"
+        src={categoryIconSources[icon]}
+        width={size * 0.72}
+        height={size * 0.72}
+        alt=""
+      />
+    </span>
   );
 }
 function CompassResearchDetails({

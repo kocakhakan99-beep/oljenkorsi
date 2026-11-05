@@ -71,6 +71,7 @@ const series: Record<
     essential: number[];
     flexible: number[];
     liquid: number;
+    investment: number;
     debt: number;
     rate: number;
     payment: number;
@@ -81,6 +82,7 @@ const series: Record<
     essential: [286000, 289000, 291000, 288000, 294000, 290000],
     flexible: [76000, 81000, 79000, 84000, 78000, 82000],
     liquid: 165000,
+    investment: 180000,
     debt: 1450000,
     rate: 7.4,
     payment: 48000,
@@ -90,6 +92,7 @@ const series: Record<
     essential: [218000, 225000, 217000, 231000, 222000, 229000],
     flexible: [77000, 85000, 81000, 91000, 86000, 83000],
     liquid: 690000,
+    investment: 2450000,
     debt: 980000,
     rate: 4.2,
     payment: 39000,
@@ -99,6 +102,7 @@ const series: Record<
     essential: [215000, 221000, 218000, 224000, 219000, 223000],
     flexible: [89000, 92000, 96000, 100000, 94000, 97000],
     liquid: 2200000,
+    investment: 9640000,
     debt: 710000,
     rate: 2.9,
     payment: 44000,
@@ -108,6 +112,7 @@ const series: Record<
     essential: [254000, 258000, 261000, 256000, 265000, 260000],
     flexible: [81000, 76000, 67000, 72000, 64000, 69000],
     liquid: 26000,
+    investment: 850000,
     debt: 2180000,
     rate: 15.2,
     payment: 24000,
@@ -236,6 +241,25 @@ export function createCompassDemoCases(month: string): CompassDemoCase[] {
         rate: values.rate,
         payment: values.payment,
         linkedAssetId: homeId,
+      }),
+    );
+    const investmentPrices: Record<CompassDemoId, [number, number]> = {
+      strained: [9000, 8100],
+      everyday: [24500, 22000],
+      steady: [48200, 42500],
+      shock: [17000, 15100],
+    };
+    const [investmentPrice, purchasePrice] = investmentPrices[profile.id];
+    state.investments.push(
+      entry({
+        id: `${profile.id}-index-fund`,
+        name: "Laajasti hajautettu indeksirahasto",
+        category: "Rahastot",
+        amount: investmentPrice,
+        purchasePrice,
+        quantity: values.investment / investmentPrice,
+        date: `${month}-01`,
+        description: "Kuvitteellinen euromääräinen omistus demotarkoitukseen.",
       }),
     );
     if (profile.id === "steady")

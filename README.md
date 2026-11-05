@@ -9,9 +9,7 @@ Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus.
 3. Aloita tyhjästä, kokeile selvästi merkittyä fiktiivistä esimerkkitaloutta tai palauta JSON.
 4. Vie varmuuskopio tärkeiden muutosten jälkeen ja ennen tiedoston siirtämistä.
 
-Esimerkkitalouden voi ladata uudelleen Asetukset-näkymästä. Lataus korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi.
-
-Esimerkkitalous kuvaa fiktiivistä kahden aikuisen ja yhden lapsen perhettä. Siinä on kahden aikuisen palkat, lapsilisä, ajoittaisia sivutuloja ja tulospalkkioita sekä 12 kuukauden vaihtelevia ruoka-, energia-, liikenne-, ravintola- ja lapsiperheen menoja. Päiväykset suhteutetaan lataushetkeen, jotta kuukausivalitsin ja raportit toimivat myös myöhemmin. Summat ovat vain käyttöliittymän kokeiluun tarkoitettuja esimerkkejä.
+Neljä kompassiesimerkkiä voi ladata käyttöönotossa, kompassissa tai Asetuksista. Valitun talouden lataaminen korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi. Esimerkeissä on kahden aikuisen palkat, lapsilisä, kuuden kuukauden vaihtelevat meno- ja tulovirrat, budjetit, omaisuutta, velkaa ja sijoituksia. Ne ovat fiktiivisiä käyttöliittymän testidatoja, eivät ennusteita.
 
 Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai internetiä. Älä käytä sähköpostin tai pilvitallennuksen HTML-esikatselua; lataa tiedosto ensin paikalliseksi. Älä käytä yksityistä selausta, jos odotat datan säilyvän.
 
@@ -33,8 +31,8 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Raporttien yhteinen alkamis- ja päättymiskuukausi sekä aihekohtaiset esitysmuodot: tulot ja menot, kulurakenne, rahavirran ajoitus, budjetti vs toteuma, nykyinen varallisuus, velka ja oma pääoma sekä säästöaste/FIRE.
 - Talouden kompassi: paikallisesti ja selittävillä säännöillä priorisoidut seuraavat tarkistukset, jotka voi merkitä valmiiksi tai siirtää viikolla.
 - Kompassin kattavuus sisältää budjetti- ja kassavirran tarkistusten lisäksi puskurin havaintopohjaisen keston, tulovaihtelun ja epäsäännöllisten menojen kuukausivarauksen. Jokainen vinkki kertoo pienen seuraavan askeleen, tutkimusviitteen ja laskennan rajauksen; tutkimusta ei esitetä yksilöllisenä neuvona.
-- Kompassissa on neljä tallentamatonta tarinaesimerkkiä kahden aikuisen ja yhden lapsen talouksista: alijäämä, keskivertoarki, vakaa eteneminen ja yhden palkkatulon äkillinen katkos. Valinta näyttää kuuden kuukauden tulot ja menot sekä esimerkin perusteella syntyvät vinkit.
-- Uudessa taloudessa näkyy 4 tulon ja 14 menon peruskategoriaa. Valinnaisia kategorioita lisätään tarvittaessa, ja omalle kategorialle valitaan kuvake esikatselun kanssa. Paikalliset SVG-kuvat käyttävät yhtenäistä korkean kontrastin väritystä; sama aihe käyttää samaa kuvaketta omaisuudessa ja siihen linkitetyssä velassa.
+- Kompassin neljä kahden aikuisen ja yhden lapsen demotaloutta ovat ladattavissa myös käyttöönotossa ja asetuksissa. Esimerkit ovat samat kaikkialla: alijäämä, keskivertoarki, vakaa eteneminen ja yhden palkkatulon äkillinen katkos. Kuuden kuukauden tulot, menot, tarina ja kompassivinkit vaihtuvat valinnan mukaan.
+- Uudessa taloudessa näkyy 4 tulon ja 14 menon peruskategoriaa. Valinnaisia kategorioita lisätään tarvittaessa, ja omalle kategorialle valitaan kuvake esikatselun kanssa. Paikalliset Lucide-viivakuvat käyttävät yhtenäistä, teeman mukaan kontrastoitua tyyliä; sama aihe käyttää samaa kuvaketta omaisuudessa ja siihen linkitetyssä velassa.
 - Velan voi linkittää omaisuuserään; velkaraportti näyttää nykyisen oman pääoman ja oletuksiin perustuvan takaisinmaksu- ja arvoarvion.
 - Summien piilotus peittää myös kompassin euromääräiset todisteet. CSV on taulukkomuotoinen rivisiirto eikä säilytä velka–omaisuuslinkkejä; koko tietomallin siirtoon käytä JSON-varmuuskopiota.
 - Tummat raportti- ja sovelluspinnat käyttävät vaaleaa tekstiä. Raporttien omaisuuskuva on nykyhetken tilannekuva, sillä arvostushistoriaa ei vielä tallenneta.

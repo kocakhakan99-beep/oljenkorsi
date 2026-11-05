@@ -3,6 +3,7 @@
   "offline": false,
   "protocol": "localhost HTTP",
   "passed": [
+    "Onboarding näyttää samat neljä demoreittiä kuin kompassi",
     "Onboarding tyhjästä paikallisessa yhden tiedoston sovelluksessa localhost-testipalvelimella",
     "Rajattu aloituskategorioiden joukko, valinnaiset kategoriat ja kuvan esikatselu uuden kategorian ikonille",
     "Ohjelaatikon voi piilottaa ja palauttaa asetuksista",
@@ -49,7 +50,11 @@
     "Kaiken datan poisto ja tarkistus",
     "JSON restore onboardingista: kaikki tiedot palautettu",
     "Väärä varmuuskopio hylätty ilman datan muutosta",
-    "Demotalous: kaksi aikuista, yksi lapsi ja 12 kuukauden meno- ja tulovariaatiot",
+    "Kompassin demotalous ladattavissa koko sovellukseen: Haastava",
+    "Kompassin demotalous ladattavissa koko sovellukseen: Keskiverto",
+    "Kompassin demotalous ladattavissa koko sovellukseen: Hyvä eteneminen",
+    "Kompassin demotalous ladattavissa koko sovellukseen: Äkillinen kriisi",
+    "Kompassista ladataan sama valittu kriisitalous ja sen kuukausisummat",
     "Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä"
   ],
   "pageErrors": [],
