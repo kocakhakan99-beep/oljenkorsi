@@ -1,12 +1,12 @@
 # Roadmap
 
-Päivitetty 4.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
+Päivitetty 5.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
 ## P0: toistettava ja turvallinen perusta
 
-Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; tyyppitarkistus, linttaus, 37 yksikkötestiä ja standalone-build läpäisevät. `e2e.py` kattaa nyt raporttien oman aikavälin rajat, jakson KPI-summat, välilehtien näppäimistöpolun sekä kaavioiden ja päivävalintojen tietokortit. Seuraavaksi aja laajennettu file://-E2E oikeassa selainympäristössä ja varmista `npm ci` uudessa ympäristössä. Tämän työtilan Chromium ei käynnisty `setsockopt: Operation not permitted` / SIGTRAP -virheestä, joten uutta selainajoa ei ole vahvistettu.
+Viten kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; tyyppitarkistus, linttaus, 37 yksikkötestiä ja standalone-build läpäisevät. `e2e.py` kattaa raporttien oman aikavälin rajat, jakson KPI-summat, välilehtien näppäimistöpolun, kaavioiden tietokortit sekä järjestelmän teeman reaaliaikaisen vaihdon. Chromium 155 suoritti pääpolun valmiista HTML:stä loopback HTTP -palvelun kautta; ajossa ei ollut ulkoisia pyyntöjä. Hallitun selaimen politiikka esti `file://`-osoitteen, joten selaimen file://-tallennusta tai offline-simulaatiota ei ole tässä ympäristössä vahvistettu.
 
-Varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
+Seuraavaksi varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kiintiö/varmuuskopion palautus sekä näppäimistö- ja ruudunlukijapolut tarkoitukseen sopivissa ympäristöissä. Paranna moduulijakoa ja backupin eheystarkistusta. Kryptografinen tarkiste ei yksin tarkoita salausta tai aitoutta.
 
 **Valmis kun:** puhtaasta asennuksesta syntyy lähdekoodia vastaava HTML, merkitykselliset testit suoritetaan ja ympäristökohtaiset rajoitukset raportoidaan. Ei julisteta yleistä selainyhteensopivuutta yhden selainajon perusteella.
 

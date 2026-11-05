@@ -323,7 +323,10 @@ function App() {
     [categoryChart, setCategoryChart] = useState<'bars' | 'pie'>('bars'),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(null),
     [bufferMonths, setBufferMonths] = useState(3),
-    [dismissedHelp, setDismissedHelp] = useState<Set<string>>(readDismissedHelp);
+    [dismissedHelp, setDismissedHelp] = useState<Set<string>>(readDismissedHelp),
+    [systemPrefersDark, setSystemPrefersDark] = useState(() =>
+      matchMedia('(prefers-color-scheme: dark)').matches,
+    );
   const menuButton = useRef<HTMLButtonElement>(null);
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
@@ -465,9 +468,15 @@ function App() {
     window.addEventListener('beforeunload', f);
     return () => window.removeEventListener('beforeunload', f);
   }, [storageOk]);
+  useEffect(() => {
+    const colorScheme = matchMedia('(prefers-color-scheme: dark)');
+    const update = (event: MediaQueryListEvent) => setSystemPrefersDark(event.matches);
+    colorScheme.addEventListener('change', update);
+    return () => colorScheme.removeEventListener('change', update);
+  }, []);
   const dark =
     s.settings.mode === 'dark' ||
-    (s.settings.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    (s.settings.mode === 'system' && systemPrefersDark);
   useEffect(() => {
     document.documentElement.dataset.theme = s.settings.theme;
     document.documentElement.dataset.mode = dark ? 'dark' : 'light';

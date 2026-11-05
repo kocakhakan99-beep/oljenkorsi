@@ -8,4 +8,6 @@ Raporttien aikavälipainikkeet toimivat näppäimistöllä, ja pitkä painikeriv
 
 Playwrightillä testattiin koko pääpolku system Chromium 155:llä valmiista yhden HTML-tiedoston sovelluksesta localhost-palvelun kautta. Mobiiliylivuoto tarkistettiin 320, 375, 390, 600, 760 ja 768 pikselissä; listan avaus testattiin Enter- ja välilyöntinäppäimillä. Tämä ajo ei käyttänyt `file://`-osoitetta eikä selaimen offline-simulointia, koska hallittu Chromium estää suoran tiedoston avaamisen. Kaikkia käyttäjäpolkuja ei ole suoritettu pelkästään näppäimistöllä. Ruudunlukijaa, 200/400 % zoomia, kontrastimittauksia, axe-auditointia tai Windows High Contrast -tilaa ei ole kattavasti testattu.
 
+Järjestelmän vaalea/tumma-asetuksen vaihtuminen testattiin selaimen media-asetuksen muutoksella sovelluksen ollessa auki. Teeman automaattinen päivitys ei vaadi sivun uudelleenlatausta.
+
 Oman korostusvärin kontrastia ei lasketa automaattisesti; UI näyttää varoituksen. Summien piilotus ei peitä kaikkia johdettuja tietoja tai muokkauslomakkeita. Neljä valmista teemaa ja tumma tila ovat toteutettuja, mutta AA-kontrastia ei väitetä sertifioiduksi.
