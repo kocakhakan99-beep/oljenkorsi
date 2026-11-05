@@ -126,6 +126,15 @@ with sync_playwright() as p:
  page.get_by_role('tab',name='Velat ja oma pääoma',exact=True).click();expect(page.locator('#report-panel-debt')).to_contain_text('Oma pääoma velkojen maksun jälkeen');expect(page.locator('#report-panel-debt')).to_contain_text('4 000,00');mark('Velkaraportti laskee linkitetyn omaisuuserän nykyisen ja arvioidun pääoman')
  page.get_by_role('tab',name='Säästöaste ja FIRE',exact=True).click();expect(page.locator('#report-panel-fire')).to_contain_text('Arvioitu sijoitusvarallisuuden tavoite');expect(page.locator('#report-panel-fire')).to_contain_text('Säästöaste');mark('FIRE-raportti näyttää säästöasteen ja oletetun pääomatavoitteen')
  nav(page,'Talouden kompassi');expect(page.get_by_role('heading',name='Seuraava hyvä askel')).to_be_visible();assert page.locator('.compass-task').count()>0;active_task_title=page.locator('.compass-task').first.locator('h3').inner_text();assert page.locator('.compass-scenario-choice').count()==4;page.locator('.compass-scenario-choice').nth(3).click();expect(page.locator('.compass-story')).to_contain_text('Toisen palkka ja lapsilisä jatkuvat');expect(page.locator('.compass-demo-guidance')).to_contain_text('Kompassi nostaa esiin');assert page.locator('.compass-demo-tip-grid .compass-research-details').count()>0;page.locator('.compass-demo-tip-grid .compass-research-details summary').first.click();expect(page.locator('.compass-demo-tip-grid .compass-research-details').first).to_contain_text('Deaton (1991)');mark('Kompassin neljä fiktiivistä tarinareittiä, kassavirtavisualisointi ja lähteistetyt vinkit')
+ compass_filters=page.get_by_role('group',name='Rajaa kompassin askelia aiheittain')
+ assert compass_filters.get_by_role('button').count()==5
+ compass_filters.get_by_role('button',name=re.compile('Kassavirta')).click()
+ expect(compass_filters.get_by_role('button',name=re.compile('Kassavirta'))).to_have_attribute('aria-pressed','true')
+ assert page.locator('.compass-task').count()>0
+ compass_filters.get_by_role('button',name=re.compile('Menot')).click()
+ expect(compass_filters.get_by_role('button',name=re.compile('Menot'))).to_have_attribute('aria-pressed','true')
+ compass_filters.get_by_role('button',name='Kaikki askeleet').click()
+ mark('Kompassin askeleet ryhmittyvät kassavirtaan, menoihin, turvaan/velkoihin ja tavoitteisiin')
  page.get_by_role('button',name='Piilota summat',exact=True).click();expect(page.locator('.compass-task').first.locator('small')).to_contain_text('Summat piilotettu');assert '€' not in page.locator('.compass-task').first.locator('small').inner_text();page.get_by_role('button',name='Näytä summat',exact=True).click()
  blocked_action=page.locator('.compass-task').first
  blocked_title=blocked_action.locator('h3').inner_text()

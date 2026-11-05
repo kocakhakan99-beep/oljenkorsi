@@ -10,6 +10,13 @@ import type { GuidanceSourceId } from "./guidance";
 import { today, type State } from "./model";
 
 export type ActionPriority = "high" | "medium" | "low";
+export type ActionTrack = "cashflow" | "spending" | "resilience" | "future";
+export const actionTrackLabels: Record<ActionTrack, string> = {
+  cashflow: "Kassavirta",
+  spending: "Menot",
+  resilience: "Puskuri ja velat",
+  future: "Tavoitteet ja FIRE",
+};
 export interface PlannedAction {
   id: string;
   title: string;
@@ -17,6 +24,7 @@ export interface PlannedAction {
   evidence: string;
   priority: ActionPriority;
   score: number;
+  track: ActionTrack;
   destination: string;
   destinationLabel: string;
   reportView?:
@@ -30,6 +38,7 @@ export interface PlannedAction {
   nextStep?: string;
   sourceIds?: GuidanceSourceId[];
   boundary?: string;
+  impactNote?: string;
   privateEvidence?: boolean;
 }
 
@@ -45,6 +54,30 @@ function normalized(value: string) {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLocaleLowerCase("fi-FI");
+}
+
+function dayForComparison(selectedMonth: string, period: string) {
+  const [year, monthNumber] = period.split("-").map(Number);
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  if (selectedMonth !== today().slice(0, 7)) return lastDay;
+  return Math.min(Number(today().slice(-2)), lastDay);
+}
+
+function actualTotalThrough(
+  entries: State["expenses"],
+  month: string,
+  day: number,
+) {
+  const cutoff = `${month}-${String(day).padStart(2, "0")}`;
+  return sum(
+    entries
+      .filter((item) => item.status === "actual")
+      .map(
+        (item) =>
+          item.amount *
+          occurrences(item, month).filter((date) => date <= cutoff).length,
+      ),
+  );
 }
 
 function monthOffset(month: string, offset: number) {
@@ -85,6 +118,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       evidence: `Valittu kuukausi ${month} · ei budjettikategorioita`,
       priority: "medium",
       score: 240,
+      track: "cashflow",
       destination: "budget",
       destinationLabel: "Avaa budjetti",
       nextStep:
@@ -119,6 +153,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: high ? "high" : "medium",
         score: (high ? 360 : 230) + Math.min(100, Math.round(over / 10000)),
+        track: "cashflow",
         destination: "budget",
         destinationLabel: "Tarkista budjetti",
         nextStep:
@@ -158,6 +193,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
       score:
         (priority === "high" ? 390 : 270) +
         Math.min(80, Math.round(deficitTotal / 25000)),
+      track: "cashflow",
+      impactNote: `Kirjattu kassavaje oli keskimäärin ${formatCents(deficitTotal / deficitMonths.length)}/havaintokuu.`,
       destination: "reports",
       destinationLabel: "Avaa kassavirtaraportti",
       reportView: "flow",
@@ -176,6 +213,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         evidence: "3/3 havaintokuukautta miinuksella",
         priority: "high",
         score: 375,
+        track: "resilience",
         destination: "liabilities",
         destinationLabel: "Tarkista laskut ja velat",
         nextStep:
@@ -216,6 +254,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: housingShare >= 50 ? "high" : "medium",
         score: housingShare >= 50 ? 335 : 250,
+        track: "spending",
+        impactNote: `Asumismenoja kirjattu keskimäärin ${formatCents(sum(housingPeriods.map((period) => period.housing)) / housingPeriods.length)}/kk havaintokuukausina.`,
         destination: "reports",
         destinationLabel: "Tarkista menot ja tulot",
         reportView: "categories",
@@ -258,6 +298,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: essentialShare >= 100 ? "high" : "medium",
         score: essentialShare >= 100 ? 365 : 255,
+        track: "spending",
+        impactNote: `Välttämättömiä menoja kirjattu keskimäärin ${formatCents(sum(essentialPeriods.map((period) => period.essential)) / essentialPeriods.length)}/kk.`,
         destination: "expenses",
         destinationLabel: "Tarkista välttämättömät menot",
         nextStep:
@@ -283,39 +325,49 @@ export function planActions(state: State, month: string): PlannedAction[] {
     .filter((category) => !overPlanCategories.has(category))
     .map((category) => {
       const priorPeriods = completedMonths
-        .map((period) => ({
-          period,
-          hasExpense: state.expenses.some(
+        .map((period) => {
+          const day = dayForComparison(month, period);
+          const categoryEntries = state.expenses.filter(
             (item) =>
-              item.status === "actual" &&
-              item.category === category &&
-              expenseType(item) === "consumption" &&
-              occurrences(item, period).length > 0,
-          ),
-          amount: total(
-            state.expenses.filter(
-              (item) =>
-                item.category === category &&
-                expenseType(item) === "consumption",
-            ),
+              item.category === category && expenseType(item) === "consumption",
+          );
+          return {
             period,
-            true,
-          ),
-        }))
+            day,
+            hasExpense: state.expenses.some(
+              (item) =>
+                item.status === "actual" &&
+                item.category === category &&
+                expenseType(item) === "consumption" &&
+                occurrences(item, period).some(
+                  (date) => date <= `${period}-${String(day).padStart(2, "0")}`,
+                ),
+            ),
+            amount: actualTotalThrough(categoryEntries, period, day),
+          };
+        })
         .filter((item) => item.hasExpense);
-      const currentAmount = total(
-        state.expenses.filter(
-          (item) =>
-            item.category === category && expenseType(item) === "consumption",
-        ),
+      const currentDay = dayForComparison(month, month);
+      const categoryEntries = state.expenses.filter(
+        (item) =>
+          item.category === category && expenseType(item) === "consumption",
+      );
+      const currentAmount = actualTotalThrough(
+        categoryEntries,
         month,
-        true,
+        currentDay,
       );
       const average =
         priorPeriods.length > 0
           ? sum(priorPeriods.map((item) => item.amount)) / priorPeriods.length
           : 0;
-      return { category, priorPeriods, currentAmount, average };
+      return {
+        category,
+        priorPeriods,
+        currentAmount,
+        currentDay,
+        average,
+      };
     })
     .filter(
       (item) =>
@@ -337,6 +389,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
       score:
         190 +
         Math.min(50, Math.round((item.currentAmount - item.average) / 10000)),
+      track: "spending",
+      impactNote: `Jos poikkeama ei toistu, kirjattu erotus omaan keskiarvoon on ${formatCents(item.currentAmount - item.average)} tässä kuussa. Tämä ei ole säästölupaus.`,
       destination: "reports",
       destinationLabel: "Avaa kuluraportti",
       reportView: "categories",
@@ -344,7 +398,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         "Avaa erän kirjaukset ja erottele kertaluonteinen meno, hintamuutos ja mahdollinen kirjausvirhe. Päätä vasta sitten, tarvitaanko suunnitelmaan muutos.",
       sourceIds: ["R11"],
       boundary:
-        "50 €:n ja 30 %:n muutosrajat ovat sovelluksen omia huomiosääntöjä. Vertailu käyttää enintään kolmea havaittua kuukautta. Kuukausi ilman kyseisen kategorian kirjausta tulkitaan puuttuvaksi havainnoksi, ei nollakuluksi; otos ei ole ennuste.",
+        "50 €:n ja 30 %:n muutosrajat ovat sovelluksen omia huomiosääntöjä. Kuluvassa kuussa vertailu rajataan samaan kalenteripäivään myös aiemmissa kuukausissa; suljetuissa kuukausissa verrataan kokonaisia kuukausia. Kuukausi ilman kyseisen kategorian kirjausta tulkitaan puuttuvaksi havainnoksi, ei nollakuluksi; otos ei ole ennuste.",
     });
   }
 
@@ -360,6 +414,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: buffer.buffer < 0.5 ? "high" : "medium",
         score: buffer.buffer < 0.5 ? 370 : 260,
+        track: "resilience",
+        impactNote: `Likvidejä varoja ${formatCents(buffer.liquid)} · välttämättömiä menoja keskimäärin ${formatCents(buffer.averageEssential)}/kk.`,
         destination: "assets",
         destinationLabel: "Tarkista helposti käytettävät varat",
         nextStep:
@@ -378,6 +434,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       evidence: `${buffer.observedMonths}/3 kuukautta kirjattuna`,
       priority: "low",
       score: 150,
+      track: "resilience",
       destination: "expenses",
       destinationLabel: "Tarkista menokirjaukset",
       nextStep:
@@ -413,6 +470,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: "medium",
         score: 245,
+        track: "cashflow",
         destination: "reports",
         destinationLabel: "Tarkastele tulovirtaa",
         reportView: "flow",
@@ -454,6 +512,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: averageSurplus < 0 ? "high" : "medium",
         score: averageSurplus < 0 ? 300 : 220,
+        track: "future",
+        impactNote: `Tavoitesäästön ja havaitun ylijäämän ero on ${formatCents(plannedGoalSaving - averageSurplus)}/kk.`,
         destination: "goals",
         destinationLabel: "Tarkista tavoitteet",
         nextStep:
@@ -488,6 +548,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: "low",
         score: 165,
+        track: "spending",
         destination: "expenses",
         destinationLabel: "Tarkista toistuvat menot",
         nextStep:
@@ -514,6 +575,9 @@ export function planActions(state: State, month: string): PlannedAction[] {
       evidence: `${savingDrivenDeficits.length}/3 kuussa kulutusmenot alittivat tulot, vaikka kassavirta oli miinuksella`,
       priority: "medium",
       score: 235,
+      track: "cashflow",
+      privateEvidence: true,
+      impactNote: `Säästö- ja sijoitussiirtojen jälkeen kassavaje oli keskimäärin ${formatCents(sum(savingDrivenDeficits.map((period) => Math.abs(period.cash))) / savingDrivenDeficits.length)}/havaintokuu.`,
       destination: "reports",
       destinationLabel: "Erittele kassavirta",
       reportView: "overview",
@@ -540,6 +604,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       privateEvidence: true,
       priority: "medium",
       score: 225,
+      track: "resilience",
       destination: "liabilities",
       destinationLabel: "Vertaa velkoja",
       nextStep:
@@ -568,6 +633,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: paymentShare >= 50 ? "high" : "medium",
         score: paymentShare >= 50 ? 320 : 230,
+        track: "resilience",
+        impactNote: `Kirjatut velkaerät yhteensä ${formatCents(debtPayments)}/kk suhteessa tuloihin.`,
         destination: "liabilities",
         destinationLabel: "Tarkista velkaerät",
         nextStep:
@@ -593,6 +660,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       evidence: `${state.investments.length} sijoituserää · tavoite “${state.goals.find((goal) => /(fire|taloudellinen riippumattomuus|taloudellinen vapaus)/.test(normalized(goal.name)))?.name}”`,
       priority: "low",
       score: 180,
+      track: "future",
       destination: "scenarios",
       destinationLabel: "Avaa nostoskenaariot",
       nextStep:
@@ -654,6 +722,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: "low",
         score: 155 + Math.min(40, Math.round(value.amount / 100000)),
+        track: "spending",
         destination: "budget",
         destinationLabel: "Avaa budjetti",
         nextStep:
@@ -678,6 +747,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: "medium",
         score: 250,
+        track: "resilience",
         destination: "liabilities",
         destinationLabel: "Avaa velat",
         nextStep:
@@ -700,6 +770,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         privateEvidence: true,
         priority: "low",
         score: 130,
+        track: "resilience",
         destination: "liabilities",
         destinationLabel: "Tarkista velkatiedot",
         nextStep:
@@ -726,6 +797,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         evidence: `Arvostuspäivä ${asset.date} · noin ${Math.floor(ageDays / 30)} kk sitten`,
         priority: "low",
         score: 110,
+        track: "future",
         destination: "assets",
         destinationLabel: "Tarkista omaisuus",
         nextStep:
@@ -749,6 +821,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       evidence: "Tavoitteita ei ole vielä tallennettu",
       priority: "low",
       score: 100,
+      track: "future",
       destination: "goals",
       destinationLabel: "Luo tavoite",
       nextStep:

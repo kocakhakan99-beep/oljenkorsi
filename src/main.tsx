@@ -41,8 +41,10 @@ import {
   linkedAssetOutlook,
 } from "./domain/calculations";
 import {
+  actionTrackLabels,
   planActions,
   visibleActions,
+  type ActionTrack,
   type PlannedAction,
 } from "./domain/actions";
 import { guidanceSources } from "./domain/guidance";
@@ -155,6 +157,13 @@ const reportTabs = [
   { id: "debt", label: "Velat ja oma pääoma", Icon: Scale },
   { id: "fire", label: "Säästöaste ja FIRE", Icon: CircleGauge },
 ] as const;
+const compassTrackOptions: { id: ActionTrack | "all"; label: string }[] = [
+  { id: "all", label: "Kaikki askeleet" },
+  { id: "cashflow", label: actionTrackLabels.cashflow },
+  { id: "spending", label: actionTrackLabels.spending },
+  { id: "resilience", label: actionTrackLabels.resilience },
+  { id: "future", label: actionTrackLabels.future },
+];
 const helpPreferencesKey = "taloussuunnittelu.dismissed-help.v1";
 const compassWeatherIcons = {
   "cloud-rain": CloudRain,
@@ -1278,6 +1287,7 @@ function App() {
     [withdrawalRate, setWithdrawalRate] = useState(4),
     [showCompletedActions, setShowCompletedActions] = useState(false),
     [showAllCompassTasks, setShowAllCompassTasks] = useState(false),
+    [compassTrack, setCompassTrack] = useState<ActionTrack | "all">("all"),
     [compassRefreshAt, setCompassRefreshAt] = useState<string | null>(null),
     [compassRefreshMessage, setCompassRefreshMessage] = useState(""),
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(
@@ -2090,9 +2100,13 @@ function App() {
   );
   const compassTasks = planActions(s, month);
   const visibleCompassTasks = visibleActions(s, month);
+  const filteredCompassTasks =
+    compassTrack === "all"
+      ? visibleCompassTasks
+      : visibleCompassTasks.filter((task) => task.track === compassTrack);
   const displayedCompassTasks = showAllCompassTasks
-    ? visibleCompassTasks
-    : visibleCompassTasks.slice(0, 5);
+    ? filteredCompassTasks
+    : filteredCompassTasks.slice(0, 5);
   const compassDemos = useMemo(() => createCompassDemoCases(month), [month]);
   const activeCompassDemo =
     compassDemos.find(
@@ -2351,9 +2365,9 @@ function App() {
                   </div>
                   <div className="compass-hero-tools">
                     <div className="compass-count">
-                      <strong>{visibleCompassTasks.length}</strong>
+                      <strong>{filteredCompassTasks.length}</strong>
                       <small>
-                        {visibleCompassTasks.length === 1
+                        {filteredCompassTasks.length === 1
                           ? "askel näkyvissä"
                           : "askelta näkyvissä"}
                       </small>
@@ -2386,6 +2400,35 @@ function App() {
                     </small>
                   </div>
                 </div>
+                <div
+                  className="compass-track-filters"
+                  role="group"
+                  aria-label="Rajaa kompassin askelia aiheittain"
+                >
+                  {compassTrackOptions.map((track) => {
+                    const count =
+                      track.id === "all"
+                        ? visibleCompassTasks.length
+                        : visibleCompassTasks.filter(
+                            (task) => task.track === track.id,
+                          ).length;
+                    return (
+                      <button
+                        type="button"
+                        key={track.id}
+                        className="compass-track-filter"
+                        aria-pressed={compassTrack === track.id}
+                        onClick={() => {
+                          setCompassTrack(track.id);
+                          setShowAllCompassTasks(false);
+                        }}
+                      >
+                        {track.label}
+                        <span>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
                 <div className="compass-route" aria-hidden="true">
                   <span>Havainnot</span>
                   <i />
@@ -2393,7 +2436,7 @@ function App() {
                   <i />
                   <span>Sinun päätöksesi</span>
                 </div>
-                {visibleCompassTasks.length ? (
+                {filteredCompassTasks.length ? (
                   <div className="compass-task-list">
                     {displayedCompassTasks.map((task, index) => (
                       <article
@@ -2412,6 +2455,11 @@ function App() {
                                   ? "Kannattaa tarkistaa"
                                   : "Kun sinulle sopii"}
                             </span>
+                            <span
+                              className={`compass-task-track track-${task.track}`}
+                            >
+                              {actionTrackLabels[task.track]}
+                            </span>
                             <span>{task.destinationLabel}</span>
                           </div>
                           <h3>{task.title}</h3>
@@ -2421,6 +2469,14 @@ function App() {
                               ? "Summat piilotettu"
                               : task.evidence}
                           </small>
+                          {task.impactNote && (
+                            <p className="compass-impact-note">
+                              <ChartSpline size={15} aria-hidden="true" />
+                              {s.settings.private && task.privateEvidence
+                                ? "Vaikutusarvion summat piilotettu"
+                                : task.impactNote}
+                            </p>
+                          )}
                           {task.nextStep && (
                             <div className="compass-next-step">
                               <strong>Pienin kokeiltava askel</strong>
@@ -2472,22 +2528,36 @@ function App() {
                 ) : (
                   <div className="compass-empty">
                     <CircleGauge size={28} aria-hidden="true" />
-                    <h3>Reitti näyttää selkeältä</h3>
+                    <h3>
+                      {compassTrack === "all"
+                        ? "Reitti näyttää selkeältä"
+                        : `${actionTrackLabels[compassTrack]}: ei avointa askelta`}
+                    </h3>
                     <p>
-                      Tähän kuukauteen ei löytynyt automaattisia tarkistuksia.
-                      Kun lisäät budjetin, kirjauksia, tavoitteita tai
-                      omaisuustietoja, kompassi nostaa olennaisia asioita esiin.
+                      {compassTrack !== "all" && visibleCompassTasks.length
+                        ? "Tässä aiheessa ei ole nyt avointa ehdotusta. Voit tarkistaa muut aiheet."
+                        : "Tähän kuukauteen ei löytynyt automaattisia tarkistuksia. Kun lisäät budjetin, kirjauksia, tavoitteita tai omaisuustietoja, kompassi nostaa olennaisia asioita esiin."}
                     </p>
-                    <button
-                      type="button"
-                      className="primary"
-                      onClick={() => navigate("budget")}
-                    >
-                      Avaa budjetti
-                    </button>
+                    {compassTrack !== "all" && visibleCompassTasks.length ? (
+                      <button
+                        type="button"
+                        className="primary"
+                        onClick={() => setCompassTrack("all")}
+                      >
+                        Näytä kaikki aiheet
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="primary"
+                        onClick={() => navigate("budget")}
+                      >
+                        Avaa budjetti
+                      </button>
+                    )}
                   </div>
                 )}
-                {visibleCompassTasks.length > 5 && (
+                {filteredCompassTasks.length > 5 && (
                   <button
                     className="compass-toggle"
                     type="button"
@@ -2496,7 +2566,7 @@ function App() {
                   >
                     {showAllCompassTasks
                       ? "Näytä vain 5 tärkeintä"
-                      : `Näytä kaikki ${visibleCompassTasks.length} askelta`}
+                      : `Näytä kaikki ${filteredCompassTasks.length} askelta`}
                   </button>
                 )}
                 <section

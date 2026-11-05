@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { planActions, visibleActions } from "../domain/actions";
 import { createCompassDemoCases } from "../domain/compass-demos";
-import { empty, entry } from "../domain/model";
+import { empty, entry, today } from "../domain/model";
 
 describe("Talouden kompassi", () => {
   it("järjestää selittävät tarkistukset deterministisesti niiden kiireellisyyden mukaan", () => {
@@ -75,13 +75,19 @@ describe("Talouden kompassi", () => {
 
   it("nostaa asumisosuuden ja oman kuluhistorian esiin varauksin", () => {
     const state = empty();
+    const currentMonth = today().slice(0, 7);
+    const [year, monthNumber] = currentMonth.split("-").map(Number);
+    const historyStart = new Date(year, monthNumber - 4, 1);
+    const historyStartMonth = `${historyStart.getFullYear()}-${String(historyStart.getMonth() + 1).padStart(2, "0")}`;
+    const currentDay = Number(today().slice(-2));
+    const lastDay = new Date(year, monthNumber, 0).getDate();
     state.incomes = [
       entry({
         id: "salary",
         name: "Palkka",
         category: "Palkka",
         amount: 150000,
-        date: "2026-08-01",
+        date: `${historyStartMonth}-01`,
         recurrence: "monthly",
       }),
     ];
@@ -91,7 +97,7 @@ describe("Talouden kompassi", () => {
         name: "Vuokra",
         category: "Asuminen",
         amount: 70000,
-        date: "2026-08-02",
+        date: `${historyStartMonth}-01`,
         recurrence: "monthly",
         essential: true,
       }),
@@ -100,7 +106,7 @@ describe("Talouden kompassi", () => {
         name: "Ruokaostokset",
         category: "Ruoka",
         amount: 10000,
-        date: "2026-08-03",
+        date: `${historyStartMonth}-01`,
         recurrence: "monthly",
         essential: false,
       }),
@@ -109,24 +115,38 @@ describe("Talouden kompassi", () => {
         name: "Juhlat",
         category: "Ruoka",
         amount: 8000,
-        date: "2026-11-03",
+        date: today(),
         essential: false,
       }),
     ];
+    if (currentDay < lastDay)
+      state.expenses.push(
+        entry({
+          id: "food-later-this-month",
+          name: "Myöhemmin kuussa",
+          category: "Ruoka",
+          amount: 50000,
+          date: `${currentMonth}-${String(lastDay).padStart(2, "0")}`,
+          essential: false,
+        }),
+      );
 
-    const actions = planActions(state, "2026-11");
+    const actions = planActions(state, currentMonth);
     const housing = actions.find(
-      (action) => action.id === "housing-cost-review-2026-11",
+      (action) => action.id === `housing-cost-review-${currentMonth}`,
     );
     const ownBaseline = actions.find(
-      (action) => action.id === "spending-pattern-2026-11-Ruoka",
+      (action) => action.id === `spending-pattern-${currentMonth}-Ruoka`,
     );
     expect(housing?.evidence).toContain("46,7 %");
     expect(housing?.sourceIds).toEqual(["R12"]);
     expect(housing?.boundary).toContain("henkilökohtainen vuokrakatto");
     expect(housing?.reportView).toBe("categories");
+    expect(housing?.track).toBe("spending");
     expect(ownBaseline?.evidence).toContain("180,00");
     expect(ownBaseline?.reportView).toBe("categories");
+    expect(ownBaseline?.impactNote).toContain("ei ole säästölupaus");
+    expect(ownBaseline?.track).toBe("spending");
     expect(ownBaseline?.boundary).toContain("otos ei ole ennuste");
   });
 

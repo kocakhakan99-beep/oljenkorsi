@@ -4,7 +4,7 @@
 
 - TypeScript-tarkistus ja ESLint läpäisivät; Vitestissä läpäisi 53 testiä neljästä tiedostosta.
 - `npm run build` läpäisi ja tuotti päivitetyn itsenäisen `index.html`-tiedoston.
-- `python -m py_compile e2e.py` läpäisi. Päivitettyä selainpolkua ei saatu ajettua: Playwrightin oma Chromium puuttui ympäristöstä, ja `/usr/bin/chromium` sulkeutui käynnistyksessä virheeseen `setsockopt: Operation not permitted`. Kompassin uudet klikkauspolut eivät siten ole vielä E2E-varmennettuja tässä ympäristössä.
+- `python -m py_compile e2e.py` läpäisi. Päivitetty selainpolku suoritettiin system Chromium 155:llä paikallisen HTTP-palvelimen kautta: kaikki 54 varmennusta läpäisivät, mukaan lukien kompassin aihekohtainen suodatus. Selaimessa ei havaittu JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. `file://`-navigointi on edelleen ympäristön selainkäytännöllä estetty.
 - Uudet yksikkötestit tarkistavat asumisosuuden rajauksen, vertailun oman kuluhistorian perusteella, FIRE-nostojen lähderajauksen, neuvontavinkin sekä `Ei onnistu nyt` -tilan tallentumisen ja määräajan. Käyttöliittymän testiin lisättiin myös siirto-, palautus- ja manuaalisen uudelleenarvioinnin polut.
 
 ## Suoritetut tarkistukset
