@@ -1,5 +1,6 @@
 from pathlib import Path
-import json, shutil, os, tempfile
+from decimal import Decimal
+import json, shutil, os, tempfile, re
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).parent
 QA=ROOT/'qa'
@@ -25,9 +26,17 @@ def nav(page,name):
 def state(page):return page.evaluate("JSON.parse(localStorage.getItem('taloussuunnittelu.v1')).data")
 def add(page,section,button,values,selects={}):
  nav(page,section);page.get_by_role('button',name=button,exact=True).click();dlg=page.locator('dialog[open]')
- for k,v in values.items():dlg.locator('[name="'+k+'"]').fill(str(v))
+ for k,v in values.items():
+  if k in ('amount','purchasePrice','payment','target','monthly'):
+   v=str(int(Decimal(str(v))*100))
+  if k=='rate':dlg.get_by_label('Vuosikorko (%)',exact=True).fill(str(v))
+  elif k=='ownership':dlg.get_by_label('Omistusosuus (%)',exact=True).fill(str(v))
+  else:dlg.locator('[name="'+k+'"]').fill(str(v))
  for k,v in selects.items():dlg.locator('[name="'+k+'"]').select_option(v)
  dlg.get_by_role('button',name='Tallenna',exact=True).click();expect(dlg).not_to_be_visible()
+def choose_month(page,label,value):
+ page.get_by_role('button',name=re.compile(re.escape(label)+':')).click()
+ page.get_by_label(label+', syötä kuukausi',exact=True).fill(value)
 with sync_playwright() as p:
  if PROFILE.exists():shutil.rmtree(PROFILE)
  c=p.chromium.launch_persistent_context(str(PROFILE),executable_path=BROWSER,headless=True,offline=OFFLINE,accept_downloads=True,args=['--no-sandbox'],viewport={'width':1440,'height':1000})
@@ -38,21 +47,33 @@ with sync_playwright() as p:
  page.get_by_role('button',name='Lisää tulo',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Lisää 10 euroa summasta').click();assert page.locator('dialog [name=amount]').input_value()=='10,00';page.get_by_role('button',name='Sulje',exact=True).click();mark('Summan pikasäätö toimii')
  page.get_by_role('button',name='Lisää meno',exact=True).click();expect(page.locator('dialog[open]')).to_be_visible();page.get_by_role('button',name='Sulje',exact=True).click()
  page.get_by_role('button',name='Avaa budjetti',exact=True).click();expect(page.get_by_role('heading',name='Budjetti',exact=True)).to_be_visible();nav(page,'Yhteenveto');mark('Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän')
- month_input=page.get_by_label('Valitse kuukausi',exact=True)
- month_input.fill('2026-11');expect(page.locator('.month-choice')).to_contain_text('marraskuu 2026')
- page.get_by_role('button',name='Edellinen kuukausi',exact=True).click();assert month_input.input_value()=='2026-10'
- page.get_by_role('button',name='Seuraava kuukausi',exact=True).click();assert month_input.input_value()=='2026-11'
+ month_button=page.get_by_role('button',name=re.compile('Valitse kuukausi:'))
+ month_button.click();page.get_by_label('Valitse kuukausi, syötä kuukausi',exact=True).fill('2026-11');expect(page.locator('.month-choice')).to_contain_text('marraskuu 2026')
+ page.get_by_role('button',name='Edellinen kuukausi',exact=True).click();assert 'lokakuu 2026' in month_button.get_attribute('aria-label')
+ page.get_by_role('button',name='Seuraava kuukausi',exact=True).click();assert 'marraskuu 2026' in month_button.get_attribute('aria-label')
  expect(page.get_by_role('button',name='Pikatoiminnot',exact=True)).to_be_visible()
- expect(page.locator('.toolbar-status')).to_contain_text('Tallentuu tässä selaimessa')
- mark('Kuukausivalitsin, nuolisiirtymät ja kompakti yläpalkki')
+ assert page.locator('.toolbar-status').count()==0
+ mark('Mukautettu kuukausivalitsin, nuolisiirtymät ja kompakti yläpalkki')
+ page.get_by_role('button',name='Lisää tulo',exact=True).click();dlg=page.locator('dialog[open]')
+ dlg.locator('[name="amount"]').fill('1250');assert dlg.locator('[name="amount"]').input_value()=='12,50'
+ dlg.locator('[name="amount"]').fill('1 234,56 €');assert dlg.locator('[name="amount"]').input_value().replace('\u00a0',' ')=='1 234,56'
+ date_button=dlg.get_by_role('button',name='Päivämäärä / aloituspäivä: avaa kalenteri',exact=True);date_button.click();expect(dlg.get_by_role('dialog',name='Päivämäärä / aloituspäivä kalenteri')).to_be_visible();dlg.get_by_role('button',name='Tänään',exact=True).click()
+ dialog_style=dlg.evaluate("(el)=>({resize:getComputedStyle(el).resize,rect:el.getBoundingClientRect().toJSON()})");assert dialog_style['resize']=='both';assert abs(dialog_style['rect']['x']+dialog_style['rect']['width']/2-720)<2
+ dlg.get_by_role('button',name='Sulje',exact=True).click();mark('Suomalainen summamaski, mukautettu päivämäärävalitsin sekä keskitetty ja resizable ikkuna')
  add(page,'Tulot','+ Lisää tulo',{'name':'Testipalkka','amount':'3000','date':'2026-11-01'},{'recurrence':'monthly'})
  mark('Tulo lisätty')
  add(page,'Menot','+ Lisää meno',{'name':'Testivuokra','amount':'1000','date':'2026-11-01','category':'Asuminen'},{'recurrence':'monthly'})
  mark('Toistuva meno lisätty')
  expand=page.locator('.row-expand')
  expand.focus();expand.press('Enter');expect(expand).to_have_attribute('aria-expanded','true');expect(page.locator('#'+expand.get_attribute('aria-controls'))).to_be_visible();expand.press('Space');expect(expand).to_have_attribute('aria-expanded','false');mark('Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön')
- page.get_by_role('button',name='Muokkaa Testivuokra',exact=True).click();page.locator('dialog [name=amount]').fill('900');page.locator('dialog').get_by_role('button',name='Tallenna',exact=True).click();assert state(page)['expenses'][0]['amount']==90000;mark('Menon muokkaus')
- nav(page,'Budjetti');page.get_by_label('Asuminen budjetti euroina').fill('1100');page.get_by_label('Asuminen budjetti euroina').press('Tab');assert state(page)['budgets']['2026-11']['Asuminen']==110000;mark('Budjetin inline-muokkaus')
+ page.get_by_role('button',name='Muokkaa Testivuokra',exact=True).click();page.locator('dialog [name=amount]').fill('90000');page.locator('dialog').get_by_role('button',name='Tallenna',exact=True).click();assert state(page)['expenses'][0]['amount']==90000;mark('Menon muokkaus')
+ nav(page,'Budjetti');page.get_by_label('Asuminen budjetti euroina').fill('110000');page.get_by_label('Asuminen budjetti euroina').press('Tab');assert state(page)['budgets']['2026-11']['Asuminen']==110000;mark('Budjetin inline-muokkaus suomalaisella summamaskilla')
+ page.get_by_label('Asuminen toteuma euroina').fill('100000');page.get_by_label('Asuminen toteuma euroina').press('Tab');assert state(page)['budgetActuals']['2026-11']['Asuminen']==100000;mark('Manuaalinen toteumasyöttö suomalaisella summamaskilla')
+ nav(page,'Omaisuus');page.get_by_role('button',name='+ Lisää omaisuuserä',exact=True).click();dlg=page.locator('dialog[open]');slider=dlg.get_by_role('slider',name='Omistusosuus (%), säädin');percent_input=dlg.get_by_label('Omistusosuus (%)',exact=True);slider.press('Home');slider.press('ArrowRight');assert percent_input.input_value()=='0,1'
+ bounds=slider.bounding_box();x=bounds['x']+bounds['width']*.4;y=bounds['y']+bounds['height']/2
+ page.mouse.move(x,y);page.mouse.down();page.mouse.move(x+20,y);page.mouse.up();fast=float(percent_input.input_value().replace(',','.'));assert fast>44
+ page.mouse.move(x,y);page.mouse.down();page.mouse.move(x+20,y-10);page.mouse.up();fine=float(percent_input.input_value().replace(',','.'));assert 40<fine<41
+ dlg.get_by_role('button',name='Sulje',exact=True).click();mark('Prosenttisäädin: nuolinäppäimet, nopea vaakaveto ja tarkka viistoveto')
  add(page,'Omaisuus','+ Lisää omaisuuserä',{'name':'Testitili','amount':'6000','category':'Talletukset'})
  add(page,'Velat','+ Lisää velka',{'name':'Testivelka','amount':'2000','rate':'0','payment':'100'})
  add(page,'Sijoitukset','+ Lisää sijoitus',{'name':'Testirahasto','amount':'100','quantity':'2','purchasePrice':'80'})
@@ -71,21 +92,18 @@ with sync_playwright() as p:
  expect(page.get_by_role('table')).to_be_visible()
  assert '70 %' in page.locator('.report-saving-rate').inner_text()
  assert '2\u00a0100,00' in page.locator('.report-kpi.cash').inner_text()
- report_range=page.get_by_role('button',name='Oma aikaväli',exact=True)
- report_range.click()
- page.get_by_label('Raportin alkukuukausi').fill('2026-11')
- page.get_by_label('Raportin loppukuukausi').fill('2026-11')
- expect(page.locator('.report-period-summary')).to_contain_text('2026-11')
+ choose_month(page,'Raportin alkukuukausi','2026-11')
+ choose_month(page,'Raportin loppukuukausi','2026-11')
+ expect(page.locator('.report-period-summary')).to_contain_text('marraskuu 2026')
  assert '2\u00a0100,00' in page.locator('.report-kpi.cash').inner_text()
- page.get_by_label('Raportin alkukuukausi').fill('2010-01')
+ page.get_by_role('button',name='Siirrä aikaväliä kuukausi taaksepäin',exact=True).click()
+ expect(page.locator('.report-range-heading')).to_contain_text('lokakuu 2026')
+ page.get_by_role('button',name='Siirrä aikaväliä kuukausi eteenpäin',exact=True).click()
+ choose_month(page,'Raportin alkukuukausi','2010-01')
  expect(page.locator('.report-panel [role=alert]')).to_contain_text('120 kuukautta')
- page.get_by_label('Raportin alkukuukausi').fill('2026-11')
- page.get_by_label('Raportin alkukuukausi').fill('2017-01')
+ choose_month(page,'Raportin alkukuukausi','2017-01')
  expect(page.locator('.chart-scroll')).to_be_visible()
  assert page.locator('.chart-scroll').evaluate('(el) => el.scrollWidth > el.clientWidth')
- page.get_by_label('Raportin alkukuukausi').fill('2026-11')
- page.get_by_role('button',name='Vuoden alusta',exact=True).click();expect(page.locator('.report-range-heading')).to_contain_text('2026-01')
- page.get_by_role('button',name='6 kk',exact=True).click()
  page.get_by_role('button',name='Alue',exact=True).click();expect(page.locator('.area-chart')).to_be_visible();page.get_by_role('button',name='Suurenna kaaviota').click();expect(page.get_by_label('Kaavion suurennusprosentti')).to_have_value('1.1');page.get_by_role('button',name='Palauta kaavion oletuskoko').click();mark('Raportin ajanjakso, aluekaavio ja zoomaus')
  page.locator('.report-kpi.income').click()
  expect(page.locator('.report-detail')).to_contain_text('Testipalkka')
@@ -143,6 +161,7 @@ with sync_playwright() as p:
  nav(page,'Asetukset');page.get_by_role('button',name='Poista kaikki tietoni',exact=True).click();page.get_by_label('Kirjoita POISTA',exact=True).fill('POISTA');page.get_by_role('button',name='Poista pysyvästi',exact=True).click();assert page.evaluate("localStorage.getItem('taloussuunnittelu.v1')") is None;mark('Kaiken datan poisto ja tarkistus')
  page.locator('dialog[open] input[type=file]').set_input_files(str(bfile));expect(page.get_by_role('heading',name='Vahvista varmuuskopion palautus')).to_be_visible();page.get_by_role('button',name='Korvaa ja palauta',exact=True).click();assert state(page)==saved;mark('JSON restore onboardingista: kaikki tiedot palautettu')
  bad=ARTIFACTS/'bad.json';bad.write_text('{"schemaVersion":999}');nav(page,'Tuonti ja vienti');page.get_by_label('Palauta varmuuskopio',exact=True).set_input_files(str(bad));expect(page.locator('.alert[role="status"]')).to_contain_text('Palautus hylätty');assert state(page)==saved;mark('Väärä varmuuskopio hylätty ilman datan muutosta')
+ nav(page,'Asetukset');page.get_by_role('button',name='Lataa esimerkkitalous',exact=True).click();sample=state(page);assert sample['settings']['demo'] and len([x for x in sample['incomes'] if 'nettopalkka' in x['name']])==2 and any('Lapsilisä' in x['name'] for x in sample['incomes']);assert len([x for x in sample['expenses'] if x['category']=='Ruoka'])>=30;assert len(set(x['amount'] for x in sample['expenses'] if x['category']=='Ruoka'))>3;mark('Demotalous: kaksi aikuista, yksi lapsi ja 12 kuukauden meno- ja tulovariaatiot')
  c.close()
 assert not errors,errors
 assert not network,network

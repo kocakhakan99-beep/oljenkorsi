@@ -290,6 +290,14 @@ header {
   flex: 0 0 auto;
   gap: 4px;
 }
+.month-select {
+  position: relative;
+  min-width: 0;
+}
+.month-select-compact {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .month-step {
   display: grid;
   place-items: center;
@@ -304,7 +312,6 @@ header {
   background: var(--soft);
 }
 .month-choice {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -312,12 +319,12 @@ header {
   height: 48px;
   margin: 0;
   padding: 5px 11px;
-  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
   color: var(--accent-ink);
   cursor: pointer;
+  text-align: left;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -356,21 +363,101 @@ header {
   margin-left: auto;
   color: var(--muted);
 }
-.month-choice:focus-within {
+.month-choice:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
-.month-native-input {
+.month-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: min(190px, 100%);
+  min-height: 48px;
+  padding: 7px 12px;
+  border-color: var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--text);
+  text-transform: capitalize;
+  text-align: left;
+}
+.month-select-trigger > span {
+  flex: 1 1 auto;
+}
+.month-select-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.month-popover,
+.date-calendar-popover {
   position: absolute;
-  z-index: 1;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
+  z-index: 50;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  min-width: min(260px, calc(100vw - 32px));
+  min-height: 250px;
+  max-height: min(80vh, 620px);
+  overflow: auto;
+  resize: both;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 16px 44px #0003;
+}
+.month-popover-heading,
+.date-calendar-heading {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.month-popover-heading button,
+.date-calendar-heading button {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
   padding: 0;
-  border: 0;
-  opacity: 0;
-  cursor: pointer;
+  border-radius: 11px;
+}
+.month-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.month-grid-button {
+  min-height: 44px;
+  padding: 6px 5px;
+  border-color: transparent;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.month-grid-button[aria-pressed="true"] {
+  border-color: var(--focus);
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.month-native-fallback {
+  display: block;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.month-native-fallback input {
+  margin-top: 4px;
+  font-size: 14px;
 }
 .toolbar-icon-button {
   display: grid;
@@ -394,31 +481,6 @@ header {
 .toolbar-icon-button[aria-pressed="true"] {
   border-color: var(--line);
   background: var(--surface);
-}
-.toolbar-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 36px;
-  max-width: 220px;
-  padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.25;
-  white-space: nowrap;
-}
-.toolbar-status svg {
-  flex: 0 0 auto;
-  color: var(--accent);
-}
-.toolbar-status.warning {
-  border-color: var(--negative);
-  color: var(--negative);
-}
-.toolbar-status.warning svg {
-  color: var(--negative);
 }
 .toolbar button {
   min-height: 44px;
@@ -848,7 +910,18 @@ td {
   border-radius: 0 7px 7px 0;
   background: transparent;
   color: var(--text);
-  font-size: 22px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.category-picker-chevron {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  transition: transform 160ms ease;
+}
+.category-picker-chevron.open {
+  transform: rotate(180deg);
 }
 .category-picker-toggle:hover {
   background: var(--soft);
@@ -913,7 +986,9 @@ textarea {
   min-width: 0;
   min-height: var(--control-height);
 }
-input:not([type="checkbox"]):not([type="range"]):not([type="color"]):not([type="file"]),
+input:not([type="checkbox"]):not([type="range"]):not([type="color"]):not(
+    [type="file"]
+  ),
 select {
   height: var(--control-height);
 }
@@ -1067,6 +1142,171 @@ textarea {
   font-variant-numeric: tabular-nums;
   font-weight: 650;
 }
+.money-input {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.date-picker-field {
+  position: relative;
+  min-width: 0;
+  margin: 12px 0;
+}
+.date-picker-label {
+  display: block;
+  margin: 0 0 7px;
+}
+.date-picker-control {
+  position: relative;
+}
+.date-picker-control input {
+  margin: 0;
+  padding-right: 56px;
+  font-variant-numeric: tabular-nums;
+}
+.date-picker-toggle {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: grid;
+  width: 44px;
+  min-height: 42px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0 9px 9px 0;
+  background: transparent;
+  color: var(--accent-ink);
+}
+.date-picker-field > small {
+  margin-top: 3px;
+  font-size: 10px;
+}
+.date-calendar-heading {
+  text-transform: capitalize;
+}
+.date-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.date-weekday {
+  display: grid;
+  min-height: 28px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+.date-day-empty {
+  min-height: 38px;
+}
+.calendar-day {
+  min-width: 0;
+  min-height: 38px;
+  padding: 4px;
+  border-color: transparent;
+  border-radius: 9px;
+  background: var(--bg);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.calendar-day[aria-pressed="true"] {
+  border-color: var(--focus);
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.date-calendar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.date-calendar-footer button {
+  min-height: 38px;
+  padding: 5px 10px;
+}
+.percent-control {
+  min-width: 0;
+  margin: 12px 0;
+}
+.percent-control > label {
+  display: block;
+  margin: 0 0 6px;
+}
+.percent-input-wrap {
+  position: relative;
+}
+.percent-input-wrap input {
+  margin: 0;
+  padding-right: 42px;
+  font-variant-numeric: tabular-nums;
+}
+.percent-suffix {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.percent-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 2px;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+.percent-slider-track,
+.percent-slider-fill {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  height: 6px;
+  border-radius: 999px;
+}
+.percent-slider-track {
+  background: var(--line);
+}
+.percent-slider-fill {
+  right: auto;
+  max-width: calc(100% - 18px);
+  background: var(--accent);
+}
+.percent-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--accent-ink);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 4px #0003;
+  transform: translate(-50%, -50%);
+}
+.percent-slider:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+  border-radius: 9px;
+}
+.percent-slider.dragging .percent-slider-thumb {
+  transform: translate(-50%, -50%) scale(1.18);
+}
+.percent-control > small {
+  margin-top: -2px;
+  font-size: 10px;
+}
+.scenario-money-field {
+  min-width: 0;
+}
 .amount-adjusters {
   display: flex;
   gap: 7px;
@@ -1106,8 +1346,16 @@ textarea {
   font-size: 14px;
 }
 dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   width: min(760px, 94vw);
-  max-height: 90vh;
+  min-width: min(320px, calc(100vw - 24px));
+  min-height: 180px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  resize: both;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 26px;
@@ -1330,9 +1578,6 @@ dialog::backdrop {
 .report-panel textarea::placeholder {
   color: var(--report-muted);
 }
-.report-range-selector {
-  max-width: 250px;
-}
 .report-range-control {
   margin: 0 0 22px;
   padding: 16px;
@@ -1365,45 +1610,82 @@ dialog::backdrop {
 .report-range-heading > small {
   text-align: right;
 }
-.report-period-rail {
+.report-range-navigator {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: end;
+  gap: 10px;
+}
+.report-range-navigator > button {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
+  border-color: var(--report-line);
+  border-radius: 12px;
+  background: var(--report-surface);
+  color: var(--report-text);
+}
+.report-range-navigator > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.report-range-fields {
   display: flex;
-  gap: 7px;
+  min-width: 0;
+  gap: 10px;
+  margin: 0;
+}
+.report-range-fields .month-select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.report-range-fields .month-select-trigger {
+  width: 100%;
+}
+.report-month-rail {
+  display: flex;
+  gap: 6px;
   overflow-x: auto;
-  padding: 2px 2px 6px;
-  margin: 0 -2px;
+  padding: 8px 2px 6px;
+  margin: 6px -2px 0;
   scrollbar-width: thin;
   scrollbar-color: #9aafa3 #edf2ee;
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
   touch-action: pan-x pan-y;
 }
-.report-period-rail button {
-  flex: 0 0 auto;
-  min-height: 44px;
-  padding: 8px 13px;
+.report-month-rail button {
+  display: grid;
+  flex: 0 0 65px;
+  min-height: 48px;
+  place-content: center;
+  gap: 1px;
+  padding: 4px;
   border-color: var(--report-line);
-  border-radius: 12px;
+  border-radius: 11px;
   background: var(--report-surface);
   color: var(--report-muted);
   font-size: 12px;
-  scroll-snap-align: start;
+  scroll-snap-align: center;
 }
-.report-period-rail button[aria-pressed="true"] {
+.report-month-rail button[aria-pressed="true"] {
   border-color: #8ab29c;
   background: #eaf4ee;
   color: #175a43;
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px rgb(23 90 67 / 8%);
 }
-.report-range-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 8px 0 16px;
+.report-month-rail button span {
+  text-transform: capitalize;
 }
-.report-range-fields label {
-  width: min(190px, 100%);
-  margin: 4px 0;
+.report-month-rail button small {
+  font-size: 9px;
+}
+.report-range-hint {
+  margin: 4px 0 0;
+  color: var(--report-muted);
+  font-size: 11px;
 }
 .report-chart-controls {
   display: flex;
@@ -1711,8 +1993,14 @@ dialog::backdrop {
   animation: report-detail-enter 260ms ease both;
 }
 @keyframes report-detail-enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .flow-visual {
   display: flex;
@@ -2224,11 +2512,6 @@ footer {
     grid-column: 2;
     grid-row: 2;
     justify-self: start;
-  }
-  .toolbar-status {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-self: center;
   }
   main {
     padding: 20px 14px;
