@@ -1,4 +1,12 @@
-import { expenseType, metrics, total } from "./calculations";
+import {
+  emergencyFund,
+  expenseType,
+  metrics,
+  occurrences,
+  sum,
+  total,
+} from "./calculations";
+import type { GuidanceSourceId } from "./guidance";
 import { today, type State } from "./model";
 
 export type ActionPriority = "high" | "medium" | "low";
@@ -11,6 +19,9 @@ export interface PlannedAction {
   score: number;
   destination: string;
   destinationLabel: string;
+  nextStep?: string;
+  sourceIds?: GuidanceSourceId[];
+  boundary?: string;
   privateEvidence?: boolean;
 }
 
@@ -23,6 +34,18 @@ function monthOffset(month: string, offset: number) {
   const [year, monthNumber] = month.split("-").map(Number);
   const date = new Date(year, monthNumber - 1 + offset, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function recentMonths(month: string, count: number, endOffset = -1) {
+  return Array.from({ length: count }, (_, index) =>
+    monthOffset(month, endOffset - count + index + 1),
+  );
+}
+
+function hasActualEntries(state: State, month: string) {
+  return [...state.incomes, ...state.expenses].some(
+    (item) => item.status === "actual" && occurrences(item, month).length > 0,
+  );
 }
 
 export function planActions(state: State, month: string): PlannedAction[] {
@@ -44,6 +67,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
       score: 240,
       destination: "budget",
       destinationLabel: "Avaa budjetti",
+      nextStep:
+        "Valitse ensin yksi iso tai toistuva menoluokka. Käytä budjettia kokeiltavana suunnitelmana, älä suorituspisteenä.",
+      sourceIds: ["R1", "R11"],
+      boundary:
+        "Budjetin tekeminen ei itsessään takaa säästöjä. Kirjausten kattavuus ratkaisee, mitä vertailusta voi päätellä.",
     });
   }
 
@@ -73,6 +101,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
         score: (high ? 360 : 230) + Math.min(100, Math.round(over / 10000)),
         destination: "budget",
         destinationLabel: "Tarkista budjetti",
+        nextStep:
+          "Tarkista ensin käsin syötetty toteuma, tapahtumat ja kuun jäljellä olevat laskut. Muuta suunnitelmaa vasta, jos se vastaa todellista arkea.",
+        sourceIds: ["R1", "R11"],
+        boundary:
+          "Kynnys on sovelluksen tarkistussääntö, ei tutkimuksessa määritetty riskiraja. Keskeneräinen kuukausi voi ylittää suunnitelman tilapäisesti.",
       });
     }
   }
@@ -105,7 +138,150 @@ export function planActions(state: State, month: string): PlannedAction[] {
         Math.min(80, Math.round(deficitTotal / 25000)),
       destination: "reports",
       destinationLabel: "Avaa kassavirtaraportti",
+      nextStep:
+        "Avaa tulot ja eräpäivät päivä kerrallaan. Varmista tietojen kattavuus ja merkitse lähiajan välttämättömät maksut ennen pitkän aikavälin päätöksiä.",
+      sourceIds: ["R1", "R2", "R3"],
+      boundary:
+        "Kolmen kuukauden näkymä on lyhyt otos. Se ei ennusta tuloja tai osoita yksin, että menoja pitäisi leikata.",
     });
+  }
+
+  const buffer = emergencyFund(state, month, 3);
+  if (buffer.observedMonths >= 2 && buffer.averageEssential !== null) {
+    if (buffer.buffer !== null && buffer.buffer < 1) {
+      actions.push({
+        id: `liquidity-review-${month}`,
+        title: "Tarkista puskurin riittävyys omaan tilanteeseen",
+        reason:
+          "Kirjatut heti käytettävissä olevat varat kattavat alle yhden kuukauden kirjatuista välttämättömistä menoista.",
+        evidence: `${buffer.observedMonths}/3 kulukuukautta mukana · arvio ${buffer.buffer.toFixed(1).replace(".", ",")} kk`,
+        privateEvidence: true,
+        priority: buffer.buffer < 0.5 ? "high" : "medium",
+        score: buffer.buffer < 0.5 ? 370 : 260,
+        destination: "assets",
+        destinationLabel: "Tarkista helposti käytettävät varat",
+        nextStep:
+          "Varmista ensin, mitkä varat saa käyttöön nopeasti. Valitse sitten oma tavoite huomioiden tulojen vakaus, huollettavat ja tulevat maksut.",
+        sourceIds: ["R2", "R3"],
+        boundary:
+          "Tutkimus ei anna kaikille sopivaa puskurikuukausien lukua. Alle yhden kuukauden merkintä on kompassin tarkistusraja, ei suositeltu tavoite. Laskelma ei käsittele luottoa tai tulevia tuloja puskurina.",
+      });
+    }
+  } else if (state.expenses.some((item) => item.status === "actual")) {
+    actions.push({
+      id: `coverage-check-${month}`,
+      title: "Täydennä välttämättömien menojen havaintoja",
+      reason:
+        "Puskurin kestoa ei voi arvioida vakaasti, koska viimeisiltä kolmelta kuukaudelta on alle kaksi kuluhavaintoa.",
+      evidence: `${buffer.observedMonths}/3 kuukautta kirjattuna`,
+      priority: "low",
+      score: 150,
+      destination: "expenses",
+      destinationLabel: "Tarkista menokirjaukset",
+      nextStep:
+        "Lisää tavalliset välttämättömät kuukausikulut ja tarkista, ettei puuttuva kuukausi tarkoita nollamenoja.",
+      sourceIds: ["R2", "R3", "R11"],
+      boundary:
+        "Laskuri käyttää valittuja välttämättömyysmerkintöjä. Puuttuva kirjaus ei ole sama kuin toteutunut nollameno.",
+    });
+  }
+
+  const incomeHistory = recentMonths(month, 6).filter((period) =>
+    hasActualEntries(state, period),
+  );
+  if (incomeHistory.length >= 4) {
+    const incomes = incomeHistory.map((period) =>
+      total(state.incomes, period, true),
+    );
+    const averageIncome = sum(incomes) / incomes.length;
+    const variance =
+      averageIncome > 0
+        ? sum(incomes.map((income) => (income - averageIncome) ** 2)) /
+          incomes.length
+        : 0;
+    const coefficientOfVariation =
+      averageIncome > 0 ? Math.sqrt(variance) / averageIncome : 0;
+    if (averageIncome > 0 && coefficientOfVariation >= 0.3) {
+      actions.push({
+        id: `income-variation-${month}`,
+        title: "Tee suunnitelmasta joustava vaihteleville tuloille",
+        reason:
+          "Kirjatut tulot vaihtelevat viime kuukausina selvästi. Välttämättömien menojen ajoitus voi silloin olla tärkeämpi kuin yhden keskiarvon tavoittelu.",
+        evidence: `${incomeHistory.length} havaintokuukautta · vaihtelukerroin ${Math.round(coefficientOfVariation * 100)} %`,
+        privateEvidence: true,
+        priority: "medium",
+        score: 245,
+        destination: "reports",
+        destinationLabel: "Tarkastele tulovirtaa",
+        nextStep:
+          "Kokeile kuukausibudjettia tavanomaista matalamman tulon varassa ja tarkista, mitkä kulut joustavat. Pidä satunnaiset tulot erillisenä skenaariona.",
+        sourceIds: ["R2", "R3"],
+        boundary:
+          "30 % on tämän näkymän tunnistuskynnys, ei tutkimuksen riskiraja. Puuttuvat tulokirjaukset voivat näyttää vaihtelun todellista suurempana.",
+      });
+    }
+  }
+
+  const expenseHistory = recentMonths(month, 12).filter((period) =>
+    state.expenses.some(
+      (item) =>
+        item.status === "actual" &&
+        expenseType(item) === "consumption" &&
+        occurrences(item, period).length > 0,
+    ),
+  );
+  if (expenseHistory.length >= 6) {
+    const irregularTotals = new Map<
+      string,
+      { amount: number; months: Set<string> }
+    >();
+    for (const item of state.expenses) {
+      if (
+        item.status !== "actual" ||
+        item.recurrence !== "once" ||
+        expenseType(item) !== "consumption"
+      )
+        continue;
+      const period = item.date.slice(0, 7);
+      if (!expenseHistory.includes(period)) continue;
+      const current = irregularTotals.get(item.category) || {
+        amount: 0,
+        months: new Set<string>(),
+      };
+      current.amount += item.amount;
+      current.months.add(period);
+      irregularTotals.set(item.category, current);
+    }
+    const currentPlan = new Set(Object.keys(state.budgets[month] || {}));
+    const irregular = [...irregularTotals.entries()]
+      .filter(
+        ([category, value]) =>
+          !currentPlan.has(category) &&
+          value.months.size >= 2 &&
+          value.months.size <=
+            Math.min(6, Math.floor(expenseHistory.length / 2)),
+      )
+      .sort((a, b) => b[1].amount - a[1].amount)
+      .slice(0, 2);
+    for (const [category, value] of irregular) {
+      actions.push({
+        id: `irregular-expense-${month}-${category}`,
+        title: `Tee varaus epäsäännölliseen menoon: ${category}`,
+        reason:
+          "Kululuokassa on useita erillisiä menoja vuoden aikana, mutta sille ei ole tämän kuun suunnitelmaa.",
+        evidence: `${value.months.size} kuukautta · vuoden kirjattu summa ${formatCents(value.amount)} · tasattuna ${formatCents(Math.ceil(value.amount / 12))}/kk`,
+        privateEvidence: true,
+        priority: "low",
+        score: 155 + Math.min(40, Math.round(value.amount / 100000)),
+        destination: "budget",
+        destinationLabel: "Avaa budjetti",
+        nextStep:
+          "Tarkista, toistuuko meno tulevaisuudessa. Käytä 12 kuukauden keskiarvoa vain aloitusarviona ja päätä itse sopiva varaus.",
+        sourceIds: ["R1", "R4"],
+        boundary:
+          "Viime vuoden menot eivät takaa seuraavan vuoden menoja. Tasajako ei huomioi laskujen todellisia eräpäiviä.",
+      });
+    }
   }
 
   if (state.assets.length > 0) {
@@ -123,6 +299,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
         score: 250,
         destination: "liabilities",
         destinationLabel: "Avaa velat",
+        nextStep:
+          "Valitse velkatiedoista siihen liittyvä omaisuuserä. Linkitys muuttaa vain raportin oman pääoman laskentaa, ei saldoa tai maksueriä.",
+        sourceIds: ["R1", "R11"],
+        boundary:
+          "Nykyarvo on käyttäjän arvio. Takaisinmaksuaika olettaa syötetyn koron ja maksuerän pysyvän vakiona.",
       });
     }
   }
@@ -140,6 +321,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
         score: 130,
         destination: "liabilities",
         destinationLabel: "Tarkista velkatiedot",
+        nextStep:
+          "Tarkista velkojan viimeisin saldo, korko ja kuukausierä. Jos jokin on aidosti nolla, merkitse se kuvaukseen.",
+        sourceIds: ["R1", "R3"],
+        boundary:
+          "Nolla voi olla oikea tieto. Kompassi ei vertaile lainan maksamista sijoitustuottoon eikä tee maksujärjestyssuositusta.",
       });
     }
   }
@@ -161,6 +347,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
         score: 110,
         destination: "assets",
         destinationLabel: "Tarkista omaisuus",
+        nextStep:
+          "Päivitä arvio vain, jos sinulla on tuoreempi ja perusteltu arvo. Voit myös kirjata arvion päivämäärän ja lähteen kuvaukseen.",
+        sourceIds: ["R11"],
+        boundary:
+          "Vanha arvostuspäivä ei tarkoita, että arvo olisi muuttunut. Sovellus ei hae markkinahintoja.",
       });
     }
   }
@@ -179,6 +370,11 @@ export function planActions(state: State, month: string): PlannedAction[] {
       score: 100,
       destination: "goals",
       destinationLabel: "Luo tavoite",
+      nextStep:
+        "Valitse ensin tavoite, joka parantaisi sinun arkeasi. Aseta kuukausisummaa vain, jos se sopii myös vaihteleviin ja yllättäviin menoihin.",
+      sourceIds: ["R4", "R11"],
+      boundary:
+        "Sitoumusta helpottava suunnitelma on käyttäjän valinta. Kompassi ei aseta säästöastetta eikä lupaa tutkimuksen vaikutusta tässä sovelluksessa.",
     });
   }
 
@@ -193,7 +389,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         priorityOrder[a.priority] - priorityOrder[b.priority] ||
         b.score - a.score,
     )
-    .slice(0, 40);
+    .slice(0, 16);
 }
 
 export function visibleActions(state: State, month: string, date = today()) {

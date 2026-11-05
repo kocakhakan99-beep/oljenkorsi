@@ -1,3 +1,10 @@
+import {
+  categoryIconFor,
+  defaultCategoryDefinitions,
+  optionalCategoryDefinitions,
+  type CategoryIconId,
+} from "./categories";
+
 export type Kind =
   | "incomes"
   | "expenses"
@@ -45,6 +52,7 @@ export interface Category {
   name: string;
   kind: "incomes" | "expenses";
   color: string;
+  icon: CategoryIconId;
   archived: boolean;
 }
 export interface Scenario {
@@ -120,63 +128,11 @@ export function empty(): State {
       currency: "EUR",
       language: "fi",
     },
-    categories: [
-      ...[
-        "Palkka",
-        "Etuudet",
-        "Eläke",
-        "Sivutulot",
-        "Yritystulot",
-        "Vuokratulot",
-        "Sijoitustulot",
-        "Veronpalautukset",
-        "Lahjat",
-        "Muu tulo",
-      ].map((name) => ({
-        id: uid(),
-        name,
-        kind: "incomes" as const,
-        color: "#17604d",
-        archived: false,
-      })),
-      ...[
-        "Asuminen",
-        "Sähkö",
-        "Vesi",
-        "Vakuutukset",
-        "Ruoka",
-        "Ravintolat ja kahvilat",
-        "Liikenne",
-        "Autoilu",
-        "Julkinen liikenne",
-        "Terveys",
-        "Lääkkeet",
-        "Puhelin",
-        "Internet",
-        "Tilaukset",
-        "Vaatteet",
-        "Harrastukset",
-        "Viihde",
-        "Lapset ja perhe",
-        "Lemmikit",
-        "Koulutus",
-        "Matkailu",
-        "Lahjat",
-        "Hyväntekeväisyys",
-        "Verot",
-        "Lainat",
-        "Korot",
-        "Säästäminen",
-        "Sijoittaminen",
-        "Muu meno",
-      ].map((name) => ({
-        id: uid(),
-        name,
-        kind: "expenses" as const,
-        color: "#376eab",
-        archived: false,
-      })),
-    ],
+    categories: defaultCategoryDefinitions.map((category) => ({
+      id: uid(),
+      ...category,
+      archived: false,
+    })),
     incomes: [],
     expenses: [],
     assets: [],
@@ -511,5 +467,25 @@ export function demo(): State {
     Vaatteet: 10000,
     Harrastukset: 10000,
   };
+  const used = new Map<string, "incomes" | "expenses">();
+  for (const income of s.incomes) used.set(income.category, "incomes");
+  for (const expense of s.expenses) used.set(expense.category, "expenses");
+  for (const category of Object.keys(s.budgets[s.settings.month]))
+    used.set(category, "expenses");
+  for (const [name, kind] of used) {
+    if (s.categories.some((category) => category.kind === kind && category.name === name))
+      continue;
+    const definition = [...defaultCategoryDefinitions, ...optionalCategoryDefinitions].find(
+      (category) => category.kind === kind && category.name === name,
+    );
+    s.categories.push({
+      id: uid(),
+      name,
+      kind,
+      color: definition?.color || (kind === "incomes" ? "#17604d" : "#245c78"),
+      icon: definition?.icon || categoryIconFor(name, kind),
+      archived: false,
+    });
+  }
   return s;
 }
