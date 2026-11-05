@@ -25,11 +25,16 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
 - FI-pääomatavoitteen yksivaiheinen havainnollistus, ehdollinen aika-arvio omalla säästö- ja reaalituotto-oletuksella sekä ±10 % kulutusherkkyys.
-- 1/3/6/12/24 kuukauden, vuoden alusta tai itse rajatun enintään 120 kuukauden kassavirtaraportti ja taulukkovastine.
+- Itse rajattu enintään 120 kuukauden alkamis- ja päättymisjakso raporteille; yhden kuukauden raportti syntyy valitsemalla sama kuukausi alkuun ja loppuun.
 - Raporteissa valittava pylväs-/viiva-/aluekaavio ja 70–180 % suurennus; kulurakenne pylväs-/piirakkakaaviona. Valittavat pisteet, pylväät ja sektorit avaavat tapahtumakohtaiset tietokortit.
 - Piilotettavat sivukohtaiset opastuslaatikot, joiden näyttämisen voi palauttaa asetuksista; summakenttien eurokohtaiset pikasäätimet.
 - Valitun raporttijakson tulot, menot, nettokassavirta ja kokonaisjakson säästöaste; tulot-, menot- ja kassavirtasummista pääsee suoraan niiden kirjauksiin.
 - Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
+- Raporttien yhteinen alkamis- ja päättymiskuukausi sekä aihekohtaiset esitysmuodot: tulot ja menot, kulurakenne, rahavirran ajoitus, budjetti vs toteuma, nykyinen varallisuus, velka ja oma pääoma sekä säästöaste/FIRE.
+- Talouden kompassi: paikallisesti ja selittävillä säännöillä priorisoidut seuraavat tarkistukset, jotka voi merkitä valmiiksi tai siirtää viikolla.
+- Velan voi linkittää omaisuuserään; velkaraportti näyttää nykyisen oman pääoman ja oletuksiin perustuvan takaisinmaksu- ja arvoarvion.
+- Summien piilotus peittää myös kompassin euromääräiset todisteet. CSV on taulukkomuotoinen rivisiirto eikä säilytä velka–omaisuuslinkkejä; koko tietomallin siirtoon käytä JSON-varmuuskopiota.
+- Tummat raportti- ja sovelluspinnat käyttävät vaaleaa tekstiä. Raporttien omaisuuskuva on nykyhetken tilannekuva, sillä arvostushistoriaa ei vielä tallenneta.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus.
 - Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko sekä yhteenvedon ja suunnittelun erisävyiset mittari- ja sisältöalueet.

@@ -13,6 +13,7 @@ import {
   fiTarget,
   fiMonths,
   emergencyFund,
+  linkedAssetOutlook,
 } from "../domain/calculations";
 import { empty, entry, demo, uid } from "../domain/model";
 import { backup, restore, validate } from "../services/validation";
@@ -166,6 +167,26 @@ describe("Raha ja laskelmat", () => {
     expect(payoff(120000, 10000, 0)).toEqual({ months: 12, interest: 0 });
     expect(payoff(120000, 100, 12)).toBeNull();
   });
+  it("omaisuuserään linkitetty velka näyttää nykyisen ja arvioidun oman pääoman", () => {
+    const asset = entry({ id: "home", amount: 20000000, ownership: 50 });
+    const debt = entry({
+      linkedAssetId: "home",
+      amount: 2000000,
+      payment: 100000,
+      rate: 0,
+    });
+    const outlook = linkedAssetOutlook(asset, [debt], 0);
+    expect(outlook?.ownedValue).toBe(10000000);
+    expect(outlook?.debtBalance).toBe(2000000);
+    expect(outlook?.currentEquity).toBe(8000000);
+    expect(outlook?.payoffMonths).toBe(20);
+    expect(outlook?.estimatedInterest).toBe(0);
+    expect(outlook?.estimatedEquityAtPayoff).toBe(10000000);
+    expect(
+      linkedAssetOutlook(asset, [entry({ ...debt, payment: 0 })], 0)
+        ?.payoffMonths,
+    ).toBeNull();
+  });
   it("korkoa korolle nollatuotolla", () => {
     let r = compound({
       id: uid(),
@@ -293,6 +314,34 @@ describe("Varmuuskopio ja validointi", () => {
   it("esimerkkitalouden roundtrip", () => {
     let s = demo();
     expect(restore(backup(s))).toEqual(s);
+  });
+  it("vanha varmuuskopio saa tyhjät omaisuuslinkit ja kompassitilat", () => {
+    const older = JSON.parse(JSON.stringify(demo())) as Record<string, unknown>;
+    delete older.actionStates;
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
+        delete item.linkedAssetId;
+    const migrated = validate(older);
+    expect(migrated.actionStates).toEqual({});
+    expect(
+      migrated.liabilities.every((item) => item.linkedAssetId === ""),
+    ).toBe(true);
+  });
+  it("velan omaisuuslinkin on viitattava olemassa olevaan omaisuuserään", () => {
+    const state = demo();
+    state.liabilities[0].linkedAssetId = "missing-asset";
+    expect(() => validate(state)).toThrow();
+    state.liabilities[0].linkedAssetId = state.assets[0].id;
+    expect(validate(state).liabilities[0].linkedAssetId).toBe(
+      state.assets[0].id,
+    );
   });
   it("vioittunut eheys", () => {
     let b = JSON.parse(backup(demo()));

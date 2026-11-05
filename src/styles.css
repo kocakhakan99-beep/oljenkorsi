@@ -901,7 +901,7 @@ td {
 .category-picker-toggle {
   position: absolute;
   right: 2px;
-  top: 9px;
+  top: 0;
   width: var(--control-height);
   height: var(--control-height);
   padding: 0;
@@ -2923,4 +2923,559 @@ footer {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Unified report controls and the new financial views. */
+.report-global-controls {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+.report-global-controls label {
+  display: grid;
+  gap: 4px;
+  width: min(260px, 100%);
+  font-size: 12px;
+  font-weight: 650;
+}
+.report-global-controls select {
+  min-height: var(--control-height);
+}
+.report-selected-period {
+  color: var(--muted);
+  font-size: 12px;
+}
+.report-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+.report-summary-strip article {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--report-line);
+  border-radius: 13px;
+  background: var(--report-soft);
+}
+.report-summary-strip small,
+.wealth-report-grid small,
+.debt-outlook-values small {
+  color: var(--report-muted);
+  font-size: 11px;
+}
+.report-summary-strip strong {
+  overflow-wrap: anywhere;
+  color: var(--report-text);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.report-assumption {
+  display: grid;
+  grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
+  align-items: end;
+  gap: 12px 20px;
+  padding: 14px;
+  margin: 14px 0;
+  border: 1px solid var(--report-line);
+  border-radius: 13px;
+  background: var(--report-soft);
+}
+.report-assumption > small {
+  max-width: 65ch;
+  padding-bottom: 8px;
+}
+.budget-report-chart {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+.budget-report-month {
+  display: grid;
+  grid-template-columns: 85px minmax(80px, 1fr) minmax(110px, auto);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-color: var(--report-line);
+  border-radius: 12px;
+  background: var(--report-soft);
+  text-align: left;
+}
+.budget-report-month > span:first-child,
+.budget-report-month strong {
+  font-variant-numeric: tabular-nums;
+}
+.budget-report-month strong {
+  text-align: right;
+}
+.budget-report-month strong small {
+  font-size: 11px;
+}
+.budget-report-bars {
+  display: grid;
+  gap: 4px;
+}
+.budget-report-bars > * {
+  display: block;
+  height: 9px;
+  min-width: 2px;
+  border-radius: 99px;
+  transition: width 220ms ease;
+}
+.budget-report-bars i {
+  background: #a5b6ab;
+}
+.budget-report-bars b {
+  background: var(--report-expense);
+}
+.planned-swatch {
+  background: #a5b6ab;
+}
+.wealth-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.wealth-report-grid section {
+  padding: 14px;
+  border: 1px solid var(--report-line);
+  border-radius: 14px;
+  background: var(--report-soft);
+}
+.wealth-report-grid h3 {
+  margin: 0 0 10px;
+}
+.wealth-report-grid article {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--report-line);
+}
+.wealth-report-grid article span {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wealth-report-grid article strong {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+.debt-outlook-list {
+  display: grid;
+  gap: 12px;
+}
+.debt-outlook-card {
+  padding: 16px;
+  border: 1px solid var(--report-line);
+  border-radius: 15px;
+  background: var(--report-soft);
+}
+.debt-outlook-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  margin: 0 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--report-text);
+}
+.debt-outlook-card header h3 {
+  margin: 0;
+}
+.debt-outlook-card header span {
+  color: var(--report-muted);
+}
+.debt-outlook-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(145px, 100%), 1fr));
+  gap: 8px;
+}
+.debt-outlook-values span {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--report-surface);
+}
+.debt-outlook-values strong {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.debt-outlook-card > p {
+  margin: 14px 0 6px;
+}
+.debt-equity-result {
+  display: block;
+  padding-top: 10px;
+  border-top: 1px solid var(--report-line);
+}
+.report-alert {
+  margin-top: 14px;
+}
+.fire-trend {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 170px;
+  overflow-x: auto;
+  padding: 12px 8px 0;
+  margin: 18px 0;
+  border-bottom: 1px solid var(--report-line);
+  background: var(--report-surface);
+}
+.fire-trend button {
+  display: flex;
+  flex: 1 0 34px;
+  min-width: 34px;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 5px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+}
+.fire-trend button span {
+  display: block;
+  width: min(24px, 75%);
+  min-height: 3px;
+  border-radius: 6px 6px 0 0;
+  background: var(--report-income);
+}
+.fire-trend button small {
+  white-space: nowrap;
+  font-size: 9px;
+}
+.fire-target-card {
+  padding: 18px;
+  border: 1px solid var(--report-line);
+  border-radius: 16px;
+  background: var(--report-soft);
+}
+.fire-target-card h3 {
+  margin: 2px 0 6px;
+}
+.fire-target-card > strong {
+  display: block;
+  color: var(--report-income);
+  font-size: clamp(24px, 5vw, 38px);
+  font-variant-numeric: tabular-nums;
+}
+.fire-target-card p {
+  margin-bottom: 0;
+}
+.report-table-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--report-text);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--report-muted);
+  text-underline-offset: 3px;
+}
+.report-detail .text-slate-500 {
+  color: var(--report-muted);
+}
+.report-detail > div {
+  border-color: var(--report-line);
+}
+.compass-page {
+  display: grid;
+  gap: 18px;
+  max-width: 1000px;
+  margin-inline: auto;
+}
+.compass-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: clamp(18px, 4vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--cash-bg), var(--surface) 72%);
+}
+.compass-mark {
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+}
+.compass-hero h2 {
+  margin: 2px 0 5px;
+  font-size: clamp(23px, 4vw, 32px);
+}
+.compass-hero p {
+  max-width: 65ch;
+  margin: 0;
+  color: var(--muted);
+}
+.compass-count {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.compass-count strong {
+  font-size: 27px;
+  line-height: 1.1;
+}
+.compass-count small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.compass-route {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.compass-route i {
+  flex: 1;
+  border-top: 1px dashed var(--line);
+}
+.compass-task-list {
+  display: grid;
+  gap: 12px;
+}
+.compass-task {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 16px;
+  background: var(--surface);
+  animation: report-detail-enter 250ms ease both;
+}
+.compass-task.priority-high {
+  border-left-color: var(--negative);
+}
+.compass-task.priority-low {
+  border-left-color: #85968b;
+}
+.compass-task-index {
+  color: var(--muted);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.compass-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.compass-task h3 {
+  margin: 5px 0;
+}
+.compass-task-copy > p {
+  margin: 0 0 8px;
+}
+.compass-task-copy > small {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--soft);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.compass-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 13px;
+}
+.compass-task-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+}
+.compass-empty {
+  display: grid;
+  justify-items: center;
+  padding: 34px 18px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  text-align: center;
+}
+.compass-empty p {
+  max-width: 55ch;
+  color: var(--muted);
+}
+.compass-parked {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.compass-parked h3 {
+  margin-top: 0;
+}
+.compass-parked article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.compass-parked article span {
+  display: grid;
+}
+.compass-parked article small,
+.compass-note {
+  color: var(--muted);
+}
+.compass-toggle {
+  justify-self: start;
+}
+@media (max-width: 600px) {
+  .report-global-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .report-global-controls label {
+    width: 100%;
+  }
+  .report-assumption {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .budget-report-month {
+    grid-template-columns: 54px minmax(30px, 1fr);
+    gap: 7px;
+  }
+  .budget-report-month strong {
+    grid-column: 2;
+    justify-self: end;
+  }
+  .compass-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+  }
+  .compass-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+  }
+  .compass-count {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .compass-task {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px;
+  }
+  .compass-task-index {
+    font-size: 16px;
+  }
+  .compass-task-actions > button {
+    flex: 1 1 100%;
+  }
+  .compass-parked article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+[data-mode="dark"] {
+  --text: #fff;
+  --muted: #f1f5f2;
+  --accent-ink: #fff;
+  --focus: #fff;
+  --report-surface: #17241e;
+  --report-text: #fff;
+  --report-muted: #f1f5f2;
+  --report-line: #5c7568;
+  --report-soft: #24382e;
+  --report-income: #69dfae;
+  --report-expense: #ff9b83;
+  --report-focus: #fff;
+}
+[data-mode="dark"][data-theme="blue"],
+[data-mode="dark"][data-theme="green"],
+[data-mode="dark"][data-theme="custom"] {
+  --accent-ink: #fff;
+  --focus: #fff;
+}
+[data-mode="dark"] .report-range-control,
+[data-mode="dark"] .report-period-summary,
+[data-mode="dark"] .report-kpi,
+[data-mode="dark"] .report-kpi:hover,
+[data-mode="dark"] .report-kpi.selected,
+[data-mode="dark"] .report-saving-rate,
+[data-mode="dark"] .line-chart-wrap,
+[data-mode="dark"] .flow-summary,
+[data-mode="dark"] .flow-day:hover,
+[data-mode="dark"] .flow-day.selected-flow-day,
+[data-mode="dark"] .report-panel .chart-switch,
+[data-mode="dark"] .report-panel .chart-switch button[aria-pressed="true"],
+[data-mode="dark"] .report-panel .report-tabs [aria-selected="true"],
+[data-mode="dark"] .report-panel .report-tabs [aria-selected="true"] svg,
+[data-mode="dark"] .report-month-rail button[aria-pressed="true"],
+[data-mode="dark"] .category-report-row:hover,
+[data-mode="dark"] .category-report-row.selected-report-row,
+[data-mode="dark"] .pie-legend button:hover,
+[data-mode="dark"] .pie-legend button.selected-legend,
+[data-mode="dark"] .flow-day:hover,
+[data-mode="dark"] .flow-day.selected-flow-day,
+[data-mode="dark"] .report-detail {
+  border-color: var(--report-line);
+  background: var(--report-surface);
+  color: #fff;
+}
+[data-mode="dark"] .report-period-summary,
+[data-mode="dark"] .report-kpi {
+  box-shadow: none;
+}
+[data-mode="dark"] .report-kpi > svg:first-child,
+[data-mode="dark"] .report-kpi.expense > svg:first-child,
+[data-mode="dark"] .report-kpi.cash > svg:first-child {
+  background: var(--report-soft);
+  color: #fff;
+}
+[data-mode="dark"] .report-kpi.negative .report-kpi-copy strong,
+[data-mode="dark"] .report-kpi-arrow,
+[data-mode="dark"] .report-saving-rate,
+[data-mode="dark"] .report-panel .report-tabs [aria-selected="true"] {
+  color: #fff;
+}
+[data-mode="dark"] .report-month-rail button[aria-pressed="true"] {
+  background: var(--report-soft);
+}
+[data-mode="dark"] .report-range-control {
+  background: var(--report-surface);
+}
+[data-mode="dark"] .report-detail .text-slate-500,
+[data-mode="dark"] .report-panel .text-slate-500 {
+  color: var(--report-muted);
+}
+[data-mode="dark"] .report-panel .alert {
+  background: var(--notice-bg);
+  color: #fff;
 }

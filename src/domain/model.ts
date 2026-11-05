@@ -31,6 +31,7 @@ export interface Entry {
   purchasePrice: number;
   ownership: number;
   liquid: boolean;
+  linkedAssetId: string;
   rate: number;
   payment: number;
   target: number;
@@ -56,6 +57,11 @@ export interface Scenario {
   inflation: number;
   years: number;
 }
+export interface ActionState {
+  status: "done" | "snoozed";
+  until?: string;
+  updatedAt: string;
+}
 export interface State {
   schemaVersion: 1;
   applicationVersion: string;
@@ -80,6 +86,7 @@ export interface State {
   goals: Entry[];
   budgets: Record<string, Record<string, number>>;
   budgetActuals: Record<string, Record<string, number>>;
+  actionStates: Record<string, ActionState>;
   investmentTransactions: unknown[];
   scenarios: Scenario[];
   themes: unknown[];
@@ -178,6 +185,7 @@ export function empty(): State {
     goals: [],
     budgets: {},
     budgetActuals: {},
+    actionStates: {},
     investmentTransactions: [],
     scenarios: [],
     themes: [],
@@ -201,6 +209,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     purchasePrice: 0,
     ownership: 100,
     liquid: false,
+    linkedAssetId: "",
     rate: 0,
     payment: 0,
     target: 0,

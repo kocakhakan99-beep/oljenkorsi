@@ -329,3 +329,45 @@ export function payoff(balance: number, payment: number, rate: number) {
   }
   return null;
 }
+export function linkedAssetOutlook(
+  asset: Entry,
+  liabilities: Entry[],
+  annualValueChange: number,
+) {
+  const linked = liabilities.filter((item) => item.linkedAssetId === asset.id);
+  if (
+    !linked.length ||
+    !Number.isFinite(annualValueChange) ||
+    annualValueChange <= -100 ||
+    annualValueChange > 100
+  )
+    return null;
+  const ownedValue = Math.round((asset.amount * asset.ownership) / 100);
+  const debtBalance = sum(linked.map((item) => item.amount));
+  const payoffs = linked.map((item) =>
+    item.amount === 0
+      ? { months: 0, interest: 0 }
+      : payoff(item.amount, item.payment, item.rate),
+  );
+  const canProject = payoffs.every((result) => result !== null);
+  const months = canProject
+    ? Math.max(...payoffs.map((result) => result!.months))
+    : null;
+  const interest = canProject
+    ? sum(payoffs.map((result) => result!.interest))
+    : null;
+  const projectedValue =
+    months === null
+      ? null
+      : depreciation(ownedValue, annualValueChange, months / 12);
+  return {
+    linkedLiabilities: linked,
+    ownedValue,
+    debtBalance,
+    currentEquity: ownedValue - debtBalance,
+    payoffMonths: months,
+    estimatedInterest: interest,
+    projectedValueAtPayoff: projectedValue,
+    estimatedEquityAtPayoff: projectedValue,
+  };
+}
