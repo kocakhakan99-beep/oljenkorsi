@@ -56,6 +56,7 @@ function normalized(value: string) {
     .toLocaleLowerCase("fi-FI");
 }
 
+// Keskeneräinen kuukausi vertautuu aiempien kuukausien samaan kalenteripäivään.
 function dayForComparison(selectedMonth: string, period: string) {
   const [year, monthNumber] = period.split("-").map(Number);
   const lastDay = new Date(year, monthNumber, 0).getDate();
