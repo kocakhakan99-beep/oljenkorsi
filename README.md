@@ -11,6 +11,8 @@ Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus.
 
 Esimerkkitalouden voi ladata uudelleen Asetukset-näkymästä. Lataus korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi.
 
+Esimerkkitalous kuvaa fiktiivistä kahden aikuisen ja yhden lapsen perhettä. Siinä on kahden aikuisen palkat, lapsilisä, ajoittaisia sivutuloja ja tulospalkkioita sekä 12 kuukauden vaihtelevia ruoka-, energia-, liikenne-, ravintola- ja lapsiperheen menoja. Päiväykset suhteutetaan lataushetkeen, jotta kuukausivalitsin ja raportit toimivat myös myöhemmin. Summat ovat vain käyttöliittymän kokeiluun tarkoitettuja esimerkkejä.
+
 Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai internetiä. Älä käytä sähköpostin tai pilvitallennuksen HTML-esikatselua; lataa tiedosto ensin paikalliseksi. Älä käytä yksityistä selausta, jos odotat datan säilyvän.
 
 ## Toteutettu
