@@ -32,11 +32,14 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
 - Raporttien yhteinen alkamis- ja päättymiskuukausi sekä aihekohtaiset esitysmuodot: tulot ja menot, kulurakenne, rahavirran ajoitus, budjetti vs toteuma, nykyinen varallisuus, velka ja oma pääoma sekä säästöaste/FIRE.
 - Talouden kompassi: paikallisesti ja selittävillä säännöillä priorisoidut seuraavat tarkistukset, jotka voi merkitä valmiiksi tai siirtää viikolla.
+- Kompassin kattavuus sisältää budjetti- ja kassavirran tarkistusten lisäksi puskurin havaintopohjaisen keston, tulovaihtelun ja epäsäännöllisten menojen kuukausivarauksen. Jokainen vinkki kertoo pienen seuraavan askeleen, tutkimusviitteen ja laskennan rajauksen; tutkimusta ei esitetä yksilöllisenä neuvona.
+- Kompassissa on neljä tallentamatonta tarinaesimerkkiä kahden aikuisen ja yhden lapsen talouksista: alijäämä, keskivertoarki, vakaa eteneminen ja yhden palkkatulon äkillinen katkos. Valinta näyttää kuuden kuukauden tulot ja menot sekä esimerkin perusteella syntyvät vinkit.
+- Uudessa taloudessa näkyy 4 tulon ja 14 menon peruskategoriaa. Valinnaisia kategorioita lisätään tarvittaessa, ja omalle kategorialle valitaan kuvake esikatselun kanssa. Paikalliset SVG-kuvat käyttävät yhtenäistä korkean kontrastin väritystä; sama aihe käyttää samaa kuvaketta omaisuudessa ja siihen linkitetyssä velassa.
 - Velan voi linkittää omaisuuserään; velkaraportti näyttää nykyisen oman pääoman ja oletuksiin perustuvan takaisinmaksu- ja arvoarvion.
 - Summien piilotus peittää myös kompassin euromääräiset todisteet. CSV on taulukkomuotoinen rivisiirto eikä säilytä velka–omaisuuslinkkejä; koko tietomallin siirtoon käytä JSON-varmuuskopiota.
 - Tummat raportti- ja sovelluspinnat käyttävät vaaleaa tekstiä. Raporttien omaisuuskuva on nykyhetken tilannekuva, sillä arvostushistoriaa ei vielä tallenneta.
 - Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
-- Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus.
+- Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus. Teemoissa on yhtenäiset vahvat reunat ja väriperheeseen sopivat pinnat; korostusnapin teksti valitaan kontrastilaskelmalla.
 - Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko sekä yhteenvedon ja suunnittelun erisävyiset mittari- ja sisältöalueet.
 - Yhteenvedosta pääsee yhdellä painalluksella tulon tai menon kirjaukseen sekä budjettiin ja raportteihin.
 - Yleishaku Ctrl/Cmd + K, listojen haku, kategoria/tila-suodatus ja lajittelu.

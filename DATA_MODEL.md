@@ -19,7 +19,7 @@ Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, d
 
 ## Category
 
-id, name, kind (incomes/expenses), color ja archived. Väri on datassa, mutta värin/kuvakkeen muokkausta ei ole UI:ssa. Uudelleennimeäminen päivittää tietueet ja budjetit. Arkistointi ei poista historiaa.
+id, name, kind (incomes/expenses), color, icon ja archived. `icon` viittaa paikalliseen kuvakeluetteloon; vanhoista varmuuskopioista puuttuva tunniste päätellään nimestä. Alussa on 4 tulon ja 14 menon peruskategoriaa. Valinnaisia valmiita kategorioita voi lisätä tarpeen mukaan, ja käyttämättömät aiemmat vakiot arkistoidaan palautuksessa. Oma kuvake valitaan esikatselun kanssa. Arkistointi ei poista historiaa. Asuntolaina ja asunto käyttävät samaa kuvatunnistetta.
 
 ## Budget
 
@@ -30,6 +30,8 @@ Raportin toteuma käyttää kategoriakohtaista manuaalista arvoa silloin, kun k�
 ## Talouden kompassi
 
 `actionStates` tallentaa deterministisesti muodostettujen tarkistusten tilan ID:n perusteella: `done` tai `snoozed`, päivitysaika ja siirretyn tehtävän viimeinen piilotuspäivä. Tarkistukset muodostuvat uudelleen sen hetken tiedoista; tila ei sisällä käyttäjän taloustietojen kopiota. Säännöt eivät tee automaattisia muutoksia budjettiin, kirjauksiin tai lainoihin.
+
+Kompassin ohjeet kertovat havainnon, kokeiltavan askeleen, lähdeviitteen ja laskennan rajauksen. Deatonin (1991) ja Carrollin (1997) likviditeetti- ja varautumissäästämisen tutkimukset eivät määrää kaikille samaa puskurin kokoa; kompassin tunnistuskynnykset ovat käyttöliittymän tarkistussääntöjä, eivät tutkimustuloksia. Tulojen vaihtelu, epäsäännöllisten menojen tasaus ja tavoitteet johdetaan syötetystä historiasta. Neljä kuvitteellista kahden aikuisen ja yhden lapsen reittitapausta luodaan vain näkymää varten, eikä niitä tallenneta käyttäjän talouteen. Kriisiesimerkissä yhden aikuisen palkkatulo katkeaa, kun taas toisen palkka ja lapsilisä jatkuvat.
 
 ## Scenario
 

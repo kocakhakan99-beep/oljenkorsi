@@ -16,6 +16,11 @@ import {
   linkedAssetOutlook,
 } from "../domain/calculations";
 import { empty, entry, demo, uid } from "../domain/model";
+import {
+  categoryIconFor,
+  defaultCategoryDefinitions,
+  optionalCategoryDefinitions,
+} from "../domain/categories";
 import { backup, restore, validate } from "../services/validation";
 import { parseCSV, exportCSV, csvEntry, csvFields } from "../services/csv";
 describe("Raha ja laskelmat", () => {
@@ -333,6 +338,33 @@ describe("Varmuuskopio ja validointi", () => {
     expect(
       migrated.liabilities.every((item) => item.linkedAssetId === ""),
     ).toBe(true);
+  });
+  it("kategorioilla on yhtenäiset kuvat ja vanhat kategoriat saavat ikonin palautuksessa", () => {
+    expect(defaultCategoryDefinitions.length).toBeLessThanOrEqual(20);
+    expect(optionalCategoryDefinitions.length).toBeGreaterThan(10);
+    expect(categoryIconFor("Asunto", "assets")).toBe(
+      categoryIconFor("Asuntolaina", "liabilities"),
+    );
+    const old = JSON.parse(JSON.stringify(empty())) as {
+      categories: Array<Record<string, unknown>>;
+    } & Record<string, unknown>;
+    old.categories.push({
+      id: "old-car-category",
+      name: "Autoilu",
+      kind: "expenses",
+      color: "#376eab",
+      archived: false,
+    });
+    for (const item of old.categories) delete item.icon;
+    const migrated = validate(old);
+    const auto = migrated.categories.find(
+      (category) => category.name === "Autoilu",
+    );
+    expect(auto?.icon).toBe("car");
+    expect(auto?.archived).toBe(true);
+    expect(
+      migrated.categories.find((category) => category.name === "Ruoka")?.icon,
+    ).toBe("food");
   });
   it("velan omaisuuslinkin on viitattava olemassa olevaan omaisuuserään", () => {
     const state = demo();

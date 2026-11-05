@@ -11,8 +11,17 @@ import {
   type State,
   type Entry,
   type Kind,
+  type Category,
   type Scenario,
 } from "./domain/model";
+import {
+  categoryIconFor,
+  categoryIconOptions,
+  defaultCategoryDefinitions,
+  optionalCategoryDefinitions,
+  type CategoryIconId,
+} from "./domain/categories";
+import { categoryIconSources } from "./assets/category-icons";
 import {
   metrics,
   money,
@@ -37,6 +46,13 @@ import {
   visibleActions,
   type PlannedAction,
 } from "./domain/actions";
+import { guidanceSources } from "./domain/guidance";
+import { contrastForeground } from "./domain/color";
+import {
+  compassDemoProfiles,
+  createCompassDemoCases,
+  type CompassDemoId,
+} from "./domain/compass-demos";
 import { storage } from "./data/storage";
 import {
   backup,
@@ -52,15 +68,6 @@ import {
   download,
 } from "./services/csv";
 import "./styles.css";
-import homeIcon from "./assets/home.svg";
-import carIcon from "./assets/car.svg";
-import bankIcon from "./assets/bank.svg";
-import landIcon from "./assets/land.svg";
-import portfolioIcon from "./assets/portfolio.svg";
-import loanIcon from "./assets/loan.svg";
-import boatIcon from "./assets/boat.svg";
-import motorcycleIcon from "./assets/motorcycle.svg";
-import valuablesIcon from "./assets/valuables.svg";
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -96,6 +103,9 @@ import {
   Blocks,
   CircleGauge,
   Scale,
+  CloudRain,
+  CloudSun,
+  Sun,
 } from "lucide-react";
 const names: Record<string, string> = {
   dashboard: "Yhteenveto",
@@ -146,6 +156,12 @@ const reportTabs = [
   { id: "fire", label: "Säästöaste ja FIRE", Icon: CircleGauge },
 ] as const;
 const helpPreferencesKey = "taloussuunnittelu.dismissed-help.v1";
+const compassWeatherIcons = {
+  "cloud-rain": CloudRain,
+  "cloud-sun": CloudSun,
+  sun: Sun,
+  lightning: Zap,
+} as const;
 function readDismissedHelp() {
   try {
     const saved = JSON.parse(localStorage.getItem(helpPreferencesKey) || "[]");
@@ -215,6 +231,7 @@ type ReportDetailEntry = {
   amount: number;
   occurrences?: number;
 };
+type CategoryChoice = { name: string; icon: CategoryIconId };
 function pieSlicePath(startPercent: number, endPercent: number) {
   const point = (percent: number, radius: number) => {
     const angle = ((percent * 3.6 - 90) * Math.PI) / 180;
@@ -1166,6 +1183,8 @@ function App() {
       null,
     ),
     [bufferMonths, setBufferMonths] = useState(3),
+    [selectedCompassDemo, setSelectedCompassDemo] =
+      useState<CompassDemoId>("everyday"),
     [dismissedHelp, setDismissedHelp] =
       useState<Set<string>>(readDismissedHelp),
     [systemPrefersDark, setSystemPrefersDark] = useState(
@@ -1348,6 +1367,10 @@ function App() {
     document.documentElement.dataset.theme = s.settings.theme;
     document.documentElement.dataset.mode = dark ? "dark" : "light";
     document.documentElement.style.setProperty("--custom", s.settings.accent);
+    document.documentElement.style.setProperty(
+      "--custom-on",
+      contrastForeground(s.settings.accent),
+    );
   }, [s.settings.theme, dark, s.settings.accent]);
   function saveEntry(kind: Kind, item: Entry) {
     let exists = s[kind].some((e) => e.id === item.id);
@@ -1451,6 +1474,15 @@ function App() {
           .filter((c) => c.kind === kind && !c.archived)
           .map((c) => c.name)
       : otherCategories[kind];
+  const categoryChoices = (kind: Kind) =>
+    kind === "incomes" || kind === "expenses"
+      ? s.categories
+          .filter((category) => category.kind === kind && !category.archived)
+          .map((category) => ({ name: category.name, icon: category.icon }))
+      : otherCategories[kind].map((name) => ({
+          name,
+          icon: categoryIconFor(name, kind),
+        }));
   const rows = kinds.includes(page as Kind)
     ? s[page as Kind]
         .filter(
@@ -1910,6 +1942,21 @@ function App() {
   );
   const compassTasks = planActions(s, month);
   const visibleCompassTasks = visibleActions(s, month);
+  const compassDemos = useMemo(() => createCompassDemoCases(month), [month]);
+  const activeCompassDemo =
+    compassDemos.find(
+      (scenario) => scenario.profile.id === selectedCompassDemo,
+    ) || compassDemos[1];
+  const activeCompassDemoMetrics = metrics(activeCompassDemo.state, month);
+  const activeCompassDemoBuffer = emergencyFund(
+    activeCompassDemo.state,
+    month,
+    3,
+  );
+  const activeCompassDemoActions = planActions(
+    activeCompassDemo.state,
+    month,
+  ).slice(0, 3);
   const parkedCompassTasks = compassTasks.filter((task) => {
     const saved = s.actionStates[task.id];
     return (
@@ -2166,6 +2213,13 @@ function App() {
                               ? "Summat piilotettu"
                               : task.evidence}
                           </small>
+                          {task.nextStep && (
+                            <div className="compass-next-step">
+                              <strong>Pienin kokeiltava askel</strong>
+                              <p>{task.nextStep}</p>
+                            </div>
+                          )}
+                          <CompassResearchDetails task={task} />
                           <div className="compass-task-actions">
                             <button
                               type="button"
@@ -2216,6 +2270,225 @@ function App() {
                     </button>
                   </div>
                 )}
+                <section
+                  className="compass-scenario-lab"
+                  aria-labelledby="compass-scenarios-title"
+                >
+                  <div className="compass-scenario-heading">
+                    <span className="eyebrow">NELJÄ FIKTIIVISTÄ REITTIÄ</span>
+                    <h2 id="compass-scenarios-title">
+                      Kokeile, miten tilanne muuttaa seuraavaa askelta
+                    </h2>
+                    <p>
+                      Valitse esimerkkitalous ja seuraa sen kassavirtaa sekä
+                      kompassin huomioita. Esimerkit eivät muuta omia tietojasi.
+                    </p>
+                  </div>
+                  <div
+                    className="compass-scenario-picker"
+                    role="group"
+                    aria-label="Valitse talouden demotilanne"
+                  >
+                    {compassDemos.map(({ profile }) => {
+                      const Icon = compassWeatherIcons[profile.icon];
+                      return (
+                        <button
+                          type="button"
+                          key={profile.id}
+                          aria-pressed={selectedCompassDemo === profile.id}
+                          className={`compass-scenario-choice weather-${profile.weather}${selectedCompassDemo === profile.id ? " selected" : ""}`}
+                          onClick={() => setSelectedCompassDemo(profile.id)}
+                        >
+                          <span className="compass-scenario-rank">
+                            {profile.rank}
+                          </span>
+                          <Icon size={22} aria-hidden="true" />
+                          <span>
+                            <small>{profile.label}</small>
+                            <strong>{profile.title}</strong>
+                          </span>
+                          <ArrowRight size={17} aria-hidden="true" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <article
+                    className={`compass-story weather-${activeCompassDemo.profile.weather}`}
+                  >
+                    <header>
+                      <div className="compass-story-icon" aria-hidden="true">
+                        {React.createElement(
+                          compassWeatherIcons[activeCompassDemo.profile.icon],
+                          { size: 32, strokeWidth: 1.8 },
+                        )}
+                      </div>
+                      <div>
+                        <span className="eyebrow">
+                          REITTI {activeCompassDemo.profile.rank} / 4 ·{" "}
+                          {activeCompassDemo.profile.label.toLocaleUpperCase(
+                            "fi-FI",
+                          )}
+                        </span>
+                        <h3>{activeCompassDemo.profile.title}</h3>
+                        <p>{activeCompassDemo.profile.story}</p>
+                      </div>
+                    </header>
+                    <div className="compass-story-metrics">
+                      <div>
+                        <small>Tulot tässä kuussa</small>
+                        <strong>{euro(activeCompassDemoMetrics.income)}</strong>
+                      </div>
+                      <div>
+                        <small>Menot</small>
+                        <strong>
+                          {euro(activeCompassDemoMetrics.consumption)}
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Kassavirta</small>
+                        <strong
+                          className={
+                            activeCompassDemoMetrics.cash < 0
+                              ? "negative"
+                              : "positive"
+                          }
+                        >
+                          {euro(activeCompassDemoMetrics.cash)}
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Likvidi puskuri</small>
+                        <strong>
+                          {activeCompassDemoBuffer.buffer === null
+                            ? "Ei laskettavissa"
+                            : `${new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 1 }).format(activeCompassDemoBuffer.buffer)} kk`}
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="compass-story-body">
+                      <section
+                        className="compass-story-chart"
+                        aria-labelledby="compass-demo-chart-title"
+                      >
+                        <div className="compass-story-section-heading">
+                          <div>
+                            <span className="eyebrow">KUUSI KUUKAUTTA</span>
+                            <h4 id="compass-demo-chart-title">
+                              Tulovirta ja menot
+                            </h4>
+                          </div>
+                          <div className="compass-chart-legend">
+                            <span>
+                              <i className="legend-income" />
+                              Tulot
+                            </span>
+                            <span>
+                              <i className="legend-expense" />
+                              Menot
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          className="compass-story-bars"
+                          role="group"
+                          aria-label="Kuukausittaiset tulo- ja menopylväät"
+                        >
+                          {activeCompassDemo.timeline.map((point) => {
+                            const max = Math.max(
+                              1,
+                              ...activeCompassDemo.timeline.flatMap((row) => [
+                                row.income,
+                                row.expense,
+                              ]),
+                            );
+                            return (
+                              <div
+                                className={`compass-story-period${point.cash < 0 ? " deficit" : ""}`}
+                                key={point.month}
+                              >
+                                <div
+                                  className="compass-story-bar-pair"
+                                  aria-label={`${point.month}: tulot ${euro(point.income)}, menot ${euro(point.expense)}`}
+                                >
+                                  <span
+                                    className="legend-income"
+                                    style={{
+                                      height: `${Math.max(point.income ? 7 : 2, (point.income / max) * 100)}%`,
+                                    }}
+                                  />
+                                  <span
+                                    className="legend-expense"
+                                    style={{
+                                      height: `${Math.max(7, (point.expense / max) * 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                                <small>{point.month.slice(5)}</small>
+                                <strong>{euro(point.cash)}</strong>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                      <aside className="compass-story-question">
+                        <span className="eyebrow">POHDI SEURAAVAKSI</span>
+                        <p>{activeCompassDemo.profile.prompt}</p>
+                        <small>
+                          Esimerkkilaskelma käyttää samoja näkyviä sääntöjä kuin
+                          oma kompassisi.
+                        </small>
+                      </aside>
+                    </div>
+                    <section
+                      className="compass-demo-guidance"
+                      aria-label="Tämän esimerkin kompassivinkit"
+                    >
+                      <div className="compass-story-section-heading">
+                        <div>
+                          <span className="eyebrow">TIEDOSTA TOIMINTAAN</span>
+                          <h4>Kompassi nostaa esiin</h4>
+                        </div>
+                        <span>{activeCompassDemoActions.length} huomioita</span>
+                      </div>
+                      {activeCompassDemoActions.length ? (
+                        <div className="compass-demo-tip-grid">
+                          {activeCompassDemoActions.map((task, index) => (
+                            <article key={task.id}>
+                              <span
+                                className={`priority-dot priority-${task.priority}`}
+                                aria-hidden="true"
+                              >
+                                {index + 1}
+                              </span>
+                              <div>
+                                <h5>{task.title}</h5>
+                                <p>{task.reason}</p>
+                                {task.privateEvidence && (
+                                  <small>
+                                    {s.settings.private
+                                      ? "Summat piilotettu"
+                                      : task.evidence}
+                                  </small>
+                                )}
+                                {task.nextStep && (
+                                  <p className="compass-demo-next">
+                                    <strong>Kokeile:</strong> {task.nextStep}
+                                  </p>
+                                )}
+                                <CompassResearchDetails task={task} compact />
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="compass-demo-calm">
+                          Tähän esimerkkiin ei nouse kiireellistä tarkistusta.
+                          Hyvä tilanne saa myös näyttää rauhalliselta.
+                        </p>
+                      )}
+                    </section>
+                  </article>
+                </section>
                 {showCompletedActions && parkedCompassTasks.length > 0 && (
                   <section className="compass-parked">
                     <h3>Siirretyt ja valmiit</h3>
@@ -2896,16 +3169,20 @@ function App() {
                                         {expandedRows.has(e.id) ? "⌄" : "›"}
                                       </span>
                                     </button>
-                                    {page === "assets" ||
-                                    page === "liabilities" ? (
-                                      <CategoryIcon
-                                        category={e.category}
-                                        debt={page === "liabilities"}
-                                      />
-                                    ) : null}
                                     <strong>{e.name}</strong>
                                   </div>
-                                  <small>
+                                  <small className="entry-category-label">
+                                    <CategoryImage
+                                      icon={
+                                        s.categories.find(
+                                          (category) =>
+                                            category.kind === page &&
+                                            category.name === e.category,
+                                        )?.icon ||
+                                        categoryIconFor(e.category, page)
+                                      }
+                                      size={19}
+                                    />
                                     {e.category}
                                     {userTags(e.tags)
                                       ? " · " + userTags(e.tags)
@@ -4295,13 +4572,25 @@ function App() {
                           {currentAssets.length ? (
                             currentAssets.map((asset) => (
                               <article key={asset.id}>
-                                <span>
-                                  {asset.name}
-                                  <small>
-                                    {asset.category} · arvostettu{" "}
-                                    {asset.date.split("-").reverse().join(".")}
-                                  </small>
-                                </span>
+                                <div className="wealth-report-item-label">
+                                  <CategoryImage
+                                    icon={categoryIconFor(
+                                      asset.category,
+                                      "assets",
+                                    )}
+                                    size={28}
+                                  />
+                                  <span>
+                                    {asset.name}
+                                    <small>
+                                      {asset.category} · arvostettu{" "}
+                                      {asset.date
+                                        .split("-")
+                                        .reverse()
+                                        .join(".")}
+                                    </small>
+                                  </span>
+                                </div>
                                 <strong>{euro(asset.ownedValue)}</strong>
                               </article>
                             ))
@@ -4314,13 +4603,22 @@ function App() {
                           {currentInvestments.length ? (
                             currentInvestments.map((investment) => (
                               <article key={investment.id}>
-                                <span>
-                                  {investment.name}
-                                  <small>
-                                    {investment.category} ·{" "}
-                                    {investment.quantity} kpl
-                                  </small>
-                                </span>
+                                <div className="wealth-report-item-label">
+                                  <CategoryImage
+                                    icon={categoryIconFor(
+                                      investment.category,
+                                      "investments",
+                                    )}
+                                    size={28}
+                                  />
+                                  <span>
+                                    {investment.name}
+                                    <small>
+                                      {investment.category} ·{" "}
+                                      {investment.quantity} kpl
+                                    </small>
+                                  </span>
+                                </div>
                                 <strong>{euro(investment.marketValue)}</strong>
                               </article>
                             ))
@@ -4335,10 +4633,19 @@ function App() {
                           {currentDebts.length ? (
                             currentDebts.map((debt) => (
                               <article key={debt.id}>
-                                <span>
-                                  {debt.name}
-                                  <small>{debt.category}</small>
-                                </span>
+                                <div className="wealth-report-item-label">
+                                  <CategoryImage
+                                    icon={categoryIconFor(
+                                      debt.category,
+                                      "liabilities",
+                                    )}
+                                    size={28}
+                                  />
+                                  <span>
+                                    {debt.name}
+                                    <small>{debt.category}</small>
+                                  </span>
+                                </div>
                                 <strong>−{euro(debt.amount)}</strong>
                               </article>
                             ))
@@ -4827,9 +5134,8 @@ function App() {
                           onChange={(e) => settings({ accent: e.target.value })}
                         />
                         <small>
-                          Oman värin kontrastia ei ole automaattisesti
-                          tarkistettu. Käytä korkean kontrastin teemaa
-                          tarvittaessa.
+                          Tekstin väri valitaan automaattisesti parhaan
+                          kontrastin mukaan (vähintään 4,5:1).
                         </small>
                       </label>
                     )}
@@ -5115,7 +5421,7 @@ function App() {
           <EntryForm
             kind={edit.kind}
             item={edit.item}
-            categories={cats(edit.kind)}
+            categories={categoryChoices(edit.kind)}
             assets={s.assets}
             onSave={(e) => saveEntry(edit.kind, e)}
             onCancel={() => setEdit(null)}
@@ -5280,36 +5586,54 @@ function App() {
     </>
   );
 }
-function CategoryIcon({ category, debt }: { category: string; debt: boolean }) {
-  const key = category.toLocaleLowerCase("fi-FI");
-  const icon = /asunt|koti|asunto/.test(key)
-    ? homeIcon
-    : /vene|boat/.test(key)
-      ? boatIcon
-      : /moottoripyör|moottorikelkka|mopo/.test(key)
-        ? motorcycleIcon
-        : /auto|ajoneuvo/.test(key)
-          ? carIcon
-          : /käte|tallet|pankki/.test(key)
-            ? bankIcon
-            : /metsä|maa|tontti/.test(key)
-              ? landIcon
-              : /rahasto|osake|sijoit|etf/.test(key)
-                ? portfolioIcon
-                : /opinto|kortti|luotto/.test(key)
-                  ? loanIcon
-                  : debt
-                    ? loanIcon
-                    : /arvoesine|yritys|muu/.test(key)
-                      ? valuablesIcon
-                      : bankIcon;
+function CategoryImage({
+  icon,
+  size = 26,
+}: {
+  icon: CategoryIconId;
+  size?: number;
+}) {
   return (
     <img
-      className={`category-icon${debt ? " category-icon-debt" : ""}`}
-      src={icon}
+      className="category-icon"
+      src={categoryIconSources[icon]}
+      width={size}
+      height={size}
       alt=""
       aria-hidden="true"
     />
+  );
+}
+function CompassResearchDetails({
+  task,
+  compact = false,
+}: {
+  task: PlannedAction;
+  compact?: boolean;
+}) {
+  if (!task.sourceIds?.length && !task.boundary) return null;
+  return (
+    <details className={`compass-research-details${compact ? " compact" : ""}`}>
+      <summary>
+        {compact ? "Tietopohja ja rajat" : "Mihin havainto perustuu?"}
+        {task.sourceIds?.length ? ` · ${task.sourceIds.join(", ")}` : ""}
+      </summary>
+      {task.sourceIds?.length ? (
+        <ul>
+          {task.sourceIds.map((id) => (
+            <li key={id}>
+              <strong>{guidanceSources[id].citation}.</strong>{" "}
+              {guidanceSources[id].idea} {guidanceSources[id].boundary}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {task.boundary && (
+        <p>
+          <strong>Tämän huomion rajaus:</strong> {task.boundary}
+        </p>
+      )}
+    </details>
   );
 }
 function Empty({ text }: { text: string }) {
@@ -5368,7 +5692,7 @@ function EntryForm({
 }: {
   kind: Kind;
   item: Entry;
-  categories: string[];
+  categories: CategoryChoice[];
   assets: Entry[];
   onSave: (e: Entry) => void;
   onCancel: () => void;
@@ -5601,18 +5925,19 @@ function EntryForm({
                     <button
                       type="button"
                       role="option"
-                      aria-selected={category === item.category}
-                      key={category}
+                      aria-selected={category.name === item.category}
+                      key={category.name}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
-                        setValue("category", category, {
+                        setValue("category", category.name, {
                           shouldDirty: true,
                           shouldValidate: true,
                         });
                         setCategoryOpen(false);
                       }}
                     >
-                      {category}
+                      <CategoryImage icon={category.icon} size={21} />
+                      <span>{category.name}</span>
                     </button>
                   ))
                 ) : (
@@ -5812,7 +6137,8 @@ function Categories({
   commit: (s: State) => boolean;
 }) {
   const [name, setName] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [chosenIcon, setChosenIcon] = useState<CategoryIconId | null>(null);
   function rename(id: string, value: string) {
     value = value.trim();
     let old = s.categories.find((c) => c.id === id)!;
@@ -5858,28 +6184,87 @@ function Categories({
       budgetActuals,
     });
   }
+  const availableOptional = optionalCategoryDefinitions.filter(
+    (definition) =>
+      definition.kind === kind &&
+      !s.categories.some(
+        (category) =>
+          category.kind === kind && category.name === definition.name,
+      ),
+  );
+  function addDefinition(definition: Category) {
+    if (
+      s.categories.some(
+        (category) =>
+          category.kind === kind && category.name === definition.name,
+      )
+    ) {
+      setError("Kategoria on jo olemassa.");
+      return;
+    }
+    if (commit({ ...s, categories: [...s.categories, definition] }))
+      setError("");
+  }
+  function changeIcon(id: string, icon: CategoryIconId) {
+    commit({
+      ...s,
+      categories: s.categories.map((category) =>
+        category.id === id ? { ...category, icon } : category,
+      ),
+    });
+  }
   return (
     <>
-      <p>
-        Kategorian uudelleennimeäminen päivittää tietueet, budjetit ja käsin
-        syötetyt toteumat. Arkistointi piilottaa kategorian valintalistasta, ei
-        poista historiaa.
-      </p>
+      <div className="category-editor-intro">
+        <span className="eyebrow">SELKEÄT KATEGORIAT</span>
+        <p>
+          Aloituksessa näytetään pieni joukko yleisiä kategorioita. Lisää vain
+          tarvitsemasi valinnaiset tai luo oma. Kuvakkeet ovat pieniä
+          paikallisia kuvia; kodin ja asuntolainan kaltaiset aiheet käyttävät
+          samaa kuvaa.
+        </p>
+        <small>
+          Nimen muutos päivittää tietueet, budjetit ja käsin syötetyt toteumat.
+          Arkistointi piilottaa valinnan mutta säilyttää historian.
+        </small>
+      </div>
       {error && <p role="alert">{error}</p>}
       <div className="category-list">
         {s.categories
           .filter((c) => c.kind === kind)
           .map((c) => (
-            <div className="simple-row" key={c.id}>
+            <div
+              className={`category-management-row${c.archived ? " archived" : ""}`}
+              key={c.id}
+            >
+              <CategoryImage icon={c.icon} size={32} />
               <input
-                aria-label={"Kategorian " + c.name + " nimi"}
+                aria-label={`Kategorian ${c.name} nimi`}
                 defaultValue={c.name}
                 key={c.name}
                 onBlur={(e) =>
                   e.target.value !== c.name && rename(c.id, e.target.value)
                 }
               />
+              <label className="category-icon-choice">
+                <span className="sr-only">Kuvake</span>
+                <CategoryImage icon={c.icon} size={25} />
+                <select
+                  aria-label={`Kuvake kategorialle ${c.name}`}
+                  value={c.icon}
+                  onChange={(event) =>
+                    changeIcon(c.id, event.target.value as CategoryIconId)
+                  }
+                >
+                  {categoryIconOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
+                type="button"
                 onClick={() =>
                   commit({
                     ...s,
@@ -5892,10 +6277,12 @@ function Categories({
                 {c.archived ? "Palauta" : "Arkistoi"}
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (
                     s[kind].some((e) => e.category === c.name) ||
-                    Object.values(s.budgets).some((b) => c.name in b)
+                    Object.values(s.budgets).some((b) => c.name in b) ||
+                    Object.values(s.budgetActuals).some((b) => c.name in b)
                   ) {
                     setError(
                       "Kategoria on käytössä. Arkistoi se poistamisen sijaan.",
@@ -5913,15 +6300,50 @@ function Categories({
             </div>
           ))}
       </div>
+      {availableOptional.length > 0 && (
+        <details className="category-optional">
+          <summary>
+            Valinnaiset valmiit kategoriat
+            <span>{availableOptional.length} lisättävissä</span>
+          </summary>
+          <div className="category-optional-grid">
+            {availableOptional.map((definition) => (
+              <button
+                key={definition.name}
+                type="button"
+                className="category-optional-card"
+                onClick={() =>
+                  addDefinition({
+                    id: uid(),
+                    ...definition,
+                    archived: false,
+                  })
+                }
+              >
+                <CategoryImage icon={definition.icon} size={32} />
+                <span>{definition.name}</span>
+                <strong>Lisää</strong>
+              </button>
+            ))}
+          </div>
+        </details>
+      )}
       <form
+        className="category-create-form"
         onSubmit={(e) => {
           e.preventDefault();
           if (
             !name.trim() ||
             name.length > 100 ||
-            s.categories.some((c) => c.kind === kind && c.name === name.trim())
+            s.categories.some(
+              (c) => c.kind === kind && c.name === name.trim(),
+            ) ||
+            [
+              ...defaultCategoryDefinitions,
+              ...optionalCategoryDefinitions,
+            ].some((c) => c.kind === kind && c.name === name.trim())
           ) {
-            setError("Anna yksilöllinen nimi.");
+            setError("Anna valmiskategorioista eroava yksilöllinen nimi.");
             return;
           }
           if (
@@ -5933,24 +6355,52 @@ function Categories({
                   id: uid(),
                   name: name.trim(),
                   kind,
-                  color: "#17604d",
+                  color: kind === "incomes" ? "#17604d" : "#245c78",
+                  icon: chosenIcon || categoryIconFor(name, kind),
                   archived: false,
                 },
               ],
             })
-          )
+          ) {
             setName("");
+            setChosenIcon(null);
+            setError("");
+          }
         }}
       >
-        <label>
-          Uusi kategoria
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={100}
-          />
-        </label>
-        <button>Lisää kategoria</button>
+        <div className="category-create-fields">
+          <label>
+            Oma kategoria
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={100}
+            />
+          </label>
+          <label className="category-icon-choice category-icon-choice-new">
+            <span>Kuvake</span>
+            <CategoryImage
+              icon={chosenIcon || categoryIconFor(name, kind)}
+              size={32}
+            />
+            <select
+              aria-label="Kuvake uudelle kategorialle"
+              value={chosenIcon || categoryIconFor(name, kind)}
+              onChange={(event) =>
+                setChosenIcon(event.target.value as CategoryIconId)
+              }
+            >
+              {categoryIconOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <button type="submit" className="primary">
+          Lisää oma kategoria
+        </button>
       </form>
     </>
   );

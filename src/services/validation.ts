@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { empty, kinds, type State, type Entry, type ActionState } from '../domain/model';
+import { categoryIconFor, isCategoryIconId, optionalCategoryDefinitions } from '../domain/categories';
 import { MAX, validDate } from '../domain/calculations';
 const shellSchema = z.object({
   schemaVersion: z.literal(1),
@@ -92,8 +93,26 @@ export function validate(raw: unknown): State {
       throw Error('Omaisuuslinkki kuuluu vain velkatietueelle.');
   if (!Array.isArray(x.categories) || x.categories.length > 500)
     throw Error('Virheelliset kategoriat.');
+  const usedCategoryNames = new Set<string>();
+  for (const kind of ['incomes', 'expenses'] as const)
+    for (const item of x[kind])
+      if (item && typeof item === 'object' && typeof item.category === 'string')
+        usedCategoryNames.add(`${kind}:${item.category}`);
+  for (const [month, budget] of Object.entries(x.budgets || {})) {
+    void month;
+    if (budget && typeof budget === 'object')
+      for (const name of Object.keys(budget)) usedCategoryNames.add(`expenses:${name}`);
+  }
+  for (const [month, actuals] of Object.entries(x.budgetActuals || {})) {
+    void month;
+    if (actuals && typeof actuals === 'object')
+      for (const name of Object.keys(actuals)) usedCategoryNames.add(`expenses:${name}`);
+  }
   s.categories = x.categories.map((c) => {
     if (
+      !c ||
+      typeof c !== 'object' ||
+      Array.isArray(c) ||
       typeof c.id !== 'string' ||
       typeof c.name !== 'string' ||
       !c.name.trim() ||
@@ -103,7 +122,17 @@ export function validate(raw: unknown): State {
       !/^#[0-9a-f]{6}$/i.test(c.color)
     )
       throw Error('Virheellinen kategoria.');
-    return { id: c.id, name: c.name, kind: c.kind, color: c.color, archived: c.archived };
+    const unusedOptionalDefault = optionalCategoryDefinitions.some(
+      (category) => category.kind === c.kind && category.name === c.name,
+    ) && !usedCategoryNames.has(`${c.kind}:${c.name}`);
+    return {
+      id: c.id,
+      name: c.name,
+      kind: c.kind,
+      color: c.color,
+      icon: isCategoryIconId(c.icon) ? c.icon : categoryIconFor(c.name, c.kind),
+      archived: c.archived || unusedOptionalDefault,
+    };
   });
   if (
     !x.budgets ||
