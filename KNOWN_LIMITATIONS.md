@@ -12,8 +12,8 @@
 ## Domain
 
 - Yhteinen Entry-malli on suppeampi kuin alkuperäinen erillisten domain-mallien vaatimus.
-- Ei mukautettua toistuvuutta, poikkeuspäiviä, yksittäisten esiintymien toteumahallintaa tai vuosittaista hinnanmuutosta.
-- Actual-toistuva tapahtuma oletetaan toteutuneeksi jokaisella esiintymällä; käyttäjä vastaa tilasta.
+- Ei mukautettua toistuvuutta, päivämäärän tai summan muuttamista yhdelle toistuman esiintymälle eikä vuosittaista hinnanmuutosta.
+- Toistuvalla tietueella on sarjan oletustila sekä päivämääräkohtaiset actual/planned/skipped-poikkeukset. Näillä voi merkitä yksittäisen tulevan maksun suunnitelluksi tai jättää maksun toteutumatta. Tila ei kuitenkaan varmennu pankista, eikä poikkeus muuta maksun päivää tai summaa.
 - Vain kategoriabudjetti; ei budjettipohjia, nollapohjaista/prosenttijakoa tai kuun lopun ennustetta.
 - Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain kuukausista, joilla on välttämättömiä kulutuskirjauksia. Havaintokattavuus ei todista kaikkien menojen kirjaamista; nykyinen kuukausi voi olla kesken. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
 - Omaisuuden manuaalinen nykyarvo ja omistusosuus; ei arvostushistoriaa, automaattista arvonalenemaa tai auton erillismallia.
@@ -29,7 +29,7 @@
 - Teemat: neljä valmista, tumma/vaalea/järjestelmä ja oma korostusväri. Järjestelmän vaalea/tumma-asetuksen muutosta seurataan sovelluksen ollessa auki. Ei kaikkien tokenien editoria tai automaattista kontrastilaskentaa.
 - Summien piilotus ei salaa dataa eikä piilota muokkauslomakkeita tai kaikkia johdettuja tietoja.
 - Haku ja kategoria/tila/lajittelu; ei kaikkia summa/aikaväli/toistuvuus-suodattimia tai tallennettuja suodattimia.
-- CSV-kartoituksen tekniset kenttänimet ovat englanniksi; korjaus tapahtuu lähde-CSV:ssä. Ei pankkiformaatteja tai täydellistä merkistötunnistusta.
+- CSV-kartoituksen tekniset kenttänimet ovat englanniksi; toistuman tilapoikkeukset kulkevat JSON-tekstikentässä. Korjaus tapahtuu lähde-CSV:ssä. Ei pankkiformaatteja tai täydellistä merkistötunnistusta.
 - Ei täydellistä WCAG-auditointia, ruudunlukijakoetta, komponenttitestejä tai tuhansien rivien suorituskykymittausta.
 - main.tsx sisältää useita feature-näkymiä; modulaarisuus tulee parantaa.
 - Npm-lukitustiedosto on lisätty; täysin puhtaan ympäristön asennuskoe ja riippuvuusauditointi puuttuvat edelleen.

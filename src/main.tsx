@@ -9,6 +9,7 @@ import {
   kinds,
   type State,
   type Entry,
+  type EntryStatus,
   type Kind,
   type Category,
   type Scenario,
@@ -23,9 +24,12 @@ import {
 import { categoryIconSources } from "./assets/category-icons";
 import {
   metrics,
+  budgetSummary,
   money,
   total,
-  occurrences,
+  scheduledOccurrences,
+  occurrencesWithStatus,
+  occurrenceStatus,
   sum,
   compound,
   goalMonths,
@@ -125,6 +129,18 @@ const names: Record<string, string> = {
   settings: "Asetukset",
   help: "Ohje ja tietosuoja",
 };
+const entryStatusName = (status: EntryStatus) =>
+  status === "actual"
+    ? "Toteutunut"
+    : status === "planned"
+      ? "Suunniteltu"
+      : "Ohitettu";
+const expenseTypeName = (type: "consumption" | "saving" | "investment") =>
+  type === "consumption"
+    ? "Kulutus"
+    : type === "saving"
+      ? "Säästösiirto"
+      : "Sijoitussiirto";
 const navGroups = [
   { label: "Aloitus", pages: ["dashboard", "compass"] },
   { label: "Arki", pages: ["incomes", "expenses", "budget"] },
@@ -262,7 +278,7 @@ function expCatsForReport(s: State, months: string[]): [string, number][] {
   );
   for (const month of months)
     for (const item of expenses) {
-      const count = occurrences(item, month).length;
+      const count = occurrencesWithStatus(item, month, "actual").length;
       if (count)
         totals.set(
           item.category,
@@ -1278,6 +1294,7 @@ function App() {
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
     [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
+    [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
     [reportZoom, setReportZoom] = useState(1),
@@ -1305,6 +1322,7 @@ function App() {
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
+  const hasDashboardData = kinds.some((kind) => s[kind].length > 0);
   const [selectedYear, selectedMonthNumber] = month.split("-").map(Number);
   const canGoPreviousMonth = month > "1900-01";
   const canGoNextMonth = month < "2200-12";
@@ -1511,6 +1529,24 @@ function App() {
       setEdit(null);
       setNotice("Tiedot päivitetty.");
     }
+  }
+  function updateOccurrenceStatus(
+    kind: "incomes" | "expenses",
+    id: string,
+    date: string,
+    status: EntryStatus,
+  ) {
+    const current = s[kind].find((item) => item.id === id);
+    if (!current) return;
+    const occurrenceStatuses = { ...current.occurrenceStatuses };
+    if (status === current.status) delete occurrenceStatuses[date];
+    else occurrenceStatuses[date] = status;
+    commit({
+      ...s,
+      [kind]: s[kind].map((item) =>
+        item.id === id ? { ...item, occurrenceStatuses } : item,
+      ),
+    });
   }
   function remove(kind: Kind, id: string) {
     if (
@@ -1737,45 +1773,22 @@ function App() {
         ? history
             .map(({ key }) => {
               const plannedByCategory = s.budgets[key] || {};
-              const actualByCategory: Record<string, number> = {};
-              for (const expense of s.expenses) {
-                if (
-                  expense.status !== "actual" ||
-                  expenseType(expense) !== "consumption"
-                )
-                  continue;
-                const count = occurrences(expense, key).length;
-                if (count)
-                  actualByCategory[expense.category] =
-                    (actualByCategory[expense.category] || 0) +
-                    expense.amount * count;
-              }
-              const categories = new Set([
-                ...Object.keys(plannedByCategory),
-                ...Object.keys(actualByCategory),
-                ...Object.keys(s.budgetActuals[key] || {}),
-              ]);
-              for (const category of categories) {
-                if (Object.hasOwn(s.budgetActuals[key] || {}, category))
-                  actualByCategory[category] = s.budgetActuals[key][category];
-              }
-              const planned = sum(Object.values(plannedByCategory));
-              const actual = sum(
-                [...categories].map(
-                  (category) => actualByCategory[category] || 0,
-                ),
-              );
+              const summary = budgetSummary(s, key);
+              const planned = summary.planned;
+              const actual = summary.budgetedActual;
               return {
                 key,
                 planned,
-                hasPlan: Object.keys(plannedByCategory).length > 0,
+                hasPlan: planned > 0,
                 actual,
-                categories: [...categories],
+                unbudgetedActual: summary.unbudgetedActual,
                 plannedByCategory,
-                actualByCategory,
               };
             })
-            .filter((row) => row.hasPlan || row.actual > 0)
+            .filter(
+              (row) =>
+                row.hasPlan || row.actual > 0 || row.unbudgetedActual > 0,
+            )
         : [],
     [s, page, reportView, history],
   );
@@ -1783,8 +1796,17 @@ function App() {
     (totals, row) => ({
       planned: totals.planned + row.planned,
       actual: totals.actual + row.actual,
+      unbudgetedActual: totals.unbudgetedActual + row.unbudgetedActual,
     }),
-    { planned: 0, actual: 0 },
+    { planned: 0, actual: 0, unbudgetedActual: 0 },
+  );
+  const budgetReportScale = Math.max(
+    ...budgetReport.flatMap((row) => [
+      row.planned,
+      row.actual,
+      row.unbudgetedActual,
+    ]),
+    1,
   );
   const currentAssets = s.assets.map((asset) => ({
     ...asset,
@@ -1937,17 +1959,17 @@ function App() {
   const flowByDate = useMemo(() => {
     const map = new Map<string, { income: number; expense: number }>();
     if (page !== "reports" || reportView !== "flow") return map;
-    const incomes = s.incomes.filter((item) => item.status === "actual");
-    const expenses = s.expenses.filter((item) => item.status === "actual");
+    const incomes = s.incomes;
+    const expenses = s.expenses;
     for (const period of history) {
       for (const item of incomes)
-        for (const date of occurrences(item, period.key)) {
+        for (const date of occurrencesWithStatus(item, period.key, "actual")) {
           const value = map.get(date) || { income: 0, expense: 0 };
           value.income += item.amount;
           map.set(date, value);
         }
       for (const item of expenses)
-        for (const date of occurrences(item, period.key)) {
+        for (const date of occurrencesWithStatus(item, period.key, "actual")) {
           const value = map.get(date) || { income: 0, expense: 0 };
           value.expense += item.amount;
           map.set(date, value);
@@ -1979,8 +2001,11 @@ function App() {
     const grouped = new Map<string, ReportDetailEntry>();
     for (const period of history) {
       for (const record of items) {
-        if (record.status !== "actual") continue;
-        const count = occurrences(record, period.key).length;
+        const count = occurrencesWithStatus(
+          record,
+          period.key,
+          "actual",
+        ).length;
         if (!count) continue;
         const key = `${kind}-${record.id}`;
         const previous = grouped.get(key);
@@ -2006,35 +2031,46 @@ function App() {
             ]
       : selectedReport?.type === "month" || selectedReport?.type === "budget"
         ? (selectedReport.type === "budget"
-            ? s.expenses.filter((item) => expenseType(item) === "consumption")
+            ? s.expenses.filter(
+                (item) =>
+                  expenseType(item) === "consumption" &&
+                  (s.budgets[selectedReport.month]?.[item.category] || 0) > 0,
+              )
             : selectedReport.metric === "income"
               ? s.incomes
               : s.expenses
           )
             .filter(
               (e) =>
-                e.status === "actual" &&
-                occurrences(e, selectedReport.month).length > 0,
+                occurrencesWithStatus(e, selectedReport.month, "actual")
+                  .length > 0,
             )
-            .map((e) => ({
-              entry: e,
-              kind:
-                selectedReport.type === "budget"
-                  ? ("expense" as const)
-                  : selectedReport.metric,
-              amount: e.amount * occurrences(e, selectedReport.month).length,
-            }))
+            .map((e) => {
+              const count = occurrencesWithStatus(
+                e,
+                selectedReport.month,
+                "actual",
+              ).length;
+              return {
+                entry: e,
+                kind:
+                  selectedReport.type === "budget"
+                    ? ("expense" as const)
+                    : selectedReport.metric,
+                amount: e.amount * count,
+              };
+            })
         : selectedReport?.type === "category"
           ? s.expenses
               .filter(
                 (e) =>
-                  e.status === "actual" &&
                   e.category === selectedReport.category &&
                   expenseType(e) === "consumption",
               )
               .map((e) => {
                 const count = history.reduce(
-                  (sum, period) => sum + occurrences(e, period.key).length,
+                  (sum, period) =>
+                    sum + occurrencesWithStatus(e, period.key, "actual").length,
                   0,
                 );
                 return {
@@ -2048,14 +2084,12 @@ function App() {
           : selectedReport?.type === "day"
             ? [
                 ...s.incomes
-                  .filter(
-                    (e) =>
-                      e.status === "actual" &&
-                      history.some((period) =>
-                        occurrences(e, period.key).includes(
-                          selectedReport.date,
-                        ),
+                  .filter((e) =>
+                    history.some((period) =>
+                      occurrencesWithStatus(e, period.key, "actual").includes(
+                        selectedReport.date,
                       ),
+                    ),
                   )
                   .map((e) => ({
                     entry: e,
@@ -2063,14 +2097,12 @@ function App() {
                     amount: e.amount,
                   })),
                 ...s.expenses
-                  .filter(
-                    (e) =>
-                      e.status === "actual" &&
-                      history.some((period) =>
-                        occurrences(e, period.key).includes(
-                          selectedReport.date,
-                        ),
+                  .filter((e) =>
+                    history.some((period) =>
+                      occurrencesWithStatus(e, period.key, "actual").includes(
+                        selectedReport.date,
                       ),
+                    ),
                   )
                   .map((e) => ({
                     entry: e,
@@ -2089,6 +2121,10 @@ function App() {
             0,
           )
         : selectedReportEntries.reduce((value, item) => value + item.amount, 0);
+  const selectedBudgetSummary =
+    selectedReport?.type === "budget"
+      ? budgetSummary(s, selectedReport.month)
+      : null;
   const expCats = Array.from(
     new Set([
       ...s.categories
@@ -2098,6 +2134,33 @@ function App() {
       ...Object.keys(s.budgets[month] || {}),
     ]),
   );
+  const monthBudgetSummary = budgetSummary(s, month);
+  const monthBudgets = s.budgets[month] || {};
+  const budgetCategoriesByName = new Map(
+    monthBudgetSummary.categories.map((category) => [
+      category.category,
+      category,
+    ]),
+  );
+  const actualForBudgetCategory = (category: string) =>
+    budgetCategoriesByName.get(category)?.actual || 0;
+  const budgetedCategories = monthBudgetSummary.categories
+    .filter((category) => category.planned > 0)
+    .map((category) => category.category);
+  const budgetedActual = monthBudgetSummary.budgetedActual;
+  const budgetDifference = monthBudgetSummary.difference;
+  const unbudgetedActual = monthBudgetSummary.unbudgetedActual;
+  const relevantBudgetCategories = expCats.filter(
+    (category) =>
+      (monthBudgets[category] || 0) > 0 ||
+      actualForBudgetCategory(category) > 0 ||
+      Object.hasOwn(s.budgetActuals[month] || {}, category),
+  );
+  const visibleBudgetCategories = showAllBudgetCategories
+    ? expCats
+    : relevantBudgetCategories.length
+      ? relevantBudgetCategories
+      : expCats.slice(0, 4);
   const compassTasks = planActions(s, month);
   const visibleCompassTasks = visibleActions(s, month);
   const filteredCompassTasks =
@@ -2859,197 +2922,266 @@ function App() {
                 </p>
               </section>
             )}
-            {page === "dashboard" && (
-              <>
-                <div className="hero">
-                  <div>
-                    <span className="eyebrow">KUUKAUDEN KASSAVIRTA</span>
-                    <div className="hero-value">{euro(m.cash)}</div>
-                    <p>Toteutuneet tulot − toteutuneet menot</p>
-                  </div>
-                  <div>
-                    <span>Käyttövara suunniteltujen menojen jälkeen</span>
-                    <strong>{euro(m.available)}</strong>
-                    <small>Ei sisällä erillistä säästövarausta.</small>
-                  </div>
-                </div>
-                <section
-                  className="dashboard-actions grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6"
-                  aria-label="Pikatoiminnot"
-                >
-                  <button
-                    aria-label="Lisää tulo"
-                    className="dashboard-action group flex min-h-16 items-center gap-3"
-                    onClick={() =>
-                      setEdit({
-                        kind: "incomes",
-                        item: entry({ category: cats("incomes")[0] }),
-                      })
-                    }
-                  >
-                    <CircleDollarSign
-                      size={21}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    />
-                    <span className="dashboard-action-copy">
-                      <strong>Lisää tulo</strong>
-                      <small>Palkka tai muu tulo</small>
-                    </span>
-                    <ArrowRight
-                      className="dashboard-action-arrow"
-                      size={17}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <button
-                    aria-label="Lisää meno"
-                    className="dashboard-action group flex min-h-16 items-center gap-3"
-                    onClick={() =>
-                      setEdit({
-                        kind: "expenses",
-                        item: entry({ category: cats("expenses")[0] }),
-                      })
-                    }
-                  >
-                    <ReceiptText
-                      size={21}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    />
-                    <span className="dashboard-action-copy">
-                      <strong>Lisää meno</strong>
-                      <small>Kuukausittainen tai kertameno</small>
-                    </span>
-                    <ArrowRight
-                      className="dashboard-action-arrow"
-                      size={17}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <button
-                    aria-label="Avaa budjetti"
-                    className="dashboard-action group flex min-h-16 items-center gap-3"
-                    onClick={() => navigate("budget")}
-                  >
-                    <Wallet size={21} strokeWidth={1.8} aria-hidden="true" />
-                    <span className="dashboard-action-copy">
-                      <strong>Avaa budjetti</strong>
-                      <small>Suunnittele kuukauden kulut</small>
-                    </span>
-                    <ArrowRight
-                      className="dashboard-action-arrow"
-                      size={17}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <button
-                    aria-label="Avaa raportit"
-                    className="dashboard-action group flex min-h-16 items-center gap-3"
-                    onClick={() => navigate("reports")}
-                  >
-                    <ChartNoAxesCombined
-                      size={21}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    />
-                    <span className="dashboard-action-copy">
-                      <strong>Avaa raportit</strong>
-                      <small>Tutki rahavirtaa ja kulurakennetta</small>
-                    </span>
-                    <ArrowRight
-                      className="dashboard-action-arrow"
-                      size={17}
-                      aria-hidden="true"
-                    />
-                  </button>
-                </section>
-                {!dismissedHelp.has("dashboard-start") && (
-                  <HelpBox
-                    id="dashboard-start"
-                    title="Pääset alkuun pienin askelin"
-                    onDismiss={dismissHelp}
-                  >
-                    Lisää ensin yksi tavallinen tulo ja muutama toistuva meno.
-                    Budjetti ja raportit tarkentuvat sitä mukaa kun kirjaat
-                    tietoja.
-                  </HelpBox>
-                )}
-                <section
-                  className="metric-group metric-group-cash"
-                  aria-labelledby="cash-heading"
-                >
-                  <h2 id="cash-heading">Kuukauden rahavirta</h2>
-                  <div className="stats">
-                    {stat("Tulot tässä kuussa", euro(m.income))}
-                    {stat("Menot tässä kuussa", euro(m.expense))}
-                    {stat(
-                      "Kulutusmenot",
-                      euro(m.consumption),
-                      "Menon tyypiksi merkityt siirrot sivuutetaan",
-                    )}
-                    {stat(
-                      "Tulot kulutuksen jälkeen",
-                      euro(m.surplus),
-                      "Ei ole sama kuin todennettu sijoitussumma",
-                    )}
-                    {stat(
-                      "Säästöaste",
-                      pct(m.savingRate),
-                      "Tulot kulutuksen jälkeen / tulot",
-                    )}
+            {page === "dashboard" &&
+              (!hasDashboardData ? (
+                <section className="empty-dashboard panel">
+                  <span className="eyebrow">ALOITA OMASTA TILANTEESTASI</span>
+                  <h2>Ota talous haltuun yksi asia kerrallaan</h2>
+                  <p>
+                    Lisää ensin tulot ja tavallisimmat menot. Budjetin ja
+                    raporttien luvut tarkentuvat niiden perusteella.
+                  </p>
+                  <ol className="empty-dashboard-steps">
+                    <li>
+                      <span>1</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEdit({
+                            kind: "incomes",
+                            item: entry({ category: cats("incomes")[0] }),
+                          })
+                        }
+                      >
+                        Lisää tulo
+                      </button>
+                    </li>
+                    <li>
+                      <span>2</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEdit({
+                            kind: "expenses",
+                            item: entry({ category: cats("expenses")[0] }),
+                          })
+                        }
+                      >
+                        Lisää meno
+                      </button>
+                    </li>
+                    <li>
+                      <span>3</span>
+                      <button type="button" onClick={() => navigate("budget")}>
+                        Avaa budjetti
+                      </button>
+                    </li>
+                  </ol>
+                  <div className="empty-dashboard-actions">
+                    <button type="button" onClick={() => navigate("compass")}>
+                      Tutki neljää esimerkkitaloutta
+                    </button>
+                    <button type="button" onClick={() => navigate("help")}>
+                      Avaa ohje ja tietosuoja
+                    </button>
                   </div>
                 </section>
-                <section
-                  className="metric-group metric-group-wealth"
-                  aria-labelledby="wealth-heading"
-                >
-                  <h2 id="wealth-heading">Varallisuus</h2>
-                  <div className="stats">
-                    {stat(
-                      "Nettovarallisuus",
-                      euro(m.net),
-                      "Omaisuus + sijoitukset − velat",
-                    )}
-                    {stat(
-                      "Omaisuus",
-                      euro(m.assets),
-                      "Käyttäjän syöttämät arvot",
-                    )}
-                    {stat("Velat", euro(m.debts))}
-                    {stat(
-                      "Sijoitussalkku",
-                      euro(m.investments),
-                      "Manuaaliset EUR-hinnat",
-                    )}
+              ) : (
+                <>
+                  <div className="hero">
+                    <div>
+                      <span className="eyebrow">KUUKAUDEN KASSAVIRTA</span>
+                      <div className="hero-value">{euro(m.cash)}</div>
+                      <p>Toteutuneet tulot − toteutuneet menot</p>
+                    </div>
+                    <div>
+                      <span>
+                        Arvio kuukauden kirjatuista tuloista ja menoista
+                      </span>
+                      <strong>{euro(m.available)}</strong>
+                      <small>
+                        Tulot − toteutuneet ja suunnitellut menot. Ei tilisaldo.
+                      </small>
+                    </div>
                   </div>
-                </section>
-                <section
-                  className="metric-group metric-group-plan"
-                  aria-labelledby="plan-heading"
-                >
-                  <h2 id="plan-heading">Suunnitelma ja siirrot</h2>
-                  <div className="stats">
-                    {stat("Säästösiirrot", euro(m.savingTransfers))}
-                    {stat("Sijoitussiirrot", euro(m.investmentTransfers))}
-                    {stat(
-                      "Budjetista käytetty",
-                      m.budget
-                        ? pct((m.consumption / m.budget) * 100)
-                        : "Ei budjettia",
-                    )}
-                  </div>
-                </section>
-                <div className="grid-two">
-                  <section className="panel">
-                    <h2>Kulutuksen kokonaiskuva</h2>
-                    <p className="muted">
-                      Toteutuneet kulutusmenot valitussa kuussa
-                    </p>
-                    {expCats
-                      .filter(
-                        (c) =>
-                          total(
+                  <section
+                    className="dashboard-actions grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6"
+                    aria-label="Pikatoiminnot"
+                  >
+                    <button
+                      aria-label="Lisää tulo"
+                      className="dashboard-action group flex min-h-16 items-center gap-3"
+                      onClick={() =>
+                        setEdit({
+                          kind: "incomes",
+                          item: entry({ category: cats("incomes")[0] }),
+                        })
+                      }
+                    >
+                      <CircleDollarSign
+                        size={21}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                      <span className="dashboard-action-copy">
+                        <strong>Lisää tulo</strong>
+                        <small>Palkka tai muu tulo</small>
+                      </span>
+                      <ArrowRight
+                        className="dashboard-action-arrow"
+                        size={17}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      aria-label="Lisää meno"
+                      className="dashboard-action group flex min-h-16 items-center gap-3"
+                      onClick={() =>
+                        setEdit({
+                          kind: "expenses",
+                          item: entry({ category: cats("expenses")[0] }),
+                        })
+                      }
+                    >
+                      <ReceiptText
+                        size={21}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                      <span className="dashboard-action-copy">
+                        <strong>Lisää meno</strong>
+                        <small>Kuukausittainen tai kertameno</small>
+                      </span>
+                      <ArrowRight
+                        className="dashboard-action-arrow"
+                        size={17}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      aria-label="Avaa budjetti"
+                      className="dashboard-action group flex min-h-16 items-center gap-3"
+                      onClick={() => navigate("budget")}
+                    >
+                      <Wallet size={21} strokeWidth={1.8} aria-hidden="true" />
+                      <span className="dashboard-action-copy">
+                        <strong>Avaa budjetti</strong>
+                        <small>Suunnittele kuukauden kulut</small>
+                      </span>
+                      <ArrowRight
+                        className="dashboard-action-arrow"
+                        size={17}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      aria-label="Avaa raportit"
+                      className="dashboard-action group flex min-h-16 items-center gap-3"
+                      onClick={() => navigate("reports")}
+                    >
+                      <ChartNoAxesCombined
+                        size={21}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                      <span className="dashboard-action-copy">
+                        <strong>Avaa raportit</strong>
+                        <small>Tutki rahavirtaa ja kulurakennetta</small>
+                      </span>
+                      <ArrowRight
+                        className="dashboard-action-arrow"
+                        size={17}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </section>
+                  {!dismissedHelp.has("dashboard-start") && (
+                    <HelpBox
+                      id="dashboard-start"
+                      title="Pääset alkuun pienin askelin"
+                      onDismiss={dismissHelp}
+                    >
+                      Lisää ensin yksi tavallinen tulo ja muutama toistuva meno.
+                      Budjetti ja raportit tarkentuvat sitä mukaa kun kirjaat
+                      tietoja.
+                    </HelpBox>
+                  )}
+                  <section
+                    className="metric-group metric-group-cash"
+                    aria-labelledby="cash-heading"
+                  >
+                    <h2 id="cash-heading">Kuukauden rahavirta</h2>
+                    <div className="stats">
+                      {stat("Tulot tässä kuussa", euro(m.income))}
+                      {stat("Menot tässä kuussa", euro(m.expense))}
+                      {stat(
+                        "Kulutusmenot",
+                        euro(m.consumption),
+                        "Menon tyypiksi merkityt siirrot sivuutetaan",
+                      )}
+                      {stat(
+                        "Tulot kulutuksen jälkeen",
+                        euro(m.surplus),
+                        "Ei ole sama kuin todennettu sijoitussumma",
+                      )}
+                      {stat(
+                        "Säästöaste",
+                        pct(m.savingRate),
+                        "Tulot kulutuksen jälkeen / tulot",
+                      )}
+                    </div>
+                  </section>
+                  <section
+                    className="metric-group metric-group-wealth"
+                    aria-labelledby="wealth-heading"
+                  >
+                    <h2 id="wealth-heading">Varallisuus</h2>
+                    <div className="stats">
+                      {stat(
+                        "Nettovarallisuus",
+                        euro(m.net),
+                        "Omaisuus + sijoitukset − velat",
+                      )}
+                      {stat(
+                        "Omaisuus",
+                        euro(m.assets),
+                        "Käyttäjän syöttämät arvot",
+                      )}
+                      {stat("Velat", euro(m.debts))}
+                      {stat(
+                        "Sijoitussalkku",
+                        euro(m.investments),
+                        "Manuaaliset EUR-hinnat",
+                      )}
+                    </div>
+                  </section>
+                  <section
+                    className="metric-group metric-group-plan"
+                    aria-labelledby="plan-heading"
+                  >
+                    <h2 id="plan-heading">Suunnitelma ja siirrot</h2>
+                    <div className="stats">
+                      {stat("Säästösiirrot", euro(m.savingTransfers))}
+                      {stat("Sijoitussiirrot", euro(m.investmentTransfers))}
+                      {stat(
+                        "Budjetista käytetty",
+                        m.budget
+                          ? pct((m.consumption / m.budget) * 100)
+                          : "Ei budjettia",
+                      )}
+                    </div>
+                  </section>
+                  <div className="grid-two">
+                    <section className="panel">
+                      <h2>Kulutuksen kokonaiskuva</h2>
+                      <p className="muted">
+                        Toteutuneet kulutusmenot valitussa kuussa
+                      </p>
+                      {expCats
+                        .filter(
+                          (c) =>
+                            total(
+                              s.expenses.filter(
+                                (e) =>
+                                  e.category === c &&
+                                  expenseType(e) === "consumption",
+                              ),
+                              month,
+                              true,
+                            ) > 0,
+                        )
+                        .map((c) => {
+                          let n = total(
                             s.expenses.filter(
                               (e) =>
                                 e.category === c &&
@@ -3057,136 +3189,130 @@ function App() {
                             ),
                             month,
                             true,
-                          ) > 0,
+                          );
+                          return (
+                            <div className="bar-row" key={c}>
+                              <div>
+                                <span>{c}</span>
+                                <strong>{euro(n)}</strong>
+                              </div>
+                              <progress
+                                max={m.consumption || 1}
+                                value={n}
+                                aria-label={c}
+                              />
+                            </div>
+                          );
+                        })}
+                      {!m.consumption && (
+                        <Empty text="Lisää ensimmäinen kulutusmeno nähdäksesi, mihin rahat kuluvat." />
+                      )}
+                    </section>
+                    <section className="panel">
+                      <h2>Hätävara ja tavoitteet</h2>
+                      <label className="buffer-period">
+                        Tarkastelujakso
+                        <select
+                          value={bufferMonths}
+                          onChange={(e) =>
+                            setBufferMonths(Number(e.target.value))
+                          }
+                        >
+                          <option value={1}>1 kuukausi</option>
+                          <option value={3}>3 kuukautta</option>
+                          <option value={6}>6 kuukautta</option>
+                          <option value={12}>12 kuukautta</option>
+                        </select>
+                      </label>
+                      <div className="buffer">
+                        <strong>
+                          {buffer.buffer === null
+                            ? "—"
+                            : s.settings.private
+                              ? "•••"
+                              : buffer.buffer.toLocaleString("fi-FI", {
+                                  maximumFractionDigits: 1,
+                                })}
+                        </strong>
+                        <span>kuukautta välttämättömiä menoja</span>
+                      </div>
+                      <p className="muted">
+                        Likvidiksi merkitty omaisuus / kirjattujen kuukausien
+                        välttämättömien kulutusmenojen keskiarvo. Havaintoja{" "}
+                        {buffer.observedMonths}/{buffer.requestedMonths}{" "}
+                        kuukaudelta.
+                      </p>
+                      {buffer.observedMonths < buffer.requestedMonths && (
+                        <p className="muted">
+                          Puuttuvia kuukausia ei lasketa nollamenoiksi. Tarkista
+                          kirjausten kattavuus ennen päätöksiä.
+                        </p>
+                      )}
+                      {buffer.averageEssential === 0 && (
+                        <p className="muted">
+                          Kirjattuja välttämättömiä menoja on 0 €. Hätävaran
+                          kestoa ei voi laskea.
+                        </p>
+                      )}
+                      <p className="muted">
+                        Valittu kuukausi voi olla vielä kesken; havainto ei
+                        takaa kaikkien menojen kirjaamista.
+                      </p>
+                      {s.goals.map((e) => (
+                        <Goal
+                          key={e.id}
+                          e={e}
+                          euro={euro}
+                          privateMode={s.settings.private}
+                        />
+                      ))}
+                      {!s.goals.length && (
+                        <button
+                          onClick={() =>
+                            setEdit({
+                              kind: "goals",
+                              item: entry({ category: "Hätävara" }),
+                            })
+                          }
+                        >
+                          Luo oma tavoite
+                        </button>
+                      )}
+                    </section>
+                  </div>
+                  <section className="panel">
+                    <h2>Tulevat suunnitellut menot</h2>
+                    <p>
+                      Valitussa kuussa yhteensä{" "}
+                      <strong>{euro(m.planned)}</strong>. Suunniteltuja
+                      tapahtumia ei lasketa toteutuneeseen kassavirtaan.
+                    </p>
+                    {s.expenses
+                      .filter(
+                        (e) =>
+                          occurrencesWithStatus(e, month, "planned").length > 0,
                       )
-                      .map((c) => {
-                        let n = total(
-                          s.expenses.filter(
-                            (e) =>
-                              e.category === c &&
-                              expenseType(e) === "consumption",
-                          ),
+                      .map((e) => {
+                        const dates = occurrencesWithStatus(
+                          e,
                           month,
-                          true,
+                          "planned",
                         );
                         return (
-                          <div className="bar-row" key={c}>
-                            <div>
-                              <span>{c}</span>
-                              <strong>{euro(n)}</strong>
-                            </div>
-                            <progress
-                              max={m.consumption || 1}
-                              value={n}
-                              aria-label={c}
-                            />
+                          <div className="simple-row" key={e.id}>
+                            <span>
+                              {e.name} ·{" "}
+                              {dates
+                                .map((d) => d.split("-").reverse().join("."))
+                                .join(", ")}
+                            </span>
+                            <strong>{euro(e.amount * dates.length)}</strong>
                           </div>
                         );
                       })}
-                    {!m.consumption && (
-                      <Empty text="Lisää ensimmäinen kulutusmeno nähdäksesi, mihin rahat kuluvat." />
-                    )}
                   </section>
-                  <section className="panel">
-                    <h2>Hätävara ja tavoitteet</h2>
-                    <label className="buffer-period">
-                      Tarkastelujakso
-                      <select
-                        value={bufferMonths}
-                        onChange={(e) =>
-                          setBufferMonths(Number(e.target.value))
-                        }
-                      >
-                        <option value={1}>1 kuukausi</option>
-                        <option value={3}>3 kuukautta</option>
-                        <option value={6}>6 kuukautta</option>
-                        <option value={12}>12 kuukautta</option>
-                      </select>
-                    </label>
-                    <div className="buffer">
-                      <strong>
-                        {buffer.buffer === null
-                          ? "—"
-                          : s.settings.private
-                            ? "•••"
-                            : buffer.buffer.toLocaleString("fi-FI", {
-                                maximumFractionDigits: 1,
-                              })}
-                      </strong>
-                      <span>kuukautta välttämättömiä menoja</span>
-                    </div>
-                    <p className="muted">
-                      Likvidiksi merkitty omaisuus / kirjattujen kuukausien
-                      välttämättömien kulutusmenojen keskiarvo. Havaintoja{" "}
-                      {buffer.observedMonths}/{buffer.requestedMonths}{" "}
-                      kuukaudelta.
-                    </p>
-                    {buffer.observedMonths < buffer.requestedMonths && (
-                      <p className="muted">
-                        Puuttuvia kuukausia ei lasketa nollamenoiksi. Tarkista
-                        kirjausten kattavuus ennen päätöksiä.
-                      </p>
-                    )}
-                    {buffer.averageEssential === 0 && (
-                      <p className="muted">
-                        Kirjattuja välttämättömiä menoja on 0 €. Hätävaran
-                        kestoa ei voi laskea.
-                      </p>
-                    )}
-                    <p className="muted">
-                      Valittu kuukausi voi olla vielä kesken; havainto ei takaa
-                      kaikkien menojen kirjaamista.
-                    </p>
-                    {s.goals.map((e) => (
-                      <Goal
-                        key={e.id}
-                        e={e}
-                        euro={euro}
-                        privateMode={s.settings.private}
-                      />
-                    ))}
-                    {!s.goals.length && (
-                      <button
-                        onClick={() =>
-                          setEdit({
-                            kind: "goals",
-                            item: entry({ category: "Hätävara" }),
-                          })
-                        }
-                      >
-                        Luo oma tavoite
-                      </button>
-                    )}
-                  </section>
-                </div>
-                <section className="panel">
-                  <h2>Tulevat suunnitellut menot</h2>
-                  <p>
-                    Valitussa kuussa yhteensä <strong>{euro(m.planned)}</strong>
-                    . Suunniteltuja tapahtumia ei lasketa toteutuneeseen
-                    kassavirtaan.
-                  </p>
-                  {s.expenses
-                    .filter(
-                      (e) =>
-                        e.status === "planned" && occurrences(e, month).length,
-                    )
-                    .map((e) => (
-                      <div className="simple-row" key={e.id}>
-                        <span>
-                          {e.name} ·{" "}
-                          {occurrences(e, month)
-                            .map((d) => d.split("-").reverse().join("."))
-                            .join(", ")}
-                        </span>
-                        <strong>
-                          {euro(e.amount * occurrences(e, month).length)}
-                        </strong>
-                      </div>
-                    ))}
-                </section>
-              </>
-            )}
+                </>
+              ))}
             {page === "budget" && (
               <>
                 {!dismissedHelp.has("budget-actuals") && (
@@ -3201,30 +3327,13 @@ function App() {
                   </HelpBox>
                 )}
                 <div className="stats summary-strip summary-strip-plan">
-                  {stat("Kuukauden tulot", euro(m.income))}
                   {stat("Budjetti yhteensä", euro(m.budget))}
-                  {stat("Budjetista jäljellä", euro(m.budget - m.consumption))}
                   {stat(
-                    "Päiväkohtainen budjettivara",
-                    euro(
-                      Math.round(
-                        (m.budget - m.consumption) /
-                          (month === today().slice(0, 7)
-                            ? new Date(
-                                Number(month.slice(0, 4)),
-                                Number(month.slice(5)),
-                                0,
-                              ).getDate() -
-                              Number(today().slice(8)) +
-                              1
-                            : new Date(
-                                Number(month.slice(0, 4)),
-                                Number(month.slice(5)),
-                                0,
-                              ).getDate()),
-                      ),
-                    ),
+                    "Budjetoitujen kategorioiden toteuma",
+                    euro(budgetedActual),
                   )}
+                  {stat("Budjettien erotus", euro(budgetDifference))}
+                  {stat("Kulutus ilman budjettia", euro(unbudgetedActual))}
                 </div>
                 <section className="panel">
                   <div className="section-head">
@@ -3259,6 +3368,8 @@ function App() {
                     Syötä suunniteltu budjetti ja halutessasi toteutunut kulutus
                     käsin. Jos toteumaa ei ole syötetty, näytetään tapahtumista
                     laskettu summa. Budjetin toteuma ei muuta kassavirtaa.
+                    Yhteenveto vertaa toteumaa vain niihin kategorioihin, joille
+                    on asetettu budjetti.
                   </p>
                   <div className="table-wrap mobile-card-table budget-table">
                     <table role="table">
@@ -3272,7 +3383,7 @@ function App() {
                         </tr>
                       </thead>
                       <tbody role="rowgroup">
-                        {expCats.map((c) => {
+                        {visibleBudgetCategories.map((c) => {
                           let b = s.budgets[month]?.[c] || 0,
                             observed = total(
                               s.expenses.filter(
@@ -3330,9 +3441,9 @@ function App() {
                               <td
                                 role="cell"
                                 data-label="Jäljellä"
-                                className={a > b ? "negative" : ""}
+                                className={b > 0 && a > b ? "negative" : ""}
                               >
-                                {euro(b - a)}
+                                {b > 0 ? euro(b - a) : "—"}
                               </td>
                               <td role="cell" data-label="Toteuma">
                                 {b ? pct((a / b) * 100) : "Ei budjettia"}
@@ -3343,11 +3454,30 @@ function App() {
                       </tbody>
                     </table>
                   </div>
+                  {(showAllBudgetCategories ||
+                    expCats.length > visibleBudgetCategories.length) && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAllBudgetCategories((visible) => !visible)
+                      }
+                    >
+                      {showAllBudgetCategories
+                        ? "Piilota budjetoimattomat kategoriat"
+                        : `Näytä kaikki kategoriat (${expCats.length})`}
+                    </button>
+                  )}
+                  {budgetedCategories.length === 0 && (
+                    <p className="muted">
+                      Aloita suunnittelemalla muutama tuttu menokategoria.
+                      Budjetoimaton kulutus ei ole budjetin ylitys.
+                    </p>
+                  )}
                   <p>
-                    Budjetoimaton osa tuloista:{" "}
-                    <strong>{euro(m.income - m.budget)}</strong>. Tämä versio
-                    tukee kategoriabudjettia; ei nollapohjaisen budjetin
-                    automaattista jakoa.
+                    Budjetoitujen kategorioiden erotus on suunnitelma miinus
+                    toteuma. Budjetoimaton kulutus näkyy erikseen, eikä sitä
+                    lasketa budjettien ylitykseksi. Tässä versiossa budjettia ei
+                    jaeta automaattisesti kaikkiin tuloihin.
                   </p>
                 </section>
               </>
@@ -3399,9 +3529,9 @@ function App() {
                       </select>
                     </label>
                     <label>
-                      Tila
+                      Sarjan oletustila
                       <select
-                        aria-label="Tila"
+                        aria-label="Sarjan oletustila"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                       >
@@ -3557,23 +3687,24 @@ function App() {
                                     <>
                                       {recNames[e.recurrence]}
                                       <small>
-                                        {e.status === "actual"
-                                          ? "Toteutunut"
-                                          : e.status === "planned"
-                                            ? "Suunniteltu"
-                                            : "Ohitettu"}
+                                        Oletus: {entryStatusName(e.status)}
                                         {!e.active ? " · Keskeytetty" : ""}
-                                        {page === "expenses"
-                                          ? " · " +
-                                            (
-                                              {
-                                                consumption: "Kulutus",
-                                                saving: "Säästösiirto",
-                                                investment: "Sijoitussiirto",
-                                              } as const
-                                            )[expenseType(e)]
-                                          : ""}
                                       </small>
+                                      {Object.keys(e.occurrenceStatuses)
+                                        .length > 0 && (
+                                        <small>
+                                          {
+                                            Object.keys(e.occurrenceStatuses)
+                                              .length
+                                          }{" "}
+                                          tilapoikkeusta
+                                        </small>
+                                      )}
+                                      {page === "expenses" && (
+                                        <small>
+                                          {expenseTypeName(expenseType(e))}
+                                        </small>
+                                      )}
                                     </>
                                   ) : page === "assets" ? (
                                     `${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
@@ -3642,13 +3773,68 @@ function App() {
                                         ? `Omistus ${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
                                         : page === "liabilities"
                                           ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
-                                          : e.status === "planned"
-                                            ? "Suunniteltu"
-                                            : e.status === "skipped"
-                                              ? "Ohitettu"
-                                              : "Toteutuneeksi merkitty"}
+                                          : page === "incomes" ||
+                                              page === "expenses"
+                                            ? `Sarjan oletus: ${entryStatusName(e.status)}`
+                                            : null}
                                     </span>
                                   </div>
+                                  {(page === "incomes" ||
+                                    page === "expenses") &&
+                                    e.recurrence !== "once" && (
+                                      <fieldset className="occurrence-statuses">
+                                        <legend>
+                                          Valitun kuukauden tapahtumat
+                                        </legend>
+                                        {scheduledOccurrences(e, month)
+                                          .length ? (
+                                          scheduledOccurrences(e, month).map(
+                                            (date) => (
+                                              <label key={date}>
+                                                <span>
+                                                  {date
+                                                    .split("-")
+                                                    .reverse()
+                                                    .join(".")}
+                                                </span>
+                                                <select
+                                                  aria-label={`${e.name} ${date} tila`}
+                                                  value={occurrenceStatus(
+                                                    e,
+                                                    date,
+                                                  )}
+                                                  onChange={(event) =>
+                                                    updateOccurrenceStatus(
+                                                      page === "incomes"
+                                                        ? "incomes"
+                                                        : "expenses",
+                                                      e.id,
+                                                      date,
+                                                      event.target
+                                                        .value as EntryStatus,
+                                                    )
+                                                  }
+                                                >
+                                                  <option value="actual">
+                                                    Toteutunut
+                                                  </option>
+                                                  <option value="planned">
+                                                    Suunniteltu
+                                                  </option>
+                                                  <option value="skipped">
+                                                    Ohitettu
+                                                  </option>
+                                                </select>
+                                              </label>
+                                            ),
+                                          )
+                                        ) : (
+                                          <p>
+                                            Tälle kuukaudelle ei ole esiintymiä.
+                                          </p>
+                                        )}
+                                      </fieldset>
+                                    )}
                                 </td>
                               </tr>
                             </React.Fragment>
@@ -4711,8 +4897,9 @@ function App() {
                     <p className="muted">
                       {periodLabel}. Kunkin kategorian käsin syötetty toteuma
                       korvaa kirjatut menot tässä raportissa; muuten käytetään
-                      toteutuneiksi merkittyjä kulutusmenoja. Kuukausia ilman
-                      suunnitelmaa ei tulkita nollabudjetiksi.
+                      toteutuneiksi merkittyjä kulutusmenoja. Vertailu koskee
+                      vain budjetoituja kategorioita; budjetoimattomat kulut
+                      näytetään erikseen.
                     </p>
                     <div className="report-summary-strip">
                       <article>
@@ -4720,11 +4907,15 @@ function App() {
                         <strong>{euro(budgetTotals.planned)}</strong>
                       </article>
                       <article>
-                        <small>Toteuma yhteensä</small>
+                        <small>Toteuma budjetoiduissa kategorioissa</small>
                         <strong>{euro(budgetTotals.actual)}</strong>
                       </article>
                       <article>
-                        <small>Erotus</small>
+                        <small>Budjetoimattomat kulut</small>
+                        <strong>{euro(budgetTotals.unbudgetedActual)}</strong>
+                      </article>
+                      <article>
+                        <small>Budjetoitujen kategorioiden erotus</small>
                         <strong
                           className={
                             budgetTotals.actual > budgetTotals.planned
@@ -4757,7 +4948,7 @@ function App() {
                                 ),
                               })
                             }
-                            aria-label={`${row.key}: ${row.hasPlan ? `suunnitelma ${euro(row.planned)}` : "ei budjettisuunnitelmaa"}, toteuma ${euro(row.actual)}. Avaa kirjaukset.`}
+                            aria-label={`${row.key}: ${row.hasPlan ? `budjetti ${euro(row.planned)}, budjetoitujen kategorioiden toteuma ${euro(row.actual)}` : "ei budjettisuunnitelmaa"}, budjetoimattomat kulut ${euro(row.unbudgetedActual)}. Avaa kirjaukset.`}
                           >
                             <span>{row.key}</span>
                             <span className="budget-report-bars">
@@ -4769,32 +4960,46 @@ function App() {
                                 }
                                 style={{
                                   width: row.hasPlan
-                                    ? `${Math.min(100, (row.planned / Math.max(...budgetReport.flatMap((item) => [item.planned, item.actual]), 1)) * 100)}%`
+                                    ? `${Math.min(100, (row.planned / budgetReportScale) * 100)}%`
                                     : "0%",
                                 }}
                               />
                               <b
-                                title={`Toteuma ${euro(row.actual)}`}
+                                title={`Budjetoitujen kategorioiden toteuma ${euro(row.actual)}`}
                                 style={{
-                                  width: `${Math.min(100, (row.actual / Math.max(...budgetReport.flatMap((item) => [item.planned, item.actual]), 1)) * 100)}%`,
+                                  width: `${Math.min(100, (row.actual / budgetReportScale) * 100)}%`,
+                                }}
+                              />
+                              <i
+                                className="unbudgeted-bar"
+                                title={`Budjetoimattomat kulut ${euro(row.unbudgetedActual)}`}
+                                style={{
+                                  width: `${Math.min(100, (row.unbudgetedActual / budgetReportScale) * 100)}%`,
                                 }}
                               />
                             </span>
                             <strong>
-                              {euro(row.actual)}{" "}
+                              {row.hasPlan ? euro(row.actual) : "—"}{" "}
                               <small>
                                 /{" "}
                                 {row.hasPlan
                                   ? euro(row.planned)
                                   : "ei suunnitelmaa"}
                               </small>
+                              {row.unbudgetedActual > 0 && (
+                                <small className="unbudgeted-report-value">
+                                  + {euro(row.unbudgetedActual)} ilman budjettia
+                                </small>
+                              )}
                             </strong>
                           </button>
                         ))}
                         <p className="muted">
                           <i className="legend-swatch planned-swatch" />{" "}
-                          Suunnitelma{" "}
-                          <i className="legend-swatch expense-bar" /> Toteuma
+                          Budjetti <i className="legend-swatch expense-bar" />
+                          Budjetoitujen kategorioiden toteuma{" "}
+                          <i className="legend-swatch unbudgeted-swatch" />
+                          Budjetoimaton kulutus
                         </p>
                       </div>
                     )}
@@ -4805,8 +5010,9 @@ function App() {
                             <tr>
                               <th>Kuukausi</th>
                               <th>Suunnitelma</th>
-                              <th>Toteuma</th>
-                              <th>Erotus</th>
+                              <th>Budjetoidun toteuma</th>
+                              <th>Budjetoimaton</th>
+                              <th>Budjetin erotus</th>
                               <th>Budjetoituja kategorioita</th>
                             </tr>
                           </thead>
@@ -4836,7 +5042,12 @@ function App() {
                                     ? euro(row.planned)
                                     : "Ei suunnitelmaa"}
                                 </td>
-                                <td data-label="Toteuma">{euro(row.actual)}</td>
+                                <td data-label="Budjetoidun toteuma">
+                                  {euro(row.actual)}
+                                </td>
+                                <td data-label="Budjetoimaton">
+                                  {euro(row.unbudgetedActual)}
+                                </td>
                                 <td
                                   data-label="Erotus"
                                   className={
@@ -4850,7 +5061,11 @@ function App() {
                                     : "—"}
                                 </td>
                                 <td data-label="Kategorioita">
-                                  {Object.keys(row.plannedByCategory).length}
+                                  {
+                                    Object.values(row.plannedByCategory).filter(
+                                      (amount) => amount > 0,
+                                    ).length
+                                  }
                                 </td>
                               </tr>
                             ))}
@@ -4858,7 +5073,10 @@ function App() {
                         </table>
                       </div>
                     )}
-                    {!budgetReport.some((row) => row.planned || row.actual) && (
+                    {!budgetReport.some(
+                      (row) =>
+                        row.planned || row.actual || row.unbudgetedActual,
+                    ) && (
                       <Empty text="Aikavälillä ei ole budjettisuunnitelmia tai toteumia." />
                     )}
                   </section>
@@ -5364,14 +5582,38 @@ function App() {
                       · {selectedReportEntries.length} tietuetta
                     </p>
                     {selectedReport.type === "budget" && (
-                      <p className="muted">
-                        Suunnitelma {euro(selectedReport.planned)} · toteuma{" "}
-                        {euro(selectedReport.actual)}.{" "}
-                        {selectedReport.manualCategories.length
-                          ? `Käsin syötetty toteuma korvaa kirjaukset kategorioissa ${selectedReport.manualCategories.join(", ")}. `
-                          : "Toteuma lasketaan kirjatuista kulutusmenoista. "}
-                        Alla näkyvät toteutuneiksi merkityt kulutustapahtumat.
-                      </p>
+                      <>
+                        <p className="muted">
+                          Suunnitelma {euro(selectedReport.planned)} ·
+                          budjetoitujen kategorioiden toteuma{" "}
+                          {euro(selectedReport.actual)} · budjetoimattomat kulut{" "}
+                          {euro(selectedBudgetSummary?.unbudgetedActual || 0)}.{" "}
+                          {selectedReport.manualCategories.length
+                            ? `Käsin syötetty toteuma korvaa kirjaukset kategorioissa ${selectedReport.manualCategories.join(", ")}. `
+                            : "Toteuma lasketaan kirjatuista kulutusmenoista. "}
+                          Alla näkyvät budjetoitujen kategorioiden toteutuneet
+                          kulutustapahtumat.
+                        </p>
+                        {!!selectedBudgetSummary?.categories.some(
+                          (category) =>
+                            category.planned <= 0 && category.actual > 0,
+                        ) && (
+                          <div className="unbudgeted-report-list">
+                            <strong>Budjetoimattomat kategoriat</strong>
+                            {selectedBudgetSummary.categories
+                              .filter(
+                                (category) =>
+                                  category.planned <= 0 && category.actual > 0,
+                              )
+                              .map((category) => (
+                                <span key={category.category}>
+                                  {category.category}
+                                  <b>{euro(category.actual)}</b>
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                      </>
                     )}
                     {selectedReportEntries.length ? (
                       <div className="divide-y divide-slate-100">
@@ -6036,10 +6278,17 @@ function EntryForm({
   onSave: (e: Entry) => void;
   onCancel: () => void;
 }) {
-  const { register, handleSubmit, setValue } =
+  const { register, handleSubmit, setValue, watch } =
     useForm<Record<string, string>>();
   const [error, setError] = useState("");
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryActiveIndex, setCategoryActiveIndex] = useState(-1);
+  const categoryValue = watch("category") || item.category;
+  const matchingCategories = categories.filter((category) =>
+    category.name
+      .toLocaleLowerCase("fi-FI")
+      .includes(categoryValue.trim().toLocaleLowerCase("fi-FI")),
+  );
   const [entryDate, setEntryDate] = useState(item.date);
   const [formPercents, setFormPercents] = useState({
     ownership: item.ownership,
@@ -6228,10 +6477,70 @@ function EntryForm({
               required
               maxLength={100}
               autoComplete="off"
+              role="combobox"
               aria-expanded={categoryOpen}
               aria-controls={`category-options-${kind}`}
+              aria-activedescendant={
+                categoryOpen &&
+                categoryActiveIndex >= 0 &&
+                matchingCategories.length
+                  ? `category-option-${kind}-${Math.min(categoryActiveIndex, matchingCategories.length - 1)}`
+                  : undefined
+              }
               aria-autocomplete="list"
-              onFocus={() => setCategoryOpen(true)}
+              onFocus={() => {
+                setCategoryOpen(true);
+                setCategoryActiveIndex(-1);
+              }}
+              onKeyDown={(event) => {
+                const lastIndex = matchingCategories.length - 1;
+                if (event.key === "Escape" && categoryOpen) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setCategoryOpen(false);
+                } else if (event.key === "ArrowDown" && lastIndex >= 0) {
+                  event.preventDefault();
+                  setCategoryOpen(true);
+                  setCategoryActiveIndex((index) =>
+                    Math.min(index < 0 ? 0 : index + 1, lastIndex),
+                  );
+                } else if (event.key === "ArrowUp" && lastIndex >= 0) {
+                  event.preventDefault();
+                  setCategoryOpen(true);
+                  setCategoryActiveIndex((index) =>
+                    index < 0 ? lastIndex : Math.max(index - 1, 0),
+                  );
+                } else if (
+                  event.key === "Home" &&
+                  categoryOpen &&
+                  lastIndex >= 0
+                ) {
+                  event.preventDefault();
+                  setCategoryActiveIndex(0);
+                } else if (
+                  event.key === "End" &&
+                  categoryOpen &&
+                  lastIndex >= 0
+                ) {
+                  event.preventDefault();
+                  setCategoryActiveIndex(lastIndex);
+                } else if (
+                  event.key === "Enter" &&
+                  categoryOpen &&
+                  matchingCategories.length > 0
+                ) {
+                  event.preventDefault();
+                  const active = Math.max(
+                    0,
+                    Math.min(categoryActiveIndex, lastIndex),
+                  );
+                  setValue("category", matchingCategories[active].name, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  setCategoryOpen(false);
+                }
+              }}
             />
             <button
               type="button"
@@ -6240,7 +6549,11 @@ function EntryForm({
               aria-expanded={categoryOpen}
               aria-controls={`category-options-${kind}`}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => setCategoryOpen((open) => !open)}
+              onClick={() => {
+                const opening = !categoryOpen;
+                setCategoryOpen(opening);
+                if (opening) setCategoryActiveIndex(-1);
+              }}
             >
               <ChevronDown
                 size={18}
@@ -6259,12 +6572,19 @@ function EntryForm({
                 role="listbox"
                 aria-label="Kategoriat"
               >
-                {categories.length ? (
-                  categories.map((category) => (
-                    <button
-                      type="button"
+                {matchingCategories.length ? (
+                  matchingCategories.map((category, index) => (
+                    <div
+                      id={`category-option-${kind}-${index}`}
                       role="option"
-                      aria-selected={category.name === item.category}
+                      aria-selected={
+                        categoryActiveIndex >= 0 &&
+                        index ===
+                          Math.min(
+                            categoryActiveIndex,
+                            matchingCategories.length - 1,
+                          )
+                      }
                       key={category.name}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => {
@@ -6277,7 +6597,7 @@ function EntryForm({
                     >
                       <CategoryImage icon={category.icon} size={21} />
                       <span>{category.name}</span>
-                    </button>
+                    </div>
                   ))
                 ) : (
                   <span className="category-options-empty">
@@ -6329,7 +6649,7 @@ function EntryForm({
               </select>
             </label>
             <label>
-              Tila
+              Tila / sarjan oletus
               <select
                 aria-label="Tila"
                 name="status"
@@ -6451,8 +6771,8 @@ function EntryForm({
       </label>
       {recurring && (
         <p className="muted">
-          Toteutunut toistuva tietue lasketaan jokaiselle esiintymälle. Merkitse
-          tulevat maksut suunnitelluiksi tarvittaessa.
+          Tila on toistuvan sarjan oletus. Yksittäisen kuukauden tapahtuman
+          tilan voit muuttaa avaamalla tietuerivin lisätiedot.
         </p>
       )}
       <div className="actions">

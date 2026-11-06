@@ -21,6 +21,7 @@ export type Recurrence =
   | "quarterly"
   | "semiannual"
   | "yearly";
+export type EntryStatus = "actual" | "planned" | "skipped";
 export interface Entry {
   id: string;
   name: string;
@@ -29,7 +30,8 @@ export interface Entry {
   date: string;
   endDate: string;
   recurrence: Recurrence;
-  status: "actual" | "planned" | "skipped";
+  status: EntryStatus;
+  occurrenceStatuses: Record<string, EntryStatus>;
   active: boolean;
   essential: boolean;
   description: string;
@@ -157,6 +159,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     endDate: "",
     recurrence: "once",
     status: "actual",
+    occurrenceStatuses: {},
     active: true,
     essential: true,
     description: "",
@@ -473,11 +476,16 @@ export function demo(): State {
   for (const category of Object.keys(s.budgets[s.settings.month]))
     used.set(category, "expenses");
   for (const [name, kind] of used) {
-    if (s.categories.some((category) => category.kind === kind && category.name === name))
+    if (
+      s.categories.some(
+        (category) => category.kind === kind && category.name === name,
+      )
+    )
       continue;
-    const definition = [...defaultCategoryDefinitions, ...optionalCategoryDefinitions].find(
-      (category) => category.kind === kind && category.name === name,
-    );
+    const definition = [
+      ...defaultCategoryDefinitions,
+      ...optionalCategoryDefinitions,
+    ].find((category) => category.kind === kind && category.name === name);
     s.categories.push({
       id: uid(),
       name,

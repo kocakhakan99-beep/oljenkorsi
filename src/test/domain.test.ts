@@ -2,7 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   money,
   metrics,
+  budgetSummary,
   occurrences,
+  scheduledOccurrences,
+  occurrencesWithStatus,
+  occurrenceStatus,
   compound,
   goalMonths,
   payoff,
@@ -117,6 +121,29 @@ describe("Raha ja laskelmat", () => {
     expect(m.net).toBe(420000);
     expect(m.buffer).toBe(6);
     expect(m.budget - m.expense).toBe(20000);
+  });
+  it("budjetin yhteenveto vertaa vain budjetoituja kategorioita", () => {
+    const state = empty();
+    state.budgets["2026-11"] = { Ruoka: 60000, Asuminen: 0 };
+    state.budgetActuals["2026-11"] = { Ruoka: 50000 };
+    state.expenses = [
+      entry({
+        category: "Ruoka",
+        amount: 70000,
+        date: "2026-11-03",
+      }),
+      entry({
+        category: "Asuminen",
+        amount: 30000,
+        date: "2026-11-04",
+      }),
+    ];
+    expect(budgetSummary(state, "2026-11")).toMatchObject({
+      planned: 60000,
+      budgetedActual: 50000,
+      difference: 10000,
+      unbudgetedActual: 30000,
+    });
   });
   it("nollatulot eivät aiheuta NaN-arvoa", () =>
     expect(metrics(empty(), "2026-11").savingRate).toBeNull());
@@ -282,6 +309,33 @@ describe("Toistuvuus ja päivät", () => {
     expect(occurrences(entry({ active: false }), "2026-11")).toEqual([]);
     expect(occurrences(entry({ status: "skipped" }), "2026-11")).toEqual([]);
   });
+  it("toistuvan tapahtuman yksittäinen tila ei muuta sarjan muita kuukausia", () => {
+    const item = entry({
+      date: "2026-11-10",
+      recurrence: "monthly",
+      amount: 10000,
+    });
+    item.occurrenceStatuses = {
+      "2026-12-10": "planned",
+      "2027-01-10": "skipped",
+    };
+    expect(occurrencesWithStatus(item, "2026-11", "actual")).toEqual([
+      "2026-11-10",
+    ]);
+    expect(occurrencesWithStatus(item, "2026-12", "actual")).toEqual([]);
+    expect(occurrencesWithStatus(item, "2026-12", "planned")).toEqual([
+      "2026-12-10",
+    ]);
+    expect(occurrenceStatus(item, "2027-01-10")).toBe("skipped");
+    expect(scheduledOccurrences(item, "2027-01")).toEqual(["2027-01-10"]);
+    expect(occurrences(item, "2027-01")).toEqual([]);
+    const state = empty();
+    state.expenses = [item];
+    expect(metrics(state, "2026-11").expense).toBe(10000);
+    expect(metrics(state, "2026-12").expense).toBe(0);
+    expect(metrics(state, "2026-12").planned).toBe(10000);
+    expect(metrics(state, "2027-01").planned).toBe(0);
+  });
   it("virheelliset päivät", () => {
     expect(validDate("2026-02-29")).toBe(false);
     expect(validDate("2024-02-29")).toBe(true);
@@ -333,10 +387,25 @@ describe("Varmuuskopio ja validointi", () => {
     ])
       for (const item of older[kind] as Record<string, unknown>[])
         delete item.linkedAssetId;
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
+        delete item.occurrenceStatuses;
     const migrated = validate(older);
     expect(migrated.actionStates).toEqual({});
     expect(
       migrated.liabilities.every((item) => item.linkedAssetId === ""),
+    ).toBe(true);
+    expect(
+      migrated.incomes.every(
+        (item) => Object.keys(item.occurrenceStatuses).length === 0,
+      ),
     ).toBe(true);
   });
   it("tallentaa Ei onnistu nyt -tilan varmuuskopioon", () => {
@@ -406,6 +475,17 @@ describe("Varmuuskopio ja validointi", () => {
     s.incomes.push(s.incomes[0]);
     expect(() => validate(s)).toThrow();
   });
+  it("virheelliset yksittäisen toistuman tilat hylätään", () => {
+    const state = demo();
+    state.expenses[0].occurrenceStatuses = {
+      "2026-02-30": "planned",
+    };
+    expect(() => validate(state)).toThrow();
+    state.expenses[0].occurrenceStatuses = {
+      "2026-02-28": "unknown" as never,
+    };
+    expect(() => validate(state)).toThrow();
+  });
 });
 describe("CSV", () => {
   it("erottimet, lainaus ja rivinvaihto", () => {
@@ -422,13 +502,20 @@ describe("CSV", () => {
       exportCSV([entry({ name: "=SUM(A1)", description: "@cmd" })]),
     ).toContain("'=SUM(A1)"));
   it("CSV roundtrip", () => {
-    let e = entry({ name: "Ruoka", amount: 1999, date: "2026-11-03" });
+    let e = entry({
+      name: "Ruoka",
+      amount: 1999,
+      date: "2026-11-03",
+      recurrence: "monthly",
+      occurrenceStatuses: { "2026-12-03": "planned" },
+    });
     let rows = parseCSV(exportCSV([e]).replace(/^\ufeff/, ""));
     let map = Object.fromEntries(csvFields.map((k, i) => [k, i]));
     let r = csvEntry(rows[1], map);
     expect(r.amount).toBe(1999);
     expect(r.name).toBe("Ruoka");
     expect(r.date).toBe("2026-11-03");
+    expect(r.occurrenceStatuses).toEqual({ "2026-12-03": "planned" });
   });
   it("suomalainen päivämäärä", () =>
     expect(

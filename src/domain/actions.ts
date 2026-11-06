@@ -2,7 +2,8 @@ import {
   emergencyFund,
   expenseType,
   metrics,
-  occurrences,
+  occurrencesWithStatus,
+  occurrenceStatus,
   sum,
   total,
 } from "./calculations";
@@ -71,13 +72,13 @@ function actualTotalThrough(
 ) {
   const cutoff = `${month}-${String(day).padStart(2, "0")}`;
   return sum(
-    entries
-      .filter((item) => item.status === "actual")
-      .map(
-        (item) =>
-          item.amount *
-          occurrences(item, month).filter((date) => date <= cutoff).length,
-      ),
+    entries.map(
+      (item) =>
+        item.amount *
+        occurrencesWithStatus(item, month, "actual").filter(
+          (date) => date <= cutoff,
+        ).length,
+    ),
   );
 }
 
@@ -97,7 +98,7 @@ function hasCashEntries(state: State, month: string) {
   return (
     total(state.incomes, month, true) > 0 &&
     state.expenses.some(
-      (item) => item.status === "actual" && occurrences(item, month).length > 0,
+      (item) => occurrencesWithStatus(item, month, "actual").length > 0,
     )
   );
 }
@@ -107,7 +108,9 @@ export function planActions(state: State, month: string): PlannedAction[] {
   const monthBudget = state.budgets[month] || {};
   const budgetCategories = Object.keys(monthBudget);
   const hasExpenseHistory = state.expenses.some(
-    (item) => item.status === "actual",
+    (item) =>
+      item.status === "actual" ||
+      Object.values(item.occurrenceStatuses).includes("actual"),
   );
 
   if (hasExpenseHistory && budgetCategories.length === 0) {
@@ -229,7 +232,6 @@ export function planActions(state: State, month: string): PlannedAction[] {
   const housingExpenses = state.expenses.filter((item) => {
     const label = normalized(`${item.category} ${item.name}`);
     return (
-      item.status === "actual" &&
       expenseType(item) === "consumption" &&
       /(asumis|asunt|vuokra|vastike|housing|rent|mortgage)/.test(label)
     );
@@ -318,7 +320,9 @@ export function planActions(state: State, month: string): PlannedAction[] {
       state.expenses
         .filter(
           (item) =>
-            item.status === "actual" && expenseType(item) === "consumption",
+            (item.status === "actual" ||
+              Object.values(item.occurrenceStatuses).includes("actual")) &&
+            expenseType(item) === "consumption",
         )
         .map((item) => item.category),
     ),
@@ -337,10 +341,9 @@ export function planActions(state: State, month: string): PlannedAction[] {
             day,
             hasExpense: state.expenses.some(
               (item) =>
-                item.status === "actual" &&
                 item.category === category &&
                 expenseType(item) === "consumption" &&
-                occurrences(item, period).some(
+                occurrencesWithStatus(item, period, "actual").some(
                   (date) => date <= `${period}-${String(day).padStart(2, "0")}`,
                 ),
             ),
@@ -426,7 +429,13 @@ export function planActions(state: State, month: string): PlannedAction[] {
           "Tutkimus ei anna kaikille sopivaa puskurikuukausien lukua. Alle yhden kuukauden merkintä on kompassin tarkistusraja, ei suositeltu tavoite. Laskelma ei käsittele luottoa tai tulevia tuloja puskurina.",
       });
     }
-  } else if (state.expenses.some((item) => item.status === "actual")) {
+  } else if (
+    state.expenses.some(
+      (item) =>
+        item.status === "actual" ||
+        Object.values(item.occurrenceStatuses).includes("actual"),
+    )
+  ) {
     actions.push({
       id: `coverage-check-${month}`,
       title: "Täydennä välttämättömien menojen havaintoja",
@@ -527,7 +536,6 @@ export function planActions(state: State, month: string): PlannedAction[] {
 
     const recurringOptional = state.expenses.filter(
       (item) =>
-        item.status === "actual" &&
         item.active &&
         item.recurrence !== "once" &&
         !item.essential &&
@@ -675,9 +683,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
   const expenseHistory = recentMonths(month, 12).filter((period) =>
     state.expenses.some(
       (item) =>
-        item.status === "actual" &&
         expenseType(item) === "consumption" &&
-        occurrences(item, period).length > 0,
+        occurrencesWithStatus(item, period, "actual").length > 0,
     ),
   );
   if (expenseHistory.length >= 6) {
@@ -687,7 +694,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
     >();
     for (const item of state.expenses) {
       if (
-        item.status !== "actual" ||
+        occurrenceStatus(item, item.date) !== "actual" ||
         item.recurrence !== "once" ||
         expenseType(item) !== "consumption"
       )

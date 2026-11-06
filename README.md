@@ -16,9 +16,9 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 ## Toteutettu
 
 - Tulot, menot, omaisuus, velat, sijoitukset ja tavoitteet: lisäys, muokkaus, poisto.
-- Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, suunniteltu/toteutunut/ohitettu.
-- Kategoriabudjetti, inline-muokkaus, edellisen kuukauden kopiointi.
-- Kassavirta, käyttövara, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari havaintokattavuudella.
+- Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, sarjan oletustila sekä valitun kuukauden esiintymäkohtaiset suunniteltu/toteutunut/ohitettu-tilat.
+- Kategoriabudjetti ja toteuman inline-muokkaus; budjetoimattomat kulut erotetaan budjetoitujen kategorioiden erotuksesta. Edellisen kuukauden budjetin kopiointi.
+- Kassavirta, kirjauksiin perustuva kuukausiarvio, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari havaintokattavuudella.
 - Manuaaliset sijoitushinnat euroina ja hankinta-arvo.
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
