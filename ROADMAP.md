@@ -12,7 +12,7 @@ Seuraavaksi varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kii
 
 ## P1: luotettava arjen talous ja mittarit
 
-Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Lisää tilit, alkusaldot, täsmäytys ja esiintymäkohtainen toteuma/poikkeus ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
+Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Toistuvan tapahtuman päivämääräkohtainen tila on nyt tuettu; lisää tilit, alkusaldot ja täsmäytys ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
 
 Toteutettu tässä työpaketissa: yhteinen enintään 120 kuukauden raporttijakso (alku ja loppu), aihekohtainen esitysmuoto, budjetin suunnitelma/toteuma-vertailu, nykyhetken varallisuuserittely, omaisuuserään linkitettävä velka sekä oletuksilla merkitty velan takaisinmaksu- ja omaisuusarvio. Talouden kompassin havaintoperheitä on laajennettu asumiseen, välttämättömien menojen osuuteen, oman historian kulupoikkeamiin, tavoitteiden realistiseen tahtiin, toistuviin menoihin, velkojen kustannuksiin, säästösiirtojen ajoitukseen ja FIRE-nostojen stressitestaukseen. Käyttäjä voi päivittää tilanteen, kuitata ehdotuksen tai siirtää sen viikoksi tai kuukaudeksi. Kompassi ei tee muutoksia automaattisesti. Hätävaran 1/3/6/12 kk havaintopohjainen keskiarvo ja kirjauskuukausien määrä on toteutettu. Jäljellä: vahvistetun nollakuukauden erottelu puuttuvasta, keskeneräisen kuukauden käsittely, oma menoarvio sekä tulokatkosstressi. Lisää kirjauksen kattavuuden vahvistus ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
 

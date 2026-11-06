@@ -1,4 +1,4 @@
-import type { Entry, State, Scenario } from "./model";
+import type { Entry, EntryStatus, State, Scenario } from "./model";
 export const MAX = 1000000000000;
 export type ExpenseType = "consumption" | "saving" | "investment";
 const EXPENSE_TYPE_TAG =
@@ -79,8 +79,8 @@ export function validDate(s: string) {
     d <= new Date(y, m, 0).getDate()
   );
 }
-export function occurrences(e: Entry, month: string): string[] {
-  if (!e.active || e.status === "skipped") return [];
+export function scheduledOccurrences(e: Entry, month: string): string[] {
+  if (!e.active) return [];
   let [y, m] = month.split("-").map(Number),
     start = `${month}-01`,
     end = `${month}-${new Date(y, m, 0).getDate()}`;
@@ -115,11 +115,36 @@ export function occurrences(e: Entry, month: string): string[] {
   }
   return out;
 }
+
+export function occurrenceStatus(e: Entry, date: string): EntryStatus {
+  return e.occurrenceStatuses?.[date] || e.status;
+}
+
+export function occurrencesWithStatus(
+  e: Entry,
+  month: string,
+  status: EntryStatus,
+) {
+  return scheduledOccurrences(e, month).filter(
+    (date) => occurrenceStatus(e, date) === status,
+  );
+}
+
+export function occurrences(e: Entry, month: string): string[] {
+  return scheduledOccurrences(e, month).filter(
+    (date) => occurrenceStatus(e, date) !== "skipped",
+  );
+}
+
 export const total = (es: Entry[], m: string, actual = false) =>
   sum(
-    es
-      .filter((e) => !actual || e.status === "actual")
-      .map((e) => e.amount * occurrences(e, m).length),
+    es.map(
+      (e) =>
+        e.amount *
+        (actual
+          ? occurrencesWithStatus(e, m, "actual").length
+          : occurrences(e, m).length),
+    ),
   );
 export function emergencyFund(
   s: State,
@@ -133,8 +158,7 @@ export function emergencyFund(
     throw Error("Tarkista hätävaran tarkastelujakso.");
   const [year, month] = endMonth.split("-").map(Number);
   const essentialExpenses = s.expenses.filter(
-    (e) =>
-      e.status === "actual" && e.essential && expenseType(e) === "consumption",
+    (e) => e.essential && expenseType(e) === "consumption",
   );
   const monthlyExpenses = Array.from(
     { length: requestedMonths },
@@ -142,7 +166,7 @@ export function emergencyFund(
       const date = new Date(Date.UTC(year, month - 1 - index, 1));
       const period = date.toISOString().slice(0, 7);
       const observed = essentialExpenses.some(
-        (e) => occurrences(e, period).length > 0,
+        (e) => occurrencesWithStatus(e, period, "actual").length > 0,
       );
       return observed ? total(essentialExpenses, period, true) : null;
     },
@@ -188,9 +212,10 @@ export function metrics(s: State, m: string) {
       m,
       true,
     ),
-    planned = total(
-      s.expenses.filter((e) => e.status === "planned"),
-      m,
+    planned = sum(
+      s.expenses.map(
+        (e) => e.amount * occurrencesWithStatus(e, m, "planned").length,
+      ),
     ),
     assets = sum(
       s.assets.map((e) => Math.round((e.amount * e.ownership) / 100)),
@@ -229,6 +254,56 @@ export function metrics(s: State, m: string) {
     essential,
     buffer: essential ? liquid / essential : null,
     planned,
+  };
+}
+
+export type CategoryBudgetSummary = {
+  category: string;
+  planned: number;
+  observed: number;
+  actual: number;
+  hasManualActual: boolean;
+};
+
+export function budgetSummary(s: State, month: string) {
+  const manualActuals = s.budgetActuals[month] || {};
+  const plannedByCategory = s.budgets[month] || {};
+  const names = new Set([
+    ...s.categories
+      .filter((category) => category.kind === "expenses")
+      .map((category) => category.name),
+    ...s.expenses.map((item) => item.category),
+    ...Object.keys(plannedByCategory),
+    ...Object.keys(manualActuals),
+  ]);
+  const categories: CategoryBudgetSummary[] = [...names].map((category) => {
+    const observed = total(
+      s.expenses.filter(
+        (item) =>
+          item.category === category && expenseType(item) === "consumption",
+      ),
+      month,
+      true,
+    );
+    const hasManualActual = Object.hasOwn(manualActuals, category);
+    return {
+      category,
+      planned: plannedByCategory[category] || 0,
+      observed,
+      actual: hasManualActual ? manualActuals[category] : observed,
+      hasManualActual,
+    };
+  });
+  const budgeted = categories.filter((category) => category.planned > 0);
+  const unbudgeted = categories.filter((category) => category.planned <= 0);
+  const planned = sum(budgeted.map((category) => category.planned));
+  const budgetedActual = sum(budgeted.map((category) => category.actual));
+  return {
+    categories,
+    planned,
+    budgetedActual,
+    difference: planned - budgetedActual,
+    unbudgetedActual: sum(unbudgeted.map((category) => category.actual)),
   };
 }
 export function compound(s: Scenario) {
