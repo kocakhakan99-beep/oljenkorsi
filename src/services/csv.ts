@@ -54,6 +54,7 @@ export const csvFields = [
   "active",
   "essential",
   "occurrenceStatuses",
+  "occurrenceAmounts",
 ];
 export function exportCSV(es: Entry[]) {
   let safe = (s: string) => {
@@ -79,6 +80,7 @@ export function exportCSV(es: Entry[]) {
             )
               v = (Number(v) / 100).toFixed(2).replace(".", ",");
             if (k === "occurrenceStatuses") v = JSON.stringify(v);
+            if (k === "occurrenceAmounts") v = JSON.stringify(v);
             return safe(String(v));
           })
           .join(";"),
@@ -104,7 +106,8 @@ export function csvEntry(row: string[], map: Record<string, number>): Entry {
     if (!v || ["name", "amount", "category", "date"].includes(k)) continue;
     if (["purchasePrice", "payment", "target", "monthly"].includes(k))
       (e as any)[k] = money(v);
-    else if (k === "occurrenceStatuses") (e as any)[k] = JSON.parse(v);
+    else if (k === "occurrenceStatuses" || k === "occurrenceAmounts")
+      (e as any)[k] = JSON.parse(v);
     else if (["quantity", "ownership", "rate"].includes(k))
       (e as any)[k] = Number(v.replace(",", "."));
     else if (["liquid", "active", "essential"].includes(k))
