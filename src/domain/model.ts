@@ -32,6 +32,7 @@ export interface Entry {
   recurrence: Recurrence;
   status: EntryStatus;
   occurrenceStatuses: Record<string, EntryStatus>;
+  occurrenceAmounts: Record<string, number>;
   active: boolean;
   essential: boolean;
   description: string;
@@ -160,6 +161,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     recurrence: "once",
     status: "actual",
     occurrenceStatuses: {},
+    occurrenceAmounts: {},
     active: true,
     essential: true,
     description: "",

@@ -1,10 +1,10 @@
 # Testausraportti 4.11.2026
 
-## UX-korjausten varmennus 6.11.2026
+## UX- ja summapoikkeusten varmennus 6.–7.11.2026
 
-- TypeScript-tarkistus, ESLint ja 56 Vitest-testiä läpäisivät.
+- TypeScript-tarkistus, ESLint ja 58 Vitest-testiä läpäisivät.
 - Standalone-build läpäisi; tuotettu `index.html` sisältää käyttöliittymäpäivitykset.
-- Chromium E2E: 55 selainvarmennusta läpäisi. Uudet polut tarkistavat kategorioiden näppäimistövalinnan, toistuvan menon yhden kuukauden suunnitellun tilan ilman sarjan oletuksen muuttumista, budjetoidun ja budjetoimattoman kulutuksen erottelun sekä CSV:n esiintymäkohtaisten tilojen roundtripin.
+- Chromium E2E: 55 selainvarmennusta läpäisi. Polut tarkistavat kategorioiden näppäimistövalinnan, esiintymän tilan ja summan vaihtamisen ilman sarjan oletusten muuttumista, budjetoidun ja budjetoimattoman kulutuksen erottelun sekä CSV:n tila- ja summapoikkeusten roundtripin.
 - Ei JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. Loopback-HTTP-ajossa selaimen verkkotila oli sallittu localhostille; sovellus ei tehnyt ulkoisia pyyntöjä.
 - Näppäimistö- ja ruudunlukijakäyttöä ei auditoitu kattavasti. `file://`-tallennusta ei tässä selainajossa varmennettu.
 

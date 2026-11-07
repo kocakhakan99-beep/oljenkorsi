@@ -4,6 +4,7 @@ import {
   metrics,
   occurrencesWithStatus,
   occurrenceStatus,
+  occurrenceAmount,
   sum,
   total,
 } from "./calculations";
@@ -72,12 +73,12 @@ function actualTotalThrough(
 ) {
   const cutoff = `${month}-${String(day).padStart(2, "0")}`;
   return sum(
-    entries.map(
-      (item) =>
-        item.amount *
-        occurrencesWithStatus(item, month, "actual").filter(
-          (date) => date <= cutoff,
-        ).length,
+    entries.map((item) =>
+      sum(
+        occurrencesWithStatus(item, month, "actual")
+          .filter((date) => date <= cutoff)
+          .map((date) => occurrenceAmount(item, date)),
+      ),
     ),
   );
 }
@@ -705,7 +706,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
         amount: 0,
         months: new Set<string>(),
       };
-      current.amount += item.amount;
+      current.amount += occurrenceAmount(item, item.date);
       current.months.add(period);
       irregularTotals.set(item.category, current);
     }

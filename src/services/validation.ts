@@ -106,6 +106,7 @@ export function validate(raw: unknown): State {
         ...e,
         linkedAssetId: e.linkedAssetId ?? "",
         occurrenceStatuses: e.occurrenceStatuses ?? {},
+        occurrenceAmounts: e.occurrenceAmounts ?? {},
       } as Entry;
       validateEntry(normalized);
       if (ids.has(e.id)) throw Error("Päällekkäinen tunniste.");
@@ -316,6 +317,7 @@ const defaultsEntry = {
   recurrence: "once",
   status: "actual",
   occurrenceStatuses: {},
+  occurrenceAmounts: {},
   active: true,
   essential: true,
   description: "",
@@ -347,6 +349,21 @@ export function validateEntry(e: Entry) {
   for (const [date, status] of Object.entries(e.occurrenceStatuses))
     if (!validDate(date) || !["actual", "planned", "skipped"].includes(status))
       throw Error("Virheellinen toistuvan tapahtuman kuukausipoikkeus.");
+  if (
+    !e.occurrenceAmounts ||
+    typeof e.occurrenceAmounts !== "object" ||
+    Array.isArray(e.occurrenceAmounts) ||
+    Object.keys(e.occurrenceAmounts).length > 2000
+  )
+    throw Error("Virheelliset toistuvan tapahtuman summapoikkeukset.");
+  for (const [date, amount] of Object.entries(e.occurrenceAmounts))
+    if (
+      !validDate(date) ||
+      !Number.isSafeInteger(amount) ||
+      amount < 0 ||
+      amount > MAX
+    )
+      throw Error("Virheellinen toistuvan tapahtuman summapoikkeus.");
   for (let k of [
     "id",
     "name",

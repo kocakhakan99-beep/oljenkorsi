@@ -7,6 +7,8 @@ import {
   scheduledOccurrences,
   occurrencesWithStatus,
   occurrenceStatus,
+  occurrenceAmount,
+  occurrenceSum,
   compound,
   goalMonths,
   payoff,
@@ -336,6 +338,30 @@ describe("Toistuvuus ja päivät", () => {
     expect(metrics(state, "2026-12").planned).toBe(10000);
     expect(metrics(state, "2027-01").planned).toBe(0);
   });
+  it("toistuvan tapahtuman summa voi poiketa vain yhdellä päivällä", () => {
+    const item = entry({
+      date: "2026-11-10",
+      recurrence: "monthly",
+      amount: 10000,
+      category: "Ruoka",
+    });
+    item.occurrenceAmounts = { "2026-12-10": 12500 };
+    const state = empty();
+    state.expenses = [item];
+    state.budgets["2026-12"] = { Ruoka: 13000 };
+    expect(occurrenceAmount(item, "2026-11-10")).toBe(10000);
+    expect(occurrenceSum(item, "2026-11", "actual")).toBe(10000);
+    expect(occurrenceSum(item, "2026-12", "actual")).toBe(12500);
+    expect(metrics(state, "2026-11").expense).toBe(10000);
+    expect(metrics(state, "2026-12").expense).toBe(12500);
+    expect(budgetSummary(state, "2026-12")).toMatchObject({
+      budgetedActual: 12500,
+      difference: 500,
+    });
+    item.occurrenceStatuses["2026-12-10"] = "planned";
+    expect(metrics(state, "2026-12").expense).toBe(0);
+    expect(metrics(state, "2026-12").planned).toBe(12500);
+  });
   it("virheelliset päivät", () => {
     expect(validDate("2026-02-29")).toBe(false);
     expect(validDate("2024-02-29")).toBe(true);
@@ -397,6 +423,16 @@ describe("Varmuuskopio ja validointi", () => {
     ])
       for (const item of older[kind] as Record<string, unknown>[])
         delete item.occurrenceStatuses;
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
+        delete item.occurrenceAmounts;
     const migrated = validate(older);
     expect(migrated.actionStates).toEqual({});
     expect(
@@ -405,6 +441,11 @@ describe("Varmuuskopio ja validointi", () => {
     expect(
       migrated.incomes.every(
         (item) => Object.keys(item.occurrenceStatuses).length === 0,
+      ),
+    ).toBe(true);
+    expect(
+      migrated.incomes.every(
+        (item) => Object.keys(item.occurrenceAmounts).length === 0,
       ),
     ).toBe(true);
   });
@@ -486,6 +527,13 @@ describe("Varmuuskopio ja validointi", () => {
     };
     expect(() => validate(state)).toThrow();
   });
+  it("virheelliset toistuman summat hylätään", () => {
+    const state = demo();
+    state.expenses[0].occurrenceAmounts = { "2026-02-30": 100 };
+    expect(() => validate(state)).toThrow();
+    state.expenses[0].occurrenceAmounts = { "2026-02-28": -1 };
+    expect(() => validate(state)).toThrow();
+  });
 });
 describe("CSV", () => {
   it("erottimet, lainaus ja rivinvaihto", () => {
@@ -508,6 +556,7 @@ describe("CSV", () => {
       date: "2026-11-03",
       recurrence: "monthly",
       occurrenceStatuses: { "2026-12-03": "planned" },
+      occurrenceAmounts: { "2026-12-03": 2250 },
     });
     let rows = parseCSV(exportCSV([e]).replace(/^\ufeff/, ""));
     let map = Object.fromEntries(csvFields.map((k, i) => [k, i]));
@@ -516,6 +565,7 @@ describe("CSV", () => {
     expect(r.name).toBe("Ruoka");
     expect(r.date).toBe("2026-11-03");
     expect(r.occurrenceStatuses).toEqual({ "2026-12-03": "planned" });
+    expect(r.occurrenceAmounts).toEqual({ "2026-12-03": 2250 });
   });
   it("suomalainen päivämäärä", () =>
     expect(

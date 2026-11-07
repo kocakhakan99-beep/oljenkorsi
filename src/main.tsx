@@ -30,6 +30,8 @@ import {
   scheduledOccurrences,
   occurrencesWithStatus,
   occurrenceStatus,
+  occurrenceAmount,
+  occurrenceSum,
   sum,
   compound,
   goalMonths,
@@ -278,12 +280,9 @@ function expCatsForReport(s: State, months: string[]): [string, number][] {
   );
   for (const month of months)
     for (const item of expenses) {
-      const count = occurrencesWithStatus(item, month, "actual").length;
-      if (count)
-        totals.set(
-          item.category,
-          (totals.get(item.category) || 0) + item.amount * count,
-        );
+      const amount = occurrenceSum(item, month, "actual");
+      if (amount)
+        totals.set(item.category, (totals.get(item.category) || 0) + amount);
     }
   return [...totals.entries()]
     .filter(([, value]) => value > 0)
@@ -1548,6 +1547,24 @@ function App() {
       ),
     });
   }
+  function updateOccurrenceAmount(
+    kind: "incomes" | "expenses",
+    id: string,
+    date: string,
+    amount: number,
+  ) {
+    const current = s[kind].find((item) => item.id === id);
+    if (!current) return;
+    const occurrenceAmounts = { ...current.occurrenceAmounts };
+    if (amount === current.amount) delete occurrenceAmounts[date];
+    else occurrenceAmounts[date] = amount;
+    commit({
+      ...s,
+      [kind]: s[kind].map((item) =>
+        item.id === id ? { ...item, occurrenceAmounts } : item,
+      ),
+    });
+  }
   function remove(kind: Kind, id: string) {
     if (
       kind === "assets" &&
@@ -1965,13 +1982,13 @@ function App() {
       for (const item of incomes)
         for (const date of occurrencesWithStatus(item, period.key, "actual")) {
           const value = map.get(date) || { income: 0, expense: 0 };
-          value.income += item.amount;
+          value.income += occurrenceAmount(item, date);
           map.set(date, value);
         }
       for (const item of expenses)
         for (const date of occurrencesWithStatus(item, period.key, "actual")) {
           const value = map.get(date) || { income: 0, expense: 0 };
-          value.expense += item.amount;
+          value.expense += occurrenceAmount(item, date);
           map.set(date, value);
         }
     }
@@ -2001,19 +2018,20 @@ function App() {
     const grouped = new Map<string, ReportDetailEntry>();
     for (const period of history) {
       for (const record of items) {
-        const count = occurrencesWithStatus(
-          record,
-          period.key,
-          "actual",
-        ).length;
-        if (!count) continue;
+        const dates = occurrencesWithStatus(record, period.key, "actual");
+        if (!dates.length) continue;
         const key = `${kind}-${record.id}`;
         const previous = grouped.get(key);
         grouped.set(key, {
           entry: record,
           kind,
-          amount: (previous?.amount || 0) + record.amount * count,
-          occurrences: (previous?.occurrences || 0) + count,
+          amount:
+            (previous?.amount || 0) +
+            dates.reduce(
+              (amount, date) => amount + occurrenceAmount(record, date),
+              0,
+            ),
+          occurrences: (previous?.occurrences || 0) + dates.length,
         });
       }
     }
@@ -2046,18 +2064,21 @@ function App() {
                   .length > 0,
             )
             .map((e) => {
-              const count = occurrencesWithStatus(
+              const dates = occurrencesWithStatus(
                 e,
                 selectedReport.month,
                 "actual",
-              ).length;
+              );
               return {
                 entry: e,
                 kind:
                   selectedReport.type === "budget"
                     ? ("expense" as const)
                     : selectedReport.metric,
-                amount: e.amount * count,
+                amount: dates.reduce(
+                  (amount, date) => amount + occurrenceAmount(e, date),
+                  0,
+                ),
               };
             })
         : selectedReport?.type === "category"
@@ -2068,16 +2089,17 @@ function App() {
                   expenseType(e) === "consumption",
               )
               .map((e) => {
-                const count = history.reduce(
-                  (sum, period) =>
-                    sum + occurrencesWithStatus(e, period.key, "actual").length,
-                  0,
+                const dates = history.flatMap((period) =>
+                  occurrencesWithStatus(e, period.key, "actual"),
                 );
                 return {
                   entry: e,
                   kind: "expense" as const,
-                  amount: e.amount * count,
-                  occurrences: count,
+                  amount: dates.reduce(
+                    (amount, date) => amount + occurrenceAmount(e, date),
+                    0,
+                  ),
+                  occurrences: dates.length,
                 };
               })
               .filter((item) => item.occurrences > 0)
@@ -2094,7 +2116,7 @@ function App() {
                   .map((e) => ({
                     entry: e,
                     kind: "income" as const,
-                    amount: e.amount,
+                    amount: occurrenceAmount(e, selectedReport.date),
                   })),
                 ...s.expenses
                   .filter((e) =>
@@ -2107,7 +2129,7 @@ function App() {
                   .map((e) => ({
                     entry: e,
                     kind: "expense" as const,
-                    amount: e.amount,
+                    amount: occurrenceAmount(e, selectedReport.date),
                   })),
               ]
             : [];
@@ -3306,7 +3328,15 @@ function App() {
                                 .map((d) => d.split("-").reverse().join("."))
                                 .join(", ")}
                             </span>
-                            <strong>{euro(e.amount * dates.length)}</strong>
+                            <strong>
+                              {euro(
+                                dates.reduce(
+                                  (amount, date) =>
+                                    amount + occurrenceAmount(e, date),
+                                  0,
+                                ),
+                              )}
+                            </strong>
                           </div>
                         );
                       })}
@@ -3786,46 +3816,95 @@ function App() {
                                         <legend>
                                           Valitun kuukauden tapahtumat
                                         </legend>
+                                        <p className="occurrence-amount-note">
+                                          Sarjan oletussumma {euro(e.amount)}.
+                                          Päiväkohtainen summa muuttaa vain
+                                          kyseistä tapahtumaa.
+                                        </p>
                                         {scheduledOccurrences(e, month)
                                           .length ? (
                                           scheduledOccurrences(e, month).map(
                                             (date) => (
-                                              <label key={date}>
-                                                <span>
+                                              <div
+                                                className="occurrence-item"
+                                                key={date}
+                                              >
+                                                <strong>
                                                   {date
                                                     .split("-")
                                                     .reverse()
                                                     .join(".")}
-                                                </span>
-                                                <select
-                                                  aria-label={`${e.name} ${date} tila`}
-                                                  value={occurrenceStatus(
-                                                    e,
-                                                    date,
-                                                  )}
-                                                  onChange={(event) =>
-                                                    updateOccurrenceStatus(
-                                                      page === "incomes"
-                                                        ? "incomes"
-                                                        : "expenses",
-                                                      e.id,
+                                                </strong>
+                                                <label>
+                                                  Tila
+                                                  <select
+                                                    aria-label={`${e.name} ${date} tila`}
+                                                    value={occurrenceStatus(
+                                                      e,
                                                       date,
-                                                      event.target
-                                                        .value as EntryStatus,
-                                                    )
-                                                  }
-                                                >
-                                                  <option value="actual">
-                                                    Toteutunut
-                                                  </option>
-                                                  <option value="planned">
-                                                    Suunniteltu
-                                                  </option>
-                                                  <option value="skipped">
-                                                    Ohitettu
-                                                  </option>
-                                                </select>
-                                              </label>
+                                                    )}
+                                                    onChange={(event) =>
+                                                      updateOccurrenceStatus(
+                                                        page === "incomes"
+                                                          ? "incomes"
+                                                          : "expenses",
+                                                        e.id,
+                                                        date,
+                                                        event.target
+                                                          .value as EntryStatus,
+                                                      )
+                                                    }
+                                                  >
+                                                    <option value="actual">
+                                                      Toteutunut
+                                                    </option>
+                                                    <option value="planned">
+                                                      Suunniteltu
+                                                    </option>
+                                                    <option value="skipped">
+                                                      Ohitettu
+                                                    </option>
+                                                  </select>
+                                                </label>
+                                                <label>
+                                                  Summa (€)
+                                                  <MoneyInput
+                                                    aria-label={`${e.name} ${date} tapahtuman summa euroina`}
+                                                    defaultCents={occurrenceAmount(
+                                                      e,
+                                                      date,
+                                                    )}
+                                                    onBlur={(event) => {
+                                                      const value =
+                                                        event.currentTarget.value.trim();
+                                                      if (!value) {
+                                                        event.currentTarget.value =
+                                                          formatMoneyCents(
+                                                            occurrenceAmount(
+                                                              e,
+                                                              date,
+                                                            ),
+                                                          );
+                                                        return;
+                                                      }
+                                                      try {
+                                                        updateOccurrenceAmount(
+                                                          page === "incomes"
+                                                            ? "incomes"
+                                                            : "expenses",
+                                                          e.id,
+                                                          date,
+                                                          money(value),
+                                                        );
+                                                      } catch {
+                                                        setNotice(
+                                                          "Tarkista yksittäisen tapahtuman summa.",
+                                                        );
+                                                      }
+                                                    }}
+                                                  />
+                                                </label>
+                                              </div>
                                             ),
                                           )
                                         ) : (

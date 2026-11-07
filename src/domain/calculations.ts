@@ -120,6 +120,10 @@ export function occurrenceStatus(e: Entry, date: string): EntryStatus {
   return e.occurrenceStatuses?.[date] || e.status;
 }
 
+export function occurrenceAmount(e: Entry, date: string): number {
+  return e.occurrenceAmounts?.[date] ?? e.amount;
+}
+
 export function occurrencesWithStatus(
   e: Entry,
   month: string,
@@ -136,16 +140,24 @@ export function occurrences(e: Entry, month: string): string[] {
   );
 }
 
-export const total = (es: Entry[], m: string, actual = false) =>
-  sum(
-    es.map(
-      (e) =>
-        e.amount *
-        (actual
-          ? occurrencesWithStatus(e, m, "actual").length
-          : occurrences(e, m).length),
-    ),
+export function occurrenceSum(
+  e: Entry,
+  month: string,
+  status?: EntryStatus,
+): number {
+  return sum(
+    scheduledOccurrences(e, month)
+      .filter((date) =>
+        status
+          ? occurrenceStatus(e, date) === status
+          : occurrenceStatus(e, date) !== "skipped",
+      )
+      .map((date) => occurrenceAmount(e, date)),
   );
+}
+
+export const total = (es: Entry[], m: string, actual = false) =>
+  sum(es.map((e) => occurrenceSum(e, m, actual ? "actual" : undefined)));
 export function emergencyFund(
   s: State,
   endMonth: string,
@@ -212,11 +224,7 @@ export function metrics(s: State, m: string) {
       m,
       true,
     ),
-    planned = sum(
-      s.expenses.map(
-        (e) => e.amount * occurrencesWithStatus(e, m, "planned").length,
-      ),
-    ),
+    planned = sum(s.expenses.map((e) => occurrenceSum(e, m, "planned"))),
     assets = sum(
       s.assets.map((e) => Math.round((e.amount * e.ownership) / 100)),
     ),
