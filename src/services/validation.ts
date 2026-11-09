@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   empty,
   kinds,
+  uid,
   legacyExpenseType,
   withoutLegacyExpenseTypeTag,
   type State,
@@ -10,6 +11,7 @@ import {
 } from "../domain/model";
 import {
   categoryIconFor,
+  defaultCategoryDefinitions,
   isCategoryIconId,
   optionalCategoryDefinitions,
 } from "../domain/categories";
@@ -139,6 +141,10 @@ export function validate(raw: unknown): State {
             ? withoutLegacyExpenseTypeTag(e.tags)
             : e.tags,
         linkedAssetId: e.linkedAssetId ?? "",
+        adjustToPreviousBankDay:
+          typeof e.adjustToPreviousBankDay === "boolean"
+            ? e.adjustToPreviousBankDay
+            : k === "incomes",
         occurrenceStatuses: e.occurrenceStatuses ?? {},
         occurrenceAmounts: e.occurrenceAmounts ?? {},
       } as Entry;
@@ -207,6 +213,19 @@ export function validate(raw: unknown): State {
       archived: c.archived || unusedOptionalDefault,
     };
   });
+  for (const definition of defaultCategoryDefinitions)
+    if (
+      !s.categories.some(
+        (category) =>
+          category.kind === definition.kind &&
+          category.name === definition.name,
+      )
+    )
+      s.categories.push({
+        id: uid(),
+        ...definition,
+        archived: false,
+      });
   if (
     !x.budgets ||
     typeof x.budgets !== "object" ||
@@ -354,6 +373,7 @@ const defaultsEntry = {
   occurrenceStatuses: {},
   occurrenceAmounts: {},
   active: true,
+  adjustToPreviousBankDay: false,
   essential: true,
   description: "",
   tags: "",
@@ -372,6 +392,8 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+  if (typeof e.adjustToPreviousBankDay !== "boolean")
+    throw Error("Virheellinen tulon pankkipäiväasetus.");
   if (!["consumption", "saving", "investment"].includes(e.expenseType))
     throw Error("Virheellinen menon tyyppi.");
   if (typeof e.linkedAssetId !== "string" || e.linkedAssetId.length > 200)

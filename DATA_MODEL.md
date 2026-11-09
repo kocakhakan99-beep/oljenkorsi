@@ -8,7 +8,7 @@ AppState sisältää schemaVersionin, applicationVersionin, createdAtin, setting
 
 ## Entry
 
-Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
+Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, adjustToPreviousBankDay, occurrenceStatuses, occurrenceAmounts, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
 
 - Rahat: kokonaislukusentit. quantity voi olla desimaalinen; määrä × yksikköhinta pyöristetään senttiin.
 - Date: kalenteripäivä `yyyy-mm-dd`, ei aikavyöhykettä.
@@ -20,11 +20,12 @@ Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, e
 - `linkedAssetId` on tyhjä muissa tietotyypeissä ja velalla joko tyhjä tai viittaus olemassa olevan omaisuuserän ID:hen. Linkki mahdollistaa nykyisen oman pääoman laskennan sekä oletuksiin perustuvan takaisinmaksuajan ja omaisuuden arvon arvion. Linkitys ei muuta kassavirtaa tai velkasaldoa automaattisesti.
 - `expenseType` erottaa kulutuksen, säästösiirron ja sijoitussiirron omaksi kentäkseen. Vanhan varmuuskopion piilotettu tags-merkintä tai kaksi vanhaa oletuskategoriaa muunnetaan palautuksessa kentäksi ja merkintä poistetaan käyttäjän tunnisteista. Tämä ei vielä mallinna tilisiirtoa tai lainan pääomalyhennystä.
 - Tavoitteen amount on nykyinen säästösumma; target tavoite ja monthly säästö.
-- Status: actual, planned tai skipped. Active false keskeyttää toistuvuuden.
+- `status`: sarjan oletustila (`actual`, `planned` tai `skipped`); `active: false` keskeyttää toistuvuuden. Näytettävä ja laskennassa käytettävä esiintymän tila lasketaan maksupäivästä: mennyt tai tämä päivä on actual, tuleva planned. Sarjan `skipped` ohittaa esiintymät. `occurrenceStatuses` tallentaa yksittäisten päivien valinnaiset poikkeukset; päiväkohtainen tila ohittaa automatiikan. Automaattinen tila ei varmista maksua pankista.
+- `adjustToPreviousBankDay` siirtää toistuvan tulon viikonlopulle tai huomioidulle Suomen pankkipyhälle osuvan esiintymän edeltävälle pankkipäivälle. Oletus on päällä uusille tulokirjauksille. Kertakirjaus ja menot eivät siirry. Vanhoista varmuuskopioista puuttuva arvo alustetaan tulolle todeksi ja muille tyypeille epätodeksi.
 
 ## Category
 
-id, name, kind (incomes/expenses), color, icon ja archived. `icon` viittaa paikalliseen kuvakeluetteloon; vanhoista varmuuskopioista puuttuva tunniste päätellään nimestä. Alussa on 4 tulon ja 14 menon peruskategoriaa. Valinnaisia valmiita kategorioita voi lisätä tarpeen mukaan, ja käyttämättömät aiemmat vakiot arkistoidaan palautuksessa. Oma kuvake valitaan esikatselun kanssa. Arkistointi ei poista historiaa. Asuntolaina ja asunto käyttävät samaa kuvatunnistetta.
+id, name, kind (incomes/expenses), color, icon ja archived. `icon` viittaa paikalliseen kuvakeluetteloon; vanhoista varmuuskopioista puuttuva tunniste päätellään nimestä. Alussa on 4 tulon ja 18 menon peruskategoriaa. Päivittäistavara, kosmetiikka, hygieniatarvikkeet ja luottokorttilasku ovat oletuksena käytössä. Palautus täydentää puuttuvat oletukset vanhaan dataan poistamatta omia kategorioita tai palauttamatta käyttäjän arkistoimia oletuksia. Valinnaisia valmiita kategorioita voi lisätä tarpeen mukaan. Oma kuvake valitaan esikatselun kanssa. Arkistointi ei poista historiaa. Asuntolaina ja asunto käyttävät samaa kuvatunnistetta.
 
 ## Budget
 
@@ -48,4 +49,4 @@ Erilliset AssetValuation, PortfolioValuation, InvestmentTransaction, ImportJob, 
 
 ## Migraatiot
 
-Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjoiteta. Skeema 1:n puuttuvat `linkedAssetId`-, `actionStates`- ja `coverage`-kentät alustetaan yhteensopivuuden vuoksi tyhjiksi. Vanhan menotyypin tags-merkintä tai vanha säästö-/sijoituskategoria muunnetaan palautuksessa `expenseType`-kentäksi ja tekninen merkintä poistetaan käyttäjän tunnisteista. Migraatio on additive eikä luo historiatietoa. Uuden skeemaversion julkaisu vaatii eksplisiittisen migraation ja roundtrip-testit.
+Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjoiteta. Skeema 1:n puuttuvat `linkedAssetId`-, `actionStates`-, `coverage`-, `occurrenceStatuses`-, `occurrenceAmounts`- ja `adjustToPreviousBankDay`-kentät alustetaan yhteensopivuuden vuoksi. Puuttuva pankkipäiväsiirto oletetaan vanhoilla tulotietueilla päälle ja muilla pois. Puuttuvat uudet oletuskategoriat lisätään palautuksen yhteydessä; jo olemassa olevat säilyttävät värinsä, kuvakkeensa ja arkistointitilansa. Vanhan menotyypin tags-merkintä tai vanha säästö-/sijoituskategoria muunnetaan palautuksessa `expenseType`-kentäksi ja tekninen merkintä poistetaan käyttäjän tunnisteista. Migraatio on additive eikä luo historiatietoa. Uuden skeemaversion julkaisu vaatii eksplisiittisen migraation ja roundtrip-testit.

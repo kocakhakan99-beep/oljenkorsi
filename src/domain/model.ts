@@ -56,6 +56,7 @@ export interface Entry {
   endDate: string;
   recurrence: Recurrence;
   status: EntryStatus;
+  adjustToPreviousBankDay: boolean;
   occurrenceStatuses: Record<string, EntryStatus>;
   occurrenceAmounts: Record<string, number>;
   active: boolean;
@@ -190,6 +191,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     endDate: "",
     recurrence: "once",
     status: "actual",
+    adjustToPreviousBankDay: false,
     occurrenceStatuses: {},
     occurrenceAmounts: {},
     active: true,

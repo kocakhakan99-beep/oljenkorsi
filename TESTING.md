@@ -1,5 +1,13 @@
 # Testausraportti 9.11.2026
 
+## Käyttäjätestauksen kirjauspolut 9.11.2026
+
+- `npm run typecheck`, `npm run lint`, 69 Vitest-testiä, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Build tuotti päivitetyn itsenäisen juuren `index.html`-tiedoston. Minifioitu JavaScript (noin 533 kB) ylittää Viten 500 kB:n huomautusrajan; build onnistui.
+- Chromium 155.0.8059.79: kaikki 60 selainvarmennusta läpäisivät localhost-ajossa. Uudet polut tarkistavat puuttuvien kategorioiden näkyvyyden, nopeat kirjaukset, budjettikategoriasta aloittamisen, kerta-/toistuvan tulon ja menon, automaattisen tilan käyttöliittymäpolun, pyhäpäiväsiirron asetuksen sekä yksittäisen esiintymän manuaalisen tilan.
+- Yksikkötestit kattavat päiväperusteisen tilan, ohitukset, vanhan datan kenttämigraation, oletuskategorioiden täydentämisen sekä viikonloput ja suomalaiset pankkipyhät, myös vuodenvaihteen yli. E2E kattaa lisäksi varmuuskopion pyöreän matkan, raportit, kompassin ja 320–768 px mobiilileveydet.
+- Selaimessa ei havaittu JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. `file://`-avausta ei ympäristön selainkäytännön vuoksi varmennettu. Tulokset: [`qa/e2e-results.json`](qa/e2e-results.json).
+- Automaattinen toteumatila on päivämäärään perustuva oletus, ei pankkitapahtuman vahvistus. Etuuden maksupäivän käytäntö voi poiketa sovelluksen yleisestä pyhäpäiväsäännöstä.
+
 ## Puskuristressi ja lainaerän erittely 9.11.2026
 
 - `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 66 testiä neljästä tiedostosta.

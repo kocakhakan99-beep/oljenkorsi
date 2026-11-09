@@ -4,7 +4,7 @@ Kaikki tallennetut rahasummat ovat kokonaislukusenttejä. Käyttäjän desimaali
 
 ## Kuukausi
 
-Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain actual-tilassa. Planned ei sisälly toteumaan; skipped ja keskeytetty eivät generoi esiintymiä.
+Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain actual-tilassa. Esiintymän automaattinen tila on actual, kun sen maksupäivä on tänään tai menneisyydessä, ja planned tulevaisuudessa. Käyttäjä voi tallentaa yksittäiselle esiintymälle poikkeuksen, joka ohittaa automaattisen tilan. Sarjan skipped-tila ohittaa kaikki esiintymät; inactive-sarja ei tuota esiintymiä. Päivämäärä on kirjanpidollinen oletus, ei pankkitapahtuman varmennus.
 
 - Kassavirta = tulot − menot.
 - Käyttövara = kassavirta − suunnitellut menot. Erillistä säästövarausta ei vähennetä.
@@ -20,6 +20,8 @@ Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain a
 ## Toistuvuus
 
 Kerran, viikko, kaksi viikkoa, kuukausi, kaksi kuukautta, neljännesvuosi, puolivuosi ja vuosi. Viikkovälit lasketaan UTC-kalenteripäivinä, ei paikallisen kellon kesäaikahyppyjen kautta. Kuukausitoistot perustuvat alkuperäiseen kuukauden päivään; 31. päivä siirtyy lyhyen kuukauden viimeiseen päivään mutta palautuu seuraavassa kuussa 31. päivään. Loppupäivä on inklusiivinen. Ei pysyvää massagenerointia.
+
+Toistuvalle tulolle voidaan asettaa `adjustToPreviousBankDay`. Kun esiintymä osuu lauantaille, sunnuntaille tai huomioidulle suomalaiselle pankkipyhälle, maksupäivä siirtyy taaksepäin edeltävälle arkipäivälle, joka ei ole pankkipyhä. Huomioitavat pyhät ovat pitkäperjantai, toinen pääsiäispäivä ja helatorstai; lisäksi 1.1., loppiainen, vappu, itsenäisyyspäivä, juhannusaatto, 24.–26.12. ja 31.12. Kuukausirytmi lasketaan alkuperäisen päivän mukaan, joten siirto ei muuta myöhempien kuukausien aikataulua. Tämä yleissääntö ei mallinna pankin, työnantajan tai yksittäisen etuuden maksatuskäytäntöä. Kertaluonteista tuloa tai menon eräpäivää ei siirretä.
 
 ## Skenaariot
 

@@ -110,7 +110,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
   const budgetCategories = Object.keys(monthBudget);
   const hasExpenseHistory = state.expenses.some(
     (item) =>
-      item.status === "actual" ||
+      occurrenceStatus(item, item.date) === "actual" ||
       Object.values(item.occurrenceStatuses).includes("actual"),
   );
 
@@ -321,7 +321,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       state.expenses
         .filter(
           (item) =>
-            (item.status === "actual" ||
+            (occurrenceStatus(item, item.date) === "actual" ||
               Object.values(item.occurrenceStatuses).includes("actual")) &&
             expenseType(item) === "consumption",
         )
@@ -433,7 +433,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
   } else if (
     state.expenses.some(
       (item) =>
-        item.status === "actual" ||
+        occurrenceStatus(item, item.date) === "actual" ||
         Object.values(item.occurrenceStatuses).includes("actual"),
     )
   ) {

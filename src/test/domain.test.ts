@@ -5,6 +5,7 @@ import {
   budgetSummary,
   occurrences,
   scheduledOccurrences,
+  previousFinnishBankDay,
   occurrencesWithStatus,
   occurrenceStatus,
   occurrenceAmount,
@@ -24,7 +25,7 @@ import {
   incomeInterruptionStress,
   linkedAssetOutlook,
 } from "../domain/calculations";
-import { empty, entry, demo, uid } from "../domain/model";
+import { empty, entry, demo, uid, today } from "../domain/model";
 import {
   categoryIconFor,
   defaultCategoryDefinitions,
@@ -136,7 +137,7 @@ describe("Raha ja laskelmat", () => {
         name: "Tuleva",
         amount: 50000,
         date: "2026-11-02",
-        status: "planned",
+        occurrenceStatuses: { "2026-11-02": "planned" },
       }),
     ];
     s.assets = [entry({ name: "Tili", amount: 600000, liquid: true })];
@@ -187,7 +188,7 @@ describe("Raha ja laskelmat", () => {
         date: "2026-02-12",
         amount: 50000,
         essential: true,
-        status: "planned",
+        occurrenceStatuses: { "2026-02-12": "planned" },
       }),
       entry({
         date: "2026-02-12",
@@ -396,13 +397,56 @@ describe("Toistuvuus ja päivät", () => {
     expect(occurrences(entry({ active: false }), "2026-11")).toEqual([]);
     expect(occurrences(entry({ status: "skipped" }), "2026-11")).toEqual([]);
   });
+  it("laskee menneet ja tulevat tapahtumat päivämäärästä ja säilyttää poikkeuksen", () => {
+    const current = new Date(`${today()}T12:00:00`);
+    const yesterday = new Date(current);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(current);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const iso = (date: Date) =>
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const item = entry({ status: "planned" });
+    expect(occurrenceStatus(item, iso(yesterday))).toBe("actual");
+    expect(occurrenceStatus(item, today())).toBe("actual");
+    expect(occurrenceStatus(item, iso(tomorrow))).toBe("planned");
+    item.occurrenceStatuses[iso(tomorrow)] = "skipped";
+    expect(occurrenceStatus(item, iso(tomorrow))).toBe("skipped");
+  });
+  it("siirtää toistuvan tulon viikonlopulta ja Suomen pankkipyhästä edeltävään pankkipäivään", () => {
+    expect(previousFinnishBankDay("2027-05-16")).toBe("2027-05-14");
+    expect(previousFinnishBankDay("2026-11-16")).toBe("2026-11-16");
+    expect(previousFinnishBankDay("2026-12-06")).toBe("2026-12-04");
+    expect(previousFinnishBankDay("2026-04-03")).toBe("2026-04-02");
+    expect(previousFinnishBankDay("2027-06-25")).toBe("2027-06-24");
+    expect(previousFinnishBankDay("2028-01-01")).toBe("2027-12-30");
+    expect(() => previousFinnishBankDay("2026-02-30")).toThrow();
+
+    const salary = entry({
+      date: "2027-05-16",
+      recurrence: "monthly",
+      adjustToPreviousBankDay: true,
+    });
+    expect(scheduledOccurrences(salary, "2027-05")).toEqual(["2027-05-14"]);
+    expect(scheduledOccurrences(salary, "2027-06")).toEqual(["2027-06-16"]);
+    const newYearPay = entry({
+      date: "2028-01-01",
+      recurrence: "monthly",
+      adjustToPreviousBankDay: true,
+    });
+    expect(scheduledOccurrences(newYearPay, "2027-12")).toEqual([
+      "2027-12-30",
+    ]);
+    expect(scheduledOccurrences(newYearPay, "2028-01")).toEqual([]);
+  });
   it("toistuvan tapahtuman yksittäinen tila ei muuta sarjan muita kuukausia", () => {
     const item = entry({
       date: "2026-11-10",
       recurrence: "monthly",
       amount: 10000,
+      occurrenceStatuses: { "2026-11-10": "actual" },
     });
     item.occurrenceStatuses = {
+      "2026-11-10": "actual",
       "2026-12-10": "planned",
       "2027-01-10": "skipped",
     };
@@ -429,6 +473,10 @@ describe("Toistuvuus ja päivät", () => {
       recurrence: "monthly",
       amount: 10000,
       category: "Ruoka",
+      occurrenceStatuses: {
+        "2026-11-10": "actual",
+        "2026-12-10": "actual",
+      },
     });
     item.occurrenceAmounts = { "2026-12-10": 12500 };
     const state = empty();
@@ -509,6 +557,16 @@ describe("Varmuuskopio ja validointi", () => {
       "goals",
     ])
       for (const item of older[kind] as Record<string, unknown>[])
+        delete item.adjustToPreviousBankDay;
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
         delete item.expenseType;
     for (const kind of [
       "incomes",
@@ -535,6 +593,12 @@ describe("Varmuuskopio ja validointi", () => {
     expect(migrated.settings.essentialMonthlyEstimate).toBeNull();
     expect(migrated.coverage).toEqual({ incomeMonths: [], expenseMonths: [] });
     expect(
+      migrated.incomes.every((item) => item.adjustToPreviousBankDay),
+    ).toBe(true);
+    expect(
+      migrated.expenses.every((item) => !item.adjustToPreviousBankDay),
+    ).toBe(true);
+    expect(
       migrated.liabilities.every((item) => item.linkedAssetId === ""),
     ).toBe(true);
     expect(
@@ -547,6 +611,25 @@ describe("Varmuuskopio ja validointi", () => {
         (item) => Object.keys(item.occurrenceAmounts).length === 0,
       ),
     ).toBe(true);
+  });
+  it("lisää uudet oletusmenokategoriat aiempaan tallennettuun talouteen", () => {
+    const oldState = empty();
+    const added = [
+      "Päivittäistavara",
+      "Kosmetiikka",
+      "Hygieniatarvikkeet",
+      "Luottokorttilasku",
+    ];
+    oldState.categories = oldState.categories.filter(
+      (category) => !added.includes(category.name),
+    );
+    const restored = validate(oldState);
+    for (const name of added)
+      expect(
+        restored.categories.find(
+          (category) => category.kind === "expenses" && category.name === name,
+        )?.archived,
+      ).toBe(false);
   });
   it("tallentaa Ei onnistu nyt -tilan varmuuskopioon", () => {
     const state = empty();
@@ -561,7 +644,18 @@ describe("Varmuuskopio ja validointi", () => {
     );
   });
   it("kategorioilla on yhtenäiset kuvat ja vanhat kategoriat saavat ikonin palautuksessa", () => {
-    expect(defaultCategoryDefinitions.length).toBeLessThanOrEqual(20);
+    expect(defaultCategoryDefinitions.length).toBeLessThanOrEqual(24);
+    for (const name of [
+      "Päivittäistavara",
+      "Kosmetiikka",
+      "Hygieniatarvikkeet",
+      "Luottokorttilasku",
+    ])
+      expect(
+        defaultCategoryDefinitions.some(
+          (category) => category.kind === "expenses" && category.name === name,
+        ),
+      ).toBe(true);
     expect(optionalCategoryDefinitions.length).toBeGreaterThan(10);
     expect(categoryIconFor("Asunto", "assets")).toBe(
       categoryIconFor("Asuntolaina", "liabilities"),
