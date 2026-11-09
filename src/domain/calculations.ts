@@ -72,7 +72,7 @@ export function validDate(s: string) {
     d <= new Date(y, m, 0).getDate()
   );
 }
-export function scheduledOccurrences(e: Entry, month: string): string[] {
+function scheduledDatesForMonth(e: Entry, month: string): string[] {
   if (!e.active) return [];
   let [y, m] = month.split("-").map(Number),
     start = `${month}-01`,
@@ -109,8 +109,97 @@ export function scheduledOccurrences(e: Entry, month: string): string[] {
   return out;
 }
 
+function easterSunday(year: number) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function addUtcDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+function isoDay(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function finnishBankHolidays(year: number) {
+  const holidays = new Set<string>();
+  for (const [month, day] of [
+    [1, 1],
+    [1, 6],
+    [5, 1],
+    [12, 6],
+    [12, 24],
+    [12, 25],
+    [12, 26],
+    [12, 31],
+  ])
+    holidays.add(isoDay(new Date(Date.UTC(year, month - 1, day))));
+
+  const easter = easterSunday(year);
+  for (const offset of [-2, 1, 39])
+    holidays.add(isoDay(addUtcDays(easter, offset)));
+
+  for (let day = 19; day <= 25; day++) {
+    const midsummerEve = new Date(Date.UTC(year, 5, day));
+    if (midsummerEve.getUTCDay() === 5) {
+      holidays.add(isoDay(midsummerEve));
+      break;
+    }
+  }
+  return holidays;
+}
+
+export function previousFinnishBankDay(value: string) {
+  if (!validDate(value)) throw Error("Tarkista maksupäivä.");
+  const date = new Date(`${value}T00:00:00.000Z`);
+  while (
+    date.getUTCDay() === 0 ||
+    date.getUTCDay() === 6 ||
+    finnishBankHolidays(date.getUTCFullYear()).has(isoDay(date))
+  )
+    date.setUTCDate(date.getUTCDate() - 1);
+  return isoDay(date);
+}
+
+export function scheduledOccurrences(e: Entry, month: string): string[] {
+  const dates = scheduledDatesForMonth(e, month);
+  if (!e.adjustToPreviousBankDay || e.recurrence === "once") return dates;
+
+  const [year, monthNumber] = month.split("-").map(Number);
+  const nextMonth = new Date(Date.UTC(year, monthNumber, 1))
+    .toISOString()
+    .slice(0, 7);
+  const candidates = [...dates, ...scheduledDatesForMonth(e, nextMonth)];
+  return [
+    ...new Set(
+      candidates
+        .map(previousFinnishBankDay)
+        .filter((date) => date.slice(0, 7) === month),
+    ),
+  ].sort();
+}
+
 export function occurrenceStatus(e: Entry, date: string): EntryStatus {
-  return e.occurrenceStatuses?.[date] || e.status;
+  const override = e.occurrenceStatuses?.[date];
+  if (override) return override;
+  if (e.status === "skipped") return "skipped";
+  return date <= today() ? "actual" : "planned";
 }
 
 export function occurrenceAmount(e: Entry, date: string): number {

@@ -11,6 +11,7 @@ import {
   type Entry,
   type EntryStatus,
   type Kind,
+  type Recurrence,
   type Category,
   type Scenario,
 } from "./domain/model";
@@ -141,6 +142,15 @@ const entryStatusName = (status: EntryStatus) =>
     : status === "planned"
       ? "Suunniteltu"
       : "Ohitettu";
+const monthEntryStatus = (item: Entry, month: string) => {
+  const statuses = scheduledOccurrences(item, month).map((date) =>
+    occurrenceStatus(item, date),
+  );
+  if (!statuses.length) return "Ei tapahtumaa tässä kuussa";
+  if (statuses.every((status) => status === statuses[0]))
+    return `Päivämäärän mukaan ${entryStatusName(statuses[0]).toLocaleLowerCase("fi-FI")}`;
+  return "Osittain toteutunut";
+};
 const expenseTypeName = (type: "consumption" | "saving" | "investment") =>
   type === "consumption"
     ? "Kulutus"
@@ -1554,6 +1564,19 @@ function QuickEntryForm({
   const nameRef = useRef<HTMLInputElement>(null);
   const title = kind === "incomes" ? "Tulo" : "Meno";
 
+  function adjustQuickAmount(deltaEuros: number) {
+    const input = formRef.current?.elements.namedItem("amount");
+    if (!(input instanceof HTMLInputElement)) return;
+    let current = 0;
+    try {
+      current = input.value.trim() ? money(input.value) : 0;
+    } catch {
+      current = 0;
+    }
+    input.value = formatMoneyCents(Math.max(0, current + deltaEuros * 100));
+    input.focus();
+  }
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -1576,8 +1599,10 @@ function QuickEntryForm({
         date,
         endDate: "",
         recurrence: repeats ? "monthly" : "once",
-        status: repeats ? "planned" : "actual",
-        occurrenceStatuses: repeats ? { [date]: "actual" } : {},
+        status: date <= today() ? "actual" : "planned",
+        adjustToPreviousBankDay:
+          kind === "incomes" && fields.has("adjustToPreviousBankDay"),
+        occurrenceStatuses: {},
         occurrenceAmounts: {},
         active: true,
         updatedAt: new Date().toISOString(),
@@ -1622,8 +1647,12 @@ function QuickEntryForm({
       }}
     >
       <p className="quick-entry-intro">
-        Kirjaa toteutunut {title.toLocaleLowerCase("fi-FI")} nopeasti. Toistuvan
-        kirjauksen tulevat kuukaudet merkitään suunnitelluiksi.
+        Kirjaa {title.toLocaleLowerCase("fi-FI")} nopeasti. Tarvittavat
+        lisätiedot ovat valinnaisia.
+      </p>
+      <p className="muted quick-status-note">
+        Tila määräytyy päivästä: tuleva päivä on suunniteltu ja tämä päivä tai
+        mennyt päivä toteutunut. Sovellus ei varmista maksua pankista.
       </p>
       {error && (
         <div role="alert" className="alert warning">
@@ -1643,16 +1672,37 @@ function QuickEntryForm({
             maxLength={200}
           />
         </label>
-        <label>
-          Summa (€)
+        <div className="amount-field">
+          <label htmlFor="quick-entry-amount">Summa (€)</label>
           <MoneyInput
             name="amount"
+            id="quick-entry-amount"
             defaultCents={item.amount > 0 ? item.amount : null}
             required
             aria-label={`${title}, summa euroina`}
+            aria-describedby="quick-entry-amount-hint"
           />
-          <small>Kirjoita numerot sentteinä: 1250 = 12,50 €.</small>
-        </label>
+          <div
+            className="amount-adjusters"
+            role="group"
+            aria-label="Summan pikasäädöt euroina"
+          >
+            {[-100, -10, 10, 100].map((delta) => (
+              <button
+                type="button"
+                key={delta}
+                aria-label={`${delta < 0 ? "Vähennä" : "Lisää"} ${Math.abs(delta)} euroa summasta`}
+                onClick={() => adjustQuickAmount(delta)}
+              >
+                {delta > 0 ? "+" : "−"}
+                {Math.abs(delta)} €
+              </button>
+            ))}
+          </div>
+          <small id="quick-entry-amount-hint">
+            Kirjoita numerot sentteinä: 1250 = 12,50 €.
+          </small>
+        </div>
         <label>
           Kategoria
           <select name="category" defaultValue={item.category} required>
@@ -1675,9 +1725,24 @@ function QuickEntryForm({
         <summary>Lisävalinnat</summary>
         <div className="quick-entry-options">
           <label className="check">
-            <input type="checkbox" name="repeatMonthly" />
+            <input
+              type="checkbox"
+              name="repeatMonthly"
+              defaultChecked={item.recurrence === "monthly"}
+            />
             Toistuu kuukausittain
           </label>
+          {kind === "incomes" && (
+            <label className="check">
+              <input
+                type="checkbox"
+                name="adjustToPreviousBankDay"
+                defaultChecked={item.adjustToPreviousBankDay}
+              />
+              Aikaista viikonlopulle tai pyhälle osuva maksupäivä edeltävään
+              pankkipäivään
+            </label>
+          )}
           {kind === "expenses" && (
             <>
               <label>
@@ -2108,7 +2173,12 @@ function App() {
       setNotice("Tiedot päivitetty.");
     }
   }
-  function beginQuickEntry(kind: "incomes" | "expenses", source?: Entry) {
+  function beginQuickEntry(
+    kind: "incomes" | "expenses",
+    source?: Entry,
+    recurrence: Recurrence = "once",
+    preferredCategory?: string,
+  ) {
     const defaultDate = month === today().slice(0, 7) ? today() : `${month}-01`;
     const latest = [...s[kind]].sort((a, b) =>
       b.updatedAt.localeCompare(a.updatedAt),
@@ -2121,15 +2191,20 @@ function App() {
             date: defaultDate,
             endDate: "",
             recurrence: "once",
-            status: "actual",
+            status: defaultDate <= today() ? "actual" : "planned",
+            adjustToPreviousBankDay:
+              kind === "incomes" && source.adjustToPreviousBankDay,
             occurrenceStatuses: {},
             occurrenceAmounts: {},
             active: true,
           }
         : entry({
-            category: latest?.category || cats(kind)[0] || "Muu",
+            category:
+              preferredCategory || latest?.category || cats(kind)[0] || "Muu",
             date: defaultDate,
-            status: "actual",
+            status: defaultDate <= today() ? "actual" : "planned",
+            recurrence,
+            adjustToPreviousBankDay: kind === "incomes",
           }),
     );
     setQuickEntryKind(kind);
@@ -2155,12 +2230,19 @@ function App() {
     kind: "incomes" | "expenses",
     id: string,
     date: string,
-    status: EntryStatus,
+    status: EntryStatus | "auto",
   ) {
     const current = s[kind].find((item) => item.id === id);
     if (!current) return;
     const occurrenceStatuses = { ...current.occurrenceStatuses };
-    if (status === current.status) delete occurrenceStatuses[date];
+    const automaticStatus =
+      current.status === "skipped"
+        ? "skipped"
+        : date <= today()
+          ? "actual"
+          : "planned";
+    if (status === "auto" || status === automaticStatus)
+      delete occurrenceStatuses[date];
     else occurrenceStatuses[date] = status;
     commit({
       ...s,
@@ -2323,6 +2405,7 @@ function App() {
     return entry({
       category: latest?.category || cats(kind)[0] || "Muu",
       date: month === today().slice(0, 7) ? today() : `${month}-01`,
+      adjustToPreviousBankDay: kind === "incomes",
     });
   };
   const recentQuickEntries = [
@@ -2339,7 +2422,10 @@ function App() {
               .toLocaleLowerCase("fi")
               .includes(search.toLocaleLowerCase("fi")) &&
             (!categoryFilter || e.category === categoryFilter) &&
-            (!statusFilter || e.status === statusFilter),
+            (!statusFilter ||
+              scheduledOccurrences(e, month).some(
+                (date) => occurrenceStatus(e, date) === statusFilter,
+              )),
         )
         .sort((a, b) =>
           sort === "amount"
@@ -3157,7 +3243,28 @@ function App() {
                 </p>
                 <h1 tabIndex={-1}>{names[page] || "Yhteenveto"}</h1>
               </div>
-              {kinds.includes(page as Kind) && (
+              {(page === "incomes" || page === "expenses") && (
+                <div className="entry-head-actions">
+                  <button
+                    className="primary"
+                    onClick={() => beginQuickEntry(page)}
+                  >
+                    {page === "expenses"
+                      ? "+ Lisää kertaluonteinen meno"
+                      : "+ Lisää tulo"}
+                  </button>
+                  <button
+                    onClick={() => beginQuickEntry(page, undefined, "monthly")}
+                  >
+                    {page === "expenses"
+                      ? "+ Lisää toistuva lasku"
+                      : "+ Lisää toistuva tulo"}
+                  </button>
+                </div>
+              )}
+              {kinds.includes(page as Kind) &&
+                page !== "incomes" &&
+                page !== "expenses" && (
                 <button
                   className="primary"
                   onClick={() =>
@@ -4201,7 +4308,23 @@ function App() {
                                 scope="row"
                                 data-label="Kategoria"
                               >
-                                {c}
+                                <span>{c}</span>
+                                <button
+                                  type="button"
+                                  className="budget-category-add"
+                                  aria-label={`Lisää meno kategoriaan ${c}`}
+                                  onClick={() =>
+                                    beginQuickEntry(
+                                      "expenses",
+                                      undefined,
+                                      "once",
+                                      c,
+                                    )
+                                  }
+                                >
+                                  <Plus size={14} aria-hidden="true" />
+                                  Lisää meno
+                                </button>
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput
@@ -4281,12 +4404,13 @@ function App() {
                   !dismissedHelp.has("entry-basics") && (
                     <HelpBox
                       id="entry-basics"
-                      title="Kirjaa summa kerran, tarkenna tarvittaessa"
+                      title="Päiväys laskee tapahtuman tilan"
                       onDismiss={dismissHelp}
                     >
-                      Toistuva palkka tai lasku kirjataan yhdellä tietueella.
-                      Valitse tila oikein: suunniteltu ei vaikuta toteutuneeseen
-                      kassavirtaan.
+                      Tuleva maksupäivä näkyy suunniteltuna. Tämän päivän ja
+                      menneet päivät lasketaan toteutuneiksi, mutta sovellus ei
+                      vahvista maksua pankista. Voit korjata yksittäisen
+                      tapahtuman lisätiedoista.
                     </HelpBox>
                   )}
                 {(page === "incomes" || page === "expenses") && (
@@ -4361,9 +4485,9 @@ function App() {
                       </select>
                     </label>
                     <label>
-                      Sarjan oletustila
+                      Kuukauden tapahtuman tila
                       <select
-                        aria-label="Sarjan oletustila"
+                        aria-label="Kuukauden tapahtuman tila"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                       >
@@ -4427,11 +4551,11 @@ function App() {
                             <th role="columnheader">
                               {page === "goals" ? "Tavoite" : "Päivämäärä"}
                             </th>
-                            <th role="columnheader">
-                              {page === "incomes" || page === "expenses"
-                                ? "Toistuvuus / tila"
-                                : "Lisätiedot"}
-                            </th>
+                      <th role="columnheader">
+                        {page === "incomes" || page === "expenses"
+                          ? "Toistuvuus / kuukauden tila"
+                          : "Lisätiedot"}
+                      </th>
                             <th role="columnheader">Toiminnot</th>
                           </tr>
                         </thead>
@@ -4505,13 +4629,22 @@ function App() {
                                 >
                                   {page === "goals"
                                     ? euro(e.target)
-                                    : e.date.split("-").reverse().join(".")}
+                                    : page === "incomes" &&
+                                        e.adjustToPreviousBankDay &&
+                                        e.recurrence !== "once"
+                                      ? scheduledOccurrences(e, month)
+                                          .map((date) =>
+                                            date.split("-").reverse().join("."),
+                                          )
+                                          .join(", ") ||
+                                        `Alkaa ${e.date.split("-").reverse().join(".")}`
+                                      : e.date.split("-").reverse().join(".")}
                                 </td>
                                 <td
                                   role="cell"
                                   data-label={
                                     page === "incomes" || page === "expenses"
-                                      ? "Toistuvuus / tila"
+                                      ? "Toistuvuus / kuukauden tila"
                                       : "Lisätiedot"
                                   }
                                 >
@@ -4519,7 +4652,7 @@ function App() {
                                     <>
                                       {recNames[e.recurrence]}
                                       <small>
-                                        Oletus: {entryStatusName(e.status)}
+                                        {monthEntryStatus(e, month)}
                                         {!e.active ? " · Keskeytetty" : ""}
                                       </small>
                                       {Object.keys(e.occurrenceStatuses)
@@ -4607,13 +4740,12 @@ function App() {
                                           ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
                                           : page === "incomes" ||
                                               page === "expenses"
-                                            ? `Sarjan oletus: ${entryStatusName(e.status)}`
+                                            ? "Tila perustuu päivämäärään, ei pankkivarmennukseen"
                                             : null}
                                     </span>
                                   </div>
                                   {(page === "incomes" ||
-                                    page === "expenses") &&
-                                    e.recurrence !== "once" && (
+                                    page === "expenses") && (
                                       <fieldset className="occurrence-statuses">
                                         <legend>
                                           Valitun kuukauden tapahtumat
@@ -4641,10 +4773,12 @@ function App() {
                                                   Tila
                                                   <select
                                                     aria-label={`${e.name} ${date} tila`}
-                                                    value={occurrenceStatus(
-                                                      e,
-                                                      date,
-                                                    )}
+                                                    value={
+                                                      e.occurrenceStatuses[date] ||
+                                                      (e.status === "skipped"
+                                                        ? "skipped"
+                                                        : "auto")
+                                                    }
                                                     onChange={(event) =>
                                                       updateOccurrenceStatus(
                                                         page === "incomes"
@@ -4652,11 +4786,15 @@ function App() {
                                                           : "expenses",
                                                         e.id,
                                                         date,
-                                                        event.target
-                                                          .value as EntryStatus,
+                                                        event.target.value as
+                                                          | EntryStatus
+                                                          | "auto",
                                                       )
                                                     }
                                                   >
+                                                    <option value="auto">
+                                                      Automaattinen päivästä
+                                                    </option>
                                                     <option value="actual">
                                                       Toteutunut
                                                     </option>
@@ -7227,8 +7365,10 @@ function EntryForm({
         if (f.has(k)) v[k] = Number(String(f.get(k)).replace(",", "."));
       if (recurring) {
         v.recurrence = String(f.get("recurrence")) as Entry["recurrence"];
-        v.status = String(f.get("status")) as Entry["status"];
+        v.status = dateTextToIso(v.date) <= today() ? "actual" : "planned";
         v.active = f.has("active");
+        v.adjustToPreviousBankDay =
+          kind === "incomes" && f.has("adjustToPreviousBankDay");
       }
       if (kind === "expenses") v.essential = f.has("essential");
       if (kind === "expenses") {
@@ -7526,18 +7666,20 @@ function EntryForm({
                 ))}
               </select>
             </label>
-            <label>
-              Tila / sarjan oletus
-              <select
-                aria-label="Tila"
-                name="status"
-                defaultValue={item.status}
-              >
-                <option value="actual">Toteutunut</option>
-                <option value="planned">Suunniteltu</option>
-                <option value="skipped">Ohitettu</option>
-              </select>
-            </label>
+            <p className="muted form-status-note">
+              Tila lasketaan maksupäivästä. Päivä ei ole pankkivarmennus.
+            </p>
+            {kind === "incomes" && (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  name="adjustToPreviousBankDay"
+                  defaultChecked={item.adjustToPreviousBankDay}
+                />
+                Aikaista viikonlopulle tai pyhälle osuva maksupäivä edeltävään
+                pankkipäivään
+              </label>
+            )}
             {field(
               "Lopetuspäivä (valinnainen)",
               "endDate",

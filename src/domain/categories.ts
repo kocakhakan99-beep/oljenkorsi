@@ -109,6 +109,10 @@ const expenseDefaults: Array<[string, CategoryIconId]> = [
   ["Vesi", "water"],
   ["Vakuutukset", "insurance"],
   ["Ruoka", "food"],
+  ["Päivittäistavara", "food"],
+  ["Kosmetiikka", "health"],
+  ["Hygieniatarvikkeet", "health"],
+  ["Luottokorttilasku", "loan"],
   ["Liikenne", "transit"],
   ["Terveys", "health"],
   ["Lapset ja perhe", "family"],
@@ -220,7 +224,7 @@ export function categoryIconFor(name: string, kind?: string): CategoryIconId {
   if (/ravintol|kahvil/.test(key)) return "dining";
   if (/joukkoliik|julkinen liik|liikenne|matka/.test(key)) return "transit";
   if (/polttoaine|bensa|lataus/.test(key)) return "fuel";
-  if (/terveys|laak|hammas|lääk/.test(key))
+  if (/kosmetiik|hygieni|terveys|laak|hammas|lääk/.test(key))
     return /laak|lääk/.test(key) ? "medicine" : "health";
   if (/puhelin|liittym/.test(key)) return "phone";
   if (/internet|laajakaist|wifi/.test(key)) return "wifi";
