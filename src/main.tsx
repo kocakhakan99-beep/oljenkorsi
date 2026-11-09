@@ -576,10 +576,10 @@ function HelpBox({
   return (
     <aside className="help-box" aria-labelledby={`help-${id}-title`}>
       <CircleHelp size={20} aria-hidden="true" />
-      <div className="help-box-copy">
-        <strong id={`help-${id}-title`}>{title}</strong>
+      <details className="help-box-copy">
+        <summary><strong id={`help-${id}-title`}>{title}</strong></summary>
         <p>{children}</p>
-      </div>
+      </details>
       <button
         type="button"
         className="help-box-dismiss"
@@ -1576,8 +1576,8 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
   </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
     <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
-    <p>Kuukauden {month} kirjatut nettotulot yhteensä <strong>{euro(result.income)}</strong>, joista toteutuneita {euro(result.actualIncome)}. Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja.</p>
-    {!result.coverageConfirmed && <p className="muted">Kuukauden tulojen ja menojen kattavuutta ei ole vahvistettu. Suositukset päivittyvät kirjauksista ja voivat muuttua tietojen täydentyessä.</p>}
+    <div className="budget-income-basis"><span>Nettotulot · {month}</span><strong>{euro(result.income)}</strong><small>Toteutunut {euro(result.actualIncome)} · sisältää myös tulevat kirjaukset</small></div>
+    {!result.coverageConfirmed && <p className="ux-status-note">Tietojen kattavuutta ei vahvistettu</p>}
     {result.income <= 0 ? <p className="alert warning" role="status">Tulopohja puuttuu: lisää valitulle kuukaudelle nettotulot ennen prosenttivertailua. Nollatuloista ei lasketa suosituksia.</p> : <>
       <div className="budget-rule-grid">{result.checks.map(check => <article key={check.group} className={`budget-rule-card ${check.group}${check.outside ? " outside" : ""}`}>
         <h3>{budgetGroupNames[check.group]} <span>{percentText(check.percent)} %</span></h3>
@@ -1588,12 +1588,12 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
       <div className="budget-rule-alerts" role="status" aria-live="polite">
         <strong>{outside.length + excessCategories.length ? `${outside.length} ryhmäpoikkeamaa ja ${excessCategories.length} kategoriaylitystä` : "Ryhmät ja kategoriat ovat asetetuissa raameissa"}</strong>
         {result.totalAllocated > result.income && <p>Kuukaudelle on varattu {euro(result.totalAllocated - result.income)} enemmän kuin tuloja on kirjattu. Tarkista suunnitelman rahoitus ennen uusia sitoumuksia.</p>}
-        {(detailed ? excessCategories : excessCategories.slice(0, 3)).map(category => <p key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button> {euro(category.allocated)} / ohjeraja {euro(category.cap!)} ({percentText(category.maxPercent!)} %) · ylitys {euro(category.excess)}. Harkitse menon uudelleenjärjestelyä tai tarkista oma ohjeraja.</p>)}
+        {excessCategories.map(category => <div className="budget-rule-alert-row" key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button><strong>Yli {euro(category.excess)}</strong><small>{euro(category.allocated)} / {euro(category.cap!)} · {percentText(category.maxPercent!)} %</small></div>)}
         {!detailed && excessCategories.length > 3 && <button onClick={onBudget}>Näytä kaikki {excessCategories.length} kategoriaylitystä</button>}
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
-    <p className="muted">Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää.</p>
+    <details className="ux-explanation"><summary>Miten raamit lasketaan?</summary><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan.</p></details>
     {detailed && <details className="budget-rule-settings"><summary>Muokkaa prosentteja, kategoriaryhmiä ja suosituksia</summary>
       <p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee. Sovita tavoitteet elämäntilanteeseen; älä leikkaa välttämätöntä hoitoa tai ota velkaa säästötavoitteen vuoksi.</p>
       <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
@@ -3493,27 +3493,18 @@ function App() {
                             <span>{task.destinationLabel}</span>
                           </div>
                           <h3>{task.title}</h3>
-                          <p>{task.reason}</p>
                           <small>
                             {s.settings.private && task.privateEvidence
                               ? "Summat piilotettu"
                               : task.evidence}
                           </small>
-                          {task.impactNote && (
-                            <p className="compass-impact-note">
-                              <ChartSpline size={15} aria-hidden="true" />
-                              {s.settings.private && task.privateEvidence
-                                ? "Vaikutusarvion summat piilotettu"
-                                : task.impactNote}
-                            </p>
-                          )}
                           {task.nextStep && (
                             <div className="compass-next-step">
                               <strong>Pienin kokeiltava askel</strong>
                               <p>{task.nextStep}</p>
                             </div>
                           )}
-                          <CompassResearchDetails task={task} />
+                          <CompassResearchDetails task={task} privateMode={s.settings.private} />
                           <div className="compass-task-actions">
                             <button
                               type="button"
@@ -3792,7 +3783,6 @@ function App() {
                               </span>
                               <div>
                                 <h5>{task.title}</h5>
-                                <p>{task.reason}</p>
                                 {task.privateEvidence && (
                                   <small>
                                     {s.settings.private
@@ -3805,7 +3795,7 @@ function App() {
                                     <strong>Kokeile:</strong> {task.nextStep}
                                   </p>
                                 )}
-                                <CompassResearchDetails task={task} compact />
+                                <CompassResearchDetails task={task} compact privateMode={s.settings.private} />
                               </div>
                             </article>
                           ))}
@@ -7308,17 +7298,20 @@ function CategoryImage({
 function CompassResearchDetails({
   task,
   compact = false,
+  privateMode = false,
 }: {
   task: PlannedAction;
   compact?: boolean;
+  privateMode?: boolean;
 }) {
-  if (!task.sourceIds?.length && !task.boundary) return null;
   return (
     <details className={`compass-research-details${compact ? " compact" : ""}`}>
       <summary>
         {compact ? "Tietopohja ja rajat" : "Mihin havainto perustuu?"}
         {task.sourceIds?.length ? ` · ${task.sourceIds.join(", ")}` : ""}
       </summary>
+      <p>{task.reason}</p>
+      {task.impactNote && <p className="compass-impact-note">{privateMode && task.privateEvidence ? "Vaikutusarvion summat piilotettu" : task.impactNote}</p>}
       {task.sourceIds?.length ? (
         <ul>
           {task.sourceIds.map((id) => (
