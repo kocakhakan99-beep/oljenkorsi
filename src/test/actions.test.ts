@@ -402,8 +402,8 @@ describe("Talouden kompassi", () => {
     expect(demos[3].timeline.slice(-3).every((month) => month.income > 0)).toBe(
       true,
     );
-    expect(demos[3].timeline[2].income).toBeLessThan(
-      demos[3].timeline[1].income,
+    expect(demos[3].timeline.find(point => point.month === "2026-08")!.income).toBeLessThan(
+      demos[3].timeline.find(point => point.month === "2026-07")!.income,
     );
     const shockMonthIncome = demos[3].state.incomes.filter((income) =>
       income.date.startsWith("2026-11"),

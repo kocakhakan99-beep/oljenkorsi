@@ -62,6 +62,7 @@ import { contrastForeground } from "./domain/color";
 import {
   compassDemoProfiles,
   createCompassDemoCases,
+  demoMonthSummary,
   type CompassDemoId,
   type CompassDemoCase,
 } from "./domain/compass-demos";
@@ -483,7 +484,7 @@ function DemoCashflowSparkline({
       className="demo-cashflow-sparkline"
       viewBox="0 0 220 48"
       role="img"
-      aria-label="Kuuden kuukauden kassavirran suunta"
+      aria-label="Vuosien 2025–2026 kuukausisuunnitelman kassavirta"
       preserveAspectRatio="none"
     >
       <line x1="7" y1="24" x2="213" y2="24" />
@@ -511,9 +512,9 @@ function DemoHouseholdGrid({
 }) {
   return (
     <div className="demo-household-grid">
-      {scenarios.map(({ profile, timeline }) => {
+      {scenarios.map(({ profile, timeline, state }) => {
         const WeatherIcon = compassWeatherIcons[profile.icon];
-        const latest = timeline[timeline.length - 1];
+        const latest = timeline.find(point => point.month === state.settings.month) || timeline[timeline.length - 1];
         const cashLabel = hideNumbers
           ? "•••• €"
           : new Intl.NumberFormat("fi-FI", {
@@ -538,9 +539,10 @@ function DemoHouseholdGrid({
               </div>
             </header>
             <p>{profile.story}</p>
+            <small className="demo-data-period">2025–2026 · 24 kk · kaikki tietonäkymät</small>
             <div className="demo-household-snapshot">
               <span>
-                <small>Viimeisin kuukausi</small>
+                <small>Kuukausisuunnitelma · {latest.month}</small>
                 <strong className={latest.cash < 0 ? "negative" : "positive"}>
                   {cashLabel}
                 </strong>
@@ -3121,15 +3123,17 @@ function App() {
     compassDemos.find(
       (scenario) => scenario.profile.id === selectedCompassDemo,
     ) || compassDemos[1];
-  const activeCompassDemoMetrics = metrics(activeCompassDemo.state, month);
+  const demoSelectedMonth = activeCompassDemo.state.settings.month;
+  const demoSelectedSummary = demoMonthSummary(activeCompassDemo.state, demoSelectedMonth);
+  const activeCompassDemoMetrics = { income: demoSelectedSummary.income, consumption: demoSelectedSummary.expense, cash: demoSelectedSummary.cash };
   const activeCompassDemoBuffer = emergencyFund(
     activeCompassDemo.state,
-    month,
+    demoSelectedMonth,
     3,
   );
   const activeCompassDemoActions = planActions(
     activeCompassDemo.state,
-    month,
+    demoSelectedMonth,
   ).slice(0, 3);
   function loadDemoHousehold(id: CompassDemoId) {
     const scenario = compassDemos.find((item) => item.profile.id === id);
@@ -3656,7 +3660,7 @@ function App() {
                     </header>
                     <div className="compass-story-metrics">
                       <div>
-                        <small>Tulot tässä kuussa</small>
+                        <small>Kirjatut tulot · {demoSelectedMonth}</small>
                         <strong>{euro(activeCompassDemoMetrics.income)}</strong>
                       </div>
                       <div>
@@ -3693,9 +3697,9 @@ function App() {
                       >
                         <div className="compass-story-section-heading">
                           <div>
-                            <span className="eyebrow">KUUSI KUUKAUTTA</span>
+                            <span className="eyebrow">2025–2026 · 24 KUUKAUTTA</span>
                             <h4 id="compass-demo-chart-title">
-                              Tulovirta ja menot
+                              Kuukausisuunnitelmat
                             </h4>
                           </div>
                           <div className="compass-chart-legend">
@@ -3712,7 +3716,8 @@ function App() {
                         <div
                           className="compass-story-bars"
                           role="group"
-                          aria-label="Kuukausittaiset tulo- ja menopylväät"
+                          aria-label="Vuosien 2025 ja 2026 kuukausittaiset tulo- ja menopylväät"
+                          tabIndex={0}
                         >
                           {activeCompassDemo.timeline.map((point) => {
                             const max = Math.max(
@@ -3744,12 +3749,13 @@ function App() {
                                     }}
                                   />
                                 </div>
-                                <small>{point.month.slice(5)}</small>
+                                <small>{point.month.slice(5)}/{point.month.slice(2, 4)}</small>
                                 <strong>{euro(point.cash)}</strong>
                               </div>
                             );
                           })}
                         </div>
+                        <small>Kirjatut tulot ja kulutusmenot koko kuukaudelta. Tulevat maksut ovat suunniteltuja; säästösiirrot näkyvät ladatun talouden omissa näkymissä. Varallisuusluvut ovat esimerkin tilannekuva, eivät kahden vuoden arvostushistoria.</small>
                       </section>
                       <aside className="compass-story-question">
                         <span className="eyebrow">POHDI SEURAAVAKSI</span>

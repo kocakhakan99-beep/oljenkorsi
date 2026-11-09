@@ -1,5 +1,14 @@
 # Testausraportti 9.11.2026
 
+## Demotalouksien vuodet 2025–2026
+
+- TypeScript, ESLint, 83 yksikkötestiä kuudessa tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 554 kB; Viten kokohuomautus säilyy.
+- Uudet testit käyvät kaikista neljästä taloudesta läpi kaikki 24 kuukautta: tulot, menot, budjetit ja käytettyjen menokategorioiden budjettikattavuus. Kaikissa kuudessa tietolajissa on vähintään yksi tietue ja tallennettuja skenaarioita on kaksi. Kaikkien talouksien JSON-varmuuskopioiden roundtrip läpäisi.
+- Tulokatkos alkaa 2026-08. Tulevia päivämääriä ei lasketa toteumiksi, kattavuusvahvistuksia ei anneta tuleville kuukausille ja aineiston ulkopuolinen avaus rajautuu esimerkkijaksoon. Palkkapäivien, kausivaihtelun ja kuukausisuunnitelman yhteys kompassin aikajanaan tarkistettiin.
+- Kaikki 63 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Kaikki neljä taloutta ladattiin ja niiden kahden vuoden aineisto tarkistettiin. Ladatun kriisitalouden Tulot-, Menot-, Budjetti-, Omaisuus-, Velat-, Sijoitukset-, Tavoitteet- ja Skenaariot-näkymissä oli näkyviä taulukkorivejä; raporttipaneeli ja kompassin 24 kuukausipylvästä näkyivät.
+- Nykyiset 320–768 px responsiivisuus-, kompassi-, vienti-/palautus- ja raporttipolut läpäisivät. Ei sovelluksen JavaScript- tai konsolivirheitä eikä verkkopyyntöjä. File-käyttöä ei tässä ympäristössä varmennettu. Aineisto on fiktiivinen, eikä sen taloudellista edustavuutta väestöön nähden ole tutkittu.
+
+
 ## UX:n priorisointimalli: ensimmäinen soveltamiskierros
 
 TypeScript, ESLint, 77 yksikkötestiä ja tuotantobuild läpäisivät. Kaikki 62 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Yhteinen ohje näyttää oletuksena vain otsikon; Enter ja välilyönti avaavat/sulkevat sisällön. Piilotus ja palautus säilyivät. Budjetin laskentaselitys ja kompassin perustelu varmennettiin sekä suljettuna että avattuna. Nykyiset sääntöjen muokkaus-, kompassitoiminto-, vienti-/palautus- ja 320–768 px mobiilipolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä tai käyttäjien ymmärrystä ei tällä testillä varmennettu; JavaScriptin kokohuomautus säilyy (noin 550 kB).

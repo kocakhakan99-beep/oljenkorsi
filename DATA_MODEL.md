@@ -58,3 +58,9 @@ Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjo
 ## Syöttöpolkujen yhtenäistäminen
 
 Tietomalli ja vanhat kokonaistoteuman poikkeukset säilyvät. Tulojen ja menojen yhteinen lomake lisää uuden ID:n vain lisäyksessä/kopioinnissa; muokkaus säilyttää ID:n, aikaleimametadatan sekä päiväkohtaiset tila- ja summapoikkeukset. Sarjan toistuvuus, loppupäivä, aktiivisuus, tunnisteet ja monirivinen kuvaus ovat lisävalinnoissa sekä lisäyksessä että muokkauksessa. Budjetin kokonaistoteuman erillinen korjaus löytyy vain kategoriakortin lisävalinnasta; päätaulukko näyttää toteuman ja sen lähteen. Korjauksen voi poistaa palaamalla kirjauksista laskettuun toteumaan.
+
+## Demotalouksien kattavuus
+
+Käyttöliittymän neljä esimerkkitaloutta luodaan yhteisesti `createCompassDemoCases`-funktiolla. Jokaisessa on kaikki kuukaudet 2025-01–2026-12 tuloineen, menoineen ja kategoriabudjetteineen sekä vähintään yksi omaisuus-, velka-, sijoitus- ja tavoitetietue ja kaksi tallennettua skenaariota. Internet on yksi aikarajattu kuukausisarja; muiden menojen kuukausikohtaiset erot tallennetaan erillisinä tapahtumina. Ruokaostokset jakautuvat neljään erään ja palkkojen sekä etuuksien päivä on aikaistettu tarvittaessa pankkipäivälle.
+
+Tulokatkos on kriisitaloudessa kiinteästi elokuusta 2026 alkaen. Tulevia kuukausia ei vahvisteta kattaviksi eikä niille tallenneta keinotekoisia actual-poikkeuksia. Kompassin esimerkkikuvaaja näyttää koko kuukaudelle kirjatun suunnitelman (myös tulevat tapahtumat); ladatun sovelluksen toteumaraportit käyttävät tavallista päiväperusteista tilaa. Varallisuus ja velat ovat manuaalinen esimerkkitilannekuva, eivät kahden vuoden saldohistoria. Aineiston ulkopuolelta ladattaessa valittu kuukausi rajataan 2025-01–2026-12-väliin. Kehityksen vanha `model.demo()`-testifixture ei ole käyttöliittymässä ladattava esimerkkitalous.
