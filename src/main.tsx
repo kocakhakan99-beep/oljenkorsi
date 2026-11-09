@@ -1,3 +1,4 @@
+import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createRoot } from "react-dom/client";
@@ -1544,6 +1545,63 @@ function EmergencyPlanner({
   );
 }
 
+function BudgetCategoryRuleEditor({ state, name, onSave }: { state: State; name: string; onSave: (key: string, value: BudgetGuidanceSettings["categories"][string]) => void }) {
+  const policy = budgetCategoryPolicy(state, name);
+  const [group, setGroup] = useState(policy.group);
+  const [cap, setCap] = useState(policy.maxPercent ?? 5);
+  const [enabled, setEnabled] = useState(policy.maxPercent !== null);
+  return <details className="budget-policy-editor">
+    <summary>{name} · {budgetGroupNames[policy.group]} · {policy.maxPercent === null ? "ei kategoriarajaa" : `${percentText(policy.maxPercent)} %`}</summary>
+    <label>Ryhmitys: {name}<select value={group} onChange={event => setGroup(event.target.value as typeof group)}>{Object.entries(budgetGroupNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <label className="check"><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Käytä kategoriakohtaista enimmäisosuutta</label>
+    {enabled && <PercentField label={`${name}, enimmäisosuus nettotuloista (%)`} value={cap} min={0} max={100} onChange={setCap} />}
+    <button type="button" onClick={() => onSave(policy.key, { group, maxPercent: enabled ? cap : null })}>Tallenna kategorian {name} ohje</button>
+  </details>;
+}
+function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory, onBudget }: {
+  state: State; month: string; euro: (amount: number) => string; detailed: boolean;
+  onSave: (rule: BudgetGuidanceSettings) => void; onCategory: (name: string) => void; onBudget: () => void;
+}) {
+  const result = budgetGuidance(state, month);
+  const [shares, setShares] = useState(state.settings.budgetGuidance);
+  const [error, setError] = useState("");
+  useEffect(() => { setShares(state.settings.budgetGuidance); }, [state.settings.budgetGuidance]);
+  const excessCategories = result.categories.filter(category => category.excess > 0).sort((a, b) => b.excess - a.excess);
+  const outside = result.checks.filter(check => check.outside);
+  const unknown = result.categories.filter(category => category.group === "unclassified" && category.allocated > 0);
+  const rule = state.settings.budgetGuidance;
+  return <section className="panel budget-guidance" aria-label="Budjetin raamit">
+    <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
+    <p>Kuukauden {month} kirjatut nettotulot yhteensä <strong>{euro(result.income)}</strong>, joista toteutuneita {euro(result.actualIncome)}. Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja.</p>
+    {!result.coverageConfirmed && <p className="muted">Kuukauden tulojen ja menojen kattavuutta ei ole vahvistettu. Suositukset päivittyvät kirjauksista ja voivat muuttua tietojen täydentyessä.</p>}
+    {result.income <= 0 ? <p className="alert warning" role="status">Tulopohja puuttuu: lisää valitulle kuukaudelle nettotulot ennen prosenttivertailua. Nollatuloista ei lasketa suosituksia.</p> : <>
+      <div className="budget-rule-grid">{result.checks.map(check => <article key={check.group} className={`budget-rule-card ${check.group}${check.outside ? " outside" : ""}`}>
+        <h3>{budgetGroupNames[check.group]} <span>{percentText(check.percent)} %</span></h3>
+        <strong>{euro(check.allocated)}</strong><small>Kuukaudelle varattu · toteutunut {euro(check.actual)}</small>
+        <progress max={Math.max(1, check.target, check.allocated)} value={check.allocated} aria-label={`${budgetGroupNames[check.group]}, varattu suhteessa tavoitteeseen`} />
+        <p>{check.group === "saving" ? "Vähintään" : "Enintään"} {euro(check.target)}{check.outside ? ` · ${check.group === "saving" ? "tavoitteesta puuttuu" : "ylitys"} ${euro(check.gap)}` : " · omissa raameissa"}</p>
+      </article>)}</div>
+      <div className="budget-rule-alerts" role="status" aria-live="polite">
+        <strong>{outside.length + excessCategories.length ? `${outside.length} ryhmäpoikkeamaa ja ${excessCategories.length} kategoriaylitystä` : "Ryhmät ja kategoriat ovat asetetuissa raameissa"}</strong>
+        {result.totalAllocated > result.income && <p>Kuukaudelle on varattu {euro(result.totalAllocated - result.income)} enemmän kuin tuloja on kirjattu. Tarkista suunnitelman rahoitus ennen uusia sitoumuksia.</p>}
+        {(detailed ? excessCategories : excessCategories.slice(0, 3)).map(category => <p key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button> {euro(category.allocated)} / ohjeraja {euro(category.cap!)} ({percentText(category.maxPercent!)} %) · ylitys {euro(category.excess)}. Harkitse menon uudelleenjärjestelyä tai tarkista oma ohjeraja.</p>)}
+        {!detailed && excessCategories.length > 3 && <button onClick={onBudget}>Näytä kaikki {excessCategories.length} kategoriaylitystä</button>}
+        {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
+      </div>
+    </>}
+    <p className="muted">Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää.</p>
+    {detailed && <details className="budget-rule-settings"><summary>Muokkaa prosentteja, kategoriaryhmiä ja suosituksia</summary>
+      <p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee. Sovita tavoitteet elämäntilanteeseen; älä leikkaa välttämätöntä hoitoa tai ota velkaa säästötavoitteen vuoksi.</p>
+      <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
+        <div className="budget-rule-grid">{(["needs", "wants", "saving"] as BudgetGroup[]).map(group => <PercentField key={group} label={`${budgetGroupNames[group]}, tavoite (%)`} value={shares[group]} min={0} max={100} onChange={value => setShares(current => ({ ...current, [group]: value }))} />)}</div>
+        {error && <p role="alert">{error}</p>}<button type="submit">Tallenna ryhmien osuudet</button>
+      </form>
+      <p>Luokitus koskee budjettiraameja. Menon oma välttämättömyysvalinta vaikuttaa erikseen hätävaralaskentaan. Säästö- ja sijoitussiirron menotyyppi ohjaa sen aina säästämisryhmään. Luottokorttilaskua ei pidä kirjata uudelleen, jos ostokset on jo kirjattu. Lisälyhennys voidaan luokitella säästämisryhmään, mutta sovellus ei erittele siitä korkoa tai päivitä velkasaldoa.</p>
+      {result.categories.map(category => <BudgetCategoryRuleEditor key={`${category.key}-${category.group}-${category.maxPercent}`} state={state} name={category.name} onSave={(key, value) => onSave({ ...rule, categories: { ...rule.categories, [key]: value } })} />)}
+    </details>}
+  </section>;
+}
+
 function QuickEntryForm({
   kind,
   item,
@@ -1984,6 +2042,7 @@ function App() {
         next.budgets !== s.budgets ||
         next.budgetActuals !== s.budgetActuals ||
         next.categories !== s.categories ||
+        next.settings.budgetGuidance !== s.settings.budgetGuidance ||
         next.settings.month !== s.settings.month
       ) {
         setCompassRefreshAt(null);
@@ -3013,6 +3072,7 @@ function App() {
     ]),
   );
   const monthBudgetSummary = budgetSummary(s, month);
+  const monthGuidance = budgetGuidance(s, month);
   const monthBudgets = s.budgets[month] || {};
   const budgetCategoriesByName = new Map(
     monthBudgetSummary.categories.map((category) => [
@@ -4214,6 +4274,7 @@ function App() {
                   </section>
                 </>
               ))}
+            {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onSave={rule => settings({ budgetGuidance: rule })} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} />}
             {page === "budget" && (
               <>
                 {!dismissedHelp.has("budget-actuals") && (
@@ -4302,6 +4363,7 @@ function App() {
                             a = hasManual
                               ? s.budgetActuals[month][c]
                               : observed;
+                          const recommendation = monthGuidance.categories.find(category => category.name === c);
                           return (
                             <tr role="row" key={month + c}>
                               <th
@@ -4343,6 +4405,7 @@ function App() {
                                   </span>
                                 </button>
                                 </div>
+                                {recommendation && <small className="budget-row-recommendation">{budgetGroupNames[recommendation.group]} · {recommendation.maxPercent === null ? "Ei kategoriarajaa" : `${percentText(recommendation.maxPercent)} % nettotuloista${recommendation.cap === null ? "" : ` · ${euro(recommendation.cap)}`}`}{recommendation.excess > 0 ? ` · ylitys ${euro(recommendation.excess)}` : ""}</small>}
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput
@@ -7900,6 +7963,13 @@ function Categories({
     }
     commit({
       ...s,
+      settings: kind === "expenses" ? {
+        ...s.settings,
+        budgetGuidance: { ...s.settings.budgetGuidance, categories: {
+          ...s.settings.budgetGuidance.categories,
+          [id]: { group: budgetCategoryPolicy(s, old.name).group, maxPercent: budgetCategoryPolicy(s, old.name).maxPercent },
+        } },
+      } : s.settings,
       categories: s.categories.map((c) =>
         c.id === id ? { ...c, name: value } : c,
       ),

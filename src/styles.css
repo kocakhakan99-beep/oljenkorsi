@@ -5205,3 +5205,22 @@ button.primary,
 }
 .expense-add-icon { position: relative; display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; }
 .expense-add-icon > svg:last-child { position: absolute; top: -1px; right: -2px; width: 14px; height: 14px; padding: 1px; border-radius: 50%; background: var(--soft); stroke-width: 3; }
+
+.budget-guidance { margin-bottom: 20px; }
+.budget-rule-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.budget-rule-card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); border-top: 4px solid var(--accent); }
+.budget-rule-card.wants { border-top-color: #9b72cf; }
+.budget-rule-card.saving { border-top-color: #21a18b; }
+.budget-rule-card.outside { border-style: solid; box-shadow: inset 0 -3px 0 #cf8541; }
+.budget-rule-card h3 { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 15px; }
+.budget-rule-card > strong { display: block; font-size: 22px; overflow-wrap: anywhere; }
+.budget-rule-card small { display: block; margin: 8px 0; color: var(--muted); }
+.budget-rule-card progress { width: 100%; accent-color: var(--accent); }
+.budget-rule-card p { margin-bottom: 0; font-size: 13px; }
+.budget-rule-alerts { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--soft); }
+.budget-rule-alerts p { overflow-wrap: anywhere; }
+.budget-rule-category-link { display: inline-flex; gap: 6px; align-items: center; padding: 3px 6px; color: var(--text); }
+.budget-rule-settings { margin-top: 16px; }
+.budget-policy-editor { border-top: 1px solid var(--line); padding: 10px 0; }
+.budget-policy-editor label { margin: 10px 0; }
+@media (max-width: 760px) { .budget-rule-grid { grid-template-columns: 1fr; } }

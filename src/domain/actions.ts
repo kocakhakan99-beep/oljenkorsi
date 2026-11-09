@@ -1,3 +1,4 @@
+import { budgetGuidance, budgetGroupNames } from "./budget-guidance";
 import {
   emergencyFund,
   expenseType,
@@ -106,6 +107,42 @@ function hasCashEntries(state: State, month: string) {
 
 export function planActions(state: State, month: string): PlannedAction[] {
   const actions: PlannedAction[] = [];
+  const guidance = budgetGuidance(state, month);
+  if (guidance.income > 0 && guidance.totalAllocated > guidance.income) actions.push({
+    id: `budget-allocation-deficit-${month}`, title: "Sovita kuukausisuunnitelma käytettävissä oleviin tuloihin",
+    reason: "Kulutukseen ja säästämiseen on yhteensä varattu enemmän kuin kuukaudelle on kirjattu tuloja.",
+    evidence: `Rahoitusvaje ${formatCents(guidance.totalAllocated - guidance.income)}`,
+    priority: "high", score: 340, track: "cashflow", destination: "budget", destinationLabel: "Tarkista kuukausisuunnitelma",
+    nextStep: "Varmista tulojen nettomäärät ja vältä päällekkäisiä kirjauksia. Turvaa ensin välttämättömät laskut; ajoita valinnaisia menoja tai säästösiirtoja uudelleen. Älä rahoita säästötavoitetta luotolla.", sourceIds: ["R14"], privateEvidence: true,
+  });
+  if (guidance.groups.unclassified.allocated > 0) actions.push({
+    id: `budget-classification-${month}`, title: "Luokittele budjetin vielä tuntemattomat menot",
+    reason: "Osa menoista puuttuu 50/30/20-ryhmittelystä. Luottokorttilasku tai itse tehty kategoria vaatii oman arviosi.",
+    evidence: `Luokittelematta ${formatCents(guidance.groups.unclassified.allocated)}`,
+    priority: "medium", score: 270, track: "spending", destination: "budget", destinationLabel: "Luokittele kategoriat",
+    nextStep: "Avaa budjetin raamien asetukset ja valitse kategoriaryhmä. Tarkista luottokorttilaskusta, ettei samoja ostoksia ole jo kirjattu menoiksi.", sourceIds: ["R14"], privateEvidence: true,
+  });
+  for (const check of guidance.checks.filter(check => check.outside)) {
+    actions.push({
+      id: `budget-rule-${check.group}-${month}`, title: `${budgetGroupNames[check.group]}: tarkista kuukausisuunnitelma`,
+      reason: check.group === "saving" ? "Kirjatut tai budjetissa varatut säästö- ja sijoitussiirrot alittavat valitsemasi tavoitteen. Kulutusylijäämä ei yksin ole säästösiirto." : "Budjetti tai kuukaudelle kirjatut menot ylittävät ryhmälle valitsemasi osuuden tuloista.",
+      evidence: `${formatCents(check.allocated)} / tavoite ${formatCents(check.target)} · poikkeama ${formatCents(check.gap)}`,
+      priority: "medium", score: 265, track: check.group === "saving" ? "future" : "spending",
+      destination: "budget", destinationLabel: "Tarkista budjetin raamit", sourceIds: ["R14"],
+      nextStep: check.group === "saving" ? "Tarkista ensin laskujen ja puskurin riittävyys. Varaa sitten realistinen kuukausisiirto tai muuta tavoitetta elämäntilanteeseesi sopivaksi; älä rahoita säästämistä velalla." : "Avaa ryhmän suurimmat menokategoriat. Harkitse yhden sopimuksen kilpailutusta, valinnaisen menon siirtämistä tai edullisempaa vaihtoehtoa. Älä vähennä välttämätöntä hoitoa tai jätä laskuja maksamatta.",
+      boundary: "Kuukauden tulopohja sisältää myös tulevat kirjatut tulot. Tietojen kattavuutta tai tulojen nettomääräisyyttä ei ole pankista vahvistettu. Raja on oma suunnittelutavoite.", privateEvidence: true,
+    });
+  }
+  for (const category of guidance.categories.filter(category => category.excess > 0).sort((a, b) => b.excess - a.excess).slice(0, 6)) {
+    actions.push({
+      id: `budget-category-review-${category.key}-${month}`, title: `${category.name}: harkitse menojen uudelleenjärjestelyä`,
+      reason: "Kategorian budjetti tai kirjattu kuukauden meno ylittää sille asetetun osuuden nettotuloista.",
+      evidence: `${formatCents(category.allocated)} · oma ohjeraja ${formatCents(category.cap!)} · ylitys ${formatCents(category.excess)}`,
+      priority: "medium", score: 260, track: "spending", destination: "budget", destinationLabel: "Tutki kategorian menot",
+      nextStep: `Tarkista ${category.name}-kategorian laskut ja luokitus. Valitse yksi meno: voiko sitä kilpailuttaa, ajoittaa uudelleen tai korvata? Jos meno on välttämätön, sovi realistinen oma ohjeraja.`,
+      sourceIds: ["R14"], boundary: "Kategoriaraja on muokattava sovelluksen aloitusarvo, ei tilastollinen keskiarvo. Päällekkäisiä korttiostoksia ja luottokorttilaskua ei pidä kirjata molempia menoiksi.", privateEvidence: true,
+    });
+  }
   const monthBudget = state.budgets[month] || {};
   const budgetCategories = Object.keys(monthBudget);
   const hasExpenseHistory = state.expenses.some(

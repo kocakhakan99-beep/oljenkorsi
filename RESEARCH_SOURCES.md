@@ -25,3 +25,9 @@ Elinkaari- ja puskurimallit ovat talousteoriaa. Säästämisohjelman kenttänäy
 25 × vuosimenot on algebrallinen vastine 4 %:n alkunostolle, ei itsenäinen tutkimustulos. Tässä suunnitelmassa 3–5 %:n kaltaista vaihteluväliä saa käyttää vain havainnollistavana käyttäjän herkkyystarkasteluna; sitä ei nimetä turvalliseksi vaihteluväliksi. Historiallinen aineisto, horisontti, verot, kulut, valuutta ja kulutusjoustot muuttavat tulkintaa.
 
 Suomen verotus, eläkeikä ja eläkekertymät tarvitsevat erillisen toteutushetken viranomaislähdekatselmoinnin (Verohallinto ja Eläketurvakeskus / käyttäjän oma eläkeote). Tässä ei lukita veroprosentteja, eläkkeen alkamisiän oletusarvoja tai reaali-/nimellistuottoja tutkimuksen nimissä. Muut maat vaativat oman version ja rajauksen.
+
+## R14: käytännön budjetointikehikko
+
+Warren, Elizabeth & Tyagi, Amelia Warren (2005). *All Your Worth: The Ultimate Lifetime Money Plan*. Free Press. 50/30/20-jako on käytännön talouskirjallisuuden kehikko, ei empiirisesti kaikille sopivaksi validoitu kulurakenne. Tässä toteutuksessa 50 ja 30 ovat ylärajoja, 20 säästö- ja sijoitussiirtojen vähimmäisvaraus. Yksittäisen velan lisälyhennyksen käyttäjä voi ryhmitellä itse.
+
+Asumisen 30 %, ruoan 15 % ja muut kategoriarajat ovat sovelluksen omia, muokattavia aloitusarvoja; niitä ei johdeta tästä kirjasta tai suomalaisista tilastoista. Kotitalouden koko, terveys, asuinpaikka, velan ehdot ja tulotaso muuttavat sopivia osuuksia. Lähdettä ei tässä työssä tarkistettu verkosta tai kokotekstistä.
