@@ -2574,6 +2574,47 @@ dialog::backdrop {
     gap: 20px;
   }
 }
+.csv-auto-map-note {
+  margin: -4px 0 10px;
+}
+.csv-primary-mapping {
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+}
+.csv-advanced-mapping {
+  margin: 12px 0 18px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.csv-advanced-mapping summary {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 650;
+}
+.csv-advanced-mapping summary small {
+  color: var(--muted);
+  font-weight: 500;
+}
+.csv-advanced-mapping[open] > p {
+  margin: 0 0 10px;
+}
+.csv-advanced-mapping .form-grid {
+  padding-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .csv-primary-mapping {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .prose {
   max-width: 900px;
 }

@@ -73,6 +73,8 @@ import {
   exportCSV,
   csvEntry,
   csvFields,
+  csvFieldLabels,
+  mapCSVHeaders,
   download,
 } from "./services/csv";
 import "./styles.css";
@@ -8099,15 +8101,43 @@ function Transfer({
     [bytes, setBytes] = useState<ArrayBuffer | null>(null),
     [skipErrors, setSkipErrors] = useState(false),
     [skipDuplicates, setSkipDuplicates] = useState(true);
+  const primaryCSVFields = ["name", "amount", "category", "date"];
+  const advancedCSVFields = csvFields.filter(
+    (field) => !primaryCSVFields.includes(field),
+  );
+  const mappedAdvancedCSVFields = advancedCSVFields.filter(
+    (field) => (map[field] ?? -1) >= 0,
+  ).length;
   let rows: string[][] = [];
   try {
     rows = text ? parseCSV(text, delimiter) : [];
   } catch (e) {
     error || queueMicrotask(() => setError(String(e)));
   }
+  const usesSignedBankAmounts =
+    map.amount >= 0 &&
+    rows.slice(1).some((row) => {
+      try {
+        return money(row[map.amount] || "") < 0;
+      } catch {
+        return false;
+      }
+    });
   const evaluated = rows.slice(1).map((r, i) => {
     try {
-      let e = csvEntry(r, map),
+      if (
+        usesSignedBankAmounts &&
+        kind === "expenses" &&
+        money(r[map.amount] || "") > 0
+      )
+        throw Error(
+          "Positiivinen pankkitapahtuma näyttää tulolta. Tuo se Tulot-näkymässä tai suodata CSV.",
+        );
+      let e = csvEntry(
+          r,
+          map,
+          kind === "incomes" || kind === "expenses" ? kind : undefined,
+        ),
         duplicate = s[kind].some(
           (x) =>
             x.name === e.name &&
@@ -8117,7 +8147,12 @@ function Transfer({
         );
       return { e, duplicate, line: i + 2, error: "" };
     } catch (e) {
-      return { e: null, duplicate: false, line: i + 2, error: String(e) };
+      return {
+        e: null,
+        duplicate: false,
+        line: i + 2,
+        error: e instanceof Error ? e.message : String(e),
+      };
     }
   });
   let seen = new Set<string>();
@@ -8141,14 +8176,7 @@ function Transfer({
       let sep = t.split(/\r?\n/)[0].includes(";") ? ";" : ",";
       setDelimiter(sep);
       let header = parseCSV(t, sep)[0] || [];
-      setMap(
-        Object.fromEntries(
-          csvFields.map((k) => [
-            k,
-            header.findIndex((x) => x.trim().toLowerCase() === k),
-          ]),
-        ),
-      );
+      setMap(mapCSVHeaders(header));
       setError("");
     } catch (e) {
       setError(
@@ -8186,7 +8214,8 @@ function Transfer({
           Tuonti lisää tietueita. Tuonnin voi kumota tämän istunnon aikana.
           Summat ovat CSV:ssä euroina, sisäisesti sentteinä. CSV ei säilytä
           velkojen ja omaisuuserien välisiä linkkejä; käytä JSON-varmuuskopiota
-          koko tietomallin siirtämiseen.
+          koko tietomallin siirtämiseen. Pankkiaineiston miinusmerkkiset menot
+          tuodaan positiivisina menoina; tulorivit pitää tuoda Tulot-valinnalla.
         </p>
         <div className="form-grid">
           <label>
@@ -8223,8 +8252,14 @@ function Transfer({
               aria-label="Erotin"
               value={delimiter}
               onChange={(e) => {
-                setDelimiter(e.target.value);
+                const nextDelimiter = e.target.value;
+                setDelimiter(nextDelimiter);
                 setError("");
+                try {
+                  setMap(mapCSVHeaders(parseCSV(text, nextDelimiter)[0] || []));
+                } catch (error) {
+                  setError(String(error));
+                }
               }}
             >
               <option value=";">Puolipiste</option>
@@ -8284,23 +8319,36 @@ function Transfer({
           <>
             <h3>Yhdistä sarakkeet</h3>
             <p>
-              Nimi ja summa ovat pakollisia. Päivämäärä voi olla dd.mm.yyyy tai
-              yyyy-mm-dd. Puuttuva päivämäärä on tänään.
+              Tarkista otsikoiden yhdistäminen. Nimi, summa ja päivämäärä ovat
+              pakollisia; päivämäärä voi olla dd.mm.yyyy tai yyyy-mm-dd.
+              Kategoria on vapaaehtoinen.
             </p>
-            <div className="form-grid">
-              {csvFields.map((k) => (
-                <label key={k}>
-                  {k}
-                  {["name", "amount"].includes(k) ? " *" : ""}
+            <p className="muted csv-auto-map-note">
+              Tunnistetut otsikot yhdistettiin automaattisesti. Tarkista neljä
+              perustietoa ennen tuontia.
+            </p>
+            <div className="form-grid csv-primary-mapping">
+              {primaryCSVFields.map((field) => (
+                <label key={field}>
+                  {csvFieldLabels[field]}
+                  {["name", "amount", "date"].includes(field) ? " *" : ""}
                   <select
-                    value={map[k] ?? -1}
+                    aria-label={csvFieldLabels[field]}
+                    value={map[field] ?? -1}
                     onChange={(e) =>
-                      setMap({ ...map, [k]: Number(e.target.value) })
+                      setMap({ ...map, [field]: Number(e.target.value) })
                     }
                   >
                     <option value={-1}>Ei saraketta</option>
                     {rows[0].map((h, i) => (
-                      <option key={i} value={i}>
+                      <option
+                        key={i}
+                        value={i}
+                        disabled={Object.entries(map).some(
+                          ([otherField, column]) =>
+                            otherField !== field && column === i,
+                        )}
+                      >
                         {h || "Sarake " + (i + 1)}
                       </option>
                     ))}
@@ -8308,6 +8356,44 @@ function Transfer({
                 </label>
               ))}
             </div>
+            <details className="csv-advanced-mapping">
+              <summary>
+                Lisätiedot ja harvemmat kentät
+                <small>{mappedAdvancedCSVFields} yhdistetty</small>
+              </summary>
+              <p className="muted">
+                Näitä tarvitaan vain, jos tuot toistuvuuden, muistiinpanoja tai
+                omaisuustietoja.
+              </p>
+              <div className="form-grid">
+                {advancedCSVFields.map((field) => (
+                  <label key={field}>
+                    {csvFieldLabels[field] || field}
+                    <select
+                      aria-label={csvFieldLabels[field] || field}
+                      value={map[field] ?? -1}
+                      onChange={(e) =>
+                        setMap({ ...map, [field]: Number(e.target.value) })
+                      }
+                    >
+                      <option value={-1}>Ei saraketta</option>
+                      {rows[0].map((h, i) => (
+                        <option
+                          key={i}
+                          value={i}
+                          disabled={Object.entries(map).some(
+                            ([otherField, column]) =>
+                              otherField !== field && column === i,
+                          )}
+                        >
+                          {h || "Sarake " + (i + 1)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+            </details>
             <h3>Esikatselu (enintään 5 riviä)</h3>
             <div
               className="table-wrap csv-preview-table"
@@ -8335,7 +8421,8 @@ function Transfer({
               </table>
             </div>
             <p>
-              {evaluated.length} riviä · {errors.length} virheellistä ·{" "}
+              {evaluated.length} {evaluated.length === 1 ? "rivi" : "riviä"} ·{" "}
+              {errors.length} virheellistä ·{" "}
               {dups.length} mahdollista duplikaattia · {accepted.length}{" "}
               tuotavaa.
             </p>
@@ -8367,7 +8454,8 @@ function Transfer({
                 !!error ||
                 (!!errors.length && !skipErrors) ||
                 !(map.name >= 0) ||
-                !(map.amount >= 0)
+                !(map.amount >= 0) ||
+                !(map.date >= 0)
               }
               onClick={() => {
                 if (confirm(`Tuodaanko ${accepted.length} tietuetta?`)) {

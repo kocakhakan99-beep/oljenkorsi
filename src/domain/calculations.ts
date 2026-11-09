@@ -61,7 +61,7 @@ export function money(s: string): number {
     throw Error("Anna summa enintään kahdella desimaalilla.");
   const whole = Number(integerGroups.join(""));
   const fractional = Number(fractionText.padEnd(2, "0") || "0");
-  let n = whole * 100 + (negative ? -1 : 1) * fractional;
+  let n = (whole * 100 + fractional) * (negative ? -1 : 1);
   if (!Number.isSafeInteger(n) || Math.abs(n) > MAX)
     throw Error("Summa on liian suuri.");
   return n;

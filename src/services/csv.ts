@@ -56,6 +56,88 @@ export const csvFields = [
   "occurrenceStatuses",
   "occurrenceAmounts",
 ];
+export const csvFieldLabels: Record<string, string> = {
+  name: "Nimi",
+  amount: "Summa (€)",
+  category: "Kategoria",
+  date: "Päivä",
+  recurrence: "Toistuvuus",
+  status: "Tila",
+  description: "Kuvaus",
+  quantity: "Määrä",
+  purchasePrice: "Hankintahinta (€)",
+  ownership: "Omistusosuus (%)",
+  liquid: "Likvidi omaisuus",
+  rate: "Vuosikorko tai tuotto (%)",
+  payment: "Kuukausierä (€)",
+  target: "Tavoitesumma (€)",
+  monthly: "Kuukausisummaa (€)",
+  endDate: "Päättymispäivä",
+  tags: "Tunnisteet",
+  active: "Aktiivinen",
+  essential: "Välttämätön meno",
+  occurrenceStatuses: "Esiintymien tilat",
+  occurrenceAmounts: "Esiintymien summat",
+};
+const csvHeaderAliases: Record<string, string[]> = {
+  name: [
+    "nimi",
+    "tapahtuma",
+    "tapahtuman nimi",
+    "selite",
+    "kuvaus",
+    "saaja maksaja",
+    "saaja/maksaja",
+    "payee",
+    "merchant",
+  ],
+  amount: [
+    "summa",
+    "määrä",
+    "summa eur",
+    "summa €",
+    "amount eur",
+    "amount €",
+    "value",
+  ],
+  category: ["kategoria", "luokka", "menoluokka", "tuloluokka"],
+  date: [
+    "päivä",
+    "pvm",
+    "päivämäärä",
+    "tapahtumapäivä",
+    "kirjauspäivä",
+    "maksupäivä",
+    "transaction date",
+    "value date",
+  ],
+};
+function normalizedHeader(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("fi-FI")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+export function mapCSVHeaders(header: string[]): Record<string, number> {
+  const aliases = new Map<string, string>();
+  for (const field of csvFields) aliases.set(normalizedHeader(field), field);
+  for (const [field, values] of Object.entries(csvHeaderAliases))
+    for (const alias of values) aliases.set(normalizedHeader(alias), field);
+  const map: Record<string, number> = Object.fromEntries(
+    csvFields.map((field) => [field, -1]),
+  );
+  const used = new Set<string>();
+  header.forEach((value, index) => {
+    const field = aliases.get(normalizedHeader(value));
+    if (field && map[field] < 0 && !used.has(field)) {
+      map[field] = index;
+      used.add(field);
+    }
+  });
+  return map;
+}
 export function exportCSV(es: Entry[]) {
   let safe = (s: string) => {
     if (/^[\s]*[=+@-]/.test(s)) s = "'" + s;
@@ -88,18 +170,29 @@ export function exportCSV(es: Entry[]) {
     ].join("\r\n")
   );
 }
-export function csvEntry(row: string[], map: Record<string, number>): Entry {
+export function csvEntry(
+  row: string[],
+  map: Record<string, number>,
+  transactionKind?: "incomes" | "expenses",
+): Entry {
+  if (!(map.date >= 0))
+    throw Error("Päivämääräsarake puuttuu. Yhdistä se ennen tuontia.");
   let get = (k: string) => (map[k] >= 0 ? row[map[k]] || "" : "");
   let d = get("date");
+  if (!d.trim()) throw Error("Päivämäärä puuttuu.");
   if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(d)) {
     let [day, m, y] = d.split(".");
     d = `${y}-${m.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
+  let amount = money(get("amount"));
+  if (transactionKind === "expenses" && amount < 0) amount = Math.abs(amount);
+  else if (transactionKind === "incomes" && amount < 0)
+    throw Error("Miinusmerkkinen summa näyttää menolta. Tuo se Menot-näkymään.");
   let e = entry({
     name: get("name"),
-    amount: money(get("amount")),
+    amount,
     category: get("category") || "Muu",
-    date: d || entry().date,
+    date: d,
   });
   for (let k of csvFields) {
     let v = get(k);

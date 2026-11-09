@@ -64,7 +64,7 @@ Näistä ei voi päätellä, mikä käyttöliittymä toimii parhaiten todellisis
 
 ## Osaako tavallinen käyttäjä käyttää sovellusta oikein?
 
-Nykyisestä aineistosta ei voi vahvistaa tätä: sovellusta ei ole testattu uusilla loppukäyttäjillä. Tekninen onnistuminen ja ymmärrettävyys ovat eri asioita. Nykyiset 55 E2E-tarkistusta todentavat muun muassa kirjauksen, manuaalisen budjettitoteuman, raporttien vuorovaikutuksen, demotaloudet, tallennuksen sekä mobiilinäkymän. Ajo ei löytänyt JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. Se ei todista, että käyttäjä ymmärtää talousluvut oikein.
+Nykyisestä aineistosta ei voi vahvistaa tätä: sovellusta ei ole testattu uusilla loppukäyttäjillä. Tekninen onnistuminen ja ymmärrettävyys ovat eri asioita. Viimeisimmät 57 E2E-tarkistusta todentavat muun muassa kirjauksen, manuaalisen budjettitoteuman, raporttien vuorovaikutuksen, demotaloudet, tallennuksen, CSV-tuonnin sekä mobiilinäkymän. Ajo ei löytänyt JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. Se ei todista, että käyttäjä ymmärtää talousluvut oikein.
 
 Ennen kuin sovelluksen yksinkertaisuus väitetään varmistetuksi, pyydä 5–7 taloussovelluksia vähän käyttävää ihmistä tekemään fiktiivisillä tiedoilla nämä tehtävät ilman suullista ohjausta:
 
@@ -104,3 +104,9 @@ Raportit pidetään seitsemänä, koska ne vastaavat eri päätöskysymyksiin: k
 Kuukausi- ja aikavälitila ovat nyt eksplisiittisiä. Yhden kuukauden näkymä käyttää yhtä kuukausivalitsinta ja nuolia; monen kuukauden näkymä käyttää alkua, loppua ja vieritettävää kuukausirailia. Varallisuus- ja velkaraportit näyttävät nykytilan ilman aikavalitsinta, koska historiallisia arvostuksia ei ole tallennettu. Taulukkomuodon haku ja aihekohtainen lajittelu käyttävät samoja rivejä kuin raportin tietokortit.
 
 Tämä ratkaisee näkyvän käyttöliittymäristiriidan, mutta ei vahvista tuotteen yksinkertaisuutta käyttäjäaineistolla. Seuraava laadullinen tarkistus on tarkkailla 5–7 käyttäjää lisäämässä ostosta, toistuvaa laskua ja tuloa sekä etsimässä kuukauden alijäämää ilman ohjausta. Tallenna myös virheelliset toistuvuustulkinnat, peruutukset ja se, löytääkö käyttäjä lisävalinnat itse.
+
+## CSV-tuonnin yksinkertaistus 9.11.2026
+
+CSV-tuonnin kenttälista näytti aiemmin kaikki tietueen tekniset lisäominaisuudet samalla painolla. Nyt neljä peruskenttää ovat etualalla, suomalaiset otsikot kuten "Kirjauspäivä", "Saaja/maksaja" ja "Määrä" yhdistyvät automaattisesti ja harvemmat kentät ovat suljetuissa lisävalinnoissa. Päivämäärää ei täytetä järjestelmän tämän päivän arvolla, koska se voisi siirtää historiallisen ostoksen väärään kuukauteen. Pankin negatiivinen menomäärä näytetään tuotavan positiivisena menona; positiivinen tapahtuma pysäytetään Menot-tuonnissa, jos sama aineisto sisältää etumerkillisiä summia.
+
+Tämä vähentää sarakekartoitusta, mutta ei kata kaikkien pankkien omia CSV-muotoja. Esikatselussa tulee tarkistaa yhdistykset ja virherivit ennen vahvistusta; CSV ei myöskään tunnista kategorioita pankin tekstiselitteestä automaattisesti.
