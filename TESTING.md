@@ -1,5 +1,13 @@
 # Testausraportti 9.11.2026
 
+## Yhteiset pääpaikat ja kirjauslomake
+
+- TypeScript, ESLint, 77 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript-bundlen kokohuomautus säilyy (noin 550 kB).
+- Kaikki 62 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Lisäys ja muokkaus varmennettiin samalla lomakkeella: viikkotoisto, loppupäivä, tunniste, monirivinen kuvaus sekä alkuperäinen ID säilyivät tallennuksen ja uudelleenavauksen yli. Tapahtumakohtaisten summapoikkeusten säilyminen varmennettiin sarjan muokkauksessa.
+- Budjetin kokonaistoteuman korjaus varmennettiin kategoriakortin lisävalinnasta; päätaulukossa ei ole toista toteuman syöttökenttää. Tulot/Menot-näkymissä on vain tiivis raamitila ja linkki täyteen budjettiin. Varmuuskopio haettiin Asetusten linkistä Tuonti ja vienti -näkymään, minkä jälkeen JSON-vienti ja palautus läpäisivät.
+- Mobiilileveydet 320–768 px, tumma tila ja nykyiset raportti-/kompassipolut läpäisivät. Ei JavaScript- tai konsolivirheitä eikä sovelluksen verkkopyyntöjä. File-käyttöä ei tässä ympäristössä varmennettu.
+
+
 ## 50/30/20 ja kategoriakohtaiset raamit
 
 - TypeScript, ESLint, 77 yksikkötestiä viidessä tiedostossa ja tuotantobuild läpäisivät.

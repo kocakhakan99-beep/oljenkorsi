@@ -110,3 +110,9 @@ Tämä ratkaisee näkyvän käyttöliittymäristiriidan, mutta ei vahvista tuott
 CSV-tuonnin kenttälista näytti aiemmin kaikki tietueen tekniset lisäominaisuudet samalla painolla. Nyt neljä peruskenttää ovat etualalla, suomalaiset otsikot kuten "Kirjauspäivä", "Saaja/maksaja" ja "Määrä" yhdistyvät automaattisesti ja harvemmat kentät ovat suljetuissa lisävalinnoissa. Päivämäärää ei täytetä järjestelmän tämän päivän arvolla, koska se voisi siirtää historiallisen ostoksen väärään kuukauteen. Pankin negatiivinen menomäärä näytetään tuotavan positiivisena menona; positiivinen tapahtuma pysäytetään Menot-tuonnissa, jos sama aineisto sisältää etumerkillisiä summia.
 
 Tämä vähentää sarakekartoitusta, mutta ei kata kaikkien pankkien omia CSV-muotoja. Esikatselussa tulee tarkistaa yhdistykset ja virherivit ennen vahvistusta; CSV ei myöskään tunnista kategorioita pankin tekstiselitteestä automaattisesti.
+
+## Yhtenäistämiskierros 9.11.2026
+
+Saman toiminnon rinnakkaisia toteutuksia tunnistettiin tulo-/menolomakkeista (pika vs täydellinen), kategoriatoteumasta (kirjatut maksut vs rinnakkainen koontisyöttö), 50/30/20:n kolmesta täydestä paneelista ja tavallisen varmuuskopioinnin paikoista. Lisäys ja muokkaus käyttävät nyt yhtä lomaketta, jossa harvemmat kentät ovat lisävalinnoissa. Budjetin päätaulukko näyttää toteuman; koontikorjaus säilyy kategoriakortin erillisenä lisävalintana ja sen vaikutus erotetaan kassavirrasta. Raamien asetukset ovat budjetissa, muut kirjaussivut näyttävät vain tiiviin tilan ja linkin. Tavallinen varmuuskopiointi on Tuonti ja vienti -näkymässä.
+
+[Toimintokartta](UNIFICATION_PLAN.md) määrittää pääpaikat. [UX-esittämisen malli](UX_PRESENTATION_MODEL.md) määrittää seuraavan kierroksen: vähemmän oletuksena näkyvää tekstiä ja ominaisuudet säilyttäviä lisätietotasoja. Malli on suunniteltu, koko sovelluksen käyttökokemusta ei tämän perusteella julisteta valmiiksi tai auditoiduksi.

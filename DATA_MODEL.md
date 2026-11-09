@@ -54,3 +54,7 @@ Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjo
 ## Budjetin ohjearvot
 
 `settings.budgetGuidance` sisältää `needs`, `wants` ja `saving` -prosentit (0–100, summa 100) sekä `categories`-sanakirjan. Kategoria-asetuksen avain on kategorian ID; näin käyttäjän ryhmä ja raja säilyvät nimeämisessä. Ilman kategoria-ID:tä käytetään `name:`-alkuista avainta. Arvo on `{ group: needs | wants | saving | unclassified, maxPercent: number | null }`. Null poistaa kategoriakohtaisen rajan. Puuttuvat asetukset saavat 50/30/20-jaon ja tyhjän poikkeusluettelon; kategoriakohtainen oletus päätellään nimestä laskennassa. Tuntemattoman kategorian oletus on luokittelematta. Säästö-/sijoitussiirron eksplisiittinen menotyyppi ohittaa kategoriaryhmän. Ohjearvot säilyvät JSON-varmuuskopiossa; CSV ei ole asetusten siirtomuoto.
+
+## Syöttöpolkujen yhtenäistäminen
+
+Tietomalli ja vanhat kokonaistoteuman poikkeukset säilyvät. Tulojen ja menojen yhteinen lomake lisää uuden ID:n vain lisäyksessä/kopioinnissa; muokkaus säilyttää ID:n, aikaleimametadatan sekä päiväkohtaiset tila- ja summapoikkeukset. Sarjan toistuvuus, loppupäivä, aktiivisuus, tunnisteet ja monirivinen kuvaus ovat lisävalinnoissa sekä lisäyksessä että muokkauksessa. Budjetin kokonaistoteuman erillinen korjaus löytyy vain kategoriakortin lisävalinnasta; päätaulukko näyttää toteuman ja sen lähteen. Korjauksen voi poistaa palaamalla kirjauksista laskettuun toteumaan.

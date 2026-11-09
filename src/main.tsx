@@ -1570,6 +1570,10 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
   const outside = result.checks.filter(check => check.outside);
   const unknown = result.categories.filter(category => category.group === "unclassified" && category.allocated > 0);
   const rule = state.settings.budgetGuidance;
+  if (!detailed) return <section className="panel budget-guidance-compact" aria-label="Budjetin raamit">
+    <div><strong>Budjetin raamit</strong><p role="status">{result.income <= 0 ? "Lisää kuukauden nettotulot prosenttivertailua varten." : `${outside.length} ryhmäpoikkeamaa · ${excessCategories.length} kategoriaylitystä${unknown.length ? ` · ${unknown.length} luokittelematta` : ""}`}{result.income > 0 && result.totalAllocated > result.income ? ` · rahoitusvaje ${euro(result.totalAllocated - result.income)}` : ""}</p></div>
+    <button onClick={onBudget}>Tarkista budjetissa <ArrowRight size={16} aria-hidden="true" /></button>
+  </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
     <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
     <p>Kuukauden {month} kirjatut nettotulot yhteensä <strong>{euro(result.income)}</strong>, joista toteutuneita {euro(result.actualIncome)}. Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja.</p>
@@ -1602,21 +1606,24 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
   </section>;
 }
 
-function QuickEntryForm({
+function CashEntryForm({
   kind,
   item,
+  editing = false,
   categories,
   onSave,
   onCancel,
 }: {
   kind: "incomes" | "expenses";
   item: Entry;
+  editing?: boolean;
   categories: CategoryChoice[];
   onSave: (item: Entry, addAnother: boolean) => boolean;
   onCancel: () => void;
 }) {
   const [error, setError] = useState("");
   const [entryDate, setEntryDate] = useState(item.date);
+  const [endDate, setEndDate] = useState(item.endDate);
   const [submitAgain, setSubmitAgain] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -1644,27 +1651,30 @@ function QuickEntryForm({
       const amount = money(amountText);
       const name = String(fields.get("name") || "").trim();
       const date = dateTextToIso(String(fields.get("date") || ""));
-      const repeats = fields.has("repeatMonthly");
+      const recurrence = String(fields.get("recurrence")) as Recurrence;
       if (!name) throw Error("Anna kirjaukselle nimi.");
-      if (amount <= 0) throw Error("Summan pitää olla yli 0 €.");
+      if (amount < 0 || (!editing && amount === 0)) throw Error("Summan pitää olla yli 0 €.");
       if (!date) throw Error("Tarkista päivämäärä.");
+      const endText = String(fields.get("endDate") || "").trim();
+      if (endText && !dateTextToIso(endText)) throw Error("Tarkista lopetuspäivä.");
       const value: Entry = {
         ...item,
-        id: uid(),
+        id: editing ? item.id : uid(),
         name,
         amount,
         category: String(fields.get("category") || "").trim(),
         date,
-        endDate: "",
-        recurrence: repeats ? "monthly" : "once",
-        status: date <= today() ? "actual" : "planned",
+        endDate: dateTextToIso(String(fields.get("endDate") || "")),
+        recurrence,
+        status: editing && item.status === "skipped" ? "skipped" : date <= today() ? "actual" : "planned",
         adjustToPreviousBankDay:
           kind === "incomes" && fields.has("adjustToPreviousBankDay"),
-        occurrenceStatuses: {},
-        occurrenceAmounts: {},
-        active: true,
+        occurrenceStatuses: editing ? item.occurrenceStatuses : {},
+        occurrenceAmounts: editing ? item.occurrenceAmounts : {},
+        active: fields.has("active"),
         updatedAt: new Date().toISOString(),
         description: String(fields.get("description") || "").trim(),
+        tags: userTags(String(fields.get("tags") || "")),
       };
       if (kind === "expenses") {
         value.essential = fields.has("essential");
@@ -1705,8 +1715,8 @@ function QuickEntryForm({
       }}
     >
       <p className="quick-entry-intro">
-        Kirjaa {title.toLocaleLowerCase("fi-FI")} nopeasti. Tarvittavat
-        lisätiedot ovat valinnaisia.
+        {editing ? "Muokkaa kirjausta" : "Lisää kirjaus"}: nimi, summa, kategoria ja päivä. Muut tiedot ovat lisävalinnoissa.
+        {editing && item.recurrence !== "once" && " Muutos koskee koko sarjaa; yksittäisen tapahtuman summa ja tila korjataan Menot- tai Tulot-listan lisätiedoissa."}
       </p>
       <p className="muted quick-status-note">
         Tila määräytyy päivästä: tuleva päivä on suunniteltu ja tämä päivä tai
@@ -1735,7 +1745,7 @@ function QuickEntryForm({
           <MoneyInput
             name="amount"
             id="quick-entry-amount"
-            defaultCents={item.amount > 0 ? item.amount : null}
+            defaultCents={editing ? item.amount : item.amount > 0 ? item.amount : null}
             required
             aria-label={`${title}, summa euroina`}
             aria-describedby="quick-entry-amount-hint"
@@ -1782,14 +1792,10 @@ function QuickEntryForm({
       <details className="quick-entry-details">
         <summary>Lisävalinnat</summary>
         <div className="quick-entry-options">
-          <label className="check">
-            <input
-              type="checkbox"
-              name="repeatMonthly"
-              defaultChecked={item.recurrence === "monthly"}
-            />
-            Toistuu kuukausittain
-          </label>
+          <label>Toistuvuus<select name="recurrence" defaultValue={item.recurrence}>{Object.entries(recNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <DatePickerField label="Lopetuspäivä (valinnainen)" name="endDate" value={endDate} minDate={entryDate} onChange={setEndDate} />
+          <label className="check"><input type="checkbox" name="active" defaultChecked={item.active} />Aktiivinen</label>
+          <label>Tunnisteet (valinnainen)<input name="tags" defaultValue={userTags(item.tags)} maxLength={500} /></label>
           {kind === "incomes" && (
             <label className="check">
               <input
@@ -1827,10 +1833,10 @@ function QuickEntryForm({
           )}
           <label className="quick-entry-note">
             Lisätieto
-            <input
+            <textarea
               name="description"
               defaultValue={item.description}
-              maxLength={500}
+              maxLength={2000}
               placeholder="Vapaaehtoinen tarkenne"
             />
           </label>
@@ -1838,11 +1844,11 @@ function QuickEntryForm({
       </details>
       <div className="quick-entry-actions">
         <button type="submit" className="primary" onClick={() => setSubmitAgain(false)}>
-          Tallenna {title.toLocaleLowerCase("fi-FI")}
+          {editing ? "Tallenna" : `Tallenna ${title.toLocaleLowerCase("fi-FI")}`}
         </button>
-        <button type="submit" onClick={() => setSubmitAgain(true)}>
+        {!editing && <button type="submit" onClick={() => setSubmitAgain(true)}>
           Tallenna ja lisää seuraava
-        </button>
+        </button>}
         <button type="button" onClick={onCancel}>
           Takaisin
         </button>
@@ -2231,7 +2237,9 @@ function App() {
     ) {
       setEdit(null);
       setNotice("Tiedot päivitetty.");
+      return true;
     }
+    return false;
   }
   function beginQuickEntry(
     kind: "incomes" | "expenses",
@@ -4283,9 +4291,7 @@ function App() {
                     title="Suunnitelma ja toteuma ovat eri asioita"
                     onDismiss={dismissHelp}
                   >
-                    Syötä budjetti ennakkoon. Toteumakentän voi jättää tyhjäksi,
-                    jolloin se seuraa kirjattuja kulutustapahtumia; oma käsin
-                    syötetty toteuma koskee vain valittua kuukautta.
+                    Suunnittele kategoriabudjetit täällä. Kirjaa toteutuneet maksut Menot-näkymässä tai kategorian lisäyspainikkeesta samalla lomakkeella. Toteuma lasketaan kirjauksista. Kategorian kokonaistoteuman erillinen korjaus löytyy kategoriakortin lisävalinnoista.
                   </HelpBox>
                 )}
                 <div className="stats summary-strip summary-strip-plan">
@@ -4327,11 +4333,7 @@ function App() {
                     </button>
                   </div>
                   <p className="muted">
-                    Syötä suunniteltu budjetti ja halutessasi toteutunut kulutus
-                    käsin. Jos toteumaa ei ole syötetty, näytetään tapahtumista
-                    laskettu summa. Budjetin toteuma ei muuta kassavirtaa.
-                    Yhteenveto vertaa toteumaa vain niihin kategorioihin, joille
-                    on asetettu budjetti.
+                    Aseta budjetti ja avaa kategoriasta sen kirjaukset. Toteuma kertyy menoista; mahdollinen oma kokonaistoteuman korjaus näkyy erikseen.
                   </p>
                   <div className="table-wrap mobile-card-table budget-table">
                     <table role="table">
@@ -4419,21 +4421,8 @@ function App() {
                                 />
                               </td>
                               <td role="cell" data-label="Toteutunut kulutus">
-                                <MoneyInput
-                                  className="budget-input"
-                                  aria-label={c + " toteuma euroina"}
-                                  key={`${month}-${c}-${hasManual ? "manual" : "entries"}`}
-                                  defaultCents={hasManual ? a : null}
-                                  placeholder={euro(observed)}
-                                  onBlur={(e) =>
-                                    actualChange(c, e.target.value)
-                                  }
-                                />
-                                <small>
-                                  {hasManual
-                                    ? "Manuaalinen toteuma"
-                                    : "Tapahtumista / syötä toteuma"}
-                                </small>
+                                <strong>{euro(a)}</strong>
+                                <small>{hasManual ? "Oma kokonaistoteuman korjaus" : "Kirjatuista menoista"}</small>
                               </td>
                               <td
                                 role="cell"
@@ -6804,11 +6793,7 @@ function App() {
                     nykyisen talouden; tee varmuuskopio ensin, jos haluat
                     palauttaa omat tietosi myöhemmin.
                   </p>
-                  <div className="actions">
-                    <button onClick={exportBackup}>
-                      Vie nykyisen talouden varmuuskopio
-                    </button>
-                  </div>
+                  <button onClick={() => navigate("transfer")}>Avaa varmuuskopiot</button>
                   <DemoHouseholdGrid
                     scenarios={compassDemos}
                     hideNumbers={s.settings.private}
@@ -6827,7 +6812,7 @@ function App() {
                     JSON-varmuuskopio on siirrettävä kopio tiedoistasi.
                   </p>
                   <div className="actions">
-                    <button onClick={exportBackup}>Vie varmuuskopio</button>
+                    <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
                     <button
                       onClick={() => {
                         try {
@@ -7067,6 +7052,11 @@ function App() {
                 <button aria-label={`Muokkaa menoa ${item.name}`} onClick={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }}>Muokkaa</button>
               </li>)}
             </ul> : <p className="budget-category-empty">Tässä kategoriassa ei ole tapahtumia valitussa kuussa. Lisää ensimmäinen meno yllä olevista painikkeista.</p>}
+            <details className="budget-actual-adjustment"><summary>Kokonaistoteuman korjaus (lisävalinta)</summary>
+              <p>Kirjaa yksittäiset maksut Menot-näkymässä. Käytä tätä vain, jos haluat korvata kategorian kuukauden yhteenlasketun kulutustoteuman esimerkiksi erillisellä kokonaissummalla. Tämä ei lisää maksutapahtumaa eikä muuta kassavirtaa tai säästöastetta.</p>
+              <label>Oma kokonaistoteuma (€)<MoneyInput aria-label={`${category} toteuma euroina`} defaultCents={s.budgetActuals[month]?.[category] ?? null} placeholder="Kirjauksista automaattisesti" onBlur={event => actualChange(category, event.target.value)} /></label>
+              {Object.hasOwn(s.budgetActuals[month] || {}, category) && <button onClick={() => actualChange(category, "")}>Palauta kirjauksista laskettu toteuma</button>}
+            </details>
             <button onClick={() => { setBudgetCategory(null); navigate("expenses"); setCategoryFilter(category); setSearch(""); }}>Näytä kaikki kategorian menot <ArrowRight size={16} aria-hidden="true" /></button>
           </Modal>
         );
@@ -7076,19 +7066,19 @@ function App() {
           title={"Muokkaa / lisää " + singular[edit.kind]}
           onClose={() => setEdit(null)}
         >
-          <EntryForm
+          {edit.kind === "incomes" || edit.kind === "expenses" ? <CashEntryForm key={edit.item.id} kind={edit.kind} item={edit.item} editing={s[edit.kind].some(item => item.id === edit.item.id)} categories={categoryChoices(edit.kind)} onSave={item => saveEntry(edit.kind, item)} onCancel={() => setEdit(null)} /> : <EntryForm
             kind={edit.kind}
             item={edit.item}
             categories={categoryChoices(edit.kind)}
             assets={s.assets}
             onSave={(e) => saveEntry(edit.kind, e)}
             onCancel={() => setEdit(null)}
-          />
+          />}
         </Modal>
       )}
       {quick && (
         <Modal
-          title={quickEntryKind ? `Pikakirjaus · ${singular[quickEntryKind]}` : "Pikakirjaus ja haku"}
+          title={quickEntryKind ? `Lisää ${singular[quickEntryKind]}` : "Pikakirjaus ja haku"}
           onClose={() => {
             setQuick(false);
             setQuickEntryKind(null);
@@ -7097,7 +7087,7 @@ function App() {
           }}
         >
           {quickEntryKind && quickSeed ? (
-            <QuickEntryForm
+            <CashEntryForm
               key={`${quickEntryKind}-${quickSeed.id}`}
               kind={quickEntryKind}
               item={quickSeed}
@@ -7144,7 +7134,7 @@ function App() {
                       </button>
                     ))}
                   </div>
-                  <small>Valinta kopioi tiedot uudelle toteutuneelle kirjaukselle.</small>
+                  <small>Valinta kopioi tiedot uudelle kirjaukselle. Tila määräytyy sen maksupäivästä.</small>
                 </section>
               )}
               <div className="quick-list quick-secondary-actions">
@@ -7401,7 +7391,7 @@ function EntryForm({
   onSave,
   onCancel,
 }: {
-  kind: Kind;
+  kind: Exclude<Kind, "incomes" | "expenses">;
   item: Entry;
   categories: CategoryChoice[];
   assets: Entry[];
@@ -7424,7 +7414,6 @@ function EntryForm({
     ownership: item.ownership,
     rate: item.rate,
   });
-  const recurring = kind === "incomes" || kind === "expenses";
   function adjustAmount(deltaEuros: number) {
     const input = document.querySelector<HTMLInputElement>(
       'dialog[open] input[name="amount"]',
@@ -7473,18 +7462,6 @@ function EntryForm({
         }
       for (let k of ["quantity", "ownership", "rate"] as const)
         if (f.has(k)) v[k] = Number(String(f.get(k)).replace(",", "."));
-      if (recurring) {
-        v.recurrence = String(f.get("recurrence")) as Entry["recurrence"];
-        v.status = dateTextToIso(v.date) <= today() ? "actual" : "planned";
-        v.active = f.has("active");
-        v.adjustToPreviousBankDay =
-          kind === "incomes" && f.has("adjustToPreviousBankDay");
-      }
-      if (kind === "expenses") v.essential = f.has("essential");
-      if (kind === "expenses") {
-        v.expenseType = String(f.get("expenseType")) as Entry["expenseType"];
-        v.tags = userTags(v.tags);
-      }
       if (kind === "assets") v.liquid = f.has("liquid");
       validateEntry(v);
       onSave(v);
@@ -7760,76 +7737,6 @@ function EntryForm({
           "date",
           true,
         )}
-        {recurring && (
-          <>
-            <label>
-              Toistuvuus
-              <select
-                aria-label="Toistuvuus"
-                name="recurrence"
-                defaultValue={item.recurrence}
-              >
-                {Object.entries(recNames).map(([v, n]) => (
-                  <option key={v} value={v}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="muted form-status-note">
-              Tila lasketaan maksupäivästä. Päivä ei ole pankkivarmennus.
-            </p>
-            {kind === "incomes" && (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  name="adjustToPreviousBankDay"
-                  defaultChecked={item.adjustToPreviousBankDay}
-                />
-                Aikaista viikonlopulle tai pyhälle osuva maksupäivä edeltävään
-                pankkipäivään
-              </label>
-            )}
-            {field(
-              "Lopetuspäivä (valinnainen)",
-              "endDate",
-              item.endDate,
-              "date",
-            )}
-            <label className="check">
-              <input
-                type="checkbox"
-                name="active"
-                defaultChecked={item.active}
-              />
-              Aktiivinen
-            </label>
-          </>
-        )}
-        {kind === "expenses" && (
-          <>
-            <label>
-              Menon tyyppi
-              <select
-                aria-label="Menon tyyppi"
-                name="expenseType"
-                defaultValue={expenseType(item)}
-              >
-                <option value="consumption">Kulutus</option>
-                <option value="saving">Säästösiirto</option>
-                <option value="investment">Sijoitussiirto</option>
-              </select>
-            </label>
-            <label className="check">
-              <input
-                type="checkbox"
-                name="essential"
-                defaultChecked={item.essential}
-              />
-              Välttämätön meno
-            </label>
-          </>
-        )}
         {kind === "assets" && (
           <>
             {field(
@@ -7899,12 +7806,6 @@ function EntryForm({
           maxLength={2000}
         />
       </label>
-      {recurring && (
-        <p className="muted">
-          Tila on toistuvan sarjan oletus. Yksittäisen kuukauden tapahtuman
-          tilan voit muuttaa avaamalla tietuerivin lisätiedot.
-        </p>
-      )}
       <div className="actions">
         <button type="submit" className="primary">
           Tallenna

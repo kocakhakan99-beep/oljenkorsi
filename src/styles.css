@@ -5224,3 +5224,8 @@ button.primary,
 .budget-policy-editor { border-top: 1px solid var(--line); padding: 10px 0; }
 .budget-policy-editor label { margin: 10px 0; }
 @media (max-width: 760px) { .budget-rule-grid { grid-template-columns: 1fr; } }
+
+.budget-guidance-compact { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.budget-guidance-compact p { margin: 4px 0 0; color: var(--muted); }
+.budget-actual-adjustment { margin: 18px 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+@media (max-width: 600px) { .budget-guidance-compact { align-items: stretch; flex-direction: column; } }

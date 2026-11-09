@@ -46,3 +46,7 @@ Menokortti näyttää varsinaiset kirjaukset; budjettirivin manuaalinen toteuma 
 ### Kuvakkeiden viimeistely
 
 Kategoriakuvakkeen kehys on kiinteä 32 × 32 px eikä veny kategorian tekstin mukana. Menon lisäys on 44 × 44 px kuvakepainike: kuittikuvakkeen kulmassa on plusmerkki. Teksti on korvattu työkaluvihjeellä ja saavutettavalla nimellä.
+
+## Toimintojen yhtenäistäminen
+
+Lisäys ja muokkaus on yhdistetty samaan tulo-/menolomakkeeseen. Päivittäiset maksut kirjataan tapahtumiksi; erillinen kategoriakohtainen kokonaistoteuman korjaus on siirretty budjetin kategoriakortin lisävalinnaksi. Aiemmat tiedot säilyvät ja korjauksen lähde näkyy taulukossa. [Toimintokartta](UNIFICATION_PLAN.md) ja jonossa oleva [UX-esittämisen malli](UX_PRESENTATION_MODEL.md) täydentävät suunnitelmaa.
