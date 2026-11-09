@@ -50,3 +50,13 @@ Arvonalenemafunktio on yksikkötestattu mutta ei omaisuuden UI:n arvomalli. Käy
 ## Jatkokehityksen erillinen määrittely
 
 Menoille voi valita tyypin kulutus, säästösiirto tai sijoitussiirto. Siirrot ovat edelleen kassavirrassa ja kokonaismenoissa, mutta eivät kulutusmenoissa. Vanhojen tietueiden kaksi oletuskategoriaa tai piilotettu merkintä muunnetaan palautuksessa eksplisiittiseen kenttään. Luokitus on käyttäjän kirjaus, ei pankki- tai sijoitustapahtumasta todennettu virta. Lainan korkoa ja pääomalyhennystä ei vielä eroteta. FIRE-pääoma, vaiheistetut eläketulot ja nostot eivät kuulu nykyisiin kaavoihin. Laajempi ehdotus on [FIRE-suunnitelmassa](FIRE_PLAN.md).
+
+## 50/30/20 ja kategoriarajat
+
+Tulopohja on valitun kuukauden toteutuneiden ja suunniteltujen (ei ohitettujen) kirjattujen tulojen summa. Nettomääräisyys on käyttäjän vastuulla. Toteutuneet tulot näytetään erikseen. Tulopohjan ollessa nolla ei lasketa euromääräisiä prosenttirajoja eikä muodosteta suhderajoihin perustuvia kompassitehtäviä.
+
+Kunkin kategorian varattu summa = max(kategoriabudjetti, kuukauden ei-ohitettujen tapahtumien summa, kategoriatoteuma). Manuaalinen kategoriatoteuma korvaa vain toteutuneen kulutuksen, ei säästö-/sijoitussiirtoja. Tapahtumien eurot ryhmitellään kategoriaryhmän mukaan; säästö-/sijoitussiirto ohittaa ryhmän säästämiseksi. Mahdollinen budjetin tai suuremman manuaalisen toteuman ja tapahtumien erotus kohdistetaan kategoriaryhmään. Näin budjetti ja sen kattamat tapahtumat eivät kertaudu.
+
+Välttämättömien ja valinnaisten ryhmäraja = tulopohja × käyttäjän prosentti, ylitys = max(0, varattu − raja). Säästämisen tavoite on vähimmäisosuus ja vaje = max(0, tavoite − varattu). Kirjaamatonta kulutusylijäämää ei oleteta säästösiirroksi. Säästämiseksi voi luokitella myös velan lisälyhennyksen; tämä ei erottele korkoa eikä muuta velkasaldoa. Hätävaralaskennan oma `essential`-valinta ei muutu kategoriaryhmästä.
+
+Kategorian enimmäisraja = tulopohja × maxPercent, ylitys = max(0, kategorian varattu − raja). Raja voi olla pois käytöstä. Sovelluksen oletuksia ovat esimerkiksi asuminen 30 %, ruoka 15 %, liikenne 10 %, tilaukset 3 % ja kosmetiikka 2 %. Nämä ovat muokattavia suunnittelun aloitusarvoja, eivät väestökeskiarvoja. Ryhmä- ja kategoriapoikkeamat ilmoitetaan erikseen, eikä niiden lukumäärä tarkoita eri euroja. Luokittelemattomat menot eritellään ja lasketaan kokonaisvaraukseen. Kokonaisvaraus yli tulopohjan tuottaa rahoitusvajeilmoituksen ja kompassiin tarkistuskehotuksen.

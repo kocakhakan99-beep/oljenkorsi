@@ -35,3 +35,9 @@ Eurostat käyttää yli 40 %:n asumiskustannusosuutta käytettävissä olevista 
 90 %:n välttämättömien menojen, 50 €:n ja 30 %:n kategoriamuutoksen, 10 €/kk:n toistuvien menojen listauksen sekä 35 %:n velkaeräosuuden rajat ovat tuotteen omia herkkyysasetuksia. 50 %:n velkaeräosuus nostaa vain näytön prioriteettia. Näitä ei perustella yksilön riskirajoina. Eurot, kirjaukset, kuukauden keskeneräisyys, kategoriavalinnat ja puuttuvat tapahtumat voivat vääristää arviota. Kaikki ehdotukset esittävät havaintoperusteen ja vähintään yhden rajauksen.
 
 Käyttäjä voi jättää askeleen tekemättä. Kompassi ei muuta budjettia, menoa, velkaa, sijoitusta tai tavoitetta ilman käyttäjän toimintaa. Pysyvämpi tili-, saldo- ja esiintymäkohtainen täsmäytys on yhä erillinen jatkokehitystarve; puuttuva merkintä ei tarkoita nollaa.
+
+## Budjetin raamit ja kategoriarajat
+
+Yhteinen `budgetGuidance`-laskenta tarkistaa valitun kuukauden kokonaisvarauksen, oman ryhmäjaon, säästösiirtovarauksen vajeen, luokittelemattomat menot ja suurimmat kategoriaylitykset. Rahoitusvaje on korkean prioriteetin tarkistus; muut ovat keskitason ehdotuksia. Kategoriatarkistuksia näytetään kompassin työjonossa enintään kuusi suurinta ylitystä; budjettinäkymässä kaikki kategoriaylitykset näkyvät. Kaikkiin soveltuvat olemassa olevat tehty/siirrä/ei onnistu nyt -toiminnot ja käsin tehtävä uudelleenarviointi.
+
+Toimenpiteet pyytävät tarkistamaan luokituksen, päällekkäiset korttiostokset, yhden laskun kilpailutuksen tai menon ajoituksen ja tarvittaessa oman ohjerajan. Ne eivät kehota jättämään välttämättömiä laskuja maksamatta tai rahoittamaan säästämistä velalla. Lähde R14 on käytännön kehikko; sovelluksen kategoriaprosentteja ei esitetä tutkimuksen vahvistamina rajoina. Tulopohjassa on myös tulevia kirjattuja tuloja.

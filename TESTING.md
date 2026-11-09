@@ -1,5 +1,14 @@
 # Testausraportti 9.11.2026
 
+## 50/30/20 ja kategoriakohtaiset raamit
+
+- TypeScript, ESLint, 77 yksikkötestiä viidessä tiedostossa ja tuotantobuild läpäisivät.
+- Uudet laskentatestit kattavat 1500/900/600-jaon 3000 euron tulosta, tulevat ja ohitetut tapahtumat, nollatulot, budjetin ja tapahtumien kaksoislaskennan eston, käsin syötetyn toteuman ja säästösiirtojen erottelun, luokittelemattomat kategoriat, omat kategoriarajat, vanhan tiedon migraation ja JSON-palautuksen sekä kompassin konkreettisen menotarkistuksen.
+- Kaikki 62 Chromium 155 -selainvarmennusta läpäisivät localhost-ajossa. Uusi polku muuttaa kategoriaryhmää ja rajaa, tarkistaa poikkeaman poistumisen/palaamisen sekä estää jaon, jonka summa ei ole 100 %. Yhteinen näkymä varmennettiin budjetissa, tuloissa ja menoissa.
+- Responsiiviset 320–768 px tarkistukset, nykyiset kompassi-, raportti-, nimeämis- ja varmuuskopiopolut läpäisivät. Ei sovelluksen JavaScript- tai konsolivirheitä eikä verkkopyyntöjä.
+- File-käyttöä ei tässä ympäristössä varmennettu. Viten kokohuomautus säilyy (JavaScript noin 550 kB); build onnistui. Suositusten henkilökohtaista sopivuutta tai säästövaikutusta ei testattu. Tulokset: `qa/e2e-results.json`.
+
+
 ## Budjetin kuvakkeet 9.11.2026
 
 TypeScript, ESLint ja tuotantobuild läpäisivät. Kaikki 61 Chromium-selainvarmennusta läpäisivät; lisätarkistukset mittaavat kategoriakuvakkeen kehyksen (32 × 32 px), näkyvän kuvan (vähintään 20 × 20 px) ja tekstittömän menokuvakepainikkeen 44 px leveyden. Kuvakkeeseen osunut tekstin flex-venytys rajattiin pois.

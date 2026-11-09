@@ -35,6 +35,15 @@ const shellSchema = z.object({
       .max(MAX)
       .nullable()
       .optional(),
+    budgetGuidance: z.object({
+      needs: z.number().min(0).max(100),
+      wants: z.number().min(0).max(100),
+      saving: z.number().min(0).max(100),
+      categories: z.record(z.string(), z.object({
+        group: z.enum(["needs", "wants", "saving", "unclassified"]),
+        maxPercent: z.number().min(0).max(100).nullable(),
+      })).refine(value => Object.keys(value).length <= 500),
+    }).refine(value => Math.abs(value.needs + value.wants + value.saving - 100) < 0.001, "Osuuksien summan on oltava 100 %").optional(),
     currency: z.literal("EUR"),
     language: z.literal("fi"),
   }),
@@ -112,6 +121,7 @@ export function validate(raw: unknown): State {
     settings: {
       ...defaults.settings,
       ...x.settings,
+      budgetGuidance: check.data.settings.budgetGuidance ?? defaults.settings.budgetGuidance,
       currency: "EUR",
       language: "fi",
     },

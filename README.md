@@ -45,6 +45,8 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Yhteenvedosta pääsee yhdellä painalluksella tulon tai menon kirjaukseen sekä budjettiin ja raportteihin.
 - Pikatoiminnot ja kirjauksien haku Ctrl/Cmd + K; listojen haku, kategoria/tila-suodatus ja lajittelu.
 
+Budjetin, tulojen ja menojen yhteinen 50/30/20-näkymä vertaa kuukauden nettotuloihin välttämättömiä menoja (enintään 50 %), valinnaisia menoja (enintään 30 %) sekä säästö-/sijoitussiirtoja (vähintään 20 %). Ryhmäosuuksia, kategoriaryhmiä ja kategoriarajoja voi muuttaa budjetin raamien asetuksista. Poikkeamat pysyvät näkyvissä ja kompassi ehdottaa menojen tarkistamista. Kehikko ja kategoriarajat ovat suunnittelun ohjeita, eivät henkilökohtaisia pakollisia rajoja. Katso [toteutussuunnitelma](BUDGET_RULE_PLAN.md).
+
 ## Kehitysteknologiat
 
 React 19.2.1, TypeScript strict, Vite 8.0.16, React Hook Form 7.66.0, Zod 4.1.12, Tailwind CSS 4.3 ja Lucide React 1.68. Tailwind toimii vain build-vaiheessa: CSS kootaan suoraan itsenäiseen HTML-tiedostoon. Lucide-kuvakkeet sisällytetään samaan tiedostoon; sovellus ei hae kuvakkeita verkosta. Vanha design system on edelleen `src/styles.css`-tiedostossa, ja uusia sekä uudistettuja alueita voidaan siirtää Tailwind-luokkiin asteittain. Kaaviot ovat omia, paikallisia HTML/SVG-toteutuksia ja niiden rinnalla on taulukkomuotoinen tietosisältö. Testit: Vitest ja ESLint; E2E käyttää Python Playwrightia vain kehitysympäristössä.

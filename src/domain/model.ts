@@ -1,3 +1,4 @@
+import type { BudgetGuidanceSettings } from "./budget-guidance";
 import {
   categoryIconFor,
   defaultCategoryDefinitions,
@@ -112,6 +113,7 @@ export interface State {
     accent: string;
     month: string;
     essentialMonthlyEstimate: number | null;
+    budgetGuidance: BudgetGuidanceSettings;
     currency: "EUR";
     language: "fi";
   };
@@ -157,6 +159,7 @@ export function empty(): State {
       accent: "#17604d",
       month: today().slice(0, 7),
       essentialMonthlyEstimate: null,
+      budgetGuidance: { needs: 50, wants: 30, saving: 20, categories: {} },
       currency: "EUR",
       language: "fi",
     },

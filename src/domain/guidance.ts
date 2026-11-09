@@ -1,4 +1,9 @@
 export const guidanceSources = {
+  R14: {
+    citation: "Warren & Tyagi (2005), All Your Worth: The Ultimate Lifetime Money Plan",
+    idea: "50/30/20 on käytännön budjetointikehikko nettotulojen jakamiseen välttämättömiin menoihin, valinnaiseen kulutukseen ja talouden vahvistamiseen.",
+    boundary: "Ei tutkimuksessa validoitu henkilökohtainen optimi. Kategoriakohtaiset prosentit ovat tämän sovelluksen muokattavia aloitusarvoja, eivät suomalaisia keskiarvoja tai pakollisia enimmäismenoja.",
+  },
   R1: {
     citation: "Modigliani & Brumberg (1954), elinkaaren kulutusteoria",
     idea: "Tulot, varallisuus ja kulutus liittyvät elämän eri vaiheissa toisiinsa.",
