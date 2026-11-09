@@ -2615,6 +2615,38 @@ dialog::backdrop {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.entry-coverage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-color: var(--line);
+  background: var(--soft);
+}
+.entry-coverage h2 {
+  margin: 4px 0;
+  font-size: 16px;
+}
+.entry-coverage p {
+  max-width: 760px;
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.entry-coverage small {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.entry-coverage.confirmed {
+  border-color: var(--accent);
+}
+@media (max-width: 600px) {
+  .entry-coverage {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 .prose {
   max-width: 900px;
 }

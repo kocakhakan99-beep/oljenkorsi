@@ -15,7 +15,7 @@
 - Ei mukautettua toistuvuutta, yksittäisen esiintymän päivämäärän siirtämistä eikä vuosittaista hinnanmuutosta.
 - Toistuvalla tietueella on sarjan oletustila ja -summa sekä päivämääräkohtaiset actual/planned/skipped- ja summapoikkeukset. Niillä voi kirjata laskun todellisen summan muuttamatta muita kuukausia. Tila tai summa ei kuitenkaan varmennu pankista, eikä poikkeus muuta tapahtuman päivää.
 - Vain kategoriabudjetti; ei budjettipohjia, nollapohjaista/prosenttijakoa tai kuun lopun ennustetta.
-- Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain kuukausista, joilla on välttämättömiä kulutuskirjauksia. Havaintokattavuus ei todista kaikkien menojen kirjaamista; nykyinen kuukausi voi olla kesken. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
+- Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain käyttäjän vahvistamista päättyneistä kuukausista. Vahvistus ei ole pankkivarmennus, ja vanhojen varmuuskopioiden kattavuutta ei päätellä takautuvasti. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
 - Omaisuuden manuaalinen nykyarvo ja omistusosuus; ei arvostushistoriaa, automaattista arvonalenemaa tai auton erillismallia.
 - Velkasaldo manuaalinen; erä ei generoi menoa eikä vähennä saldoa.
 - Sijoitukset vain EUR; ei ticker/ISIN/pörssi/valuutta-allokaatioita, erillisiä sijoitustapahtumia tai arvostushistoriaa. Hankinta-arvo näkyy, erilliset tuottoprosentit eivät.
@@ -29,7 +29,7 @@
 - Teemat: neljä valmista, tumma/vaalea/järjestelmä ja oma korostusväri. Järjestelmän vaalea/tumma-asetuksen muutosta seurataan sovelluksen ollessa auki. Ei kaikkien tokenien editoria tai automaattista kontrastilaskentaa.
 - Summien piilotus ei salaa dataa eikä piilota muokkauslomakkeita tai kaikkia johdettuja tietoja.
 - Haku ja kategoria/tila/lajittelu; ei kaikkia summa/aikaväli/toistuvuus-suodattimia tai tallennettuja suodattimia.
-- CSV-kartoituksen tekniset kenttänimet ovat englanniksi; toistuman tila- ja summapoikkeukset kulkevat JSON-tekstikentissä. Korjaus tapahtuu lähde-CSV:ssä. Ei pankkiformaatteja tai täydellistä merkistötunnistusta.
+- CSV-tuonti tunnistaa yleisiä suomenkielisiä otsikoita, mutta kaikkia pankkiformaatteja tai merkistöjä ei tunnisteta. Toistuman tila- ja summapoikkeukset kulkevat JSON-tekstikentissä; päivämäärä pitää olla aineistossa.
 - Ei täydellistä WCAG-auditointia, ruudunlukijakoetta, komponenttitestejä tai tuhansien rivien suorituskykymittausta.
 - main.tsx sisältää useita feature-näkymiä; modulaarisuus tulee parantaa.
 - Npm-lukitustiedosto on lisätty; täysin puhtaan ympäristön asennuskoe ja riippuvuusauditointi puuttuvat edelleen.
@@ -39,7 +39,7 @@ Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyk
 
 ## FIRE ja mittareiden tulkinta (kartoitus 3.11.2026)
 
-- Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit. Tyyppi tallentuu yhteensopivuuden vuoksi varattuna tags-merkintänä; vanhoissa tietueissa tulkinta perustuu oletuskategorioihin. Ei pankista todennettua siirtoa, eikä lainapääomaa erotella.
+- Säästöaste erottaa menolomakkeen kulutus-, säästösiirto- ja sijoitussiirtotyypit omassa kentässään. Vanhojen tietueiden tags-merkintä ja oletuskategoriat muunnetaan palautuksessa. Siirtoa ei todenneta pankista, eikä lainapääoman lyhennystä erotella.
 - FI-pääomatavoite ja aika-arvio ovat yksivaiheisia havainnollistuksia tasaisella reaalituotolla ja käyttäjän oletuksilla. Ei elinkaaren vaiheistusta, eläke- tai veromallia, nostostrategioita eikä tuottojärjestys-/Monte Carlo -laskentaa. Nykyinen vakiotuottolaskuri ei korvaa niitä.
 - Kokonaisnettovarallisuus ei tarkoita nostettavissa olevaa FIRE-pääomaa. Oma asunto ja puskuri vaativat erillisen rajauksen.
 - Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Chromium-pääpolku on testattu loopback HTTP -palvelun kautta; hallittu selain esti suoran file://-avauksen. Testi ei varmista file://-pysyvyyttä tai offline-tilaa eri selaimissa.

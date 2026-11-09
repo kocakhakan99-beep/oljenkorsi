@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   empty,
   kinds,
+  legacyExpenseType,
+  withoutLegacyExpenseTypeTag,
   type State,
   type Entry,
   type ActionState,
@@ -43,6 +45,16 @@ const shellSchema = z.object({
       z.string(),
       z.record(z.string(), z.number().int().nonnegative().max(MAX)),
     )
+    .optional(),
+  coverage: z
+    .object({
+      incomeMonths: z
+        .array(z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/))
+        .max(1200),
+      expenseMonths: z
+        .array(z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/))
+        .max(1200),
+    })
     .optional(),
   actionStates: z.record(z.string(), z.unknown()).optional(),
   scenarios: z.array(z.unknown()).max(100),
@@ -96,6 +108,10 @@ export function validate(raw: unknown): State {
     },
     createdAt: String(x.createdAt),
     applicationVersion: String(x.applicationVersion),
+    coverage: check.data.coverage || {
+      incomeMonths: [],
+      expenseMonths: [],
+    },
   };
   let ids = new Set<string>();
   for (let k of kinds) {
@@ -104,6 +120,17 @@ export function validate(raw: unknown): State {
     s[k] = x[k].map((e) => {
       const normalized = {
         ...e,
+        expenseType:
+          e.expenseType ??
+          legacyExpenseType(
+            typeof e.tags === "string" ? e.tags : "",
+            typeof e.category === "string" ? e.category : "",
+          ) ??
+          "consumption",
+        tags:
+          typeof e.tags === "string"
+            ? withoutLegacyExpenseTypeTag(e.tags)
+            : e.tags,
         linkedAssetId: e.linkedAssetId ?? "",
         occurrenceStatuses: e.occurrenceStatuses ?? {},
         occurrenceAmounts: e.occurrenceAmounts ?? {},
@@ -312,6 +339,7 @@ const defaultsEntry = {
   name: "",
   amount: 0,
   category: "",
+  expenseType: "consumption",
   date: "",
   endDate: "",
   recurrence: "once",
@@ -337,6 +365,8 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+  if (!["consumption", "saving", "investment"].includes(e.expenseType))
+    throw Error("Virheellinen menon tyyppi.");
   if (typeof e.linkedAssetId !== "string" || e.linkedAssetId.length > 200)
     throw Error("Virheellinen omaisuuslinkki.");
   if (

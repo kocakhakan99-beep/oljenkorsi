@@ -288,6 +288,8 @@ describe("Talouden kompassi", () => {
       "2026-05",
       "2026-06",
     ];
+    state.coverage.expenseMonths = ["2026-05", "2026-06"];
+    state.coverage.incomeMonths = [...months];
     for (const [index, month] of months.entries()) {
       state.incomes.push(
         entry({
@@ -353,6 +355,39 @@ describe("Talouden kompassi", () => {
     expect(irregular?.nextStep).toContain("12 kuukauden keskiarvo");
   });
 
+  it("tulojen vaihtelu käyttää vain vahvistettuja kuukausia ja laskee vahvistetun nollatulon mukaan", () => {
+    const state = empty();
+    const months = [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+    ];
+    state.coverage.incomeMonths = [...months];
+    for (const [index, month] of months.slice(0, 5).entries())
+      state.incomes.push(
+        entry({
+          id: `income-${month}`,
+          amount: [100000, 400000, 110000, 450000, 90000][index],
+          date: `${month}-01`,
+        }),
+      );
+
+    const withConfirmedMonths = planActions(state, "2026-07").find((action) =>
+      action.id.startsWith("income-variation-"),
+    );
+    expect(withConfirmedMonths?.evidence).toContain("6 havaintokuukautta");
+
+    state.coverage.incomeMonths = [];
+    expect(
+      planActions(state, "2026-07").some((action) =>
+        action.id.startsWith("income-variation-"),
+      ),
+    ).toBe(false);
+  });
+
   it("tarjoaa neljä fiktiivistä, keskenään erilaista kompassireittiä tallennettua dataa muuttamatta", () => {
     const demos = createCompassDemoCases("2026-11");
     expect(demos).toHaveLength(4);
@@ -393,6 +428,21 @@ describe("Talouden kompassi", () => {
     expect(
       planActions(demos[3].state, "2026-11").some(
         (action) => action.id === "cashflow-check-2026-11",
+      ),
+    ).toBe(true);
+    const currentMonth = today().slice(0, 7);
+    expect(
+      demos.every((scenario) =>
+        scenario.state.coverage.incomeMonths.every(
+          (period) => period < currentMonth,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      demos.every((scenario) =>
+        scenario.state.coverage.expenseMonths.every(
+          (period) => period < currentMonth,
+        ),
       ),
     ).toBe(true);
   });

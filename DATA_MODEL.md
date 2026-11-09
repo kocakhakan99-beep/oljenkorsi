@@ -1,10 +1,12 @@
 # Tietomalli, schemaVersion 1
 
-AppState sisältää schemaVersionin, applicationVersionin, createdAtin, settingsin, categoriesin, incomesin, expensesin, budgetsin, budgetActualsin, actionStatesin, assetsin, liabilitiesin, investmentsin, investmentTransactionsin, goalsin, scenariosin ja themesin.
+AppState sisältää schemaVersionin, applicationVersionin, createdAtin, settingsin, categoriesin, incomesin, expensesin, budgetsin, budgetActualsin, `coverage`-tiedon, actionStatesin, assetsin, liabilitiesin, investmentsin, investmentTransactionsin, goalsin, scenariosin ja themesin.
+
+`coverage.incomeMonths` ja `coverage.expenseMonths` ovat käyttäjän vahvistamia päättyneitä kuukausia muodossa `yyyy-mm`. Menokattavuutta käytetään hätävaran keskiarvossa ja tulokattavuutta kompassin tulovaihtelussa. Vahvistus kertoo, että käyttäjä on tarkistanut kirjaukset; se ei varmista niitä pankista. Vahvistettu nollakuukausi on eri asia kuin kuukausi, jonka tietojen kattavuutta ei ole vahvistettu. Vanha varmuuskopio saa tyhjät listat, eikä sen historiakattavuutta päätellä tapahtumista.
 
 ## Entry
 
-Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, date, endDate, recurrence, status, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
+Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
 
 - Rahat: kokonaislukusentit. quantity voi olla desimaalinen; määrä × yksikköhinta pyöristetään senttiin.
 - Date: kalenteripäivä `yyyy-mm-dd`, ei aikavyöhykettä.
@@ -14,6 +16,7 @@ Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, d
 - Omaisuuden amount on koko omaisuuserän käyttäjän arvio; ownership prosenttiosuus.
 - Velan amount on jäljellä oleva manuaalinen pääoma; payment kuukausierä sentteinä.
 - `linkedAssetId` on tyhjä muissa tietotyypeissä ja velalla joko tyhjä tai viittaus olemassa olevan omaisuuserän ID:hen. Linkki mahdollistaa nykyisen oman pääoman laskennan sekä oletuksiin perustuvan takaisinmaksuajan ja omaisuuden arvon arvion. Linkitys ei muuta kassavirtaa tai velkasaldoa automaattisesti.
+- `expenseType` erottaa kulutuksen, säästösiirron ja sijoitussiirron omaksi kentäkseen. Vanhan varmuuskopion piilotettu tags-merkintä tai kaksi vanhaa oletuskategoriaa muunnetaan palautuksessa kentäksi ja merkintä poistetaan käyttäjän tunnisteista. Tämä ei vielä mallinna tilisiirtoa tai lainan pääomalyhennystä.
 - Tavoitteen amount on nykyinen säästösumma; target tavoite ja monthly säästö.
 - Status: actual, planned tai skipped. Active false keskeyttää toistuvuuden.
 
@@ -43,4 +46,4 @@ Erilliset AssetValuation, PortfolioValuation, InvestmentTransaction, ImportJob, 
 
 ## Migraatiot
 
-Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjoiteta. Skeema 1:n puuttuvat `linkedAssetId`- ja `actionStates`-kentät alustetaan yhteensopivuuden vuoksi tyhjiksi, jolloin vanhat varmuuskopiot säilyvät käytettävinä. Migraatio on additive eikä luo historiatietoa. Uuden skeemaversion julkaisu vaatii eksplisiittisen migraation ja roundtrip-testit.
+Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjoiteta. Skeema 1:n puuttuvat `linkedAssetId`-, `actionStates`- ja `coverage`-kentät alustetaan yhteensopivuuden vuoksi tyhjiksi. Vanhan menotyypin tags-merkintä tai vanha säästö-/sijoituskategoria muunnetaan palautuksessa `expenseType`-kentäksi ja tekninen merkintä poistetaan käyttäjän tunnisteista. Migraatio on additive eikä luo historiatietoa. Uuden skeemaversion julkaisu vaatii eksplisiittisen migraation ja roundtrip-testit.

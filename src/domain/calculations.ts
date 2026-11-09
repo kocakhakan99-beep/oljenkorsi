@@ -1,27 +1,20 @@
-import type { Entry, EntryStatus, State, Scenario } from "./model";
+import {
+  legacyExpenseType,
+  today,
+  type Entry,
+  type EntryStatus,
+  type ExpenseType,
+  type State,
+  type Scenario,
+} from "./model";
 export const MAX = 1000000000000;
-export type ExpenseType = "consumption" | "saving" | "investment";
+export type { ExpenseType } from "./model";
 const EXPENSE_TYPE_TAG =
   /^talous:expense-type=(consumption|saving|investment)$/;
 export function expenseType(e: Entry): ExpenseType {
-  const tag = e.tags
-    .split(/[;,]/)
-    .map((value) => value.trim())
-    .find((value) => EXPENSE_TYPE_TAG.test(value));
-  const explicit = tag?.match(EXPENSE_TYPE_TAG)?.[1] as ExpenseType | undefined;
-  if (explicit) return explicit;
-  if (e.category.trim().toLocaleLowerCase("fi-FI") === "sijoittaminen")
-    return "investment";
-  if (e.category.trim().toLocaleLowerCase("fi-FI") === "säästäminen")
-    return "saving";
-  return "consumption";
-}
-export function setExpenseTypeTags(tags: string, type: ExpenseType) {
-  const retained = userTags(tags)
-    .split(/[;,]/)
-    .map((value) => value.trim())
-    .filter(Boolean);
-  return [...retained, `talous:expense-type=${type}`].join(";");
+  return (
+    e.expenseType || legacyExpenseType(e.tags, e.category) || "consumption"
+  );
 }
 export function userTags(tags: string) {
   return tags
@@ -168,18 +161,31 @@ export function emergencyFund(
     ![1, 3, 6, 12].includes(requestedMonths)
   )
     throw Error("Tarkista hätävaran tarkastelujakso.");
-  const [year, month] = endMonth.split("-").map(Number);
+  const currentMonth = today().slice(0, 7);
+  const windowEnd =
+    endMonth >= currentMonth
+      ? new Date(
+          Number(currentMonth.slice(0, 4)),
+          Number(currentMonth.slice(5, 7)) - 2,
+          1,
+        )
+      : new Date(
+          Number(endMonth.slice(0, 4)),
+          Number(endMonth.slice(5, 7)) - 1,
+          1,
+        );
   const essentialExpenses = s.expenses.filter(
     (e) => e.essential && expenseType(e) === "consumption",
   );
   const monthlyExpenses = Array.from(
     { length: requestedMonths },
     (_, index) => {
-      const date = new Date(Date.UTC(year, month - 1 - index, 1));
-      const period = date.toISOString().slice(0, 7);
-      const observed = essentialExpenses.some(
-        (e) => occurrencesWithStatus(e, period, "actual").length > 0,
+      const date = new Date(
+        Date.UTC(windowEnd.getFullYear(), windowEnd.getMonth() - index, 1),
       );
+      const period = date.toISOString().slice(0, 7);
+      const observed =
+        period < currentMonth && s.coverage.expenseMonths.includes(period);
       return observed ? total(essentialExpenses, period, true) : null;
     },
   );

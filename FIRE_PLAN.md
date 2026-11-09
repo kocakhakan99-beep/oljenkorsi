@@ -19,7 +19,7 @@ Tulojen on kerrottava, ovatko ne nettoa vai bruttoa. Negatiivisilla tai nollan n
 
 ## 2. Puskuri ja suunnittelun havaintopohja
 
-Käyttäjä valitsee tarkasteluun 3/6/12 täyttä kuukautta tai oman perustellun menoarvion. Näytetään kattavuus: havaittuja kuukausia / valitut kuukaudet. Tyhjä kuukausi vaatii vahvistuksen ennen kuin se tulkitaan nollakulutukseksi. Vuosittaiset vakuutukset ja muut tiedossa olevat menot jaksotetaan varauksiksi; ne eivät saa kasvattaa kulutusta toiseen kertaan maksukuussa.
+Käyttäjä valitsee tarkasteluun 1/3/6/12 täyttä kuukautta tai oman perustellun menoarvion. Näytetään kattavuus: vahvistettuja kuukausia / valitut kuukaudet. Tyhjä kuukausi vaatii käyttäjän vahvistuksen ennen kuin se tulkitaan nollakulutukseksi. Nykyistä kuukautta ei käsitellä kokonaisena. Vuosittaiset vakuutukset ja muut tiedossa olevat menot jaksotetaan varauksiksi; ne eivät saa kasvattaa kulutusta toiseen kertaan maksukuussa.
 
 Puskurikuukaudet = vapaasti käytettävä likvidi puskuri / keskimääräinen välttämätön kuukausikulutus. Nollanimittäjällä ei ääretöntä turvaa vaan puuttuva arvio. Käyttäjä valitsee puskuritavoitteen ja tulokatkosstressin; ei yhtä tutkimuksen takaamaa kuukausimäärää. Puskurin varaus vähennetään käytettävissä olevasta FIRE-pääomasta vain kerran.
 

@@ -1,5 +1,12 @@
 # Testausraportti 9.11.2026
 
+## Menotyyppien ja kuukausikattavuuden varmistus 9.11.2026
+
+- `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 64 testiä neljästä tiedostosta.
+- Chromium 155.0.8059.79: kaikki 58 selainvarmennusta läpäisivät localhost-ajossa. Uusi polku vahvisti nollamenokuukauden ja varmisti, että kuukausi menettää vahvistuksen, kun siihen lisätään kirjaus.
+- Ei sovelluksen JavaScript- tai konsolivirheitä eikä verkkopyyntöjä. Leveydet 320–768 px eivät aiheuttaneet ylivuotoa. `file://`-avausta ei ympäristön selainkäytännön vuoksi varmennettu.
+- Tuotantobuild ja standalone-`index.html` päivittyivät. Minifioitu JavaScript on noin 523 kB ja ylittää Viten 500 kB:n huomautusrajan; build onnistui. Tulokset: [`qa/e2e-results.json`](qa/e2e-results.json).
+
 ## CSV-tuonnin selkeytys 9.11.2026
 
 - `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 61 testiä neljästä tiedostosta.
