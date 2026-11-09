@@ -12,6 +12,7 @@ import {
   compound,
   goalMonths,
   payoff,
+  paymentBreakdown,
   depreciation,
   validDate,
   expenseType,
@@ -19,6 +20,8 @@ import {
   fiTarget,
   fiMonths,
   emergencyFund,
+  confirmedIncomeAverage,
+  incomeInterruptionStress,
   linkedAssetOutlook,
 } from "../domain/calculations";
 import { empty, entry, demo, uid } from "../domain/model";
@@ -230,6 +233,29 @@ describe("Raha ja laskelmat", () => {
     s.expenses = [entry({ date: `${month}-01`, amount: 100000 })];
     expect(emergencyFund(s, month, 1).observedMonths).toBe(0);
   });
+  it("tulokatkoksen arvio käyttää vain vahvistettua historiaa ja laskee puskurivajeen", () => {
+    const state = empty();
+    state.coverage.incomeMonths = ["2026-01", "2026-02", "2026-04"];
+    state.incomes = [
+      entry({ amount: 300000, date: "2026-01-01" }),
+      entry({ amount: 900000, date: "2026-04-01" }),
+    ];
+    expect(confirmedIncomeAverage(state, "2026-04")).toEqual({
+      months: 3,
+      average: 400000,
+    });
+    expect(incomeInterruptionStress(250000, 300000, 50, 3, 600000)).toEqual({
+      incomeAfterShock: 150000,
+      monthlyShortfall: 100000,
+      reserveNeeded: 300000,
+      reserveGap: 0,
+      remainingLiquid: 300000,
+    });
+    expect(
+      incomeInterruptionStress(250000, 300000, 100, 3, 100000),
+    ).toMatchObject({ reserveNeeded: 750000, reserveGap: 650000 });
+    expect(() => incomeInterruptionStress(250000, 300000, 101, 3, 0)).toThrow();
+  });
   it("arvonalenema", () => expect(depreciation(100000, -10, 2)).toBe(81000));
   it("tavoitteen kesto", () => {
     expect(
@@ -240,6 +266,25 @@ describe("Raha ja laskelmat", () => {
   it("velanmaksu", () => {
     expect(payoff(120000, 10000, 0)).toEqual({ months: 12, interest: 0 });
     expect(payoff(120000, 100, 12)).toBeNull();
+  });
+  it("jakaa seuraavan lainaerän korkoon ja pääoman lyhennykseen", () => {
+    expect(paymentBreakdown(200000, 10000, 6)).toEqual({
+      payment: 10000,
+      interest: 1000,
+      principal: 9000,
+      remainingBalance: 191000,
+    });
+    expect(paymentBreakdown(5000, 10000, 0)).toEqual({
+      payment: 5000,
+      interest: 0,
+      principal: 5000,
+      remainingBalance: 0,
+    });
+    expect(paymentBreakdown(100000, 500, 12)).toMatchObject({
+      principal: -500,
+      remainingBalance: 100500,
+    });
+    expect(() => paymentBreakdown(-1, 10000, 6)).toThrow();
   });
   it("omaisuuserään linkitetty velka näyttää nykyisen ja arvioidun oman pääoman", () => {
     const asset = entry({ id: "home", amount: 20000000, ownership: 50 });
@@ -444,6 +489,7 @@ describe("Varmuuskopio ja validointi", () => {
     const older = JSON.parse(JSON.stringify(demo())) as Record<string, unknown>;
     delete older.actionStates;
     delete older.coverage;
+    delete (older.settings as Record<string, unknown>).essentialMonthlyEstimate;
     for (const kind of [
       "incomes",
       "expenses",
@@ -486,6 +532,7 @@ describe("Varmuuskopio ja validointi", () => {
         delete item.occurrenceAmounts;
     const migrated = validate(older);
     expect(migrated.actionStates).toEqual({});
+    expect(migrated.settings.essentialMonthlyEstimate).toBeNull();
     expect(migrated.coverage).toEqual({ incomeMonths: [], expenseMonths: [] });
     expect(
       migrated.liabilities.every((item) => item.linkedAssetId === ""),

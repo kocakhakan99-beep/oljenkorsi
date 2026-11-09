@@ -23,6 +23,8 @@ Käyttäjä valitsee tarkasteluun 1/3/6/12 täyttä kuukautta tai oman perustell
 
 Puskurikuukaudet = vapaasti käytettävä likvidi puskuri / keskimääräinen välttämätön kuukausikulutus. Nollanimittäjällä ei ääretöntä turvaa vaan puuttuva arvio. Käyttäjä valitsee puskuritavoitteen ja tulokatkosstressin; ei yhtä tutkimuksen takaamaa kuukausimäärää. Puskurin varaus vähennetään käytettävissä olevasta FIRE-pääomasta vain kerran.
 
+Nykyinen stressiskenaario sallii oman menotason sekä 0–100 % tulonmenetyksen 1/3/6/12 kuukaudeksi. Se käyttää enintään kuuden vahvistetun kuukauden keskituloa, olettaa saman menetyksen kaikille tulolähteille eikä mallinna veroja, tukia tai maksujen järjestystä. Tulos ei ole ennuste eikä puskuritavoite.
+
 ## 3. FI-tavoitteen ensimmäinen deterministinen versio
 
 Tarvittavat syötteet: suunnitelman aloitus, käyttäjän suunnitteluhorisontti, nykyinen sijoituskelpoinen pääoma, vuosikulutus, säästövirrat, erilliset tulevat tulot ja alkamisajat, kulut, inflaatio, veromallin rajaus ja käyttäjän valitsema alkunostoprosentti. Nykyinen asunto tai auto ei oletuksena rahoita nostoja. Jokainen omaisuuserä kohdistetaan kerran; asunto voidaan ottaa mukaan eksplisiittisellä realisointitapahtumalla, jonka myyntikulut ja uusi asumismeno näkyvät.

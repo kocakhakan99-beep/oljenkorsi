@@ -57,6 +57,7 @@ with sync_playwright() as p:
  assert page.locator('.toolbar-status').count()==0
  mark('Mukautettu kuukausivalitsin, nuolisiirtymät ja kompakti yläpalkki')
  choose_month(page,'Valitse kuukausi','2026-10');nav(page,'Menot');page.get_by_role('button',name='Vahvista kuukauden menot',exact=True).click();assert '2026-10' in state(page)['coverage']['expenseMonths'];add(page,'Menot','+ Lisää meno',{'name':'Kattavuustesti','amount':'42','date':'2026-10-15','category':'Ruoka'});assert '2026-10' not in state(page)['coverage']['expenseMonths'];page.get_by_role('button',name='Poista Kattavuustesti',exact=True).click();choose_month(page,'Valitse kuukausi','2026-11');mark('Vahvistettu nollakuukausi tallentuu ja uusi tapahtuma mitätöi sen kattavuuden')
+ choose_month(page,'Valitse kuukausi','2026-10');nav(page,'Tulot');page.get_by_role('button',name='Vahvista kuukauden tulot',exact=True).click();choose_month(page,'Valitse kuukausi','2026-11');nav(page,'Yhteenveto');planner=page.locator('.buffer-planner');planner.locator('summary').click();estimate=page.get_by_label('Oma arvio välttämättömistä menoista kuukaudessa (€)',exact=True);estimate.fill('200000');estimate.press('Tab');assert state(page)['settings']['essentialMonthlyEstimate']==200000;expect(planner.locator('.buffer-stress-result')).to_contain_text('Tarvittava puskuri: 6 000,00 €');mark('Oma välttämättömien menojen arvio ja kolmen kuukauden tulokatkosstressi tallentuvat ja laskevat puskuriarvion')
  nav(page,'Tulot');page.get_by_role('button',name='+ Lisää tulo',exact=True).click();dlg=page.locator('dialog[open]')
  dlg.locator('[name="amount"]').fill('1250');assert dlg.locator('[name="amount"]').input_value()=='12,50'
  dlg.locator('[name="amount"]').fill('1 234,56 €');assert re.sub(r'\s+',' ',dlg.locator('[name="amount"]').input_value()).strip()=='1 234,56'
@@ -90,6 +91,7 @@ with sync_playwright() as p:
  page.get_by_role('button',name='Piilota summat',exact=True).click();nav(page,'Yhteenveto');assert page.locator('.hero-value').inner_text()=='•••••• €';page.get_by_role('button',name='Näytä summat',exact=True).click();mark('Summien piilotus')
  page.keyboard.press('Control+k');expect(page.get_by_role('heading',name='Pikakirjaus ja haku')).to_be_visible();page.keyboard.press('Escape');expect(page.get_by_role('heading',name='Pikakirjaus ja haku')).not_to_be_visible();mark('Ctrl K ja Escape näppäimistöpolku')
  nav(page,'Skenaariot')
+ installment=page.locator('.debt-installment-estimate').filter(has_text='Testivelka');expect(installment).to_contain_text('korkoa 0,00 €');expect(installment).to_contain_text('pääoman muutos 100,00 €');expect(installment).to_contain_text('Arvioitu saldo erän jälkeen 1 900,00 €');mark('Velkaerän arvio erottaa koron, pääoman lyhennyksen ja jäljelle jäävän saldon')
  for i in range(3):
   page.get_by_label('Nimi',exact=True).fill('Vertailu '+str(i+1));page.get_by_role('button',name='Tallenna vertailuun',exact=True).click()
  assert len(state(page)['scenarios'])==3;mark('Kolmen skenaarion tallennus')

@@ -15,6 +15,7 @@ Toteutunut tulo/meno = amount × kyseisen kuukauden esiintymien määrä, vain a
 - Päiväkohtainen budjettivara = budjetista jäljellä / jäljellä olevat kalenteripäivät, nykykuukaudessa. Muussa kuukaudessa käytetään kaikkia kuukauden päiviä. Ei ennuste.
 - Nettovarallisuus = summa(omaisuus × omistusosuus) + summa(sijoituksen hinta × määrä) − velat.
 - Yhteenvedon hätävarakuukaudet = likvidien omaisuuserien omistusosuuden mukainen summa / valitun 1/3/6/12 kuukauden jakson **käyttäjän vahvistettujen, päättyneiden** välttämättömien kulutusmenojen kuukausikeskiarvo. Nykyisen tai tulevan kuukauden valinta rajataan viimeiseen päättyneeseen kuukauteen; historiallisella valinnalla jakso päättyy valittuun kuukauteen. Vahvistettu kuukausi, jossa ei ole välttämättömiä kirjauksia, lasketaan aidoksi nollaksi. Vahvistamattomat kuukaudet jätetään keskiarvosta pois, ja havaintojen määrä näytetään. Jos keskiarvo puuttuu tai on nolla, kestoa ei näytetä. Vahvistus kertoo käyttäjän tarkistuksesta, ei pankkivarmennuksesta. Uuden tai muutetun tapahtuman tallennus mitätöi kyseisen kuukauden kattavuuden; toistuvan sarjan muutto mitätöi muutetusta kuukaudesta eteenpäin. Vanhassa `metrics().buffer`-kentässä säilyy yhden kuukauden laskutapa sisäistä yhteensopivuutta varten.
+- Tulokatkoksen puskuri = max(0, käyttäjän menoarvio tai hätävaran historiakeskiarvo − vahvistettujen tulokuukausien keskitulo × (1 − tulonmenetysosuus)) × skenaarion kuukaudet. Tulohistoria sisältää enintään kuusi valittuun päättymiskuukauteen päättyvää vahvistettua kuukautta, myös vahvistetut nollat. Nykyinen kuukausi ohitetaan. Tarvittavan puskurin ja likvidien varojen erotus näytetään erikseen. Tämä ei ole ennuste: veroja, etuuksia, tulojen lähdekohtaista jatkuvuutta tai uusia velkoja ei mallinneta.
 
 ## Toistuvuus
 
@@ -39,6 +40,8 @@ FI-aika-arvio on ensimmäinen kuukausi (enintään käyttäjän valitsema 1–50
 
 Tavoitteen säästökuukaudet = ceil(max(0, tavoite − nykyinen) / kuukausisäästö). Nollasäästöllä keskeneräiselle tavoitteelle ei arviota. Tavoitepäivä on tässä versiossa informatiivinen.
 Velan kuukausikorko = round(pääoma × vuosikorko/1200). Erä vähentää pääomaa koron jälkeen. Jos erä ei ylitä korkoa tai aika ylittää 1200 kuukautta, arviota ei näytetä. Velkasaldoa ei päivitetä automaattisesti.
+
+Seuraavan lainaerän erittely käyttää tallennettua nykyistä saldoa, vuosikorkoa ja kuukausierää: kuukauden korko = round(saldo × vuosikorko/1200), toteutuva erä rajataan enintään saldoon + korkoon, ja pääoman muutos = toteutuva erä − korko. Negatiivinen pääoman muutos näytetään saldon kasvuna, jos erä ei kata korkoa. Tämä on yhden kuukauden vakio-oletuksiin perustuva laskelma, ei lainanantajan maksusuunnitelma eikä toteutuneen erän seuranta.
 
 Arvonalenemafunktio on yksikkötestattu mutta ei omaisuuden UI:n arvomalli. Käyttöliittymä näyttää manuaaliset arvot.
 

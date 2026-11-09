@@ -151,43 +151,86 @@ export function occurrenceSum(
 
 export const total = (es: Entry[], m: string, actual = false) =>
   sum(es.map((e) => occurrenceSum(e, m, actual ? "actual" : undefined)));
+function completedMonthPeriods(endMonth: string, count: number) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(endMonth) || count < 1 || count > 1200)
+    throw Error("Tarkista kuukausijakso.");
+  const currentMonth = today().slice(0, 7);
+  const [year, month] = (endMonth >= currentMonth ? currentMonth : endMonth)
+    .split("-")
+    .map(Number);
+  const end =
+    endMonth >= currentMonth
+      ? new Date(Date.UTC(year, month - 2, 1))
+      : new Date(Date.UTC(year, month - 1, 1));
+  return Array.from({ length: count }, (_, index) =>
+    new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - index, 1))
+      .toISOString()
+      .slice(0, 7),
+  );
+}
+
+export function confirmedIncomeAverage(s: State, endMonth: string, count = 6) {
+  const months = completedMonthPeriods(endMonth, count).filter((period) =>
+    s.coverage.incomeMonths.includes(period),
+  );
+  const amounts = months.map((period) => total(s.incomes, period, true));
+  return {
+    months: months.length,
+    average: months.length ? sum(amounts) / months.length : null,
+  };
+}
+
+export function incomeInterruptionStress(
+  essentialMonthly: number,
+  averageIncome: number,
+  incomeLossPercent: number,
+  months: number,
+  liquid: number,
+) {
+  if (
+    !Number.isSafeInteger(essentialMonthly) ||
+    essentialMonthly < 0 ||
+    !Number.isFinite(averageIncome) ||
+    averageIncome < 0 ||
+    !Number.isSafeInteger(incomeLossPercent) ||
+    incomeLossPercent < 0 ||
+    incomeLossPercent > 100 ||
+    ![1, 3, 6, 12].includes(months) ||
+    !Number.isSafeInteger(liquid) ||
+    liquid < 0
+  )
+    throw Error("Tarkista tulokatkoksen skenaarion oletukset.");
+  const incomeAfterShock = Math.round(
+    averageIncome * (1 - incomeLossPercent / 100),
+  );
+  const monthlyShortfall = Math.max(0, essentialMonthly - incomeAfterShock);
+  const reserveNeeded = monthlyShortfall * months;
+  if (!Number.isSafeInteger(reserveNeeded))
+    throw Error("Tulokatkoksen laskelma ylittää sallitun rajan.");
+  return {
+    incomeAfterShock,
+    monthlyShortfall,
+    reserveNeeded,
+    reserveGap: Math.max(0, reserveNeeded - liquid),
+    remainingLiquid: Math.max(0, liquid - reserveNeeded),
+  };
+}
+
 export function emergencyFund(
   s: State,
   endMonth: string,
   requestedMonths: number,
 ) {
-  if (
-    !/^\d{4}-(0[1-9]|1[0-2])$/.test(endMonth) ||
-    ![1, 3, 6, 12].includes(requestedMonths)
-  )
+  if (![1, 3, 6, 12].includes(requestedMonths))
     throw Error("Tarkista hätävaran tarkastelujakso.");
-  const currentMonth = today().slice(0, 7);
-  const windowEnd =
-    endMonth >= currentMonth
-      ? new Date(
-          Number(currentMonth.slice(0, 4)),
-          Number(currentMonth.slice(5, 7)) - 2,
-          1,
-        )
-      : new Date(
-          Number(endMonth.slice(0, 4)),
-          Number(endMonth.slice(5, 7)) - 1,
-          1,
-        );
   const essentialExpenses = s.expenses.filter(
     (e) => e.essential && expenseType(e) === "consumption",
   );
-  const monthlyExpenses = Array.from(
-    { length: requestedMonths },
-    (_, index) => {
-      const date = new Date(
-        Date.UTC(windowEnd.getFullYear(), windowEnd.getMonth() - index, 1),
-      );
-      const period = date.toISOString().slice(0, 7);
-      const observed =
-        period < currentMonth && s.coverage.expenseMonths.includes(period);
-      return observed ? total(essentialExpenses, period, true) : null;
-    },
+  const monthlyExpenses = completedMonthPeriods(endMonth, requestedMonths).map(
+    (period) =>
+      s.coverage.expenseMonths.includes(period)
+        ? total(essentialExpenses, period, true)
+        : null,
   );
   const observedExpenses = monthlyExpenses.filter(
     (value): value is number => value !== null,
@@ -417,6 +460,32 @@ export function payoff(balance: number, payment: number, rate: number) {
     if (!b) return { months, interest };
   }
   return null;
+}
+export function paymentBreakdown(
+  balance: number,
+  payment: number,
+  rate: number,
+) {
+  if (
+    !Number.isSafeInteger(balance) ||
+    balance < 0 ||
+    !Number.isSafeInteger(payment) ||
+    payment < 0 ||
+    !Number.isFinite(rate) ||
+    rate < 0
+  )
+    throw Error("Tarkista lainan saldon, kuukausierän ja koron tiedot.");
+  const interest = Math.round((balance * rate) / 1200);
+  if (!Number.isSafeInteger(interest))
+    throw Error("Kuukausikoron laskelma ylittää sallitun rajan.");
+  const actualPayment = Math.min(payment, balance + interest);
+  const principal = actualPayment - interest;
+  return {
+    payment: actualPayment,
+    interest,
+    principal,
+    remainingBalance: balance - principal,
+  };
 }
 export function linkedAssetOutlook(
   asset: Entry,

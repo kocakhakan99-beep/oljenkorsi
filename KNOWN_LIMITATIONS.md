@@ -16,6 +16,7 @@
 - Toistuvalla tietueella on sarjan oletustila ja -summa sekä päivämääräkohtaiset actual/planned/skipped- ja summapoikkeukset. Niillä voi kirjata laskun todellisen summan muuttamatta muita kuukausia. Tila tai summa ei kuitenkaan varmennu pankista, eikä poikkeus muuta tapahtuman päivää.
 - Vain kategoriabudjetti; ei budjettipohjia, nollapohjaista/prosenttijakoa tai kuun lopun ennustetta.
 - Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain käyttäjän vahvistamista päättyneistä kuukausista. Vahvistus ei ole pankkivarmennus, ja vanhojen varmuuskopioiden kattavuutta ei päätellä takautuvasti. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
+- Tulokatkoksen stressitesti käyttää enintään kuuden vahvistetun kuukauden keskituloa ja yhtä tulojen menetysprosenttia kaikille tuloille. Se ei erottele kotitalouden tulolähteitä, brutto-/nettotuloa, tukia, veroja tai velkojen maksua; tulos on käyttäjän skenaario, ei ennuste tai tavoitesuositus.
 - Omaisuuden manuaalinen nykyarvo ja omistusosuus; ei arvostushistoriaa, automaattista arvonalenemaa tai auton erillismallia.
 - Velkasaldo manuaalinen; erä ei generoi menoa eikä vähennä saldoa.
 - Sijoitukset vain EUR; ei ticker/ISIN/pörssi/valuutta-allokaatioita, erillisiä sijoitustapahtumia tai arvostushistoriaa. Hankinta-arvo näkyy, erilliset tuottoprosentit eivät.

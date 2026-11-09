@@ -26,6 +26,13 @@ const shellSchema = z.object({
     theme: z.enum(["neutral", "blue", "green", "contrast", "custom"]),
     mode: z.enum(["light", "dark", "system"]),
     accent: z.string().regex(/^#[0-9a-f]{6}$/i),
+    essentialMonthlyEstimate: z
+      .number()
+      .int()
+      .positive()
+      .max(MAX)
+      .nullable()
+      .optional(),
     currency: z.literal("EUR"),
     language: z.literal("fi"),
   }),

@@ -4,6 +4,8 @@ AppState sisältää schemaVersionin, applicationVersionin, createdAtin, setting
 
 `coverage.incomeMonths` ja `coverage.expenseMonths` ovat käyttäjän vahvistamia päättyneitä kuukausia muodossa `yyyy-mm`. Menokattavuutta käytetään hätävaran keskiarvossa ja tulokattavuutta kompassin tulovaihtelussa. Vahvistus kertoo, että käyttäjä on tarkistanut kirjaukset; se ei varmista niitä pankista. Vahvistettu nollakuukausi on eri asia kuin kuukausi, jonka tietojen kattavuutta ei ole vahvistettu. Vanha varmuuskopio saa tyhjät listat, eikä sen historiakattavuutta päätellä tapahtumista.
 
+`settings.essentialMonthlyEstimate` tallentaa käyttäjän oman välttämättömien menojen kuukausiarvion sentteinä tai `null`. Se ei muuta kirjattuja tapahtumia, vaan toimii tulokatkoksen suunnittelun oletuksena. Vanha varmuuskopio saa arvoksi `null`.
+
 ## Entry
 
 Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
