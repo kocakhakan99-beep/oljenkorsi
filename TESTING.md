@@ -1,4 +1,12 @@
-# Testausraportti 4.11.2026
+# Testausraportti 9.11.2026
+
+## Syöttö ja raportointi 9.11.2026
+
+- `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 58 testiä neljästä tiedostosta.
+- Chromium 155.0.8059.79:n paikallisessa HTTP-ajossa läpäisi 56 selainvarmennusta. Uudet polut tarkistavat nopean tulokirjauksen, saman lomakkeen tyhjentymisen seuraavaa kirjausta varten, toistuvan menon toteutuneen aloituspäivän ja suunnitellut tulevat esiintymät, raporttitaulukon suodatuksen/lajittelun sekä nykytilaraporttien aikarajauksen.
+- Ajo ei tuottanut JavaScript- tai konsolivirheitä eikä ulkoisia verkkopyyntöjä. Mobiilileveydet 320–768 px eivät aiheuttaneet vaakasuuntaista ylivuotoa. Testiraportti: `qa/e2e-results.json`.
+- Tuotantobuild läpäisi. Bundlen minifioitu JavaScript ylittää Viten 500 kB:n huomautusrajan (noin 516 kB); build ei epäonnistunut.
+- Selain testattiin localhost-palvelun kautta. `file://`-osoitteen suora avaaminen on tässä ympäristössä hallintakäytännöllä estetty, joten sitä ei tässä kierroksessa varmennettu.
 
 ## UX- ja summapoikkeusten varmennus 6.–7.11.2026
 

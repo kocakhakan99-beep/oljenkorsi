@@ -16,6 +16,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 ## Toteutettu
 
 - Tulot, menot, omaisuus, velat, sijoitukset ja tavoitteet: lisäys, muokkaus, poisto.
+- Yhteenvedon tulo- ja menopainikkeet sekä Ctrl/Cmd + K avaavat nopean kirjauksen: nimi, summa, kategoria ja päivä. Viimeisimmän tulon tai menon voi kopioida uudeksi toteumaksi; useita kirjauksia voi tallentaa peräkkäin lomaketta sulkematta. Toistuvan pikakirjauksen valittu päivä on toteutunut ja tulevat kuukaudet suunniteltuja.
 - Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, sarjan oletustila sekä päiväkohtaiset suunniteltu/toteutunut/ohitettu-tilat ja summapoikkeukset. Yksittäisen laskun toteuma voi poiketa sarjan oletussummasta.
 - Kategoriabudjetti ja toteuman inline-muokkaus; budjetoimattomat kulut erotetaan budjetoitujen kategorioiden erotuksesta. Edellisen kuukauden budjetin kopiointi.
 - Kassavirta, kirjauksiin perustuva kuukausiarvio, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari havaintokattavuudella.
@@ -23,12 +24,12 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
 - FI-pääomatavoitteen yksivaiheinen havainnollistus, ehdollinen aika-arvio omalla säästö- ja reaalituotto-oletuksella sekä ±10 % kulutusherkkyys.
-- Itse rajattu enintään 120 kuukauden alkamis- ja päättymisjakso raporteille; yhden kuukauden raportti syntyy valitsemalla sama kuukausi alkuun ja loppuun.
+- Raportin aikarajaus vaihtuu yhdellä valinnalla yhden kuukauden ja enintään 120 kuukauden aikavälin välillä. Kuukausitilassa valitaan yksi kuukausi; aikavälitilassa valitaan alku ja loppu. Nykyvarallisuuden ja velan tilannekuvat eivät näytä harhaanjohtavaa aikaväliä, sillä historiallisia saldoja ei tallenneta.
 - Raporteissa valittava pylväs-/viiva-/aluekaavio ja 70–180 % suurennus; kulurakenne pylväs-/piirakkakaaviona. Valittavat pisteet, pylväät ja sektorit avaavat tapahtumakohtaiset tietokortit.
 - Piilotettavat sivukohtaiset opastuslaatikot, joiden näyttämisen voi palauttaa asetuksista; summakenttien eurokohtaiset pikasäätimet.
 - Valitun raporttijakson tulot, menot, nettokassavirta ja kokonaisjakson säästöaste; tulot-, menot- ja kassavirtasummista pääsee suoraan niiden kirjauksiin.
 - Kuukauden sisäisen rahavirran ajoitus, päiväsaldo ja negatiivisen jakson palautumispäivä.
-- Raporttien yhteinen alkamis- ja päättymiskuukausi sekä aihekohtaiset esitysmuodot: tulot ja menot, kulurakenne, rahavirran ajoitus, budjetti vs toteuma, nykyinen varallisuus, velka ja oma pääoma sekä säästöaste/FIRE.
+- Raportit vastaavat eri kysymyksiin: tulojen ja menojen kehitys, kulujen jakauma, päivien kassavirta, budjetin toteuma, nykyinen varallisuus, linkitettyjen velkojen pääoma-arvio sekä säästöaste ja FIRE. Taulukkomuodossa voi hakea rivejä ja lajitella näkymään sopivilla avaimilla.
 - Talouden kompassi: paikallinen päätössääntömoottori, jossa ehdotukset päivittyvät kirjauksia muuttaessa ja tilanteen voi päivittää käsin. Askeleet ryhmitellään kassavirtaan, menoihin, puskuriin/velkoihin ja tavoitteisiin/FIREen; näkyvissä on viisi kiireellisintä kerrallaan, enintään 20. Askeleen voi merkitä tehdyksi, siirtää viikolla tai piilottaa 30 päiväksi valinnalla ”Ei onnistu nyt”.
 - Kompassi tarkistaa budjetti- ja kassavirran lisäksi asumismenojen osuuden, oman kuluhistorian muutokset, välttämättömät menot, puskurin, tulovaihtelun, säästötavoitteiden tahdin, toistuvat menot, velkojen korot ja kuukausierät, epäsäännölliset menot sekä FIRE-nostoskenaarion. Kuluvan kuun menopoikkeama vertautuu aiempien kuukausien samaan päivään; toteutunut erotus näytetään ehdollisena havaintona, ei säästölupauksena. Jokainen ehdotus näyttää seuraavan konkreettisen askeleen, lähteen ja rajauksen; sovelluskohtaisia kynnyksiä ei esitetä tutkimuksen määrittäminä henkilökohtaisina rajoina.
 - Kompassin neljä kahden aikuisen ja yhden lapsen demotaloutta ovat ladattavissa myös käyttöönotossa ja asetuksissa. Esimerkit ovat samat kaikkialla: alijäämä, keskivertoarki, vakaa eteneminen ja yhden palkkatulon äkillinen katkos. Kuuden kuukauden tulot, menot, tarina ja kompassivinkit vaihtuvat valinnan mukaan.
@@ -40,7 +41,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus. Teemoissa on yhtenäiset vahvat reunat ja väriperheeseen sopivat pinnat; korostusnapin teksti valitaan kontrastilaskelmalla.
 - Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko sekä yhteenvedon ja suunnittelun erisävyiset mittari- ja sisältöalueet.
 - Yhteenvedosta pääsee yhdellä painalluksella tulon tai menon kirjaukseen sekä budjettiin ja raportteihin.
-- Yleishaku Ctrl/Cmd + K, listojen haku, kategoria/tila-suodatus ja lajittelu.
+- Pikatoiminnot ja kirjauksien haku Ctrl/Cmd + K; listojen haku, kategoria/tila-suodatus ja lajittelu.
 
 ## Kehitysteknologiat
 
