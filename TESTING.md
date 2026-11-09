@@ -1,5 +1,10 @@
 # Testausraportti 9.11.2026
 
+## Budjetin kategoriakortit 9.11.2026
+
+TypeScript, ESLint, 69 yksikkötestiä ja tuotantobuild läpäisivät. Chromium 155:n localhost-ajossa kaikki 61 selainvarmennusta läpäisivät: uusi testi avaa budjettikategorian menokortin, tarkistaa sen kuukauden tapahtuman ja summan sekä aloittaa samasta kategoriasta toistuvan kirjauksen. Nykyiset 320–768 px responsiivisuustarkistukset läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä ei tässä ajossa varmennettu. Buildin JavaScript-kokohuomautus säilyy (noin 535 kB).
+
+
 ## Käyttäjätestauksen kirjauspolut 9.11.2026
 
 - `npm run typecheck`, `npm run lint`, 69 Vitest-testiä, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Build tuotti päivitetyn itsenäisen juuren `index.html`-tiedoston. Minifioitu JavaScript (noin 533 kB) ylittää Viten 500 kB:n huomautusrajan; build onnistui.

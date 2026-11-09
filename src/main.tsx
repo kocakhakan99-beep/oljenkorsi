@@ -1817,6 +1817,7 @@ function App() {
     [undo, setUndo] = useState<State | null>(null),
     [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
     [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
+    [budgetCategory, setBudgetCategory] = useState<string | null>(null),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
     [reportPeriodMode, setReportPeriodMode] = useState<"month" | "range">("month"),
@@ -4308,7 +4309,19 @@ function App() {
                                 scope="row"
                                 data-label="Kategoria"
                               >
-                                <span>{c}</span>
+                                <button
+                                  type="button"
+                                  className="budget-category-title"
+                                  aria-label={`Näytä kategorian ${c} menot`}
+                                  onClick={() => setBudgetCategory(c)}
+                                >
+                                  <CategoryImage
+                                    icon={s.categories.find((category) => category.kind === "expenses" && category.name === c)?.icon || categoryIconFor(c, "expenses")}
+                                    size={24}
+                                  />
+                                  <span>{c}</span>
+                                  <ChevronRight size={16} aria-hidden="true" />
+                                </button>
                                 <button
                                   type="button"
                                   className="budget-category-add"
@@ -4323,7 +4336,8 @@ function App() {
                                   }
                                 >
                                   <Plus size={14} aria-hidden="true" />
-                                  Lisää meno
+                                  Meno
+                                  <ReceiptText size={15} aria-hidden="true" />
                                 </button>
                               </th>
                               <td role="cell" data-label="Suunniteltu">
@@ -6961,6 +6975,35 @@ function App() {
           />
         </Modal>
       )}
+      {budgetCategory !== null && (() => {
+        const category = budgetCategory;
+        const events = s.expenses.filter((item) => item.category === category)
+          .flatMap((item) => scheduledOccurrences(item, month).map((date) => ({
+            item, date, amount: occurrenceAmount(item, date), status: occurrenceStatus(item, date),
+          }))).sort((a, b) => a.date.localeCompare(b.date) || a.item.name.localeCompare(b.item.name, "fi"));
+        return (
+          <Modal title={`${category} · ${month}`} onClose={() => setBudgetCategory(null)}>
+            <p className="muted">Valitun kuukauden menot. Toistuvasta menosta näkyy tämän kuukauden tapahtuma; muokkaus koskee koko sarjaa. Budjetin käsin syötetty toteuma ei muuta näitä kirjauksia.</p>
+            <div className="stats budget-category-totals">
+              {stat("Kirjatut toteutuneet menot", euro(sum(events.filter((event) => event.status === "actual").map((event) => event.amount))))}
+              {stat("Tulevat / suunnitellut menot", euro(sum(events.filter((event) => event.status === "planned").map((event) => event.amount))))}
+            </div>
+            <div className="actions">
+              <button className="primary" onClick={() => { setBudgetCategory(null); beginQuickEntry("expenses", undefined, "once", category); }}><Plus size={16} aria-hidden="true" /> Kertaluonteinen meno</button>
+              <button onClick={() => { setBudgetCategory(null); beginQuickEntry("expenses", undefined, "monthly", category); }}><CalendarClock size={16} aria-hidden="true" /> Toistuva meno</button>
+            </div>
+            {events.length ? <ul className="budget-event-list" aria-label={`${category}, kuukauden menot`}>
+              {events.map(({ item, date, amount, status }) => <li key={`${item.id}-${date}`}>
+                <ReceiptText size={20} aria-hidden="true" />
+                <div className="budget-event-info"><strong>{item.name}</strong><small>{date.split("-").reverse().join(".")} · {entryStatusName(status)} · {recNames[item.recurrence]} · {expenseTypeName(expenseType(item))}</small></div>
+                <strong>{euro(amount)}</strong>
+                <button aria-label={`Muokkaa menoa ${item.name}`} onClick={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }}>Muokkaa</button>
+              </li>)}
+            </ul> : <p className="budget-category-empty">Tässä kategoriassa ei ole tapahtumia valitussa kuussa. Lisää ensimmäinen meno yllä olevista painikkeista.</p>}
+            <button onClick={() => { setBudgetCategory(null); navigate("expenses"); setCategoryFilter(category); setSearch(""); }}>Näytä kaikki kategorian menot <ArrowRight size={16} aria-hidden="true" /></button>
+          </Modal>
+        );
+      })()}
       {edit && (
         <Modal
           title={"Muokkaa / lisää " + singular[edit.kind]}

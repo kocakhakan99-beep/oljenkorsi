@@ -34,3 +34,11 @@ Automaattinen tila käyttää maksupäivää kirjanpidollisena oletuksena; se ei
 - [x] Migraatio-, päivämäärä-, pankkipyhä-, UI- ja E2E-varmennukset sekä dokumentaatio.
 
 Toteutus ja varmistus on valmis. Testitulokset ja testauksen rajaukset ovat [testiraportissa](TESTING.md); datan kentät ja migraatiot on kuvattu [tietomallissa](DATA_MODEL.md) ja [laskentakäytännöissä](CALCULATIONS.md).
+
+## Kategoriakohtainen tarkastelu ja ulkoasu 9.11.2026
+
+- [x] Budjetin ensimmäisessä sarakkeessa on kategorian kuvake ja avattava nimi sekä kompakti + Meno -painike menokuvakkeella.
+- [x] Kategorian nimi avaa valitun kuukauden menokortin: päivät, summat, tilat ja toistuvuus sekä toteutuneiden ja suunniteltujen erittely.
+- [x] Kortista voi muokata menoa, lisätä kerta- tai toistuvan menon samaan kategoriaan sekä siirtyä koko kategorian suodatettuun menoluetteloon.
+
+Menokortti näyttää varsinaiset kirjaukset; budjettirivin manuaalinen toteuma on erillinen tieto. Toistuvan menon muokkaus koskee sarjaa ja tämä kerrotaan kortissa.
