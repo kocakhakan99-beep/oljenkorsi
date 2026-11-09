@@ -5177,7 +5177,8 @@ button.primary,
   text-align: left;
   font: inherit;
 }
-.budget-category-title span { flex: 1; overflow-wrap: anywhere; }
+.budget-category-title > span:not(.category-icon-frame) { flex: 1; overflow-wrap: anywhere; }
+.budget-category-title > .category-icon-frame { flex: 0 0 32px; }
 .budget-category-title > svg { flex-shrink: 0; color: var(--muted); }
 .budget-category-title:hover { color: var(--accent-ink); background: var(--soft); }
 .budget-table th[scope="row"] { min-width: 150px; }
@@ -5195,3 +5196,12 @@ button.primary,
   .budget-event-list li > button { margin-left: auto; }
   .budget-table th[scope="row"] { min-width: 0; }
 }
+
+.budget-category-heading { display: flex; align-items: center; gap: 8px; }
+.budget-category-heading .budget-category-title { flex: 1; min-width: 0; width: auto; }
+.budget-category-heading .budget-category-add {
+  flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px;
+  padding: 0; margin: 0; align-self: center; justify-content: center;
+}
+.expense-add-icon { position: relative; display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; }
+.expense-add-icon > svg:last-child { position: absolute; top: -1px; right: -2px; width: 14px; height: 14px; padding: 1px; border-radius: 50%; background: var(--soft); stroke-width: 3; }

@@ -4309,6 +4309,7 @@ function App() {
                                 scope="row"
                                 data-label="Kategoria"
                               >
+                                <div className="budget-category-heading">
                                 <button
                                   type="button"
                                   className="budget-category-title"
@@ -4317,7 +4318,7 @@ function App() {
                                 >
                                   <CategoryImage
                                     icon={s.categories.find((category) => category.kind === "expenses" && category.name === c)?.icon || categoryIconFor(c, "expenses")}
-                                    size={24}
+                                    size={32}
                                   />
                                   <span>{c}</span>
                                   <ChevronRight size={16} aria-hidden="true" />
@@ -4326,6 +4327,7 @@ function App() {
                                   type="button"
                                   className="budget-category-add"
                                   aria-label={`Lisää meno kategoriaan ${c}`}
+                                  title={`Lisää meno kategoriaan ${c}`}
                                   onClick={() =>
                                     beginQuickEntry(
                                       "expenses",
@@ -4335,10 +4337,12 @@ function App() {
                                     )
                                   }
                                 >
-                                  <Plus size={14} aria-hidden="true" />
-                                  Meno
-                                  <ReceiptText size={15} aria-hidden="true" />
+                                  <span className="expense-add-icon" aria-hidden="true">
+                                    <ReceiptText size={23} />
+                                    <Plus size={12} />
+                                  </span>
                                 </button>
+                                </div>
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput

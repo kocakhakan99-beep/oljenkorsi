@@ -1,5 +1,9 @@
 # Testausraportti 9.11.2026
 
+## Budjetin kuvakkeet 9.11.2026
+
+TypeScript, ESLint ja tuotantobuild läpäisivät. Kaikki 61 Chromium-selainvarmennusta läpäisivät; lisätarkistukset mittaavat kategoriakuvakkeen kehyksen (32 × 32 px), näkyvän kuvan (vähintään 20 × 20 px) ja tekstittömän menokuvakepainikkeen 44 px leveyden. Kuvakkeeseen osunut tekstin flex-venytys rajattiin pois.
+
 ## Budjetin kategoriakortit 9.11.2026
 
 TypeScript, ESLint, 69 yksikkötestiä ja tuotantobuild läpäisivät. Chromium 155:n localhost-ajossa kaikki 61 selainvarmennusta läpäisivät: uusi testi avaa budjettikategorian menokortin, tarkistaa sen kuukauden tapahtuman ja summan sekä aloittaa samasta kategoriasta toistuvan kirjauksen. Nykyiset 320–768 px responsiivisuustarkistukset läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä ei tässä ajossa varmennettu. Buildin JavaScript-kokohuomautus säilyy (noin 535 kB).

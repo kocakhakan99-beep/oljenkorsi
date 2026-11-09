@@ -12,7 +12,7 @@ Seuraavaksi varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kii
 
 ## P1: luotettava arjen talous ja mittarit
 
-Toteutettu 9.11.2026: budjetin kuvakkeellinen kategorianimi avaa kuukausikohtaisen menokortin. Kortista voi lisätä kerta- tai toistuvan menon esivalitulla kategorialla, muokata sarjaa ja siirtyä kategorian suodatettuun menoluetteloon. Ensimmäinen sarake on tiivistetty kuvakkeeseen, nimeen ja + Meno -painikkeeseen.
+Toteutettu 9.11.2026: budjetin kuvakkeellinen kategorianimi avaa kuukausikohtaisen menokortin. Kortista voi lisätä kerta- tai toistuvan menon esivalitulla kategorialla, muokata sarjaa ja siirtyä kategorian suodatettuun menoluetteloon. Ensimmäinen sarake on tiivistetty kiinteäkokoiseen kuvakkeeseen, nimeen ja plusmerkilliseen menokuvakepainikkeeseen.
 
 Käyttäjätestauksen havaintoihin perustuva [kirjauspolkujen korjaus](USER_TESTING_PLAN.md) on tämän roadmapin ensisijainen työ, ja ensimmäinen kierros on toteutettu. Uudet neljä menokategoriaa täydentyvät vanhaan dataan palautuksessa, budjettikategoriasta voi avata esitäytetyn pikakirjauksen, kerta-/toistuva-polut ovat erilliset, perustiedot pysyvät lomakkeen alussa ja tila lasketaan maksupäivästä. Toistuvan tulon viikonloppu- ja pankkipyhäsiirto on valinnainen asetuksissa ja oletuksena käytössä tuloille. Testaus ja rajaukset on kirjattu [toteutussuunnitelmaan](USER_TESTING_PLAN.md) ja [testiraporttiin](TESTING.md). Seuraava työ on käyttäjäpalautteen avulla arvioida kuukausi- ja muun toistuvuuden oletuksia sekä tarkentaa etuuksien maksupäiväsääntöjä.
 
