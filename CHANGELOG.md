@@ -17,3 +17,7 @@ Yläpalkin kuukausivalitsin ja ikonipainikkeet viimeisteltiin. Järjestelmäteem
 ### 50/30/20 ja budjettiraamit 9.11.2026
 
 Budjetti, tulot ja menot näyttävät yhteiset ryhmäraamit ja kategoriaylitykset. Käyttäjä muokkaa osuuksia (summa 100 %), kategoriaryhmiä ja ohjerajoja; asetukset säilyvät JSON-varmuuskopiossa ja kategorian nimeämisessä. Kompassi tunnistaa rahoitusvajeen, säästövarauksen vajeen, puuttuvat luokitukset ja suurimmat kategoriaylitykset sekä ehdottaa laskujen ja menojen uudelleenjärjestelyä. Kehikko ja sovelluksen kategoriaprosentit on erotettu tutkimusnäytöstä. 77 yksikkötestiä ja 62 Chromium-selainvarmennusta läpäisivät.
+
+### Toimintojen pääpaikat 9.11.2026
+
+Tulojen ja menojen lisääminen ja muokkaus yhdistettiin samaan lomakkeeseen kaikkine toistuvuuksineen ja lisäkenttineen. Budjetin kokonaistoteuman korjaus siirrettiin kategoriakortin lisävalinnaksi; kirjaukset ovat tavallisen toteuman lähde. Täysi 50/30/20-paneeli on vain budjetissa, ja muissa kirjausnäkymissä näkyy tiivis poikkeamatila sekä linkki. Tavallinen varmuuskopiointi keskitettiin Tuonti ja vienti -näkymään. UX:n 12-tasoinen esittämismalli lisättiin seuraavaksi työpaketiksi ominaisuuksia säilyttävällä periaatteella. 77 yksikkötestiä ja 62 Chromium-selainvarmennusta läpäisivät.

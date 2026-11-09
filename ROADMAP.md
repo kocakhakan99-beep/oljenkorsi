@@ -2,6 +2,10 @@
 
 Päivitetty 9.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
+## Käynnissä ja seuraavaksi: yhtenäistäminen
+
+[Toimintojen pääpaikat](UNIFICATION_PLAN.md) yhtenäistetään ensin. Sen jälkeen sovelletaan [UX-esittämisen 12-tasoista mallia](UX_PRESENTATION_MODEL.md) kaikkiin näkymiin: lyhyt nimi/luku, tuttu kuvake, pieni visualisointi ja yksi ensisijainen toiminto; tarkennukset avautuvat tarpeen mukaan. UX-mallin suunnitelma on valmis ja toteutus on jonossa. Nykyisiä ominaisuuksia ei lähtökohtaisesti poisteta.
+
 ## P0: toistettava ja turvallinen perusta
 
 Vite-kehitysmalli `src/index.html` ja yksittäinen valmis juuren `index.html` on käytössä. Npm-lukitustiedosto lisättiin Tailwind- ja Lucide-riippuvuuksien kanssa; testien ja viimeisimmän selainajon lukumäärät kirjataan [testiraporttiin](TESTING.md). `e2e.py` kattaa raportit, kompassin, mobiilinäkymän, varmuuskopioinnin sekä esiintymäkohtaisen tilan ja summan poikkeutukset. `file://`-tallennusta tai offline-simulaatiota ei ole kaikissa ympäristöissä vahvistettu.

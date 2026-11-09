@@ -21,3 +21,5 @@ Luottokorttilasku ja velan lisälyhennys vaativat käyttäjän oman luokituksen:
 - [x] Lähteet, laskentakuvaukset, 77 yksikkötestiä ja 62 Chromium-selainvarmennusta.
 
 Toimitettu: ohjearvot päivittyvät kirjauksista ja omista asetuksista. Kirjattujen nettotulojen oikeellisuus ja kate sekä luottokorttilaskujen kaksoiskirjauksen välttäminen ovat käyttäjän tarkistettavia tietoja. Velan lisälyhennyksen ryhmitys ei vielä ole koron/pääoman erittely tai velkasaldon automaattinen muutos.
+
+Yhtenäistämiskierros: koko ohjepaneeli ja muokkaus ovat vain budjetissa. Tulot ja Menot näyttävät ryhmäpoikkeamien/kategoriaylitysten määrän, luokittelemattomien määrän ja mahdollisen rahoitusvajeen sekä linkin budjettiin. Toiminto ei poistu; sen pääpaikka selkeytyy.
