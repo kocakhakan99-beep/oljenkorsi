@@ -37,7 +37,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Velan voi linkittää omaisuuserään; velkaraportti näyttää nykyisen oman pääoman ja oletuksiin perustuvan takaisinmaksu- ja arvoarvion.
 - Summien piilotus peittää myös kompassin euromääräiset todisteet. CSV on taulukkomuotoinen rivisiirto eikä säilytä velka–omaisuuslinkkejä; koko tietomallin siirtoon käytä JSON-varmuuskopiota.
 - Tummat raportti- ja sovelluspinnat käyttävät vaaleaa tekstiä. Raporttien omaisuuskuva on nykyhetken tilannekuva, sillä arvostushistoriaa ei vielä tallenneta.
-- Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille.
+- Paikallinen JSON backup/restore sekä CSV-tuonti ja vienti kaikille kuudelle tietotyypille. CSV-tuonti tunnistaa yleisiä suomenkielisiä pankkiotsikoita, näyttää ensin vain perustiedot ja pitää harvemmat kentät lisävalinnoissa. Päivämäärä pitää yhdistää; sitä ei arvata tuontipäiväksi. Pankin miinusmerkkiset menot tuodaan itseisarvona, ja sekoitetun tulo- ja menoaineiston etumerkit auttavat ohjaamaan rivit oikeaan tuontiin.
 - Neljä teemaa, tumma/vaalea/järjestelmätila, oma korostusväri ja summien piilotus. Teemoissa on yhtenäiset vahvat reunat ja väriperheeseen sopivat pinnat; korostusnapin teksti valitaan kontrastilaskelmalla.
 - Viiteen ryhmään jaettu navigaatio, avattava mobiilivalikko sekä yhteenvedon ja suunnittelun erisävyiset mittari- ja sisältöalueet.
 - Yhteenvedosta pääsee yhdellä painalluksella tulon tai menon kirjaukseen sekä budjettiin ja raportteihin.

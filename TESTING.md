@@ -1,5 +1,12 @@
 # Testausraportti 9.11.2026
 
+## CSV-tuonnin selkeytys 9.11.2026
+
+- `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 61 testiä neljästä tiedostosta.
+- Chromium 155.0.8059.79:n localhost-ajossa läpäisi 57 selainvarmennusta. CSV-polku varmisti suomenkielisten pankkiotsikoiden automaattikartoituksen, suppean perustietonäkymän, lisäkenttien piilotuksen, päivämäärättömän tiedoston tuonnin eston, negatiivisen menon normalisoinnin, positiivisen tulorivin ohjauksen sekä virhe- ja duplikaattirivien käsittelyn.
+- Ajo ei tuottanut JavaScript- tai konsolivirheitä eikä ulkoisia verkkopyyntöjä. Mobiilileveydet 320–768 px eivät aiheuttaneet vaakasuuntaista ylivuotoa. Tuotantobuild läpäisi; minifioitu JavaScript on noin 519 kB ja ylittää Viten 500 kB:n huomautusrajan.
+- Testiraportti: `qa/e2e-results.json`. `file://`-avaaminen on tässä ympäristössä estetty, joten tämä ajo varmisti sovelluksen localhost-HTTP-palvelun kautta.
+
 ## Syöttö ja raportointi 9.11.2026
 
 - `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 58 testiä neljästä tiedostosta.

@@ -28,7 +28,13 @@ import {
   optionalCategoryDefinitions,
 } from "../domain/categories";
 import { backup, restore, validate } from "../services/validation";
-import { parseCSV, exportCSV, csvEntry, csvFields } from "../services/csv";
+import {
+  parseCSV,
+  exportCSV,
+  csvEntry,
+  csvFields,
+  mapCSVHeaders,
+} from "../services/csv";
 describe("Raha ja laskelmat", () => {
   it("FI-tavoite käyttää vuotuista rahoitusvajetta ja erottaa pääoman kattavuuden", () => {
     expect(fiTarget(3000000, 600000, 15000000, 4)).toEqual({
@@ -95,6 +101,7 @@ describe("Raha ja laskelmat", () => {
     expect(money("12,50")).toBe(1250);
     expect(money("19.99")).toBe(1999);
     expect(money("-0,01")).toBe(-1);
+    expect(money("-19,99")).toBe(-1999);
   });
   it("hylkää epätarkat ja äärettömät arvot", () => {
     for (let s of ["NaN", "Infinity", "1.234", "1e9", ""])
@@ -545,6 +552,11 @@ describe("CSV", () => {
   });
   it("sulkematon lainaus hylätään", () =>
     expect(() => parseCSV('"abc')).toThrow());
+  it("tunnistaa suomenkieliset pankkiotsikot", () => {
+    expect(
+      mapCSVHeaders(["Kirjauspäivä", "Saaja/maksaja", "Määrä", "Luokka"]),
+    ).toMatchObject({ name: 1, amount: 2, category: 3, date: 0 });
+  });
   it("formula injection suojataan", () =>
     expect(
       exportCSV([entry({ name: "=SUM(A1)", description: "@cmd" })]),
@@ -572,4 +584,27 @@ describe("CSV", () => {
       csvEntry(["Testi", "10,20", "3.11.2026"], { name: 0, amount: 1, date: 2 })
         .date,
     ).toBe("2026-11-03"));
+  it("vaatii päivämäärän eikä sijoita puuttuvaa päivää vahingossa tälle päivälle", () => {
+    expect(() => csvEntry(["Testi", "10,20"], { name: 0, amount: 1 })).toThrow(
+      "Päivämääräsarake puuttuu",
+    );
+    expect(
+      () =>
+        csvEntry(["Testi", "10,20", ""], {
+          name: 0,
+          amount: 1,
+          date: 2,
+        }),
+    ).toThrow("Päivämäärä puuttuu");
+  });
+  it("tulkitsee pankin miinusmerkkisen tapahtuman menoksi mutta ei tuloksi", () => {
+    const map = { name: 0, amount: 1, category: 2, date: 3 };
+    expect(
+      csvEntry(["Ruoka", "-19,99", "Ruoka", "3.11.2026"], map, "expenses")
+        .amount,
+    ).toBe(1999);
+    expect(() =>
+      csvEntry(["Ruoka", "-19,99", "Ruoka", "3.11.2026"], map, "incomes"),
+    ).toThrow("Miinusmerkkinen summa näyttää menolta");
+  });
 });
