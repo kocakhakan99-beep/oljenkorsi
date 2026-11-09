@@ -1,5 +1,10 @@
 # Testausraportti 9.11.2026
 
+## UX:n priorisointimalli: ensimmäinen soveltamiskierros
+
+TypeScript, ESLint, 77 yksikkötestiä ja tuotantobuild läpäisivät. Kaikki 62 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Yhteinen ohje näyttää oletuksena vain otsikon; Enter ja välilyönti avaavat/sulkevat sisällön. Piilotus ja palautus säilyivät. Budjetin laskentaselitys ja kompassin perustelu varmennettiin sekä suljettuna että avattuna. Nykyiset sääntöjen muokkaus-, kompassitoiminto-, vienti-/palautus- ja 320–768 px mobiilipolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä tai käyttäjien ymmärrystä ei tällä testillä varmennettu; JavaScriptin kokohuomautus säilyy (noin 550 kB).
+
+
 ## Yhteiset pääpaikat ja kirjauslomake
 
 - TypeScript, ESLint, 77 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript-bundlen kokohuomautus säilyy (noin 550 kB).

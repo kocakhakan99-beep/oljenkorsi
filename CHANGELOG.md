@@ -21,3 +21,7 @@ Budjetti, tulot ja menot näyttävät yhteiset ryhmäraamit ja kategoriaylitykse
 ### Toimintojen pääpaikat 9.11.2026
 
 Tulojen ja menojen lisääminen ja muokkaus yhdistettiin samaan lomakkeeseen kaikkine toistuvuuksineen ja lisäkenttineen. Budjetin kokonaistoteuman korjaus siirrettiin kategoriakortin lisävalinnaksi; kirjaukset ovat tavallisen toteuman lähde. Täysi 50/30/20-paneeli on vain budjetissa, ja muissa kirjausnäkymissä näkyy tiivis poikkeamatila sekä linkki. Tavallinen varmuuskopiointi keskitettiin Tuonti ja vienti -näkymään. UX:n 12-tasoinen esittämismalli lisättiin seuraavaksi työpaketiksi ominaisuuksia säilyttävällä periaatteella. 77 yksikkötestiä ja 62 Chromium-selainvarmennusta läpäisivät.
+
+### UX:n priorisointi 9.11.2026
+
+Esittämismalli täsmennettiin vaihtoehtojen priorisointijärjestykseksi: ensimmäinen tarkoitukseen sopiva riittävä tapa valitaan, tasoja ei kerrosteta automaattisesti. Ohjelaatikot näyttävät ensin avattavan otsikon. Budjetin tulopohja ja kategoriaylitykset tiivistettiin luvuiksi ja lyhyiksi tiloiksi, laskentakuvaus on avattava. Kompassin varsinainen toimenpide ja havainto säilyvät näkyvissä; perustelu ja lisävaikutus avautuvat pyynnöstä myös demokorteissa. Kriittiset poikkeamat ja olennaiset tulopohjan oletukset säilyvät näkyvissä.

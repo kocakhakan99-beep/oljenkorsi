@@ -1,10 +1,14 @@
 # Yhteinen UX-malli: vähemmän tekstiä, samat ominaisuudet
 
-9.11.2026. Käyttäjän uusi työjonopyyntö. **Suunnitelma valmis, koko sovelluksen läpikäynti jonossa.** Käynnissä oleva toimintojen pääpaikkojen yhtenäistäminen jatkuu ensin. Ominaisuuksia ei lähtökohtaisesti poisteta: vähennetään rinnakkaisia toteutuksia ja näytetään lisätiedot tarpeen mukaan.
+9.11.2026. Käyttäjän uusi työjonopyyntö. **Priorisointimalli täsmennetty, soveltaminen käynnissä.** Toimintojen pääpaikkojen ensimmäinen yhtenäistämiskierros on valmis. Ominaisuuksia ei lähtökohtaisesti poisteta: vähennetään rinnakkaisia toteutuksia ja näytetään lisätiedot tarpeen mukaan.
 
-## Esittämisen hierarkia
+## Esittämisen priorisointijärjestys
 
-Järjestys kertoo, missä vaiheessa tietoa kannattaa näyttää. Jokaisen kortin ei tarvitse sisältää kaikkia tasoja. Ensin näkyvät yleensä tasot 1–5, muut avautuvat tarvittaessa.
+**Valitse ensimmäinen tarkoitukseen sopiva esitystapa, joka yksin riittää asian ymmärtämiseen tai toiminnon tekemiseen. Pysähdy siihen.** Tämä ei ole kortin sisältölista eikä pakollinen polku tasojen läpi. Tasoja 1–5 ei oletuksena kasata näkyviin. Tasoa 12 tarvitaan vasta, jos asian ymmärrettävä esittäminen ei onnistu tarkoitukseen sopivilla vaihtoehdoilla 1–11.
+
+Jos ”Ruoka · 320 €” riittää tehtävään, sen alle ei lisätä samaa toistavaa kuvaketta, palkkia, tilaa ja selitystä. Jos tehtävä on selvittää ylitys, pelkkä summa ei riitä: käytä esimerkiksi lyhyttä ”Yli 40 €” -tilaa, älä automaattisesti pitkää kappaletta. Monimutkaista menetelmää ei tarvitse selittää pääkortissa; lyhyt oletusmerkintä ja erikseen avattava lähde riittävät, jos käyttäjä voi niiden avulla tulkita luvun oikein.
+
+Välttämättömän yksikön, tunnisteen, saavutettavan nimen ja kriittisen varoituksen lisääminen ei ole tarpeetonta kerrostamista. Niitä ei saa uhrata numeron pienentämiseksi. Toimintoa ei myöskään piiloteta nimeä esittävän kuvakkeen taakse, jos sen merkitys ei selviä.
 
 1. **Yksi lyhyt nimi ja tärkein luku.** Käyttäjä tunnistaa asian ja tuloksen heti: ”Ruoka · 320 €”. Jos luku ei ole olennainen, nimi riittää. Luvulla on yksikkö ja tarvittaessa ajanjakso.
 2. **Tuttu kuvake nimen tukena.** Sama käsite käyttää samaa paikallista kuvaa kaikkialla. Pelkkä kuvake sopii esimerkiksi lisäykseen, sulkemiseen ja siirtymiseen, kun saavutettava nimi ja kosketuksella saatava selite ovat käytössä. Uusi tai monitulkintainen talouskäsite tarvitsee myös lyhyen nimen.
@@ -21,7 +25,7 @@ Järjestys kertoo, missä vaiheessa tietoa kannattaa näyttää. Jokaisen kortin
 
 ## Yhteiset säännöt
 
-- Näkyvä kortti vastaa järjestyksessä: mikä asia, mikä tilanne, mitä voin tehdä, mistä näen lisää.
+- Jokaisella näkyvällä elementillä on tehtävä. Arvioi ensin, riittääkö lyhyempi esitys; lisää alempana oleva vaihtoehto vain tunnistettuun tarpeeseen. Kortin ei tarvitse vastata kaikkiin mahdollisiin lisäkysymyksiin oletuksena.
 - Tuttu kuvake vähentää lukemista; epäselvä kuvake ei korvaa lyhyttä nimeä. Selkokielisyys on tärkeämpi kuin kuvakkeiden määrä.
 - Yksi termi tarkoittaa samaa kaikkialla. Budjetti = suunnitelma, kirjaus = tapahtuma, kokonaistoteuman korjaus = erillinen kategoriapoikkeus. Varattu, toteutunut ja tilisaldo eivät ole synonyymejä.
 - Kuvat, palkit, luvut ja toiminnot käyttävät yhtenäisiä kokoja. Painallusalue vähintään 44 × 44 px, vaikka itse kuvake on pienempi.
@@ -31,13 +35,25 @@ Järjestys kertoo, missä vaiheessa tietoa kannattaa näyttää. Jokaisen kortin
 
 ## Työjono
 
-- [x] Esittämisen hierarkia ja säilytettävien ominaisuuksien periaate määritelty.
-- [ ] Yhteiset komponentit: mittarikortti, tilamerkki, edistymispalkki, rivitoiminto ja avattava ohje.
+- [x] Esittämisen priorisointijärjestys, riittävyyskriteeri ja säilytettävien ominaisuuksien periaate määritelty.
+- [x] Yhteinen ohjekomponentti: oletuksena vain avattava otsikko, ei kappaletekstiä.
+- [ ] Muut yhteiset komponentit: mittarikortti, tilamerkki, edistymispalkki ja rivitoiminto.
 - [ ] Yhteenveto: tärkeimmät luvut ja yhden askeleen toiminnot, vähemmän kappaletekstiä.
-- [ ] Budjetti: nimi, luku, palkki, poikkeama, ensisijainen lisäys; selitykset avattaviksi.
-- [ ] Tulot ja menot: samat rivit, kentät, nimet ja lisävalinnat.
-- [ ] Kompassi: yksi havainto ja seuraava askel; lähde ja perustelu avattaviksi.
-- [ ] Raportit: kysymys, tulos ja visualisointi ensin; menetelmä ja erittely pyynnöstä.
+- [x] Budjetin raamit: luvut ja lyhyet poikkeamat riittävät oletuksena; laskentaselitys avautuu pyynnöstä.
+- [ ] Budjetin muun taulukon ja kategoriakortin koko läpikäynti priorisointisäännöllä.
+- [x] Tulot ja menot: yhteinen lisäys-/muokkauslomake ja lisävalinnat; ohjeet avautuvat otsikosta.
+- [x] Kompassi: havainto ja seuraava askel näkyviin; lähde ja toistava perustelu avattaviksi, myös esimerkeissä.
+- [ ] Raportit: ohjeotsikko on nyt avattava; muiden selitteiden ja tietokorttien läpikäynti jatkuu.
 - [ ] Omaisuus, velat, sijoitukset ja tavoitteet: sama korttirakenne, aihekohtaiset lisätiedot.
 - [ ] Asetukset ja datan hallinta: selkeät pääpaikat, lyhyet nimet ja vahvistukset.
 - [ ] Käyttäjä-, näppäimistö-, ruudunlukija- ja mobiilivarmennus.
+
+## Soveltamisen päätöstesti
+
+1. Mikä on käyttäjän tehtävä tässä kohdassa?
+2. Riittääkö ensimmäinen tarkoitukseen sopiva vaihtoehto? Jos riittää, lopeta.
+3. Jos ei, mitä tietoa puuttuu? Kokeile seuraavaa soveltuvaa vaihtoehtoa.
+4. Poista saman asian toistot. Säilytä käyttäjän pyytämät lisätiedot avattavina.
+5. Tarkista, että yksikkö, tiedon epävarmuus, kriittinen poikkeama ja näppäimistö-/ruudunlukijakäyttö toimivat edelleen.
+
+Ensimmäinen toteutuskierros: yhteiset ohjelaatikot ovat oletuksena lyhyitä avattavia otsikoita; budjetin raamit esitetään lukuina, palkkeina ja lyhyinä poikkeamina; kompassin havainnon toistava perustelu ja lisävaikutus avautuvat pyynnöstä. Koko sovelluksen läpikäynti jatkuu työjonon mukaisesti.
