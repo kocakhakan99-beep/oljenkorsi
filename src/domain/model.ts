@@ -22,11 +22,36 @@ export type Recurrence =
   | "semiannual"
   | "yearly";
 export type EntryStatus = "actual" | "planned" | "skipped";
+export type ExpenseType = "consumption" | "saving" | "investment";
+const legacyExpenseTypeTag =
+  /^talous:expense-type=(consumption|saving|investment)$/;
+export function legacyExpenseType(tags: string, category: string) {
+  const tag = tags
+    .split(/[;,]/)
+    .map((value) => value.trim())
+    .find((value) => legacyExpenseTypeTag.test(value));
+  const tagged = tag?.match(legacyExpenseTypeTag)?.[1] as
+    | ExpenseType
+    | undefined;
+  if (tagged) return tagged;
+  const name = category.trim().toLocaleLowerCase("fi-FI");
+  if (name === "sijoittaminen") return "investment";
+  if (name === "säästäminen") return "saving";
+  return undefined;
+}
+export function withoutLegacyExpenseTypeTag(tags: string) {
+  return tags
+    .split(/[;,]/)
+    .map((value) => value.trim())
+    .filter((value) => value && !legacyExpenseTypeTag.test(value))
+    .join(";");
+}
 export interface Entry {
   id: string;
   name: string;
   amount: number;
   category: string;
+  expenseType: ExpenseType;
   date: string;
   endDate: string;
   recurrence: Recurrence;
@@ -97,6 +122,7 @@ export interface State {
   goals: Entry[];
   budgets: Record<string, Record<string, number>>;
   budgetActuals: Record<string, Record<string, number>>;
+  coverage: { incomeMonths: string[]; expenseMonths: string[] };
   actionStates: Record<string, ActionState>;
   investmentTransactions: unknown[];
   scenarios: Scenario[];
@@ -144,6 +170,7 @@ export function empty(): State {
     goals: [],
     budgets: {},
     budgetActuals: {},
+    coverage: { incomeMonths: [], expenseMonths: [] },
     actionStates: {},
     investmentTransactions: [],
     scenarios: [],
@@ -151,11 +178,12 @@ export function empty(): State {
   };
 }
 export function entry(v: Partial<Entry> = {}): Entry {
-  return {
+  const value: Entry = {
     id: uid(),
     name: "",
     amount: 0,
     category: "Muu",
+    expenseType: "consumption",
     date: today(),
     endDate: "",
     recurrence: "once",
@@ -180,6 +208,10 @@ export function entry(v: Partial<Entry> = {}): Entry {
     schemaVersion: 1,
     ...v,
   };
+  if (v.expenseType === undefined)
+    value.expenseType =
+      legacyExpenseType(value.tags, value.category) || "consumption";
+  return value;
 }
 export function demo(): State {
   let s = empty();
@@ -497,5 +529,10 @@ export function demo(): State {
       archived: false,
     });
   }
+  const completeMonths = Array.from({ length: 5 }, (_, index) =>
+    monthAt(index - 5),
+  );
+  s.coverage.incomeMonths = [...completeMonths];
+  s.coverage.expenseMonths = [...completeMonths];
   return s;
 }

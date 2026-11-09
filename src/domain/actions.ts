@@ -456,8 +456,8 @@ export function planActions(state: State, month: string): PlannedAction[] {
     });
   }
 
-  const incomeHistory = recentMonths(month, 6).filter(
-    (period) => total(state.incomes, period, true) > 0,
+  const incomeHistory = recentMonths(month, 6).filter((period) =>
+    state.coverage.incomeMonths.includes(period),
   );
   if (incomeHistory.length >= 4) {
     const incomes = incomeHistory.map((period) =>
@@ -489,7 +489,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
           "Kokeile kuukausibudjettia tavanomaista matalamman tulon varassa ja tarkista, mitkä kulut joustavat. Pidä satunnaiset tulot erillisenä skenaariona.",
         sourceIds: ["R2", "R3"],
         boundary:
-          "30 % on tämän näkymän tunnistuskynnys, ei tutkimuksen riskiraja. Puuttuvat tulokirjaukset voivat näyttää vaihtelun todellista suurempana.",
+          "30 % on tämän näkymän tunnistuskynnys, ei tutkimuksen riskiraja. Vain käyttäjän vahvistamat päättyneet kuukaudet sisältyvät; myös vahvistettu nollatulokuukausi lasketaan mukaan.",
       });
     }
   }

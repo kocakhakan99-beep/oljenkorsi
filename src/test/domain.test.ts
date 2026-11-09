@@ -15,7 +15,7 @@ import {
   depreciation,
   validDate,
   expenseType,
-  setExpenseTypeTags,
+  userTags,
   fiTarget,
   fiMonths,
   emergencyFund,
@@ -68,13 +68,14 @@ describe("Raha ja laskelmat", () => {
         ...dated,
         category: "Uusi nimi",
         name: "Säästö",
-        tags: setExpenseTypeTags("", "saving"),
+        expenseType: "saving",
       }),
       entry({
         ...dated,
         category: "Uusi nimi",
         name: "Sijoitus",
-        tags: setExpenseTypeTags("oma tunniste", "investment"),
+        expenseType: "investment",
+        tags: "oma tunniste",
       }),
     ];
     const m = metrics(s, "2026-11");
@@ -91,9 +92,25 @@ describe("Raha ja laskelmat", () => {
     expect(expenseType(entry({ category: "Sijoittaminen" }))).toBe(
       "investment",
     );
-    expect(
-      setExpenseTypeTags("oma; talous:expense-type=saving", "consumption"),
-    ).toBe("oma;talous:expense-type=consumption");
+    expect(userTags("oma; talous:expense-type=saving")).toBe("oma");
+  });
+  it("vanha hidden menotyyppimerkintä migroituu omaksi kentäkseen", () => {
+    const older = JSON.parse(JSON.stringify(demo())) as Record<string, unknown>;
+    const expenses = older.expenses as Record<string, unknown>[];
+    expenses[0].tags = "oma huomio;talous:expense-type=investment";
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
+        delete item.expenseType;
+    const migrated = validate(older);
+    expect(migrated.expenses[0].expenseType).toBe("investment");
+    expect(migrated.expenses[0].tags).toBe("oma huomio");
   });
   it("sentit ja suomalainen muoto", () => {
     expect(money("1 234,56 €")).toBe(123456);
@@ -156,9 +173,10 @@ describe("Raha ja laskelmat", () => {
   });
   it("nollatulot eivät aiheuta NaN-arvoa", () =>
     expect(metrics(empty(), "2026-11").savingRate).toBeNull());
-  it("hätävaran keskiarvo käyttää vain havaittuja välttämättömiä kulutuskuukausia", () => {
+  it("hätävaran keskiarvo käyttää vain vahvistettuja kokonaisia kulutuskuukausia", () => {
     const s = empty();
     s.assets = [entry({ amount: 600000, liquid: true })];
+    s.coverage.expenseMonths = ["2026-01", "2026-03"];
     s.expenses = [
       entry({ date: "2026-01-12", amount: 100000, essential: true }),
       entry({ date: "2026-03-12", amount: 200000, essential: true }),
@@ -172,7 +190,7 @@ describe("Raha ja laskelmat", () => {
         date: "2026-02-12",
         amount: 50000,
         essential: true,
-        tags: setExpenseTypeTags("", "saving"),
+        expenseType: "saving",
       }),
     ];
     expect(emergencyFund(s, "2026-03", 3)).toEqual({
@@ -184,9 +202,16 @@ describe("Raha ja laskelmat", () => {
     });
     expect(emergencyFund(s, "2026-02", 1).buffer).toBeNull();
     expect(() => emergencyFund(s, "2026-03", 2)).toThrow();
+    s.coverage.expenseMonths.push("2026-02");
+    expect(emergencyFund(s, "2026-03", 3)).toMatchObject({
+      observedMonths: 3,
+      averageEssential: 100000,
+      buffer: 6,
+    });
   });
-  it("toistuva välttämätön meno kattaa jokaisen toteutuneeksi merkityn kuukauden", () => {
+  it("toistuva meno lasketaan vasta, kun kuukaudet on vahvistettu", () => {
     const s = empty();
+    s.coverage.expenseMonths = ["2026-01", "2026-02", "2026-03"];
     s.expenses = [
       entry({
         date: "2026-01-01",
@@ -196,6 +221,14 @@ describe("Raha ja laskelmat", () => {
       }),
     ];
     expect(emergencyFund(s, "2026-03", 3).observedMonths).toBe(3);
+  });
+  it("kuluvaa kuukautta ei koskaan käsitellä kokonaisena hätävarakuukautena", () => {
+    const s = empty();
+    const current = new Date();
+    const month = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+    s.coverage.expenseMonths = [month];
+    s.expenses = [entry({ date: `${month}-01`, amount: 100000 })];
+    expect(emergencyFund(s, month, 1).observedMonths).toBe(0);
   });
   it("arvonalenema", () => expect(depreciation(100000, -10, 2)).toBe(81000));
   it("tavoitteen kesto", () => {
@@ -410,6 +443,7 @@ describe("Varmuuskopio ja validointi", () => {
   it("vanha varmuuskopio saa tyhjät omaisuuslinkit ja kompassitilat", () => {
     const older = JSON.parse(JSON.stringify(demo())) as Record<string, unknown>;
     delete older.actionStates;
+    delete older.coverage;
     for (const kind of [
       "incomes",
       "expenses",
@@ -420,6 +454,16 @@ describe("Varmuuskopio ja validointi", () => {
     ])
       for (const item of older[kind] as Record<string, unknown>[])
         delete item.linkedAssetId;
+    for (const kind of [
+      "incomes",
+      "expenses",
+      "assets",
+      "liabilities",
+      "investments",
+      "goals",
+    ])
+      for (const item of older[kind] as Record<string, unknown>[])
+        delete item.expenseType;
     for (const kind of [
       "incomes",
       "expenses",
@@ -442,6 +486,7 @@ describe("Varmuuskopio ja validointi", () => {
         delete item.occurrenceAmounts;
     const migrated = validate(older);
     expect(migrated.actionStates).toEqual({});
+    expect(migrated.coverage).toEqual({ incomeMonths: [], expenseMonths: [] });
     expect(
       migrated.liabilities.every((item) => item.linkedAssetId === ""),
     ).toBe(true);
@@ -522,6 +567,9 @@ describe("Varmuuskopio ja validointi", () => {
     s = demo();
     s.incomes.push(s.incomes[0]);
     expect(() => validate(s)).toThrow();
+    s = demo();
+    s.expenses[0].expenseType = "unknown" as never;
+    expect(() => validate(s)).toThrow("Virheellinen menon tyyppi.");
   });
   it("virheelliset yksittäisen toistuman tilat hylätään", () => {
     const state = demo();
@@ -569,12 +617,16 @@ describe("CSV", () => {
       recurrence: "monthly",
       occurrenceStatuses: { "2026-12-03": "planned" },
       occurrenceAmounts: { "2026-12-03": 2250 },
+      expenseType: "investment",
+      tags: "eläkesalkku",
     });
     let rows = parseCSV(exportCSV([e]).replace(/^\ufeff/, ""));
     let map = Object.fromEntries(csvFields.map((k, i) => [k, i]));
     let r = csvEntry(rows[1], map);
     expect(r.amount).toBe(1999);
     expect(r.name).toBe("Ruoka");
+    expect(r.expenseType).toBe("investment");
+    expect(r.tags).toBe("eläkesalkku");
     expect(r.date).toBe("2026-11-03");
     expect(r.occurrenceStatuses).toEqual({ "2026-12-03": "planned" });
     expect(r.occurrenceAmounts).toEqual({ "2026-12-03": 2250 });
@@ -588,13 +640,12 @@ describe("CSV", () => {
     expect(() => csvEntry(["Testi", "10,20"], { name: 0, amount: 1 })).toThrow(
       "Päivämääräsarake puuttuu",
     );
-    expect(
-      () =>
-        csvEntry(["Testi", "10,20", ""], {
-          name: 0,
-          amount: 1,
-          date: 2,
-        }),
+    expect(() =>
+      csvEntry(["Testi", "10,20", ""], {
+        name: 0,
+        amount: 1,
+        date: 2,
+      }),
     ).toThrow("Päivämäärä puuttuu");
   });
   it("tulkitsee pankin miinusmerkkisen tapahtuman menoksi mutta ei tuloksi", () => {

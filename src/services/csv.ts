@@ -1,5 +1,10 @@
-import { entry, type Entry } from "../domain/model";
-import { money, validDate } from "../domain/calculations";
+import {
+  entry,
+  legacyExpenseType,
+  type Entry,
+  type ExpenseType,
+} from "../domain/model";
+import { money, userTags, validDate } from "../domain/calculations";
 import { validateEntry } from "./validation";
 export function parseCSV(text: string, delimiter = ";"): string[][] {
   if (text.length > 5000000) throw Error("CSV ylittää 5 Mt rajan.");
@@ -37,6 +42,7 @@ export const csvFields = [
   "name",
   "amount",
   "category",
+  "expenseType",
   "date",
   "recurrence",
   "status",
@@ -60,6 +66,7 @@ export const csvFieldLabels: Record<string, string> = {
   name: "Nimi",
   amount: "Summa (€)",
   category: "Kategoria",
+  expenseType: "Menon tyyppi",
   date: "Päivä",
   recurrence: "Toistuvuus",
   status: "Tila",
@@ -187,16 +194,27 @@ export function csvEntry(
   let amount = money(get("amount"));
   if (transactionKind === "expenses" && amount < 0) amount = Math.abs(amount);
   else if (transactionKind === "incomes" && amount < 0)
-    throw Error("Miinusmerkkinen summa näyttää menolta. Tuo se Menot-näkymään.");
+    throw Error(
+      "Miinusmerkkinen summa näyttää menolta. Tuo se Menot-näkymään.",
+    );
+  const category = get("category") || "Muu";
+  const tags = get("tags");
+  const importedType = get("expenseType");
   let e = entry({
     name: get("name"),
     amount,
-    category: get("category") || "Muu",
+    category,
+    expenseType:
+      (importedType as ExpenseType) ||
+      legacyExpenseType(tags, category) ||
+      "consumption",
+    tags: userTags(tags),
     date: d,
   });
   for (let k of csvFields) {
     let v = get(k);
-    if (!v || ["name", "amount", "category", "date"].includes(k)) continue;
+    if (!v || ["name", "amount", "category", "expenseType", "date"].includes(k))
+      continue;
     if (["purchasePrice", "payment", "target", "monthly"].includes(k))
       (e as any)[k] = money(v);
     else if (k === "occurrenceStatuses" || k === "occurrenceAmounts")
@@ -205,6 +223,7 @@ export function csvEntry(
       (e as any)[k] = Number(v.replace(",", "."));
     else if (["liquid", "active", "essential"].includes(k))
       (e as any)[k] = v === "true";
+    else if (k === "tags") (e as any)[k] = userTags(v);
     else (e as any)[k] = v;
   }
   validateEntry(e);

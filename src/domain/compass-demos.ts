@@ -1,5 +1,5 @@
 import { metrics } from "./calculations";
-import { empty, entry, type State } from "./model";
+import { empty, entry, today, type State } from "./model";
 
 export const compassDemoProfiles = [
   {
@@ -213,6 +213,10 @@ export function createCompassDemoCases(month: string): CompassDemoCase[] {
         }),
       );
     });
+    const currentMonth = today().slice(0, 7);
+    const completeMonths = months.filter((period) => period < currentMonth);
+    state.coverage.incomeMonths = [...completeMonths];
+    state.coverage.expenseMonths = [...completeMonths];
 
     const homeId = `${profile.id}-home`;
     state.assets.push(

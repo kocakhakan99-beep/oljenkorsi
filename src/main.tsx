@@ -38,7 +38,6 @@ import {
   payoff,
   MAX,
   expenseType,
-  setExpenseTypeTags,
   userTags,
   validDate,
   fiTarget,
@@ -1458,13 +1457,10 @@ function QuickEntryForm({
       };
       if (kind === "expenses") {
         value.essential = fields.has("essential");
-        value.tags = setExpenseTypeTags(
-          value.tags,
-          String(fields.get("expenseType") || "consumption") as
-            | "consumption"
-            | "saving"
-            | "investment",
-        );
+        value.expenseType = String(
+          fields.get("expenseType") || "consumption",
+        ) as Entry["expenseType"];
+        value.tags = userTags(value.tags);
       }
       validateEntry(value);
       const addAnother = submitAgain;
@@ -1658,6 +1654,10 @@ function App() {
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
+  const coverageField =
+    page === "expenses" ? "expenseMonths" : "incomeMonths";
+  const monthCoverageConfirmed = s.coverage[coverageField].includes(month);
+  const canConfirmMonthCoverage = month < today().slice(0, 7);
   useEffect(() => {
     if (reportPeriodMode === "month") {
       setReportStart(month);
@@ -1694,8 +1694,75 @@ function App() {
         : new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 1 }).format(
             n,
           ) + " %";
+  function invalidatedCoverageMonths(
+    before: Entry[],
+    after: Entry[],
+    completed: string[],
+  ) {
+    const oldById = new Map(before.map((item) => [item.id, item]));
+    const newById = new Map(after.map((item) => [item.id, item]));
+    const ids = new Set([...oldById.keys(), ...newById.keys()]);
+    const exact = new Set<string>();
+    const cutoffs: string[] = [];
+    const root = (item: Entry) => {
+      const { occurrenceStatuses, occurrenceAmounts, ...fields } = item;
+      void occurrenceStatuses;
+      void occurrenceAmounts;
+      return fields;
+    };
+    const addMonth = (date: string) => {
+      if (date) exact.add(date.slice(0, 7));
+    };
+    for (const id of ids) {
+      const oldItem = oldById.get(id);
+      const newItem = newById.get(id);
+      if (JSON.stringify(oldItem) === JSON.stringify(newItem)) continue;
+      const oldRoot = oldItem ? JSON.stringify(root(oldItem)) : null;
+      const newRoot = newItem ? JSON.stringify(root(newItem)) : null;
+      if (oldRoot !== newRoot) {
+        const changed = [oldItem, newItem].filter(
+          (item): item is Entry => Boolean(item),
+        );
+        if (changed.some((item) => item.recurrence !== "once"))
+          cutoffs.push(...changed.map((item) => item.date.slice(0, 7)));
+        else changed.forEach((item) => addMonth(item.date));
+        continue;
+      }
+      for (const key of new Set([
+        ...Object.keys(oldItem?.occurrenceStatuses || {}),
+        ...Object.keys(newItem?.occurrenceStatuses || {}),
+        ...Object.keys(oldItem?.occurrenceAmounts || {}),
+        ...Object.keys(newItem?.occurrenceAmounts || {}),
+      ]))
+        if (
+          oldItem?.occurrenceStatuses[key] !== newItem?.occurrenceStatuses[key] ||
+          oldItem?.occurrenceAmounts[key] !== newItem?.occurrenceAmounts[key]
+        )
+          addMonth(key);
+    }
+    return completed.filter(
+      (period) =>
+        !exact.has(period) && !cutoffs.some((cutoff) => period >= cutoff),
+    );
+  }
+  function coverageAfterEntryChanges(previous: State, next: State) {
+    return {
+      incomeMonths: invalidatedCoverageMonths(
+        previous.incomes,
+        next.incomes,
+        previous.coverage.incomeMonths,
+      ),
+      expenseMonths: invalidatedCoverageMonths(
+        previous.expenses,
+        next.expenses,
+        previous.coverage.expenseMonths,
+      ),
+    };
+  }
   function commit(next: State) {
     try {
+      if (next.coverage === s.coverage)
+        next = { ...next, coverage: coverageAfterEntryChanges(s, next) };
       let valid = validate(next);
       try {
         storage.update(valid);
@@ -1731,6 +1798,16 @@ function App() {
   }
   function settings(v: Partial<State["settings"]>) {
     commit({ ...s, settings: { ...s.settings, ...v } });
+  }
+  function setMonthCoverage(kind: "incomes" | "expenses", confirmed: boolean) {
+    const field = kind === "incomes" ? "incomeMonths" : "expenseMonths";
+    const months = new Set(s.coverage[field]);
+    if (confirmed) months.add(month);
+    else months.delete(month);
+    commit({
+      ...s,
+      coverage: { ...s.coverage, [field]: [...months].sort() },
+    });
   }
   function dismissHelp(id: string) {
     setDismissedHelp((current) => {
@@ -4044,6 +4121,45 @@ function App() {
                       kassavirtaan.
                     </HelpBox>
                   )}
+                {(page === "incomes" || page === "expenses") && (
+                  <section
+                    className={`panel entry-coverage${monthCoverageConfirmed ? " confirmed" : ""}`}
+                    aria-labelledby="entry-coverage-title"
+                  >
+                    <div>
+                      <span className="eyebrow">KUUKAUDEN TIETOJEN KATTAVUUS</span>
+                      <h2 id="entry-coverage-title">
+                        Onko kuukauden kaikki {page === "incomes" ? "tulot" : "menot"} kirjattu?
+                      </h2>
+                      <p>
+                        Vahvista päättynyt kuukausi vasta, kun kaikki sen {page === "incomes" ? "tulot" : "menot"} ovat mukana. {page === "incomes"
+                          ? "Vahvistettu kuukausi sisällytetään kompassin tulovaihtelun arvioon, myös silloin kun tuloja ei ollut."
+                          : "Vahvistettu nollakuukausi erotetaan puuttuvista tiedoista hätävaran arviossa."} Sovellus ei tarkista tietoja pankista.
+                      </p>
+                      <small role="status">
+                        {monthCoverageConfirmed
+                          ? `${month} vahvistettu`
+                          : canConfirmMonthCoverage
+                            ? `${month} ei ole vahvistettu`
+                            : "Kuluvaa tai tulevaa kuukautta ei lasketa täytenä"}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!canConfirmMonthCoverage}
+                      onClick={() =>
+                        setMonthCoverage(
+                          page === "incomes" ? "incomes" : "expenses",
+                          !monthCoverageConfirmed,
+                        )
+                      }
+                    >
+                      {monthCoverageConfirmed
+                        ? "Peru kuukauden vahvistus"
+                        : `Vahvista kuukauden ${page === "incomes" ? "tulot" : "menot"}`}
+                    </button>
+                  </section>
+                )}
                 <section className="panel entry-panel">
                   <div className="filters">
                     <label>
@@ -6947,14 +7063,10 @@ function EntryForm({
         v.active = f.has("active");
       }
       if (kind === "expenses") v.essential = f.has("essential");
-      if (kind === "expenses")
-        v.tags = setExpenseTypeTags(
-          v.tags,
-          String(f.get("expenseType")) as
-            | "consumption"
-            | "saving"
-            | "investment",
-        );
+      if (kind === "expenses") {
+        v.expenseType = String(f.get("expenseType")) as Entry["expenseType"];
+        v.tags = userTags(v.tags);
+      }
       if (kind === "assets") v.liquid = f.has("liquid");
       validateEntry(v);
       onSave(v);

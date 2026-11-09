@@ -56,6 +56,7 @@ with sync_playwright() as p:
  expect(page.get_by_role('button',name='Pikatoiminnot',exact=True)).to_be_visible()
  assert page.locator('.toolbar-status').count()==0
  mark('Mukautettu kuukausivalitsin, nuolisiirtymät ja kompakti yläpalkki')
+ choose_month(page,'Valitse kuukausi','2026-10');nav(page,'Menot');page.get_by_role('button',name='Vahvista kuukauden menot',exact=True).click();assert '2026-10' in state(page)['coverage']['expenseMonths'];add(page,'Menot','+ Lisää meno',{'name':'Kattavuustesti','amount':'42','date':'2026-10-15','category':'Ruoka'});assert '2026-10' not in state(page)['coverage']['expenseMonths'];page.get_by_role('button',name='Poista Kattavuustesti',exact=True).click();choose_month(page,'Valitse kuukausi','2026-11');mark('Vahvistettu nollakuukausi tallentuu ja uusi tapahtuma mitätöi sen kattavuuden')
  nav(page,'Tulot');page.get_by_role('button',name='+ Lisää tulo',exact=True).click();dlg=page.locator('dialog[open]')
  dlg.locator('[name="amount"]').fill('1250');assert dlg.locator('[name="amount"]').input_value()=='12,50'
  dlg.locator('[name="amount"]').fill('1 234,56 €');assert re.sub(r'\s+',' ',dlg.locator('[name="amount"]').input_value()).strip()=='1 234,56'

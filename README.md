@@ -19,7 +19,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 - Yhteenvedon tulo- ja menopainikkeet sekä Ctrl/Cmd + K avaavat nopean kirjauksen: nimi, summa, kategoria ja päivä. Viimeisimmän tulon tai menon voi kopioida uudeksi toteumaksi; useita kirjauksia voi tallentaa peräkkäin lomaketta sulkematta. Toistuvan pikakirjauksen valittu päivä on toteutunut ja tulevat kuukaudet suunniteltuja.
 - Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, sarjan oletustila sekä päiväkohtaiset suunniteltu/toteutunut/ohitettu-tilat ja summapoikkeukset. Yksittäisen laskun toteuma voi poiketa sarjan oletussummasta.
 - Kategoriabudjetti ja toteuman inline-muokkaus; budjetoimattomat kulut erotetaan budjetoitujen kategorioiden erotuksesta. Edellisen kuukauden budjetin kopiointi.
-- Kassavirta, kirjauksiin perustuva kuukausiarvio, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari havaintokattavuudella.
+- Kassavirta, kirjauksiin perustuva kuukausiarvio, säästöaste, nettovarallisuus ja 1/3/6/12 kuukauden hätävaramittari. Menojen ja tulojen kuukausikattavuus vahvistetaan erikseen; hätävara ja tulovaihtelu käyttävät vain vahvistettuja päättyneitä kuukausia. Menon oma tyyppikenttä erottaa kulutuksen, säästösiirron ja sijoitussiirron; se ei vielä todenna pankkitapahtumaa.
 - Manuaaliset sijoitushinnat euroina ja hankinta-arvo.
 - Tavoitteiden eteneminen ja säästökuukausien arvio ilman tuottoa.
 - Korkoa korolle, kulut, inflaatio, tallennettavien skenaarioiden vertailu ja velanmaksuarvio.
