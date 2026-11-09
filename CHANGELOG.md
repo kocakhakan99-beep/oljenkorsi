@@ -25,3 +25,7 @@ Tulojen ja menojen lisääminen ja muokkaus yhdistettiin samaan lomakkeeseen kai
 ### UX:n priorisointi 9.11.2026
 
 Esittämismalli täsmennettiin vaihtoehtojen priorisointijärjestykseksi: ensimmäinen tarkoitukseen sopiva riittävä tapa valitaan, tasoja ei kerrosteta automaattisesti. Ohjelaatikot näyttävät ensin avattavan otsikon. Budjetin tulopohja ja kategoriaylitykset tiivistettiin luvuiksi ja lyhyiksi tiloiksi, laskentakuvaus on avattava. Kompassin varsinainen toimenpide ja havainto säilyvät näkyvissä; perustelu ja lisävaikutus avautuvat pyynnöstä myös demokorteissa. Kriittiset poikkeamat ja olennaiset tulopohjan oletukset säilyvät näkyvissä.
+
+### Demotaloudet 2025–2026
+
+Kaikkien neljän esimerkkitalouden tulot, menot ja kategoriabudjetit kattavat kiinteästi kaikki 24 kuukautta vuosilta 2025 ja 2026. Mukana on kausivaihtelua, eräpäiviä, viikoittaisia ruokaostoksia, pankkipäivälle aikaistettuja palkkoja ja etuuksia, säästö-/sijoitussiirtoja sekä kaikille talouksille tavoitteita ja kaksi tallennettua skenaariota. Omaisuus ja velat ovat linkitettyjä esimerkkitilannekuvia. Kriisitalouden tulokatkos alkaa 2026-08. Kompassin vieritettävä 24 kuukauden suunnitelmakuvaaja käyttää samaa aineistoa kuin ladattava talous; tulevat maksut eivät muutu toteutuneiksi. Vanha ladattu talous säilyy, kunnes käyttäjä lataa uuden esimerkin vahvistuksen kautta. 83 yksikkötestiä ja 63 selainvarmennusta läpäisivät.

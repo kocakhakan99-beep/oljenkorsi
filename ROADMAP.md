@@ -16,6 +16,8 @@ Seuraavaksi varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kii
 
 ## P1: luotettava arjen talous ja mittarit
 
+Toteutettu 9.11.2026: neljän demotalouden aineisto kattaa vuodet 2025 ja 2026 kokonaan. Kaikissa talouksissa on tulot, menot, 24 kuukausibudjettia, omaisuutta, linkitettyä velkaa, sijoituksia, tavoitteita ja tallennettuja skenaarioita. Kompassin 24 kuukauden suunnitelmakuvaaja käyttää samaa ladattavaa aineistoa. Tulevat maksut säilyvät suunniteltuina, ja kriisitalouden tulokatkos alkaa elokuussa 2026.
+
 Toteutettu 9.11.2026: [50/30/20 ja kategoriarajat](BUDGET_RULE_PLAN.md) yhdistävät budjetin, tulojen, menojen ja kompassin ohjauksen. Käyttäjä voi muuttaa osuuksia, kategoriaryhmiä ja rajoja. Varatut ja toteutuneet rahat erotetaan, puuttuvat luokitukset nostetaan esiin ja rahoitusvajeesta ilmoitetaan. Kategoriarajat eivät ole tutkimuksen vahvistamia enimmäismenoja.
 
 Toteutettu 9.11.2026: budjetin kuvakkeellinen kategorianimi avaa kuukausikohtaisen menokortin. Kortista voi lisätä kerta- tai toistuvan menon esivalitulla kategorialla, muokata sarjaa ja siirtyä kategorian suodatettuun menoluetteloon. Ensimmäinen sarake on tiivistetty kiinteäkokoiseen kuvakkeeseen, nimeen ja plusmerkilliseen menokuvakepainikkeeseen.
