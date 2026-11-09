@@ -1,6 +1,6 @@
 # Loppukäyttäjän UX-auditointi
 
-**Päivitetty:** 7.11.2026
+**Päivitetty:** 9.11.2026
 
 **Kohde:** Taloussuunnittelu 0.1.0, haara `codex/fire-expense-types`  
 **Tapa:** nykyisen käyttöliittymän heuristinen läpikäynti, tyhjän ja demotalouden selainkuvat, lähdekoodin laskentalogiikan tarkistus, projektin rajoitukset sekä automaattinen E2E-ajon tulos. Tämä ei ole käyttäjätutkimus eikä WCAG-vaatimustenmukaisuusauditointi.
@@ -94,3 +94,13 @@ Automaattinen testi ajettiin Chromium 155:llä paikallisen HTTP-testipalvelun ka
 Tässä kehityskierroksessa lisättiin toistuvalle tapahtumalle päivämääräkohtainen suunniteltu/toteutunut/ohitettu-tila ja summapoikkeus. Poikkeaman laskenta vietiin kassavirtaan, budjettiin, raportteihin, hätävaraan ja kompassiin. Oletustilan tai -summan muuttaminen ei muuta yksittäisiä kuukausipoikkeuksia. Kuukausiarvion teksti kertoo, että luku perustuu kirjauksiin eikä ole tilisaldo.
 
 Budjetin yhteenveto ja raportti vertaavat toteumaa vain kategorioihin, joille on asetettu budjetti; budjetoimaton kulutus näytetään erikseen. Nollakategoriat on oletuksena piilotettu, mutta ne saa avattua. Tyhjän talouden etusivu näyttää kolmen askeleen aloituspolun mittariston sijaan. Kategorianäppäinvalitsin tukee nuolia, Home/End-, Enter- ja Esc-näppäimiä. Toistuvan tapahtuman tilan ja summan poikkeutus läpäisi selainpolun; koko ajo läpäisi 55 tarkistusta ja yksikkötestit 58 tapausta. Käyttäjätesti, ruudunlukija-arvio ja laaja WCAG-tarkistus ovat edelleen tekemättä.
+
+## Syöttö- ja raportointikierros 9.11.2026
+
+Yhteenvedon tavalliset tulot ja menot kirjataan nyt neljällä kentällä; tarkemmat toistuvuuden, menotyypin, välttämättömyyden ja kuvauksen asetukset löytyvät avattavista lisävalinnoista. Käyttäjä voi tallentaa saman lomakkeen kautta useita tapahtumia ja kopioida viisi viimeisintä tuloa tai menoa uudeksi kirjaukseksi. Tulo- ja menolistojen täydellinen lomake säilyy edelleen lisätoiminnoille. Varallisuus-, velka- ja tavoitelomakkeet hyötyvät viimeksi käytetystä kategoriasta ja valitun kuukauden päivämäärästä.
+
+Raportit pidetään seitsemänä, koska ne vastaavat eri päätöskysymyksiin: kassavirran muutos, kulujen rakenne, tapahtumien ajoitus, budjettipoikkeama, nykyinen omaisuus, velkaan sidottu oma pääoma sekä säästöaste/FIRE. Piirakka ja pylväs ovat saman kulurakennetiedon vaihtoehtoisia esityksiä; aikajanakaavio ja taulukko tarjoavat eri tarkkuustasot. Karsittiin pikahakupaneelista varmuuskopion vienti, koska sama toiminto löytyy tarkoituksenmukaisemmin Hallinnasta.
+
+Kuukausi- ja aikavälitila ovat nyt eksplisiittisiä. Yhden kuukauden näkymä käyttää yhtä kuukausivalitsinta ja nuolia; monen kuukauden näkymä käyttää alkua, loppua ja vieritettävää kuukausirailia. Varallisuus- ja velkaraportit näyttävät nykytilan ilman aikavalitsinta, koska historiallisia arvostuksia ei ole tallennettu. Taulukkomuodon haku ja aihekohtainen lajittelu käyttävät samoja rivejä kuin raportin tietokortit.
+
+Tämä ratkaisee näkyvän käyttöliittymäristiriidan, mutta ei vahvista tuotteen yksinkertaisuutta käyttäjäaineistolla. Seuraava laadullinen tarkistus on tarkkailla 5–7 käyttäjää lisäämässä ostosta, toistuvaa laskua ja tuloa sekä etsimässä kuukauden alijäämää ilman ohjausta. Tallenna myös virheelliset toistuvuustulkinnat, peruutukset ja se, löytääkö käyttäjä lisävalinnat itse.

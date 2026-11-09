@@ -1,6 +1,6 @@
 # Roadmap
 
-Päivitetty 7.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
+Päivitetty 9.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
 ## P0: toistettava ja turvallinen perusta
 
@@ -15,6 +15,8 @@ Seuraavaksi varmista Windows Edge/Chrome/Firefox file://-käyttö, tallennus/kii
 Erottele kulutus, säästö-/sijoitussiirrot, korko ja lainapääoman lyhennys. Toistuvan tapahtuman päivämääräkohtainen tila ja summapoikkeus ovat nyt tuettuja. Lisää tilit, alkusaldot ja täsmäytys ilman kaksoislaskentaa. Tuo nykyisen säästöasteluvun rajaus näkyviin ennen uusien FI-lukujen käyttöönottoa.
 
 Toteutettu tässä työpaketissa: yhteinen enintään 120 kuukauden raporttijakso (alku ja loppu), aihekohtainen esitysmuoto, budjetin suunnitelma/toteuma-vertailu, nykyhetken varallisuuserittely, omaisuuserään linkitettävä velka sekä oletuksilla merkitty velan takaisinmaksu- ja omaisuusarvio. Talouden kompassin havaintoperheitä on laajennettu asumiseen, välttämättömien menojen osuuteen, oman historian kulupoikkeamiin, tavoitteiden realistiseen tahtiin, toistuviin menoihin, velkojen kustannuksiin, säästösiirtojen ajoitukseen ja FIRE-nostojen stressitestaukseen. Käyttäjä voi päivittää tilanteen, kuitata ehdotuksen tai siirtää sen viikoksi tai kuukaudeksi. Kompassi ei tee muutoksia automaattisesti. Hätävaran 1/3/6/12 kk havaintopohjainen keskiarvo ja kirjauskuukausien määrä on toteutettu. Jäljellä: vahvistetun nollakuukauden erottelu puuttuvasta, keskeneräisen kuukauden käsittely, oma menoarvio sekä tulokatkosstressi. Lisää kirjauksen kattavuuden vahvistus ja arvostushistoria; älä rekonstruoi menneisyyttä nykyarvoista. Tarjoa vapaaehtoinen kuukausikatsaus ja tavoitteiden priorisointi.
+
+Toteutettu 9.11.2026: yhteenveto avaa nopean tulo- tai menokirjauksen, viimeisiä tapahtumia voi kopioida ja lomake tukee usean kirjauksen sarjaa. Raportin ajaksi voi valita yhden kuukauden tai alku–loppu-jakson; nykytilan varallisuus- ja velkanäkymät eivät esitä aikahistoriaa jota data ei sisällä. Kaikkien raporttien taulukoihin lisättiin riveittäin haku ja näkymäkohtainen lajittelu. Raporttien ja syöttöpolkujen päällekkäisyyttä arvioidaan edelleen käyttäjätestillä.
 
 **Riippuvuus:** P0 ja tietomallimigraation suunnittelu. **Valmis kun:** FIRE_PLANin rahavirtaesimerkit täsmäävät, vanha backup palautuu ja puuttuva havaintodata erottuu nollasta.
 

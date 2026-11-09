@@ -235,6 +235,51 @@ const reportFormats: Record<ReportView, { value: string; label: string }[]> = {
     { value: "table", label: "Taulukko" },
   ],
 };
+type ReportSortOption = { value: string; label: string };
+const reportTableSorts: Record<ReportView, ReportSortOption[]> = {
+  overview: [
+    { value: "date-desc", label: "Uusin kuukausi ensin" },
+    { value: "date-asc", label: "Vanhin kuukausi ensin" },
+    { value: "income-desc", label: "Suurimmat tulot ensin" },
+    { value: "expense-desc", label: "Suurimmat menot ensin" },
+    { value: "cash-asc", label: "Heikoin kassavirta ensin" },
+  ],
+  categories: [
+    { value: "amount-desc", label: "Suurin kululuokka ensin" },
+    { value: "amount-asc", label: "Pienin kululuokka ensin" },
+    { value: "name-asc", label: "Kategoria A–Ö" },
+  ],
+  flow: [
+    { value: "date-asc", label: "Aikajärjestys" },
+    { value: "date-desc", label: "Uusin päivä ensin" },
+    { value: "expense-desc", label: "Suurimmat menot ensin" },
+    { value: "income-desc", label: "Suurimmat tulot ensin" },
+    { value: "cash-asc", label: "Heikoin kertymä ensin" },
+  ],
+  budget: [
+    { value: "date-desc", label: "Uusin kuukausi ensin" },
+    { value: "date-asc", label: "Vanhin kuukausi ensin" },
+    { value: "difference-asc", label: "Suurin ylitys ensin" },
+    { value: "actual-desc", label: "Suurin toteuma ensin" },
+  ],
+  wealth: [
+    { value: "amount-desc", label: "Suurin arvo ensin" },
+    { value: "name-asc", label: "Tietue A–Ö" },
+    { value: "date-desc", label: "Uusin arvostus ensin" },
+  ],
+  debt: [
+    { value: "debt-desc", label: "Suurin velka ensin" },
+    { value: "equity-asc", label: "Pienin oma pääoma ensin" },
+    { value: "payoff-asc", label: "Nopein arvioitu takaisinmaksu" },
+    { value: "name-asc", label: "Omaisuuserä A–Ö" },
+  ],
+  fire: [
+    { value: "date-desc", label: "Uusin kuukausi ensin" },
+    { value: "date-asc", label: "Vanhin kuukausi ensin" },
+    { value: "saving-desc", label: "Korkein säästöaste ensin" },
+    { value: "income-desc", label: "Suurimmat tulot ensin" },
+  ],
+};
 type ReportSelection =
   | { type: "month"; month: string; metric: "income" | "expense" }
   | {
@@ -909,6 +954,7 @@ function MonthPicker({
 function ReportRangeControl({
   start,
   end,
+  mode,
   startIndex,
   endIndex,
   valid,
@@ -918,11 +964,13 @@ function ReportRangeControl({
   lastMonthIndex,
   onStart,
   onEnd,
+  onMode,
   onShift,
   onRailEnd,
 }: {
   start: string;
   end: string;
+  mode: "month" | "range";
   startIndex: number | null;
   endIndex: number | null;
   valid: boolean;
@@ -932,6 +980,7 @@ function ReportRangeControl({
   lastMonthIndex: number;
   onStart: (month: string) => void;
   onEnd: (month: string) => void;
+  onMode: (mode: "month" | "range") => void;
   onShift: (offset: number) => void;
   onRailEnd: (index: number) => void;
 }) {
@@ -961,31 +1010,53 @@ function ReportRangeControl({
     }).format(new Date(year, month - 1, 1));
   };
   return (
-    <div className="report-range-control">
+    <div className={`report-range-control${mode === "month" ? " single-month" : ""}`}>
       <div className="report-range-heading">
         <div>
-          <span className="eyebrow">RAPORTOINTIJAKSO</span>
+          <span className="eyebrow">
+            {mode === "month" ? "RAPORTOINTIKUUKAUSI" : "RAPORTOINTIJAKSO"}
+          </span>
           <strong>
             {valid
-              ? `${monthLabel(start)} – ${monthLabel(end)}`
+              ? mode === "month"
+                ? monthLabel(end)
+                : `${monthLabel(start)} – ${monthLabel(end)}`
               : "Tarkista aikaväli"}
           </strong>
         </div>
         <small>
           {valid
-            ? `${length} ${length === 1 ? "kuukausi" : "kuukautta"}`
+            ? mode === "month"
+              ? "Yksi kuukausi"
+              : `${length} ${length === 1 ? "kuukausi" : "kuukautta"}`
             : "Valitse alku ja loppu"}
         </small>
+      </div>
+      <div className="report-period-mode" role="group" aria-label="Raportin aikarajaus">
+        <button
+          type="button"
+          aria-pressed={mode === "month"}
+          onClick={() => onMode("month")}
+        >
+          Kuukausi
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === "range"}
+          onClick={() => onMode("range")}
+        >
+          Aikaväli
+        </button>
       </div>
       <div
         className="report-range-navigator"
         role="group"
-        aria-label="Valitse raportin alku ja loppu"
+        aria-label={mode === "month" ? "Vaihda raportointikuukautta" : "Valitse raportin alku ja loppu"}
       >
         <button
           type="button"
-          aria-label="Siirrä aikaväliä kuukausi taaksepäin"
-          title="Siirrä aikaväliä kuukausi taaksepäin"
+          aria-label={mode === "month" ? "Edellinen raportointikuukausi" : "Siirrä aikaväliä kuukausi taaksepäin"}
+          title={mode === "month" ? "Edellinen kuukausi" : "Siirrä aikaväliä kuukausi taaksepäin"}
           disabled={
             !valid || startIndex === null || startIndex <= firstMonthIndex
           }
@@ -993,31 +1064,42 @@ function ReportRangeControl({
         >
           <ChevronLeft size={19} aria-hidden="true" />
         </button>
-        <div className="report-range-fields">
-          <MonthPicker
-            value={start}
-            label="Alku"
-            ariaLabel="Raportin alkukuukausi"
-            onChange={onStart}
-          />
-          <MonthPicker
-            value={end}
-            label="Loppu"
-            ariaLabel="Raportin loppukuukausi"
-            onChange={onEnd}
-          />
+        <div className={`report-range-fields${mode === "month" ? " report-single-month-field" : ""}`}>
+          {mode === "month" ? (
+            <MonthPicker
+              value={end}
+              label="Kuukausi"
+              ariaLabel="Raportointikuukausi"
+              onChange={onEnd}
+            />
+          ) : (
+            <>
+              <MonthPicker
+                value={start}
+                label="Alku"
+                ariaLabel="Raportin alkukuukausi"
+                onChange={onStart}
+              />
+              <MonthPicker
+                value={end}
+                label="Loppu"
+                ariaLabel="Raportin loppukuukausi"
+                onChange={onEnd}
+              />
+            </>
+          )}
         </div>
         <button
           type="button"
-          aria-label="Siirrä aikaväliä kuukausi eteenpäin"
-          title="Siirrä aikaväliä kuukausi eteenpäin"
+          aria-label={mode === "month" ? "Seuraava raportointikuukausi" : "Siirrä aikaväliä kuukausi eteenpäin"}
+          title={mode === "month" ? "Seuraava kuukausi" : "Siirrä aikaväliä kuukausi eteenpäin"}
           disabled={!valid || endIndex === null || endIndex >= lastMonthIndex}
           onClick={() => onShift(1)}
         >
           <ChevronRight size={19} aria-hidden="true" />
         </button>
       </div>
-      <div
+      {mode === "range" && <div
         className="report-month-rail"
         role="group"
         aria-label="Siirry raportin päättymiskuukauteen"
@@ -1045,10 +1127,11 @@ function ReportRangeControl({
             </button>
           );
         })}
-      </div>
+      </div>}
       <p className="report-range-hint">
-        Valitse alku ja loppu, siirrä aikaväliä nuolilla tai vieritä
-        kuukausilistaa.
+        {mode === "month"
+          ? "Valitse kuukausi kalenterista tai siirry nuolilla edelliseen ja seuraavaan."
+          : "Valitse alku ja loppu, siirrä aikaväliä nuolilla tai vieritä kuukausilistaa."}
       </p>
       {!valid && (
         <p className="alert warning" role="alert">
@@ -1056,6 +1139,55 @@ function ReportRangeControl({
           olla ennen alkua.
         </p>
       )}
+    </div>
+  );
+}
+function ReportTableControls({
+  query,
+  onQuery,
+  sort,
+  onSort,
+  sortOptions,
+  visible,
+  total,
+}: {
+  query: string;
+  onQuery: (value: string) => void;
+  sort: string;
+  onSort: (value: string) => void;
+  sortOptions: ReportSortOption[];
+  visible: number;
+  total: number;
+}) {
+  return (
+    <div className="report-table-controls" role="search">
+      <label>
+        <span>Suodata taulukkoa</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => onQuery(event.target.value)}
+          placeholder="Hae taulukon rivejä"
+          aria-label="Suodata raporttitaulukkoa"
+        />
+      </label>
+      <label>
+        <span>Lajittelu</span>
+        <select
+          value={sort}
+          onChange={(event) => onSort(event.target.value)}
+          aria-label="Lajittele raporttitaulukko"
+        >
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <small aria-live="polite">
+        {visible} / {total} riviä
+      </small>
     </div>
   );
 }
@@ -1273,6 +1405,203 @@ function DatePickerField({
     </div>
   );
 }
+function QuickEntryForm({
+  kind,
+  item,
+  categories,
+  onSave,
+  onCancel,
+}: {
+  kind: "incomes" | "expenses";
+  item: Entry;
+  categories: CategoryChoice[];
+  onSave: (item: Entry, addAnother: boolean) => boolean;
+  onCancel: () => void;
+}) {
+  const [error, setError] = useState("");
+  const [entryDate, setEntryDate] = useState(item.date);
+  const [submitAgain, setSubmitAgain] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const title = kind === "incomes" ? "Tulo" : "Meno";
+
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = new FormData(form);
+    try {
+      const amountText = String(fields.get("amount") || "");
+      const amount = money(amountText);
+      const name = String(fields.get("name") || "").trim();
+      const date = dateTextToIso(String(fields.get("date") || ""));
+      const repeats = fields.has("repeatMonthly");
+      if (!name) throw Error("Anna kirjaukselle nimi.");
+      if (amount <= 0) throw Error("Summan pitää olla yli 0 €.");
+      if (!date) throw Error("Tarkista päivämäärä.");
+      const value: Entry = {
+        ...item,
+        id: uid(),
+        name,
+        amount,
+        category: String(fields.get("category") || "").trim(),
+        date,
+        endDate: "",
+        recurrence: repeats ? "monthly" : "once",
+        status: repeats ? "planned" : "actual",
+        occurrenceStatuses: repeats ? { [date]: "actual" } : {},
+        occurrenceAmounts: {},
+        active: true,
+        updatedAt: new Date().toISOString(),
+        description: String(fields.get("description") || "").trim(),
+      };
+      if (kind === "expenses") {
+        value.essential = fields.has("essential");
+        value.tags = setExpenseTypeTags(
+          value.tags,
+          String(fields.get("expenseType") || "consumption") as
+            | "consumption"
+            | "saving"
+            | "investment",
+        );
+      }
+      validateEntry(value);
+      const addAnother = submitAgain;
+      if (!onSave(value, addAnother)) return;
+      setError("");
+      setSubmitAgain(false);
+      if (addAnother) {
+        const amountInput = form.elements.namedItem("amount");
+        if (amountInput instanceof HTMLInputElement) amountInput.value = "";
+        const nameInput = form.elements.namedItem("name");
+        if (nameInput instanceof HTMLInputElement) nameInput.value = "";
+        const noteInput = form.elements.namedItem("description");
+        if (noteInput instanceof HTMLTextAreaElement) noteInput.value = "";
+        requestAnimationFrame(() => nameRef.current?.focus());
+      } else onCancel();
+    } catch (reason) {
+      setError(String(reason));
+    }
+  }
+
+  return (
+    <form
+      ref={formRef}
+      className="quick-entry-form"
+      onSubmit={submit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          formRef.current?.requestSubmit();
+        }
+      }}
+    >
+      <p className="quick-entry-intro">
+        Kirjaa toteutunut {title.toLocaleLowerCase("fi-FI")} nopeasti. Toistuvan
+        kirjauksen tulevat kuukaudet merkitään suunnitelluiksi.
+      </p>
+      {error && (
+        <div role="alert" className="alert warning">
+          {error}
+        </div>
+      )}
+      <div className="quick-entry-fields">
+        <label>
+          Mitä {kind === "incomes" ? "sait?" : "maksoit?"}
+          <input
+            ref={nameRef}
+            name="name"
+            defaultValue={item.name}
+            placeholder={kind === "incomes" ? "esim. Palkka" : "esim. Ruokaostokset"}
+            autoFocus
+            required
+            maxLength={200}
+          />
+        </label>
+        <label>
+          Summa (€)
+          <MoneyInput
+            name="amount"
+            defaultCents={item.amount > 0 ? item.amount : null}
+            required
+            aria-label={`${title}, summa euroina`}
+          />
+          <small>Kirjoita numerot sentteinä: 1250 = 12,50 €.</small>
+        </label>
+        <label>
+          Kategoria
+          <select name="category" defaultValue={item.category} required>
+            {categories.map((category) => (
+              <option key={category.name} value={category.name}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <DatePickerField
+          label="Päivämäärä"
+          name="date"
+          value={entryDate}
+          required
+          onChange={setEntryDate}
+        />
+      </div>
+      <details className="quick-entry-details">
+        <summary>Lisävalinnat</summary>
+        <div className="quick-entry-options">
+          <label className="check">
+            <input type="checkbox" name="repeatMonthly" />
+            Toistuu kuukausittain
+          </label>
+          {kind === "expenses" && (
+            <>
+              <label>
+                Menon tyyppi
+                <select
+                  name="expenseType"
+                  defaultValue={expenseType(item)}
+                  aria-label="Menon tyyppi"
+                >
+                  <option value="consumption">Kulutus</option>
+                  <option value="saving">Säästösiirto</option>
+                  <option value="investment">Sijoitussiirto</option>
+                </select>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  name="essential"
+                  defaultChecked={item.essential}
+                />
+                Välttämätön meno
+              </label>
+            </>
+          )}
+          <label className="quick-entry-note">
+            Lisätieto
+            <input
+              name="description"
+              defaultValue={item.description}
+              maxLength={500}
+              placeholder="Vapaaehtoinen tarkenne"
+            />
+          </label>
+        </div>
+      </details>
+      <div className="quick-entry-actions">
+        <button type="submit" className="primary" onClick={() => setSubmitAgain(false)}>
+          Tallenna {title.toLocaleLowerCase("fi-FI")}
+        </button>
+        <button type="submit" onClick={() => setSubmitAgain(true)}>
+          Tallenna ja lisää seuraava
+        </button>
+        <button type="button" onClick={onCancel}>
+          Takaisin
+        </button>
+      </div>
+      <small className="quick-entry-shortcut">Vinkki: Ctrl/Cmd + Enter tallentaa.</small>
+    </form>
+  );
+}
 function App() {
   const [s, setS] = useState<State>(loaded.data),
     [page, setPage] = useState(location.hash.slice(1) || "dashboard"),
@@ -1280,6 +1609,9 @@ function App() {
     [storageOk, setStorageOk] = useState(storage.healthCheck().ok),
     [edit, setEdit] = useState<{ kind: Kind; item: Entry } | null>(null),
     [quick, setQuick] = useState(false),
+    [quickEntryKind, setQuickEntryKind] = useState<"incomes" | "expenses" | null>(null),
+    [quickSeed, setQuickSeed] = useState<Entry | null>(null),
+    [quickSearch, setQuickSearch] = useState(""),
     [menuOpen, setMenuOpen] = useState(false),
     [search, setSearch] = useState(""),
     [categoryFilter, setCategoryFilter] = useState(""),
@@ -1296,6 +1628,9 @@ function App() {
     [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
+    [reportPeriodMode, setReportPeriodMode] = useState<"month" | "range">("month"),
+    [reportTableSearch, setReportTableSearch] = useState(""),
+    [reportTableSort, setReportTableSort] = useState("date-desc"),
     [reportZoom, setReportZoom] = useState(1),
     [reportView, setReportView] = useState<ReportView>("overview"),
     [reportFormat, setReportFormat] = useState("bars"),
@@ -1321,6 +1656,12 @@ function App() {
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month,
     m = useMemo(() => metrics(s, month), [s, month]);
+  useEffect(() => {
+    if (reportPeriodMode === "month") {
+      setReportStart(month);
+      setReportEnd(month);
+    }
+  }, [month, reportPeriodMode]);
   const hasDashboardData = kinds.some((kind) => s[kind].length > 0);
   const [selectedYear, selectedMonthNumber] = month.split("-").map(Number);
   const canGoPreviousMonth = month > "1900-01";
@@ -1415,6 +1756,9 @@ function App() {
     setStatusFilter("");
     setLimit(100);
     setQuick(false);
+    setQuickEntryKind(null);
+    setQuickSeed(null);
+    setQuickSearch("");
     setMenuOpen(false);
     setTimeout(
       () => document.querySelector<HTMLElement>("main h1")?.focus(),
@@ -1424,6 +1768,8 @@ function App() {
   function selectReportView(view: ReportView) {
     setReportView(view);
     setReportFormat(reportFormats[view][0].value);
+    setReportTableSearch("");
+    setReportTableSort(reportTableSorts[view][0].value);
     setSelectedReport(null);
   }
   function onReportTabKeyDown(
@@ -1528,6 +1874,49 @@ function App() {
       setEdit(null);
       setNotice("Tiedot päivitetty.");
     }
+  }
+  function beginQuickEntry(kind: "incomes" | "expenses", source?: Entry) {
+    const defaultDate = month === today().slice(0, 7) ? today() : `${month}-01`;
+    const latest = [...s[kind]].sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt),
+    )[0];
+    setQuickSeed(
+      source
+        ? {
+            ...source,
+            id: uid(),
+            date: defaultDate,
+            endDate: "",
+            recurrence: "once",
+            status: "actual",
+            occurrenceStatuses: {},
+            occurrenceAmounts: {},
+            active: true,
+          }
+        : entry({
+            category: latest?.category || cats(kind)[0] || "Muu",
+            date: defaultDate,
+            status: "actual",
+          }),
+    );
+    setQuickEntryKind(kind);
+    setQuick(true);
+  }
+  function saveQuickEntry(
+    kind: "incomes" | "expenses",
+    item: Entry,
+    addAnother: boolean,
+  ) {
+    const saved = commit({ ...s, [kind]: [...s[kind], item] });
+    if (saved) {
+      setNotice("Kirjaus lisätty.");
+      if (!addAnother) {
+        setQuickEntryKind(null);
+        setQuickSeed(null);
+        setQuick(false);
+      }
+    }
+    return saved;
   }
   function updateOccurrenceStatus(
     kind: "incomes" | "expenses",
@@ -1694,6 +2083,21 @@ function App() {
           name,
           icon: categoryIconFor(name, kind),
         }));
+  const newEntry = (kind: Kind) => {
+    const latest = [...s[kind]].sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt),
+    )[0];
+    return entry({
+      category: latest?.category || cats(kind)[0] || "Muu",
+      date: month === today().slice(0, 7) ? today() : `${month}-01`,
+    });
+  };
+  const recentQuickEntries = [
+    ...s.incomes.map((item) => ({ kind: "incomes" as const, item })),
+    ...s.expenses.map((item) => ({ kind: "expenses" as const, item })),
+  ]
+    .sort((a, b) => b.item.updatedAt.localeCompare(a.item.updatedAt))
+    .slice(0, 5);
   const rows = kinds.includes(page as Kind)
     ? s[page as Kind]
         .filter(
@@ -1738,7 +2142,12 @@ function App() {
     customRangeLength <= 120;
   const firstMonthIndex = 1900 * 12;
   const lastMonthIndex = 2200 * 12 + 11;
-  const rangeWindow = customRangeValid ? Math.max(1, customRangeLength) : 1;
+  const rangeWindow =
+    reportPeriodMode === "month"
+      ? 1
+      : customRangeValid
+        ? Math.max(1, customRangeLength)
+        : 1;
   const shiftCustomRange = (offset: number) => {
     if (
       reportStartNumber === null ||
@@ -1751,6 +2160,7 @@ function App() {
       return;
     setReportStart(monthIndexKey(nextEnd - rangeWindow + 1));
     setReportEnd(monthIndexKey(nextEnd));
+    if (reportPeriodMode === "month") settings({ month: monthIndexKey(nextEnd) });
     setSelectedReport(null);
   };
   const setRangeEnd = (endIndex: number) => {
@@ -1760,6 +2170,15 @@ function App() {
     );
     setReportStart(monthIndexKey(nextEnd - rangeWindow + 1));
     setReportEnd(monthIndexKey(nextEnd));
+    setSelectedReport(null);
+  };
+  const changeReportPeriodMode = (mode: "month" | "range") => {
+    setReportPeriodMode(mode);
+    if (mode === "month") {
+      setReportStart(reportEnd);
+      setReportEnd(reportEnd);
+      settings({ month: reportEnd });
+    }
     setSelectedReport(null);
   };
   const rangeNavigationMonths =
@@ -2011,6 +2430,123 @@ function App() {
     ...dailyFlow.map((day) => Math.abs(day.balance)),
     1,
   );
+  const normalizedTableSearch = reportTableSearch.trim().toLocaleLowerCase("fi-FI");
+  const matchesTableSearch = (...values: Array<string | number | null | undefined>) =>
+    values
+      .filter((value) => value !== null && value !== undefined)
+      .join(" ")
+      .toLocaleLowerCase("fi-FI")
+      .includes(normalizedTableSearch);
+  const filteredHistory = history
+    .filter((row) => matchesTableSearch(row.key))
+    .sort((a, b) => {
+      if (reportTableSort === "income-desc") return b.income - a.income;
+      if (reportTableSort === "expense-desc") return b.expense - a.expense;
+      if (reportTableSort === "cash-asc") return a.cash - b.cash;
+      if (reportTableSort === "saving-desc")
+        return (b.savingRate ?? -Infinity) - (a.savingRate ?? -Infinity);
+      return reportTableSort === "date-asc"
+        ? a.key.localeCompare(b.key)
+        : b.key.localeCompare(a.key);
+    });
+  const filteredCategoryReport = categoryReport
+    .filter(([category]) => matchesTableSearch(category))
+    .sort(([nameA, amountA], [nameB, amountB]) =>
+      reportTableSort === "name-asc"
+        ? nameA.localeCompare(nameB, "fi-FI")
+        : reportTableSort === "amount-asc"
+          ? amountA - amountB
+          : amountB - amountA,
+    );
+  const filteredDailyFlow = dailyFlow
+    .filter((day) => matchesTableSearch(day.date))
+    .sort((a, b) => {
+      if (reportTableSort === "income-desc") return b.income - a.income;
+      if (reportTableSort === "expense-desc") return b.expense - a.expense;
+      if (reportTableSort === "cash-asc") return a.balance - b.balance;
+      return reportTableSort === "date-desc"
+        ? b.date.localeCompare(a.date)
+        : a.date.localeCompare(b.date);
+    });
+  const filteredBudgetReport = budgetReport
+    .filter((row) => matchesTableSearch(row.key))
+    .sort((a, b) => {
+      if (reportTableSort === "actual-desc") return b.actual - a.actual;
+      if (reportTableSort === "difference-asc")
+        return a.planned - a.actual - (b.planned - b.actual);
+      if (reportTableSort === "date-asc") return a.key.localeCompare(b.key);
+      return b.key.localeCompare(a.key);
+    });
+  const wealthTableRows = [
+    ...currentAssets.map((asset) => ({
+      id: `asset-${asset.id}`,
+      name: asset.name,
+      category: `Omaisuus · ${asset.category}`,
+      value: asset.ownedValue,
+      date: asset.date,
+    })),
+    ...currentInvestments.map((investment) => ({
+      id: `investment-${investment.id}`,
+      name: investment.name,
+      category: `Sijoitus · ${investment.category}`,
+      value: investment.marketValue,
+      date: investment.date,
+    })),
+    ...currentDebts.map((debt) => ({
+      id: `debt-${debt.id}`,
+      name: debt.name,
+      category: `Velka · ${debt.category}`,
+      value: -debt.amount,
+      date: debt.date,
+    })),
+  ];
+  const filteredWealthTableRows = wealthTableRows
+    .filter((row) => matchesTableSearch(row.name, row.category))
+    .sort((a, b) =>
+      reportTableSort === "name-asc"
+        ? a.name.localeCompare(b.name, "fi-FI")
+        : reportTableSort === "date-desc"
+          ? b.date.localeCompare(a.date)
+          : Math.abs(b.value) - Math.abs(a.value),
+    );
+  const filteredLinkedOutlooks = linkedOutlooks
+    .filter(({ asset }) => {
+      const linkedNames = currentDebts
+        .filter((debt) => debt.linkedAssetId === asset.id)
+        .map((debt) => debt.name);
+      return matchesTableSearch(asset.name, asset.category, ...linkedNames);
+    })
+    .sort((a, b) => {
+      if (reportTableSort === "debt-desc")
+        return b.outlook!.debtBalance - a.outlook!.debtBalance;
+      if (reportTableSort === "equity-asc")
+        return a.outlook!.currentEquity - b.outlook!.currentEquity;
+      if (reportTableSort === "payoff-asc")
+        return (a.outlook!.payoffMonths ?? Number.MAX_SAFE_INTEGER) -
+          (b.outlook!.payoffMonths ?? Number.MAX_SAFE_INTEGER);
+      return a.asset.name.localeCompare(b.asset.name, "fi-FI");
+    });
+  const filteredFireMonths = filteredHistory.filter(
+    (item) => item.income !== 0 || item.expense !== 0,
+  );
+  const reportTableVisibleCount = {
+    overview: filteredHistory.length,
+    categories: filteredCategoryReport.length,
+    flow: filteredDailyFlow.length,
+    budget: filteredBudgetReport.length,
+    wealth: filteredWealthTableRows.length,
+    debt: filteredLinkedOutlooks.length,
+    fire: filteredFireMonths.length,
+  }[reportView];
+  const reportTableTotalCount = {
+    overview: history.length,
+    categories: categoryReport.length,
+    flow: dailyFlow.length,
+    budget: budgetReport.length,
+    wealth: wealthTableRows.length,
+    debt: linkedOutlooks.length,
+    fire: observedCashflowMonths.length,
+  }[reportView];
   const periodEntries = (
     items: Entry[],
     kind: "income" | "expense",
@@ -2394,7 +2930,7 @@ function App() {
                   onClick={() =>
                     setEdit({
                       kind: page as Kind,
-                      item: entry({ category: cats(page as Kind)[0] }),
+                      item: newEntry(page as Kind),
                     })
                   }
                 >
@@ -2958,12 +3494,7 @@ function App() {
                       <span>1</span>
                       <button
                         type="button"
-                        onClick={() =>
-                          setEdit({
-                            kind: "incomes",
-                            item: entry({ category: cats("incomes")[0] }),
-                          })
-                        }
+                        onClick={() => beginQuickEntry("incomes")}
                       >
                         Lisää tulo
                       </button>
@@ -2972,12 +3503,7 @@ function App() {
                       <span>2</span>
                       <button
                         type="button"
-                        onClick={() =>
-                          setEdit({
-                            kind: "expenses",
-                            item: entry({ category: cats("expenses")[0] }),
-                          })
-                        }
+                        onClick={() => beginQuickEntry("expenses")}
                       >
                         Lisää meno
                       </button>
@@ -3023,12 +3549,7 @@ function App() {
                     <button
                       aria-label="Lisää tulo"
                       className="dashboard-action group flex min-h-16 items-center gap-3"
-                      onClick={() =>
-                        setEdit({
-                          kind: "incomes",
-                          item: entry({ category: cats("incomes")[0] }),
-                        })
-                      }
+                      onClick={() => beginQuickEntry("incomes")}
                     >
                       <CircleDollarSign
                         size={21}
@@ -3048,12 +3569,7 @@ function App() {
                     <button
                       aria-label="Lisää meno"
                       className="dashboard-action group flex min-h-16 items-center gap-3"
-                      onClick={() =>
-                        setEdit({
-                          kind: "expenses",
-                          item: entry({ category: cats("expenses")[0] }),
-                        })
-                      }
+                      onClick={() => beginQuickEntry("expenses")}
                     >
                       <ReceiptText
                         size={21}
@@ -3990,10 +4506,13 @@ function App() {
                     </button>
                   ))}
                 </div>
-                {reportView !== "overview" && (
+                {reportView !== "overview" &&
+                  reportView !== "wealth" &&
+                  reportView !== "debt" && (
                   <ReportRangeControl
                     start={reportStart}
                     end={reportEnd}
+                    mode={reportPeriodMode}
                     startIndex={reportStartNumber}
                     endIndex={reportEndNumber}
                     valid={customRangeValid}
@@ -4003,12 +4522,21 @@ function App() {
                     lastMonthIndex={lastMonthIndex}
                     onStart={(value) => {
                       setReportStart(value);
+                      if (reportPeriodMode === "month") {
+                        setReportEnd(value);
+                        settings({ month: value });
+                      }
                       setSelectedReport(null);
                     }}
                     onEnd={(value) => {
                       setReportEnd(value);
+                      if (reportPeriodMode === "month") {
+                        setReportStart(value);
+                        settings({ month: value });
+                      }
                       setSelectedReport(null);
                     }}
+                    onMode={changeReportPeriodMode}
                     onShift={shiftCustomRange}
                     onRailEnd={setRangeEnd}
                   />
@@ -4028,12 +4556,27 @@ function App() {
                       ))}
                     </select>
                   </label>
-                  {reportView === "overview" && (
-                    <span className="report-selected-period">
-                      {periodLabel}
-                    </span>
-                  )}
                 </div>
+                {(reportView === "wealth" || reportView === "debt") && (
+                  <div className="report-snapshot-context">
+                    <span className="eyebrow">NYKYTILANNE</span>
+                    <span>
+                      Näkymä perustuu nykyisiin saldotietoihin. Aikaväliä ei voi
+                      valita, koska aiempia arvostuksia ei tallenneta.
+                    </span>
+                  </div>
+                )}
+                {reportFormat === "table" && (
+                  <ReportTableControls
+                    query={reportTableSearch}
+                    onQuery={setReportTableSearch}
+                    sort={reportTableSort}
+                    onSort={setReportTableSort}
+                    sortOptions={reportTableSorts[reportView]}
+                    visible={reportTableVisibleCount}
+                    total={reportTableTotalCount}
+                  />
+                )}
                 {reportView === "overview" && (
                   <section
                     className="panel report-panel"
@@ -4042,113 +4585,37 @@ function App() {
                     aria-labelledby="report-tab-overview"
                     tabIndex={0}
                   >
-                    <div className="report-range-control">
-                      <div className="report-range-heading">
-                        <div>
-                          <span className="eyebrow">RAPORTOINTIJAKSO</span>
-                          <strong>{periodLabel}</strong>
-                        </div>
-                        <small>
-                          {customRangeValid
-                            ? `${customRangeLength} ${customRangeLength === 1 ? "kuukausi" : "kuukautta"}`
-                            : "Valitse alku ja loppu"}
-                        </small>
-                      </div>
-                      <div
-                        className="report-range-navigator"
-                        role="group"
-                        aria-label="Valitse raportin alku ja loppu"
-                      >
-                        <button
-                          type="button"
-                          aria-label="Siirrä aikaväliä kuukausi taaksepäin"
-                          title="Siirrä aikaväliä kuukausi taaksepäin"
-                          disabled={
-                            !customRangeValid ||
-                            reportStartNumber === null ||
-                            reportStartNumber <= firstMonthIndex
-                          }
-                          onClick={() => shiftCustomRange(-1)}
-                        >
-                          <ChevronLeft size={19} aria-hidden="true" />
-                        </button>
-                        <div className="report-range-fields">
-                          <MonthPicker
-                            value={reportStart}
-                            label="Alku"
-                            ariaLabel="Raportin alkukuukausi"
-                            onChange={(value) => {
-                              setReportStart(value);
-                              setSelectedReport(null);
-                            }}
-                          />
-                          <MonthPicker
-                            value={reportEnd}
-                            label="Loppu"
-                            ariaLabel="Raportin loppukuukausi"
-                            onChange={(value) => {
-                              setReportEnd(value);
-                              setSelectedReport(null);
-                            }}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          aria-label="Siirrä aikaväliä kuukausi eteenpäin"
-                          title="Siirrä aikaväliä kuukausi eteenpäin"
-                          disabled={
-                            !customRangeValid ||
-                            reportEndNumber === null ||
-                            reportEndNumber >= lastMonthIndex
-                          }
-                          onClick={() => shiftCustomRange(1)}
-                        >
-                          <ChevronRight size={19} aria-hidden="true" />
-                        </button>
-                      </div>
-                      <div
-                        className="report-month-rail"
-                        role="group"
-                        aria-label="Siirry raportin päättymiskuukauteen"
-                      >
-                        {rangeNavigationMonths.map((key) => {
-                          const [year, monthPart] = key.split("-").map(Number);
-                          const date = new Date(year, monthPart - 1, 1);
-                          const monthText = new Intl.DateTimeFormat("fi-FI", {
-                            month: "short",
-                          }).format(date);
-                          const fullLabel = new Intl.DateTimeFormat("fi-FI", {
-                            month: "long",
-                            year: "numeric",
-                          }).format(date);
-                          const endIndex = monthNumber(key);
-                          return (
-                            <button
-                              type="button"
-                              key={key}
-                              aria-label={`Päättymiskuukausi ${fullLabel}`}
-                              aria-pressed={key === reportEnd}
-                              title={fullLabel}
-                              onClick={() =>
-                                setRangeEnd(endIndex ?? lastMonthIndex)
-                              }
-                            >
-                              <span>{monthText}</span>
-                              <small>{year}</small>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="report-range-hint">
-                        Vieritä kuukausia tai siirrä koko jaksoa nuolilla.
-                      </p>
-                      {!customRangeValid && (
-                        <p className="alert warning" role="alert">
-                          Valitse alku- ja loppukuukausi. Oma aikaväli voi olla
-                          enintään 120 kuukautta.
-                        </p>
-                      )}
-                    </div>
+                    <ReportRangeControl
+                      start={reportStart}
+                      end={reportEnd}
+                      mode={reportPeriodMode}
+                      startIndex={reportStartNumber}
+                      endIndex={reportEndNumber}
+                      valid={customRangeValid}
+                      length={customRangeLength}
+                      months={rangeNavigationMonths}
+                      firstMonthIndex={firstMonthIndex}
+                      lastMonthIndex={lastMonthIndex}
+                      onStart={(value) => {
+                        setReportStart(value);
+                        if (reportPeriodMode === "month") {
+                          setReportEnd(value);
+                          settings({ month: value });
+                        }
+                        setSelectedReport(null);
+                      }}
+                      onEnd={(value) => {
+                        setReportEnd(value);
+                        if (reportPeriodMode === "month") {
+                          setReportStart(value);
+                          settings({ month: value });
+                        }
+                        setSelectedReport(null);
+                      }}
+                      onMode={changeReportPeriodMode}
+                      onShift={shiftCustomRange}
+                      onRailEnd={setRangeEnd}
+                    />
                     <h2>Tulot ja menot</h2>
                     {reportHasData && (
                       <section
@@ -4609,7 +5076,7 @@ function App() {
                           </tr>
                         </thead>
                         <tbody role="rowgroup">
-                          {history.map((h) => (
+                          {filteredHistory.map((h) => (
                             <tr role="row" key={h.key}>
                               <th
                                 role="rowheader"
@@ -4640,6 +5107,11 @@ function App() {
                               </td>
                             </tr>
                           ))}
+                          {filteredHistory.length === 0 && (
+                            <tr>
+                              <td colSpan={7}>Suodattimella ei löytynyt kuukausia.</td>
+                            </tr>
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -4765,7 +5237,7 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {categoryReport.map(([category, value]) => (
+                            {filteredCategoryReport.map(([category, value]) => (
                               <tr key={category}>
                                 <th scope="row" data-label="Kategoria">
                                   <button
@@ -4792,6 +5264,11 @@ function App() {
                                 <td data-label="Kulutus">{euro(value)}</td>
                               </tr>
                             ))}
+                            {filteredCategoryReport.length === 0 && (
+                              <tr>
+                                <td colSpan={3}>Suodattimella ei löytynyt kululuokkia.</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -4929,7 +5406,7 @@ function App() {
                               </tr>
                             </thead>
                             <tbody role="rowgroup">
-                              {dailyFlow.map((day) => (
+                              {filteredDailyFlow.map((day) => (
                                 <tr role="row" key={day.date}>
                                   <th
                                     role="rowheader"
@@ -4955,6 +5432,11 @@ function App() {
                                   </td>
                                 </tr>
                               ))}
+                              {filteredDailyFlow.length === 0 && (
+                                <tr>
+                                  <td colSpan={4}>Suodattimella ei löytynyt päiviä.</td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>
@@ -5096,7 +5578,7 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {budgetReport.map((row) => (
+                            {filteredBudgetReport.map((row) => (
                               <tr key={row.key}>
                                 <th scope="row" data-label="Kuukausi">
                                   <button
@@ -5148,6 +5630,11 @@ function App() {
                                 </td>
                               </tr>
                             ))}
+                            {filteredBudgetReport.length === 0 && (
+                              <tr>
+                                <td colSpan={6}>Suodattimella ei löytynyt kuukausia.</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -5293,55 +5780,27 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {currentAssets.map((asset) => (
-                              <tr key={`asset-${asset.id}`}>
+                            {filteredWealthTableRows.map((row) => (
+                              <tr key={row.id}>
                                 <th scope="row" data-label="Tietue">
-                                  {asset.name}
+                                  {row.name}
                                 </th>
-                                <td data-label="Kategoria">
-                                  Omaisuus · {asset.category}
-                                </td>
+                                <td data-label="Kategoria">{row.category}</td>
                                 <td data-label="Arvo">
-                                  {euro(asset.ownedValue)}
+                                  {row.value < 0
+                                    ? `−${euro(Math.abs(row.value))}`
+                                    : euro(row.value)}
                                 </td>
                                 <td data-label="Päivä">
-                                  {asset.date.split("-").reverse().join(".")}
+                                  {row.date.split("-").reverse().join(".")}
                                 </td>
                               </tr>
                             ))}
-                            {currentInvestments.map((investment) => (
-                              <tr key={`investment-${investment.id}`}>
-                                <th scope="row" data-label="Tietue">
-                                  {investment.name}
-                                </th>
-                                <td data-label="Kategoria">
-                                  Sijoitus · {investment.category}
-                                </td>
-                                <td data-label="Arvo">
-                                  {euro(investment.marketValue)}
-                                </td>
-                                <td data-label="Päivä">
-                                  {investment.date
-                                    .split("-")
-                                    .reverse()
-                                    .join(".")}
-                                </td>
+                            {filteredWealthTableRows.length === 0 && (
+                              <tr>
+                                <td colSpan={4}>Suodattimella ei löytynyt tietueita.</td>
                               </tr>
-                            ))}
-                            {currentDebts.map((debt) => (
-                              <tr key={`debt-${debt.id}`}>
-                                <th scope="row" data-label="Tietue">
-                                  {debt.name}
-                                </th>
-                                <td data-label="Kategoria">
-                                  Velka · {debt.category}
-                                </td>
-                                <td data-label="Saldo">−{euro(debt.amount)}</td>
-                                <td data-label="Päivä">
-                                  {debt.date.split("-").reverse().join(".")}
-                                </td>
-                              </tr>
-                            ))}
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -5392,7 +5851,7 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {linkedOutlooks.map(({ asset, outlook }) => (
+                            {filteredLinkedOutlooks.map(({ asset, outlook }) => (
                               <tr key={asset.id}>
                                 <th scope="row" data-label="Omaisuus / laina">
                                   {asset.name}
@@ -5420,6 +5879,11 @@ function App() {
                                 </td>
                               </tr>
                             ))}
+                            {filteredLinkedOutlooks.length === 0 && (
+                              <tr>
+                                <td colSpan={6}>Suodattimella ei löytynyt velka–omaisuuspareja.</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -5575,7 +6039,7 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {observedCashflowMonths.map((item) => (
+                            {filteredFireMonths.map((item) => (
                               <tr key={item.key}>
                                 <th scope="row" data-label="Kuukausi">
                                   {item.key}
@@ -5589,6 +6053,11 @@ function App() {
                                 </td>
                               </tr>
                             ))}
+                            {filteredFireMonths.length === 0 && (
+                              <tr>
+                                <td colSpan={4}>Suodattimella ei löytynyt kuukausia.</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -6085,64 +6554,112 @@ function App() {
       )}
       {quick && (
         <Modal
-          title="Pikatoiminnot ja yleishaku"
-          onClose={() => setQuick(false)}
+          title={quickEntryKind ? `Pikakirjaus · ${singular[quickEntryKind]}` : "Pikakirjaus ja haku"}
+          onClose={() => {
+            setQuick(false);
+            setQuickEntryKind(null);
+            setQuickSeed(null);
+            setQuickSearch("");
+          }}
         >
-          <label>
-            Hae kaikesta datasta
-            <input
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Nimi, kategoria, tunniste"
-            />
-          </label>
-          <div className="quick-list">
-            {kinds.map((k) => (
-              <button
-                key={k}
-                onClick={() => {
-                  setQuick(false);
-                  setEdit({ kind: k, item: entry({ category: cats(k)[0] }) });
-                }}
-              >
-                + Lisää {singular[k]}
-              </button>
-            ))}
-            <button onClick={() => navigate("budget")}>
-              Siirry budjettiin
-            </button>
-            <button
-              onClick={() => {
-                exportBackup();
-                setQuick(false);
+          {quickEntryKind && quickSeed ? (
+            <QuickEntryForm
+              key={`${quickEntryKind}-${quickSeed.id}`}
+              kind={quickEntryKind}
+              item={quickSeed}
+              categories={categoryChoices(quickEntryKind)}
+              onSave={(item, addAnother) =>
+                saveQuickEntry(quickEntryKind, item, addAnother)
+              }
+              onCancel={() => {
+                setQuickEntryKind(null);
+                setQuickSeed(null);
               }}
-            >
-              Vie varmuuskopio
-            </button>
-            {search &&
-              kinds.flatMap((k) =>
-                s[k]
-                  .filter((e) =>
-                    (e.name + " " + e.category + " " + e.tags)
-                      .toLowerCase()
-                      .includes(search.toLowerCase()),
-                  )
-                  .slice(0, 20)
-                  .map((e) => (
+            />
+          ) : (
+            <>
+              <label className="quick-search-label">
+                Hae kirjauksia ja toimintoja
+                <input
+                  autoFocus
+                  value={quickSearch}
+                  onChange={(event) => setQuickSearch(event.target.value)}
+                  placeholder="Nimi, kategoria tai tunniste"
+                />
+              </label>
+              <div className="quick-entry-start">
+                <button type="button" onClick={() => beginQuickEntry("expenses")}>
+                  <Plus size={17} aria-hidden="true" /> Kirjaa meno
+                </button>
+                <button type="button" onClick={() => beginQuickEntry("incomes")}>
+                  <Plus size={17} aria-hidden="true" /> Kirjaa tulo
+                </button>
+              </div>
+              {recentQuickEntries.length > 0 && !quickSearch && (
+                <section className="quick-recent" aria-labelledby="quick-recent-title">
+                  <h3 id="quick-recent-title">Kirjaa uudelleen</h3>
+                  <div className="quick-list">
+                    {recentQuickEntries.map(({ kind, item }) => (
+                      <button
+                        type="button"
+                        key={`${kind}-${item.id}`}
+                        onClick={() => beginQuickEntry(kind, item)}
+                      >
+                        <span>{item.name || singular[kind]} · {item.category}</span>
+                        <strong>{euro(item.amount)}</strong>
+                      </button>
+                    ))}
+                  </div>
+                  <small>Valinta kopioi tiedot uudelle toteutuneelle kirjaukselle.</small>
+                </section>
+              )}
+              <div className="quick-list quick-secondary-actions">
+                {kinds
+                  .filter((kind) => kind !== "incomes" && kind !== "expenses")
+                  .map((kind) => (
                     <button
-                      key={e.id}
+                      type="button"
+                      key={kind}
                       onClick={() => {
                         setQuick(false);
-                        navigate(k);
-                        setEdit({ kind: k, item: e });
+                        setEdit({ kind, item: newEntry(kind) });
                       }}
                     >
-                      {names[k]} · {e.name}
+                      + Lisää {singular[kind]}
                     </button>
-                  )),
+                  ))}
+                <button type="button" onClick={() => navigate("budget")}>
+                  Avaa budjetti
+                </button>
+              </div>
+              {quickSearch && (
+                <div className="quick-list quick-search-results" aria-live="polite">
+                  {kinds.flatMap((kind) =>
+                    s[kind]
+                      .filter((item) =>
+                        (item.name + " " + item.category + " " + item.tags + " " + item.description)
+                          .toLocaleLowerCase("fi-FI")
+                          .includes(quickSearch.trim().toLocaleLowerCase("fi-FI")),
+                      )
+                      .slice(0, 20)
+                      .map((item) => (
+                        <button
+                          type="button"
+                          key={`${kind}-${item.id}`}
+                          onClick={() => {
+                            setQuick(false);
+                            navigate(kind);
+                            setEdit({ kind, item });
+                          }}
+                        >
+                          {names[kind]} · {item.name || item.category}
+                        </button>
+                      )),
+                  )}
+                </div>
               )}
-          </div>
+            </>
+          )}
         </Modal>
       )}
       {pending && (

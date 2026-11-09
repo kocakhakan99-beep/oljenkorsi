@@ -4745,3 +4745,253 @@ button.primary,
     flex-direction: column;
   }
 }
+
+/* Faster capture and report table controls. */
+.quick-search-label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.quick-entry-start {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.quick-entry-start button {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: var(--accent);
+  background: var(--soft);
+  color: var(--accent-ink);
+  font-weight: 750;
+}
+.quick-entry-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+.quick-entry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.quick-entry-fields > label,
+.quick-entry-fields > .date-picker-field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.quick-entry-fields input,
+.quick-entry-fields select {
+  width: 100%;
+  min-width: 0;
+}
+.quick-entry-fields small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 450;
+}
+.quick-entry-details {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+}
+.quick-entry-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.quick-entry-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  padding-top: 12px;
+}
+.quick-entry-options > label:not(.check) {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
+.quick-entry-note {
+  grid-column: 1 / -1;
+}
+.quick-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.quick-entry-shortcut {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+}
+.quick-recent {
+  margin-top: 18px;
+}
+.quick-recent h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.quick-recent .quick-list {
+  margin-top: 8px;
+}
+.quick-recent .quick-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.quick-recent .quick-list button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quick-recent .quick-list button strong {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+.quick-recent > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.quick-secondary-actions {
+  grid-template-columns: repeat(auto-fit, minmax(min(155px, 100%), 1fr));
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.quick-search-results {
+  max-height: 34vh;
+  overflow: auto;
+}
+.report-period-mode {
+  display: inline-flex;
+  gap: 3px;
+  width: fit-content;
+  padding: 3px;
+  margin: 0 0 10px;
+  border: 1px solid var(--report-line);
+  border-radius: 11px;
+  background: var(--report-soft);
+}
+.report-period-mode button {
+  min-height: 34px;
+  padding: 5px 12px;
+  border-color: transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--report-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.report-period-mode button[aria-pressed="true"] {
+  border-color: var(--report-line);
+  background: var(--report-surface);
+  color: var(--report-text);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 9%);
+}
+.report-single-month-field {
+  justify-content: center;
+}
+.report-single-month-field .month-select {
+  flex: 0 1 360px;
+}
+.report-snapshot-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0 0 14px;
+  padding: 10px 13px;
+  border: 1px solid var(--report-line);
+  border-radius: 12px;
+  background: var(--report-soft);
+  color: var(--report-text);
+  font-size: 12px;
+}
+.report-snapshot-context .eyebrow {
+  margin: 0;
+  font-size: 9px;
+}
+.report-table-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(190px, 260px) auto;
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--report-line);
+  border-radius: 14px;
+  background: var(--report-surface);
+}
+.report-table-controls label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: var(--report-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+.report-table-controls input,
+.report-table-controls select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  border-color: var(--report-line);
+  background: var(--report-surface);
+  color: var(--report-text);
+}
+.report-table-controls > small {
+  padding: 0 2px 12px;
+  color: var(--report-muted);
+  white-space: nowrap;
+}
+[data-mode="dark"] .quick-entry-start button,
+[data-mode="dark"] .quick-entry-details,
+[data-mode="dark"] .report-snapshot-context,
+[data-mode="dark"] .report-period-mode button[aria-pressed="true"],
+[data-mode="dark"] .report-table-controls {
+  border-color: var(--report-line);
+  background: var(--report-surface);
+  color: #fff;
+}
+[data-mode="dark"] .report-period-mode {
+  border-color: var(--report-line);
+  background: var(--report-soft);
+}
+[data-mode="dark"] .report-period-mode button,
+[data-mode="dark"] .report-table-controls label,
+[data-mode="dark"] .report-table-controls > small {
+  color: var(--report-muted);
+}
+@media (max-width: 600px) {
+  .quick-entry-fields,
+  .quick-entry-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .quick-entry-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .quick-entry-actions button {
+    width: 100%;
+  }
+  .report-table-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .report-table-controls > small {
+    padding: 0;
+  }
+  .report-single-month-field .month-select {
+    flex-basis: 100%;
+  }
+}
