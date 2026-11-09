@@ -37,8 +37,12 @@ Toteutus ja varmistus on valmis. Testitulokset ja testauksen rajaukset ovat [tes
 
 ## Kategoriakohtainen tarkastelu ja ulkoasu 9.11.2026
 
-- [x] Budjetin ensimmäisessä sarakkeessa on kategorian kuvake ja avattava nimi sekä kompakti + Meno -painike menokuvakkeella.
+- [x] Budjetin ensimmäisessä sarakkeessa on kategorian kuvake ja avattava nimi sekä kompakti menokuvakepainike plusmerkillä.
 - [x] Kategorian nimi avaa valitun kuukauden menokortin: päivät, summat, tilat ja toistuvuus sekä toteutuneiden ja suunniteltujen erittely.
 - [x] Kortista voi muokata menoa, lisätä kerta- tai toistuvan menon samaan kategoriaan sekä siirtyä koko kategorian suodatettuun menoluetteloon.
 
 Menokortti näyttää varsinaiset kirjaukset; budjettirivin manuaalinen toteuma on erillinen tieto. Toistuvan menon muokkaus koskee sarjaa ja tämä kerrotaan kortissa.
+
+### Kuvakkeiden viimeistely
+
+Kategoriakuvakkeen kehys on kiinteä 32 × 32 px eikä veny kategorian tekstin mukana. Menon lisäys on 44 × 44 px kuvakepainike: kuittikuvakkeen kulmassa on plusmerkki. Teksti on korvattu työkaluvihjeellä ja saavutettavalla nimellä.
