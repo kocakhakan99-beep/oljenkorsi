@@ -43,6 +43,9 @@ import {
   fiTarget,
   fiMonths,
   emergencyFund,
+  confirmedIncomeAverage,
+  incomeInterruptionStress,
+  paymentBreakdown,
   linkedAssetOutlook,
 } from "./domain/calculations";
 import {
@@ -1406,6 +1409,131 @@ function DatePickerField({
     </div>
   );
 }
+type EmergencyPlannerProps = {
+  estimate: number | null;
+  historyEstimate: number | null;
+  incomeMonths: number;
+  averageIncome: number | null;
+  incomeLossPercent: number;
+  months: number;
+  liquid: number;
+  euro: (cents: number) => string;
+  onEstimateChange: (value: number | null) => void;
+  onEstimateError: (message: string) => void;
+  onIncomeLossChange: (value: number) => void;
+  onMonthsChange: (value: number) => void;
+};
+function EmergencyPlanner({
+  estimate,
+  historyEstimate,
+  incomeMonths,
+  averageIncome,
+  incomeLossPercent,
+  months,
+  liquid,
+  euro,
+  onEstimateChange,
+  onEstimateError,
+  onIncomeLossChange,
+  onMonthsChange,
+}: EmergencyPlannerProps) {
+  const monthlyEssentials = estimate ?? historyEstimate;
+  const stress =
+    monthlyEssentials !== null &&
+    monthlyEssentials > 0 &&
+    averageIncome !== null
+      ? incomeInterruptionStress(
+          Math.round(monthlyEssentials),
+          averageIncome,
+          incomeLossPercent,
+          months,
+          liquid,
+        )
+      : null;
+  return (
+    <details className="buffer-planner">
+      <summary>Arvioi oma kuukausitarve ja tulokatkos</summary>
+      <div className="buffer-planner-fields">
+        <label>
+          Oma arvio välttämättömistä menoista / kk (€)
+          <MoneyInput
+            key={estimate ?? "empty"}
+            aria-label="Oma arvio välttämättömistä menoista kuukaudessa (€)"
+            defaultCents={estimate}
+            onBlur={(event) => {
+              const value = event.currentTarget.value.trim();
+              if (!value) {
+                onEstimateChange(null);
+                return;
+              }
+              try {
+                const amount = money(value);
+                if (amount <= 0) throw Error();
+                onEstimateChange(amount);
+              } catch {
+                onEstimateError(
+                  "Syötä positiivinen kuukausiarvio enintään kahdella desimaalilla.",
+                );
+              }
+            }}
+          />
+        </label>
+        <p className="muted">
+          Tyhjä kenttä käyttää vahvistettujen menokuukausien keskiarvoa. Oma
+          arvio auttaa, jos historia on lyhyt tai tuleva tilanne poikkeaa siitä.
+        </p>
+        <PercentField
+          label="Tulojen vähenemä"
+          value={incomeLossPercent}
+          onChange={onIncomeLossChange}
+          min={0}
+          max={100}
+          step={5}
+          hint={false}
+        />
+        <label>
+          Katkoksen kesto
+          <select
+            value={months}
+            onChange={(event) => onMonthsChange(Number(event.target.value))}
+          >
+            <option value={1}>1 kuukausi</option>
+            <option value={3}>3 kuukautta</option>
+            <option value={6}>6 kuukautta</option>
+            <option value={12}>12 kuukautta</option>
+          </select>
+        </label>
+      </div>
+      {stress ? (
+        <div className="buffer-stress-result" aria-live="polite">
+          <strong>Tarvittava puskuri: {euro(stress.reserveNeeded)}</strong>
+          <span>
+            Vahvistetuista tuloista jäljelle jää arviolta{" "}
+            {euro(stress.incomeAfterShock)}/kk; kuukausivaje on{" "}
+            {euro(stress.monthlyShortfall)}.
+          </span>
+          <span>
+            {stress.reserveGap > 0
+              ? `Likvideistä varoista puuttuisi ${euro(stress.reserveGap)}.`
+              : `Skenaarion jälkeen jäisi likvidejä varoja ${euro(stress.remainingLiquid)}.`}
+          </span>
+        </div>
+      ) : (
+        <p className="muted" role="status">
+          {monthlyEssentials === null || monthlyEssentials === 0
+            ? "Vahvista menokuukausia tai syötä oma arvio välttämättömistä menoista."
+            : "Vahvista vähintään yhden päättyneen tulokuukauden tiedot Tulot-näkymässä."}
+        </p>
+      )}
+      <p className="muted">
+        Tulohistoriaa mukana {incomeMonths}/6 kuukautta. Tämä on omaan dataan
+        perustuva stressiskenaario, ei ennuste tai yleinen puskuritavoite; tulojen
+        brutto/netto-tapaa ei tunnisteta automaattisesti.
+      </p>
+    </details>
+  );
+}
+
 function QuickEntryForm({
   kind,
   item,
@@ -1643,6 +1771,8 @@ function App() {
       null,
     ),
     [bufferMonths, setBufferMonths] = useState(3),
+    [incomeLossPercent, setIncomeLossPercent] = useState(100),
+    [stressMonths, setStressMonths] = useState(3),
     [selectedCompassDemo, setSelectedCompassDemo] =
       useState<CompassDemoId>("everyday"),
     [dismissedHelp, setDismissedHelp] =
@@ -1678,6 +1808,10 @@ function App() {
   const buffer = useMemo(
     () => emergencyFund(s, month, bufferMonths),
     [s, month, bufferMonths],
+  );
+  const incomeHistory = useMemo(
+    () => confirmedIncomeAverage(s, month),
+    [s, month],
   );
   const euro = (n: number) =>
     s.settings.private
@@ -1808,6 +1942,26 @@ function App() {
       ...s,
       coverage: { ...s.coverage, [field]: [...months].sort() },
     });
+  }
+  function emergencyPlanner() {
+    return (
+      <EmergencyPlanner
+        estimate={s.settings.essentialMonthlyEstimate}
+        historyEstimate={buffer.averageEssential}
+        incomeMonths={incomeHistory.months}
+        averageIncome={incomeHistory.average}
+        incomeLossPercent={incomeLossPercent}
+        months={stressMonths}
+        liquid={buffer.liquid}
+        euro={euro}
+        onEstimateChange={(value) =>
+          settings({ essentialMonthlyEstimate: value })
+        }
+        onEstimateError={setNotice}
+        onIncomeLossChange={setIncomeLossPercent}
+        onMonthsChange={setStressMonths}
+      />
+    );
   }
   function dismissHelp(id: string) {
     setDismissedHelp((current) => {
@@ -3561,6 +3715,7 @@ function App() {
             )}
             {page === "dashboard" &&
               (!hasDashboardData ? (
+                <>
                 <section className="empty-dashboard panel">
                   <span className="eyebrow">ALOITA OMASTA TILANTEESTASI</span>
                   <h2>Ota talous haltuun yksi asia kerrallaan</h2>
@@ -3603,6 +3758,16 @@ function App() {
                     </button>
                   </div>
                 </section>
+                <section className="panel">
+                  <h2>Suunnittele omaa puskuria</h2>
+                  <p className="muted">
+                    Voit arvioida välttämättömät menosi ja testata, miten
+                    tulokatkos vaikuttaisi tilanteeseen jo ennen tietojen
+                    lisäämistä.
+                  </p>
+                  {emergencyPlanner()}
+                </section>
+                </>
               ) : (
                 <>
                   <div className="hero">
@@ -3854,15 +4019,17 @@ function App() {
                         <span>kuukautta välttämättömiä menoja</span>
                       </div>
                       <p className="muted">
-                        Likvidiksi merkitty omaisuus / kirjattujen kuukausien
-                        välttämättömien kulutusmenojen keskiarvo. Havaintoja{" "}
+                        Likvidiksi merkitty omaisuus / vahvistettujen
+                        päättyneiden kuukausien välttämättömien kulutusmenojen
+                        keskiarvo. Vahvistettuja kuukausia{" "}
                         {buffer.observedMonths}/{buffer.requestedMonths}{" "}
-                        kuukaudelta.
+                        valitusta.
                       </p>
                       {buffer.observedMonths < buffer.requestedMonths && (
                         <p className="muted">
-                          Puuttuvia kuukausia ei lasketa nollamenoiksi. Tarkista
-                          kirjausten kattavuus ennen päätöksiä.
+                          Puuttuvia tai vahvistamattomia kuukausia ei lasketa
+                          nollamenoiksi. Vahvista kuukauden menot
+                          Menot-näkymässä.
                         </p>
                       )}
                       {buffer.averageEssential === 0 && (
@@ -3872,9 +4039,10 @@ function App() {
                         </p>
                       )}
                       <p className="muted">
-                        Valittu kuukausi voi olla vielä kesken; havainto ei
-                        takaa kaikkien menojen kirjaamista.
+                        Kuluvaa kuukautta ei lasketa täytenä. Vahvistus kertoo
+                        omasta tarkistuksesta, ei pankkivarmennuksesta.
                       </p>
+                      {emergencyPlanner()}
                       {s.goals.map((e) => (
                         <Goal
                           key={e.id}
@@ -8177,13 +8345,25 @@ function ScenarioView({
         </p>
         {liabilities.map((e) => {
           let r = payoff(e.amount, e.payment, e.rate);
+          const installment = paymentBreakdown(e.amount, e.payment, e.rate);
           return (
-            <p key={e.id}>
-              <strong>{e.name}</strong>:{" "}
-              {r
-                ? `${r.months} kuukautta, korkoja ${euro(r.interest)}`
-                : "Erä ei riitä tai maksuaika ylittää 100 vuotta."}
-            </p>
+            <article key={e.id} className="debt-installment-estimate">
+              <p>
+                <strong>{e.name}</strong>:{" "}
+                {r
+                  ? `${r.months} kuukautta, korkoja ${euro(r.interest)}`
+                  : "Erä ei riitä tai maksuaika ylittää 100 vuotta."}
+              </p>
+              <p className="muted">
+                Seuraavan erän arvio nykyisestä saldosta: korkoa{" "}
+                {euro(installment.interest)} ja pääoman muutos{" "}
+                {installment.principal < 0
+                  ? `−${euro(Math.abs(installment.principal))} (saldo kasvaisi)`
+                  : euro(installment.principal)}
+                . Arvioitu saldo erän jälkeen{" "}
+                {euro(installment.remainingBalance)}.
+              </p>
+            </article>
           );
         })}
         {!liabilities.length && (

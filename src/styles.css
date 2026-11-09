@@ -2641,10 +2641,66 @@ dialog::backdrop {
 .entry-coverage.confirmed {
   border-color: var(--accent);
 }
+.buffer-planner {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.buffer-planner > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 700;
+}
+.buffer-planner-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+  margin: 14px 0;
+}
+.buffer-planner-fields > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+.buffer-planner-fields > .muted {
+  margin: 0;
+  font-size: 12px;
+}
+.buffer-stress-result {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+}
+.buffer-stress-result strong {
+  color: var(--accent);
+}
+.buffer-stress-result span {
+  font-size: 13px;
+}
+.debt-installment-estimate {
+  margin-block: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+}
+.debt-installment-estimate p {
+  margin: 4px 0;
+}
 @media (max-width: 600px) {
   .entry-coverage {
     align-items: stretch;
     flex-direction: column;
+  }
+  .buffer-planner-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .prose {

@@ -110,6 +110,7 @@ export interface State {
     private: boolean;
     accent: string;
     month: string;
+    essentialMonthlyEstimate: number | null;
     currency: "EUR";
     language: "fi";
   };
@@ -154,6 +155,7 @@ export function empty(): State {
       private: false,
       accent: "#17604d",
       month: today().slice(0, 7),
+      essentialMonthlyEstimate: null,
       currency: "EUR",
       language: "fi",
     },

@@ -1,5 +1,13 @@
 # Testausraportti 9.11.2026
 
+## Puskuristressi ja lainaerän erittely 9.11.2026
+
+- `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 66 testiä neljästä tiedostosta.
+- Chromium 155.0.8059.79: kaikki 60 selainvarmennusta läpäisivät localhost-ajossa. Uusi polku tallensi oman välttämättömien menojen arvion myös tyhjästä aloitustilasta ja tarkisti kolmen kuukauden tulokatkoksen puskuritarpeen. Velanmaksunäkymän testi varmisti koron, pääoman lyhennyksen ja jäljelle jäävän saldon.
+- Ei sovelluksen JavaScript- tai konsolivirheitä eikä verkkopyyntöjä. Responsiivisuus tarkistettiin 320–768 pikselissä. `file://`-avausta ei ympäristön selainkäytännön vuoksi varmennettu.
+- Standalone-build päivittyi. Minifioitu JavaScript on noin 528 kB ja ylittää Viten 500 kB:n huomautusrajan; build onnistui. Tulokset: [`qa/e2e-results.json`](qa/e2e-results.json).
+- Puskuristressi on omaan dataan perustuva skenaario, joka ohittaa keskeneräisen kuukauden ja käyttää enintään kuutta vahvistettua tulokuukautta. Lainaerittely on nykytilasta tehty kuukausiarvio, ei toteutuneiden erien kirjanpito.
+
 ## Menotyyppien ja kuukausikattavuuden varmistus 9.11.2026
 
 - `npm run typecheck`, `npm run lint`, `npm test`, `python -m py_compile e2e.py` ja `npm run build` läpäisivät. Vitestissä 64 testiä neljästä tiedostosta.
