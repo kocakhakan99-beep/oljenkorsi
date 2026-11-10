@@ -57,3 +57,7 @@ Lisätiedot laajenevat saman talousrivin sisään kaikissa kuudessa listassa. Uu
 ### Yksi avauspolku ja kompakti budjetti 10.11.2026
 
 Talouslistojen nuolilaajennus korvattiin silmäpainikkeen katselulla. Tapahtumakohtaiset korjaukset ovat katseluikkunan erillisessä valinnassa. Solujen korkeudet ja kohdistus yhtenäistettiin. Budjettiriviltä poistettiin ryhmäluokitus, ohjerajapoikkeama ja automaattisen toteuman leima; ryhmä ja ohjeraja löytyvät kategoriakortista. Silmä- ja pieni menon lisäyspainike siirrettiin omaan toimintokohtaan. Huomioiden kategoriakortit näyttävät budjetoidun summan ja selkeästi nimetyn ohjerajapoikkeaman.
+
+### Velkojen sarakkeet ja automaattinen tavoitelaskenta 10.11.2026
+
+Velan korko ja kuukausierä erotettiin omiin sarakkeisiinsa. Omaisuuslinkki näkyy linkki- ja kategoriakuvakkeena ja avaa omaisuuden katselun; tarkemmat linkkitiedot löytyvät velkakortista. Tavoitelomake laskee kuukausisäästön tavoitesummasta ja tavoitepäivästä tai tavoitesumman käyttäjän kuukausisäästöstä. Jo säästetty summa, jäljellä olevat kuukausierät, senttipyöristys ja mahdottomat aikavälit huomioidaan. Tietomalli säilyy.

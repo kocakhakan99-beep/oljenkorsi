@@ -111,3 +111,9 @@ Tämä tarkennus korvaa edellisen rivilaajennuksen: kuuden talouslistan nuoli ja
 Budjettitaulukon Kategoria-sarake sisältää vain kuvakkeen ja nimen. Erillinen Toiminnot-sarake sisältää saman silmäpainikkeen ja pienen lisäyskuvakkeen, joiden painallusalue säilyy 44 px:n kokoisena. Automaattisen toteuman ”Kirjauksista”-leima on poistettu riviltä; käsin korjatun toteuman merkintä säilyy. Ryhmäluokitus sekä ohjerajan erotus näkyvät kategoriakortissa. Oman budjetin Jäljellä-sarake ja käyttöaste säilyvät listassa.
 
 Yläosan Huomiot koostuu avattavista kategoriakorteista: kategorian kuvake ja nimi, käyttäjän budjetoitu summa, etumerkillinen poikkeama sekä ”Ohjerajan ylitys” -etiketti. Jos vertailuun käytetty varaus eroaa budjetista, myös varattu summa näytetään. Etiketti erottaa tulopohjaan perustuvan ohjerajan käyttäjän omasta budjetista. Kortti avaa saman kategorian kuin taulukon silmäpainike.
+
+## Velkarivit ja tavoitteen kaksisuuntainen syöttö 10.11.2026
+
+Velkalistassa on Nimi, Kategoria, Summa, Korko, Kuukausierä, Omaisuus ja Toiminnot. Päiväys ja linkitetyn omaisuuden tarkemmat tiedot ovat katselukortissa. Omaisuuslinkki esitetään linkkikuvakkeella ja omaisuuden kategoriakuvakkeella; nimi on saavutettavassa nimessä ja työkaluvihjeessä. Kuvaketta painamalla aukeaa omaisuuden katselukortti. Puhelimella samat tiedot ryhmitellään kahteen sarakkeeseen, päätoiminnot säilyvät otsikkorivillä.
+
+Tavoitelomakkeessa kumpikin rahakenttä on muokattava: tavoitesumman muuttaminen laskee kuukausisäästön, ja kuukausisäästön muuttaminen tavoitesumman. Nykyinen säästö ja tavoitepäivä toimivat yhteisinä lähtötietoina. Lyhyt tulospaneeli kertoo lasketun kentän, erien määrän ja ensimmäisen erän ajankohdan. Uusi tyhjä tavoite saa noin vuoden päähän asetetun ehdotuspäivän. Virheellinen tai liian lyhyt aikaväli näytetään syöttökohdan yhteydessä eikä tallenneta.

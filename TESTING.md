@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Velkojen rakenne ja tavoitelaskenta 10.11.2026
+
+- TypeScript, ESLint, 89 yksikkötestiä seitsemässä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 573 kB; Viten kokohuomautus säilyy.
+- Kuusi uutta yksikkötestiä kattavat nykyisen säästön vähentämisen, senttipyöristyksen ylöspäin, laskennan molemmat suunnat, eräpäivän rajauksen, kuukauden lopun/karkausvuoden, saavutetun tavoitteen, nollasäästön ja virheelliset/rajan ylittävät syötteet.
+- 75 Chromium-selainvarmennusta localhostissa. Velkalistan seitsemän otsikkoa, korko ja kuukausierä tarkistettiin. Linkkikuvakkeen yhteydessä oli omaisuuden kategoriakuva; kuvake avasi omaisuuskortin ja velkakortti nimesi linkitetyn omaisuuden.
+- Nykyisellä 500 euron säästöllä ja viiden erän ajalla tavoitteen muuttaminen 1 500 euroon laski kuukausisäästöksi 200 euroa. Kuukausisäästön muuttaminen 100 euroon palautti tavoitesummaksi 1 000 euroa. Molemmat arvot tallentuivat ja näkyivät uudelleen muokkauksessa.
+- Työpöydän velkarivi ja puhelimen velkakortti sekä tavoitelomake tarkistettiin kuvakaappauksista. Toimintopainikkeet pysyivät rivin sisällä ja tavoitelomake mahtui 390 px leveyteen.
+- Velkojen seitsemän saraketta huomioitiin mobiilitarkistuksissa 320–768 px. Nykyiset raportti-, kompassi-, demo-, tallennus- ja tapahtumakorjauspolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Silmäavaus, rivien kohdistus ja budjetin huomiokortit 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 570 kB; Viten kokohuomautus säilyy.

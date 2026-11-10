@@ -29,6 +29,8 @@
     "50/30/20 näkyy budjetissa, tuloissa ja menoissa; kategoriarajaa ja ryhmää voi muuttaa, ja virheellinen prosenttijako estetään",
     "Prosenttisäädin: nuolinäppäimet, nopea vaakaveto ja tarkka viistoveto",
     "Omaisuus, velka, sijoitus ja tavoite lisätty",
+    "Velan korko ja kuukausierä ovat omissa sarakkeissaan, kuvakelinkki avaa omaisuuden ja velkakortti nimeää linkin",
+    "Tavoitesumma laskee kuukausisäästön, kuukausisäästö laskee tavoitteen ja molemmat tallentuvat oikein",
     "Varallisuuslistojen kuvaketoiminnot toimivat näppäimistöllä, sijoituksen menetelmä avautuu ja tavoiterivi ei toista nimeä",
     "Kassavirta 2100 EUR ja nettovarallisuus 4200 EUR",
     "Mittarin lisätieto toimii näppäimistöllä; siirrot avautuvat pyynnöstä ja budjetin 200 % ylitys säilyy luettavana molemmissa näkymissä",

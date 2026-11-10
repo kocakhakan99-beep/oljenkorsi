@@ -1,3 +1,4 @@
+import { goalPlan } from "./domain/goal-plan";
 import { RecurrenceIndicator, EventStatusIndicator } from "./components/event-indicators";
 import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions, SignedAmount } from "./components/summary";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
@@ -99,6 +100,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Link2,
   FileChartColumn,
   Goal as GoalIcon,
   House,
@@ -659,7 +661,7 @@ function MoneyInput({ defaultCents, onChange, ...props }: MoneyInputProps) {
         "Kirjoita numerot senttijärjestyksessä (1250 = 12,50 €) tai liitä koko summa."
       }
       className={`money-input${props.className ? ` ${props.className}` : ""}`}
-      defaultValue={defaultCents === null ? "" : formatMoneyCents(defaultCents)}
+      defaultValue={props.value !== undefined ? undefined : defaultCents === null ? "" : formatMoneyCents(defaultCents)}
       onChange={handleChange}
     />
   );
@@ -4509,7 +4511,7 @@ function App() {
                   {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo automaattisesti menotapahtumaa eikä vähennä velan saldoa. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
                     <div className="table-wrap mobile-entry-table">
-                      <table className="entry-table" role="table">
+                      <table className={`entry-table${page === "liabilities" ? " debt-table" : ""}`} role="table">
                         <thead role="rowgroup">
                           <tr role="row">
                             <th role="columnheader">Nimi</th>
@@ -4520,12 +4522,13 @@ function App() {
                                 : "Summa"}
                             </th>
                             <th role="columnheader">
-                              {page === "goals" ? "Tavoite" : "Päivämäärä"}
+                              {page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : "Päivämäärä"}
                             </th>
+                      {page === "liabilities" && <th role="columnheader">Kuukausierä</th>}
                       <th role="columnheader">
                         {page === "incomes" || page === "expenses"
                           ? "Tapahtuma"
-                          : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"}
+                          : page === "investments" ? "Hankinta-arvo" : page === "liabilities" ? "Omaisuus" : "Lisätiedot"}
                       </th>
                             <th role="columnheader">Toiminnot</th>
                           </tr>
@@ -4573,12 +4576,12 @@ function App() {
                                 <td
                                   role="cell"
                                   data-label={
-                                    page === "goals" ? "Tavoite" : "Päivämäärä"
+                                    page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : "Päivämäärä"
                                   }
                                 >
                                   {page === "goals"
                                     ? euro(e.target)
-                                    : page === "incomes" &&
+                                    : page === "liabilities" ? `${percentText(e.rate)} %` : page === "incomes" &&
                                         e.adjustToPreviousBankDay &&
                                         e.recurrence !== "once"
                                       ? scheduledOccurrences(e, month)
@@ -4589,12 +4592,13 @@ function App() {
                                         `Alkaa ${e.date.split("-").reverse().join(".")}`
                                       : e.date.split("-").reverse().join(".")}
                                 </td>
+                                {page === "liabilities" && <td role="cell" data-label="Kuukausierä">{euro(e.payment)}</td>}
                                 <td
                                   role="cell"
                                   data-label={
                                     page === "incomes" || page === "expenses"
                                       ? "Tapahtuma"
-                                      : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"
+                                      : page === "investments" ? "Hankinta-arvo" : page === "liabilities" ? "Omaisuus" : "Lisätiedot"
                                   }
                                 >
                                   {page === "incomes" || page === "expenses" ? (
@@ -4608,7 +4612,7 @@ function App() {
                                   ) : page === "assets" ? (
                                     <div className="entry-statuses"><StatusBadge>{percentText(e.ownership)} %</StatusBadge><StatusBadge>{e.liquid ? "Likvidi" : "Ei likvidi"}</StatusBadge></div>
                                   ) : page === "liabilities" ? (
-                                    <div className="entry-statuses"><StatusBadge>{percentText(e.rate)} %</StatusBadge><span>{euro(e.payment)}/kk</span><StatusBadge>{e.linkedAssetId ? s.assets.find(asset => asset.id === e.linkedAssetId)?.name || "Linkitetty omaisuus" : "Ei omaisuuslinkkiä"}</StatusBadge></div>
+                                    (() => { const asset = s.assets.find(asset => asset.id === e.linkedAssetId); return asset ? <button type="button" className="asset-link-indicator" aria-label={`Avaa linkitetty omaisuus: ${asset.name}`} title={`Linkitetty omaisuus: ${asset.name} · ${asset.category}`} onClick={() => setViewEntry({ kind: "assets", id: asset.id })}><Link2 size={18} aria-hidden="true" /><CategoryImage icon={categoryIconFor(asset.category, "assets")} size={22} /></button> : <span className="muted" aria-label="Ei linkitettyä omaisuutta">—</span>; })()
                                   ) : page === "goals" ? (
                                     <Goal
                                       e={e}
@@ -6715,21 +6719,24 @@ function App() {
         const item = s[kind].find(entry => entry.id === id);
         if (!item) return null;
         const cash = kind === "incomes" || kind === "expenses";
+        const linkedAsset = kind === "liabilities" ? s.assets.find(asset => asset.id === item.linkedAssetId) : undefined;
         const linkedDebts = kind === "assets" ? s.liabilities.filter(debt => debt.linkedAssetId === id) : [];
         return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
           <section className="entry-reader" aria-label="Tietueen tiedot">
             <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round(item.amount * item.quantity) : item.amount)}</strong></div>
             <dl className="entry-facts">
-              <div><dt>{kind === "assets" ? "Arvostuspäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
+              <div><dt>{kind === "assets" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
               {cash && <><div><dt>Toistuvuus</dt><dd>{recNames[item.recurrence]}</dd></div><div><dt>Kuukauden tila</dt><dd>{monthEntryStatus(item, month)}</dd></div><div><dt>Sarja</dt><dd>{item.active ? "Aktiivinen" : "Keskeytetty"}</dd></div>{item.endDate && <div><dt>Päättyy</dt><dd>{item.endDate.split("-").reverse().join(".")}</dd></div>}{kind === "incomes" && <div><dt>Maksupäivän siirto</dt><dd>{item.adjustToPreviousBankDay ? "Edeltävä pankkipäivä" : "Ei siirtoa"}</dd></div>}{kind === "expenses" && <><div><dt>Menotyyppi</dt><dd>{expenseTypeName(expenseType(item))}</dd></div><div><dt>Välttämätön meno</dt><dd>{item.essential ? "Kyllä" : "Ei"}</dd></div></>}</>}
               {kind === "assets" && <><div><dt>Omistusosuus</dt><dd>{percentText(item.ownership)} %</dd></div><div><dt>Likvidiys</dt><dd>{item.liquid ? "Likvidi" : "Ei likvidi"}</dd></div><div><dt>Oman osuuden arvo</dt><dd>{euro(Math.round(item.amount * item.ownership / 100))}</dd></div><div><dt>Linkitetyt velat</dt><dd>{linkedDebts.map(debt => debt.name).join(", ") || "Ei linkkejä"}</dd></div></>}
-              {kind === "liabilities" && <><div><dt>Korko</dt><dd>{percentText(item.rate)} %</dd></div><div><dt>Kuukausierä</dt><dd>{euro(item.payment)}</dd></div><div><dt>Linkitetty omaisuus</dt><dd>{s.assets.find(asset => asset.id === item.linkedAssetId)?.name || "Ei linkkiä"}</dd></div></>}
+              {kind === "liabilities" && <><div><dt>Korko</dt><dd>{percentText(item.rate)} %</dd></div><div><dt>Kuukausierä</dt><dd>{euro(item.payment)}</dd></div><div><dt>Linkitetty omaisuus</dt><dd>{linkedAsset ? `${linkedAsset.name} · ${linkedAsset.category}` : "Ei linkkiä"}</dd></div></>}
               {kind === "investments" && <><div><dt>Määrä</dt><dd>{new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(item.quantity)} kpl</dd></div><div><dt>Yksikköhinta</dt><dd>{euro(item.amount)}</dd></div><div><dt>Hankinta-arvo</dt><dd>{euro(Math.round(item.purchasePrice * item.quantity))}</dd></div></>}
               {kind === "goals" && <><div><dt>Tavoite</dt><dd>{euro(item.target)}</dd></div><div><dt>Kuukausisäästö</dt><dd>{euro(item.monthly)}</dd></div></>}
               {userTags(item.tags) && <div><dt>Tunnisteet</dt><dd>{userTags(item.tags)}</dd></div>}
             </dl>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
             {cash && <><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
+            {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
+            {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
           </section>
           {cash && <div className="entry-corrections"><button type="button" aria-expanded={correctOccurrences} aria-controls="reader-occurrence-editor" onClick={() => setCorrectOccurrences(value => !value)}>{correctOccurrences ? "Sulje tapahtumakorjaukset" : "Korjaa kuukauden tapahtumia"}</button>{correctOccurrences && <div id="reader-occurrence-editor">                                      <fieldset className="occurrence-statuses">
@@ -7196,7 +7203,17 @@ function EntryForm({
       .toLocaleLowerCase("fi-FI")
       .includes(categoryValue.trim().toLocaleLowerCase("fi-FI")),
   );
-  const [entryDate, setEntryDate] = useState(item.date);
+  const [entryDate, setEntryDate] = useState(item.target === 0 && item.amount === 0 && kind === "goals" ? new Date(Date.parse(today()) + 365 * 86400000).toISOString().slice(0, 10) : item.date);
+  const [goalMode, setGoalMode] = useState<"target" | "monthly">("target");
+  const [goalTarget, setGoalTarget] = useState(item.target);
+  const [goalMonthly, setGoalMonthly] = useState(item.monthly);
+  const goalAmountText = watch("amount");
+  let goalCalculation: ReturnType<typeof goalPlan> | null = null;
+  let goalError = "";
+  if (kind === "goals") {
+    try { goalCalculation = goalPlan(goalAmountText === undefined ? item.amount : money(goalAmountText || "0"), goalTarget, goalMonthly, entryDate, goalMode); }
+    catch (error) { goalError = String(error).replace(/^Error: /, ""); }
+  }
   const [formPercents, setFormPercents] = useState({
     ownership: item.ownership,
     rate: item.rate,
@@ -7250,6 +7267,7 @@ function EntryForm({
       for (let k of ["quantity", "ownership", "rate"] as const)
         if (f.has(k)) v[k] = Number(String(f.get(k)).replace(",", "."));
       if (kind === "assets") v.liquid = f.has("liquid");
+      if (kind === "goals") { const planned = goalPlan(v.amount, goalTarget, goalMonthly, v.date, goalMode); v.target = planned.target; v.monthly = planned.monthly; }
       validateEntry(v);
       onSave(v);
     } catch (e) {
@@ -7517,7 +7535,7 @@ function EntryForm({
           kind === "assets" || kind === "investments"
             ? "Arvostuspäivä"
             : kind === "goals"
-              ? "Tavoitepäivä (informatiivinen)"
+              ? "Tavoitepäivä"
               : "Päivämäärä / aloituspäivä",
           "date",
           item.date,
@@ -7579,8 +7597,9 @@ function EntryForm({
         )}
         {kind === "goals" && (
           <>
-            {field("Tavoitesumma (€)", "target", item.target, "text", true)}
-            {field("Kuukausisäästö (€)", "monthly", item.monthly)}
+            <label>Tavoitesumma (€)<MoneyInput name="target" value={formatMoneyCents(goalCalculation?.target ?? goalTarget)} defaultCents={goalTarget} required onChange={event => { setGoalTarget(event.target.value.trim() ? money(event.target.value) : 0); setGoalMode("target"); }} /></label>
+            <label>Kuukausisäästö (€)<MoneyInput name="monthly" value={formatMoneyCents(goalCalculation?.monthly ?? goalMonthly)} defaultCents={goalMonthly} required onChange={event => { setGoalMonthly(event.target.value.trim() ? money(event.target.value) : 0); setGoalMode("monthly"); }} /></label>
+            <div className="goal-plan-feedback" role="status">{goalError || <><strong>{goalMode === "target" ? "Kuukausisäästö laskettu" : "Tavoitesumma laskettu"}</strong><span>{goalCalculation?.months} kuukausierää · ensimmäinen kuukauden päästä · ilman tuottoa</span></>}<small>Muuta tavoitesummaa laskeaksesi kuukausisäästön, tai kuukausisäästöä laskeaksesi tavoitesumman. Tavoitepäivä määrittää säästöajan. Tämä ei luo rahansiirtoja.</small></div>
           </>
         )}
         {field("Tunnisteet (pilkulla eroteltuna)", "tags", userTags(item.tags))}

@@ -59,3 +59,5 @@ Toteutettu 10.11.2026: tulojen ja menojen kahdeksan toistuvuuden sekä tapahtuma
 Toteutettu 10.11.2026: rivin sisäinen lisätietojen laajennus, yhteinen katselu/muokkaus/poisto kuudessa talouslistassa ja katselupolku budjetista, pikahausta sekä raportin tietueesta. Budjetin kategoriarivien väljyys ja mobiiliasettelu viimeistelty.
 
 Tarkennettu käyttäjäpalautteella 10.11.2026: talouslistoissa käytetään silmäpainikkeen katselua nuolilaajennuksen sijasta. Tapahtumakorjaukset säilyvät katseluikkunassa. Budjetin tiivis riviasettelu käyttää samaa avausperiaatetta ja huomiot näkyvät kategoriakohtaisina koontikortteina.
+
+Toteutettu 10.11.2026: velan erilliset korko-/kuukausieräsarakkeet ja kuvakkeellinen omaisuuslinkki; tavoitteen automaattinen kaksisuuntainen kuukausisäästö-/tavoitesummalaskenta tavoitepäivään mennessä. Kaavat ja rajaukset: [CALCULATIONS.md](CALCULATIONS.md).
