@@ -38,15 +38,17 @@ Välttämättömän yksikön, tunnisteen, saavutettavan nimen ja kriittisen varo
 - [x] Esittämisen priorisointijärjestys, riittävyyskriteeri ja säilytettävien ominaisuuksien periaate määritelty.
 - [x] Yhteinen ohjekomponentti: oletuksena vain avattava otsikko, ei kappaletekstiä.
 - [x] Yhteiset mittarikortti, tilamerkki, budjetin käyttöastepalkki ja avattava lisätieto (`src/components/summary.tsx`).
-- [ ] Rivitoimintojen yhteinen komponentti ja käyttöönotto muissa listoissa.
+- [x] Rivitoimintojen yhteinen komponentti talouslistoihin ja kategoriakorttiin; muokkaus ja poisto samoilla kuvakkeilla ja saavutettavilla nimillä.
 - [x] Yhteenveto: tulot, menot ja säästöaste ensin; kulutuksen erittely sekä suunnitelma/siirrot avattavina, mittarien menetelmäselitteet lisätiedossa.
 - [x] Budjetin raamit: luvut ja lyhyet poikkeamat riittävät oletuksena; laskentaselitys avautuu pyynnöstä.
 - [x] Budjettitaulukko: lyhyet lähde- ja ryhmämerkit, käyttöastepalkki ja eroteltu ohjerajaylitys; laskentateksti avattavana.
-- [ ] Kategoriakortin jatkoviimeistely ja toimintojen hierarkia.
+- [x] Kategoriakortti: tilamerkit ja yhteinen muokkaustoiminto; kertamenon oletusluokitusta ei toisteta jokaisella rivillä.
 - [x] Tulot ja menot: yhteinen lisäys-/muokkauslomake ja lisävalinnat; ohjeet avautuvat otsikosta.
 - [x] Kompassi: havainto ja seuraava askel näkyviin; lähde ja toistava perustelu avattaviksi, myös esimerkeissä.
-- [ ] Raportit: ohjeotsikko on nyt avattava; muiden selitteiden ja tietokorttien läpikäynti jatkuu.
-- [ ] Omaisuus, velat, sijoitukset ja tavoitteet: sama korttirakenne, aihekohtaiset lisätiedot.
+- [x] Raporttien yhteenveto ja budjettitietokortti: pääluku, yhteiset mittarit ja avattava laskentaselite; omat toteumakorjaukset näkyvät erikseen.
+- [x] Nykytilaraportit ja FIRE: manuaalisuus, puuttuva arvostushistoria ja skenaarioluonne lyhyinä näkyvinä tiloina.
+- [ ] Raporttikohtaisten muiden selitteiden ja kaavio-ohjainten jatkoläpikäynti.
+- [x] Omaisuuden, velkojen ja sijoitusten yhteenvetorakenne, tilamerkit ja avattavat lisätiedot. Tavoitetaulukossa tiivis eteneminen ilman nimen ja summien toistoa.
 - [ ] Asetukset ja datan hallinta: selkeät pääpaikat, lyhyet nimet ja vahvistukset.
 - [ ] Käyttäjä-, näppäimistö-, ruudunlukija- ja mobiilivarmennus.
 
@@ -65,3 +67,9 @@ Ensimmäinen toteutuskierros: yhteiset ohjelaatikot ovat oletuksena lyhyitä ava
 Yhteisten komponenttien ensimmäinen joukko on käytössä. Mittari näyttää nimen ja luvun; menetelmä avautuu tietokuvakkeesta. Yhteenvedossa kulutuksen lisäerittely ja suunnitellut siirrot ovat avattavia, mutta talouden pääluvut ja ”ei tilisaldo” -rajaus säilyvät näkyvissä. Varallisuuden manuaalinen nykyarvoluonne ilmaistaan lyhyesti. Budjetin kategoriariviltä ei toisteta ohjerajan koko laskentaa; se löytyy kategoriakortista. Ohjerajaylitys ja budjettiylitys nimetään erikseen, koska niiden vertailusummat voivat erota. Palkki pysähtyy 100 prosenttiin, mutta tekstilukema näyttää myös esimerkiksi 200 %.
 
 Yhteenvedon budjettiprosentti käyttää samaa kategoriatoteumaa kuin budjettinäkymä, myös käyttäjän kokonaistoteuman poikkeuksia. Tämä poistaa eri näkymien aiemman prosenttieron; kassavirtaa ei muuteta.
+
+## Raporttien ja varallisuuslistojen kierros 10.11.2026
+
+Muokkaus ja poisto käyttävät samaa kuvakekomponenttia talouslistoissa, ja kategoriakortti samaa muokkauspainiketta. Saavutettava nimi, työkaluvihje, 44 px painallusalue, alkuperäinen lomake ja poiston vahvistus säilyvät. Omaisuusrivin omistusosuus, likvidiys ja velkarivin korko/erä/linkki esitetään lyhyesti. Sijoitusrivin toistuva kategoria korvattiin hankinta-arvolla; tavoitteessa ei toisteta taulukon muissa sarakkeissa olevia tietoja.
+
+Raportin tietokortissa pääsumma ja tietuemäärä ovat ensin. Budjettivalinnan kolme vertailulukua käyttävät yhteisiä mittareita; oma kokonaistoteuman korjaus säilyy näkyvänä varoituksena. Nykytilan manuaalisuus ja arvostushistorian puuttuminen sekä FIRE-laskelman skenaarioluonne ovat näkyvissä, pitkät selitteet avautuvat tarvittaessa. Kategoriakortin tila-/toistuvuus-/menotyyppirivi näyttää vain tilanteeseen soveltuvat tiedot.

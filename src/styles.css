@@ -5266,3 +5266,23 @@ button.primary,
 .budget-usage > span { white-space: nowrap; }
 .budget-usage.exceeded progress { accent-color: #bc622f; }
 @media (max-width: 760px) { .metric-group-cash > .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.unified-row-actions { display: flex; align-items: center; gap: 6px; }
+.unified-row-actions button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px; }
+.entry-statuses { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.entry-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 14px 0; padding: 14px; background: var(--soft); border-radius: 12px; }
+.entry-summary > strong, .report-detail-total > strong { font-size: 23px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.entry-summary .ux-explanation { flex-basis: 100%; margin: 0; }
+.report-snapshot-context { flex-wrap: wrap; }
+.report-snapshot-context .ux-explanation { flex-basis: 100%; margin: 0; }
+.report-detail-total { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.report-detail-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.goal-compact { margin: 0; padding: 0; border: 0; background: transparent; min-width: 0; }
+.goal-compact progress { width: 100%; }
+.budget-event-list .unified-row-actions { flex-shrink: 0; }
+@media (max-width: 600px) {
+  .mobile-entry-table .unified-row-actions { display: flex; width: auto; }
+  .mobile-entry-table .unified-row-actions button { width: 44px; }
+  .report-detail-metrics { grid-template-columns: 1fr; }
+  .budget-event-list .unified-row-actions { margin-left: auto; }
+}

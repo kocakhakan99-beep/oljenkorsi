@@ -1,5 +1,14 @@
 # Testausraportti 10.11.2026
 
+## Raportit ja varallisuuslistojen UX 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 559 kB; Viten kokohuomautus säilyy.
+- Kaikki 65 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Kuvakepohjaisen muokkaustoiminnon 44 × 44 px painallusalue ja Enter-avaus tarkistettiin. Nykyinen tietueiden poisto, vahvistus ja kumoamispolku läpäisi samoilla käsittelijöillä.
+- Sijoituksen hankinta-arvo oli rivillä ja avattavassa menetelmäselitteessä 160 euroa, kun hankintahinta oli 80 euroa ja määrä 2. Tavoiterivi näytti 50 % etenemisen toistamatta tavoitteen nimeä.
+- Raportin budjettitietokortin kolme yhteistä mittaria ja avattava laskentaselite tarkistettiin. Käsin korjattu toteuma pysyi näkyvissä eikä kadonnut lisätietoihin. Nykyiset raporttivalinnat, kompassi, demot ja varmuuskopioiden palautus läpäisivät.
+- 320–768 px ylivuototarkistuksiin lisättiin Omaisuus, Velat, Sijoitukset ja Tavoitteet. Kaikki tarkistukset läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjien ymmärrystä ei varmennettu.
+
+
 ## Yhteiset UX-komponentit, yhteenveto ja budjetti 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript-bundle noin 555 kB; Viten kokohuomautus säilyy.
