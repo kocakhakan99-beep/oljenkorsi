@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Arvostus, korjausmerkki, velka-arvio ja sijoituspohjat 10.11.2026
+
+- TypeScript, ESLint, 93 yksikkötestiä kahdeksassa tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 580 kB; Viten kokohuomautus säilyy.
+- Neljä uutta velkalaskennan testiä varmentavat maksupäivärajan, eräkulujen vaikutuksen vuosikorkoon, lyhentämättömän velan päiväkoron sekä kuun lopun ja virheellisen arvostuspäivän.
+- 76 Chromium-selainvarmennusta localhostissa. Velan nollakoron vuosikorkoarvio oli 0 %; eräkulun lisääminen nosti sitä. Omaisuusrivillä oli Omistusosuus-sarake ilman päivämääräsaraketta, ja tuloissa Maksupäivä-otsikko. Kaikki 20 sijoituspohjaa löytyivät ja Nokia avautui esitäytettyyn lomakkeeseen.
+- Nykyiset korjaus-, tallennus-, tavoite-, velkalinkki-, demo-, raportti- ja mobiilipolut 320–768 px läpäisivät. Katseluikkunan oletustilassa ei ole laskurin syöttökenttiä. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+- Erillinen puhelintarkistus varmisti avattavan velkalaskurin leveyden ja skenaarion aloituspainikkeen vierityksen oikeaan laskuriin. Velkakortti tarkistettiin myös kuvakaappauksesta.
+- Markkinadataa ei varmennettu: kurssilähdekokeilut palauttivat HTTP 429 ja HTTP 404. Kurssidataa ja historiaa ei lisätty sovellukseen.
+
+
 ## Velkojen rakenne ja tavoitelaskenta 10.11.2026
 
 - TypeScript, ESLint, 89 yksikkötestiä seitsemässä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 573 kB; Viten kokohuomautus säilyy.

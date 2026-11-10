@@ -61,3 +61,7 @@ Talouslistojen nuolilaajennus korvattiin silmäpainikkeen katselulla. Tapahtumak
 ### Velkojen sarakkeet ja automaattinen tavoitelaskenta 10.11.2026
 
 Velan korko ja kuukausierä erotettiin omiin sarakkeisiinsa. Omaisuuslinkki näkyy linkki- ja kategoriakuvakkeena ja avaa omaisuuden katselun; tarkemmat linkkitiedot löytyvät velkakortista. Tavoitelomake laskee kuukausisäästön tavoitesummasta ja tavoitepäivästä tai tavoitesumman käyttäjän kuukausisäästöstä. Jo säästetty summa, jäljellä olevat kuukausierät, senttipyöristys ja mahdottomat aikavälit huomioidaan. Tietomalli säilyy.
+
+### Talousrivien ja laskurien selkeys 10.11.2026
+
+Omaisuuden arvostuspäivä siirrettiin kortille ja omistusosuus omaan sarakkeeseen; tuloissa käytetään Maksupäivä-otsikkoa ja tilakorjausten kuvakemerkkiä. Nollakuukausierä korvattiin selitteellä. Velkakortissa on erillisillä kuluilla toimiva jäljellä olevan suunnitelman vuosikorkoarvio ja valitun päivän saldoarvio, maksetuiksi oletetuin erinä. Skenaariot saivat kysymyskohtaisen aloitusvalinnan. Sijoituksiin lisättiin 20 valintapohjaa; nykykurssit ja kahden vuoden historia odottavat varmennettua tietolähdettä.

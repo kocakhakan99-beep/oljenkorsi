@@ -117,3 +117,9 @@ Yläosan Huomiot koostuu avattavista kategoriakorteista: kategorian kuvake ja ni
 Velkalistassa on Nimi, Kategoria, Summa, Korko, Kuukausierä, Omaisuus ja Toiminnot. Päiväys ja linkitetyn omaisuuden tarkemmat tiedot ovat katselukortissa. Omaisuuslinkki esitetään linkkikuvakkeella ja omaisuuden kategoriakuvakkeella; nimi on saavutettavassa nimessä ja työkaluvihjeessä. Kuvaketta painamalla aukeaa omaisuuden katselukortti. Puhelimella samat tiedot ryhmitellään kahteen sarakkeeseen, päätoiminnot säilyvät otsikkorivillä.
 
 Tavoitelomakkeessa kumpikin rahakenttä on muokattava: tavoitesumman muuttaminen laskee kuukausisäästön, ja kuukausisäästön muuttaminen tavoitesumman. Nykyinen säästö ja tavoitepäivä toimivat yhteisinä lähtötietoina. Lyhyt tulospaneeli kertoo lasketun kentän, erien määrän ja ensimmäisen erän ajankohdan. Uusi tyhjä tavoite saa noin vuoden päähän asetetun ehdotuspäivän. Virheellinen tai liian lyhyt aikaväli näytetään syöttökohdan yhteydessä eikä tallenneta.
+
+## Arvostus, maksupäivä ja laskurien tarkoitus 10.11.2026
+
+Omaisuuden rivillä arvostuspäivän tilalla on omistusosuus; arvostuspäivä säilyy kortilla. Tuloissa päiväys nimetään maksupäiväksi. Tapahtumakohtaisista tilakorjauksista näkyy pieni kynämerkki saavutettavalla selitteellä; kortti kertoo tila- ja summakorjausten määrän. Velan nollaerää ei esitetä rahalukuna vaan ”Ei maksuerää” -merkintänä, joka ei väitä takaisinmaksun alkaneen.
+
+Skenaariot alkavat neljällä käyttäjän kysymyksellä: FI-ajankohta, säästöjen kasvu, tallennettujen suunnitelmien vertailu ja velanmaksu. Valinta vierittää oikeaan laskuriin, eikä vaihda sovelluksen pääsivua. Oletukset ja tulokset säilyvät samassa näkymässä. Velkakortin laskuri on avattava lisätieto; sen syöttökenttiä ei näytetä oletuskatselussa.

@@ -70,3 +70,7 @@ Tulokatkos on kriisitaloudessa kiinteästi elokuusta 2026 alkaen. Tulevia kuukau
 Tietomalli ja schemaVersion säilyvät. Tavoitteen amount on jo säästetty summa, date tavoitepäivä, target tavoitesumma ja monthly suunniteltu kuukausisäästö. Lomake laskee target/monthly-parin valitun syöttösuunnan mukaan ja tallentaa molemmat. Syöttösuunta on lomakkeen tilaa; sitä ei tallenneta. Vanhoja tavoitteita ei muuteta latauksessa. Muokkaus käyttää nykyhetkeä ja olemassa olevaa tavoitepäivää; liian aikainen päivä vaatii käyttäjältä korjauksen, jos tavoite on kesken.
 
 Velan rate ja payment näkyvät erillisissä korko- ja kuukausieräsarakkeissa. linkedAssetId esitetään linkki- ja omaisuuskategoriakuvakkeena, josta voi avata omaisuuden katselun. Velan katselussa näytetään linkitetyn omaisuuden nimi ja kategoria. Linkki ei luo menoa eikä päivitä saldoja.
+
+## Velkakortin arvio ja sijoituspohjat 10.11.2026
+
+SchemaVersion säilyy. Velan laskentapäivä ja kulut ovat istuntokohtaisia laskurin oletuksia, eivät tallennettu velan maksuaikataulu. Maksetuiksi oletetut erät eivät muuta velkaa tai luo menoja. Sijoituspohja esitäyttää vain nimen, luokan ja tunnuksen kuvaukseen. Kurssihistoria tai valuuttamalli ei kuulu vielä tietomalliin; ks. INVESTMENT_MARKET_DATA_PLAN.md.

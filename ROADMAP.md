@@ -61,3 +61,5 @@ Toteutettu 10.11.2026: rivin sisäinen lisätietojen laajennus, yhteinen katselu
 Tarkennettu käyttäjäpalautteella 10.11.2026: talouslistoissa käytetään silmäpainikkeen katselua nuolilaajennuksen sijasta. Tapahtumakorjaukset säilyvät katseluikkunassa. Budjetin tiivis riviasettelu käyttää samaa avausperiaatetta ja huomiot näkyvät kategoriakohtaisina koontikortteina.
 
 Toteutettu 10.11.2026: velan erilliset korko-/kuukausieräsarakkeet ja kuvakkeellinen omaisuuslinkki; tavoitteen automaattinen kaksisuuntainen kuukausisäästö-/tavoitesummalaskenta tavoitepäivään mennessä. Kaavat ja rajaukset: [CALCULATIONS.md](CALCULATIONS.md).
+
+Toteutettu 10.11.2026: omaisuuden omistusosuus arvostuspäivän tilalle rivillä, tulojen maksupäiväotsikko ja korjausmerkki, velan nollaerän selkeytys sekä avattava saldo-/kulut sisältävä vuosikorkoarvio. Skenaarioiden aloitusvalinta ja 20 sijoituskohteen valintapohjaa. Kesken: varmennetut nykykurssit ja kahden vuoden historia, ks. [kurssidatasuunnitelma](INVESTMENT_MARKET_DATA_PLAN.md). Velan sopimuskohtainen pääomitus ja pysyvä maksuaikataulu ovat jatkotyötä.
