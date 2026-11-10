@@ -29,3 +29,7 @@ Esittämismalli täsmennettiin vaihtoehtojen priorisointijärjestykseksi: ensimm
 ### Demotaloudet 2025–2026
 
 Kaikkien neljän esimerkkitalouden tulot, menot ja kategoriabudjetit kattavat kiinteästi kaikki 24 kuukautta vuosilta 2025 ja 2026. Mukana on kausivaihtelua, eräpäiviä, viikoittaisia ruokaostoksia, pankkipäivälle aikaistettuja palkkoja ja etuuksia, säästö-/sijoitussiirtoja sekä kaikille talouksille tavoitteita ja kaksi tallennettua skenaariota. Omaisuus ja velat ovat linkitettyjä esimerkkitilannekuvia. Kriisitalouden tulokatkos alkaa 2026-08. Kompassin vieritettävä 24 kuukauden suunnitelmakuvaaja käyttää samaa aineistoa kuin ladattava talous; tulevat maksut eivät muutu toteutuneiksi. Vanha ladattu talous säilyy, kunnes käyttäjä lataa uuden esimerkin vahvistuksen kautta. 83 yksikkötestiä ja 63 selainvarmennusta läpäisivät.
+
+### Yhteenveto ja budjetin UX 10.11.2026
+
+Otettiin käyttöön yhteiset mittarikortit, tilamerkit, budjetin käyttöastepalkki ja avattava lisätieto. Yhteenvedossa näkyvät ensin tulot, menot ja säästöaste; kulutuksen erittely ja suunnitelman siirrot avautuvat pyynnöstä. Budjettitaulukon ohjerajalaskenta siirtyi kategoriakorttiin ja pitkä toteumaselitys avattavaksi. Yhteenvedon budjettikäyttöaste käyttää nyt samaa kategoriatoteumaa kuin budjetti, myös oman kokonaistoteuman korjauksen kanssa. Yli sadan prosentin toteuma säilyy tekstinä, ja kategoriakohtainen ohjerajaylitys nimetään erikseen. 83 yksikkötestiä ja 64 selainvarmennusta läpäisivät.

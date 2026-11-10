@@ -1,4 +1,12 @@
-# Testausraportti 9.11.2026
+# Testausraportti 10.11.2026
+
+## Yhteiset UX-komponentit, yhteenveto ja budjetti 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript-bundle noin 555 kB; Viten kokohuomautus säilyy.
+- Kaikki 64 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Mittarikortin lisätieto avautui/sulkeutui Enterillä ja välilyönnillä. Suunnitelma ja siirrot olivat oletuksena suljettuja ja avattavissa.
+- Uusi vertailutesti käytti 500 euron budjettia, 900 euron kirjauksia ja 1000 euron omaa kategoriatoteumaa. Yhteenvedon ja budjetin käyttöaste oli molemmissa 200 %. Palkin arvo rajautui sataan, mutta 200 % säilyi tekstinä. Erillinen kategoriakohtainen ohjerajaylitys oli nimetty ohjerajaksi.
+- Nykyiset 320–768 px mobiili-, tumma teema-, kirjaus-, raportti-, kompassi-, demo- ja varmuuskopiopolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjien ymmärrystä ei tällä ajolla varmennettu.
+
 
 ## Demotalouksien vuodet 2025–2026
 
