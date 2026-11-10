@@ -15,7 +15,7 @@ Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai inte
 
 ## Toteutettu
 
-- Tulot, menot, omaisuus, velat, sijoitukset ja tavoitteet: lisäys, muokkaus, poisto.
+- Tulot, menot, omaisuus, velat, sijoitukset ja tavoitteet: lisäys, muokkaus, poisto. Tiiviissä listoissa nimi ja kuvakkeellinen kategoria ovat omissa sarakkeissaan; lisätiedot avautuvat riviltä. Budjetin erotukset näkyvät etumerkillisinä lukuina: vihreä plus on liikkumavaraa, punainen miinus vajetta.
 - Yhteenvedon tulo- ja menopainikkeet sekä Ctrl/Cmd + K avaavat nopean kirjauksen: nimi, summa, kategoria ja päivä. Menot-näkymässä kertameno ja toistuva lasku ovat omat aloitustoimintonsa; tuloissa voi aloittaa kertatulon tai toistuvan tulon. Budjettikategorian riviltä voi aloittaa menokirjauksen kategoria esivalittuna. Kuvaus ja muut tarkennukset ovat lisävalinnoissa. Viimeisimmän tulon tai menon voi kopioida uudeksi toteumaksi; useita kirjauksia voi tallentaa peräkkäin lomaketta sulkematta.
 - Tapahtuman tila määräytyy maksupäivästä: mennyt tai tämän päivän esiintymä on automaattisesti toteutunut ja tuleva suunniteltu. Toistuvan tulon maksupäivän voi aikaistaa viikonlopun tai Suomen pankkipyhän yli edeltävälle pankkipäivälle. Yksittäisen esiintymän tilan voi tarvittaessa yhä korjata käsin. Päivämäärään perustuva tila ei ole pankkivarmennus.
 - Kahdeksan toistuvuutta, alku- ja loppupäivä, aktiivisuus, sarjan oletustila sekä päiväkohtaiset suunniteltu/toteutunut/ohitettu-tilat ja summapoikkeukset. Yksittäisen laskun toteuma voi poiketa sarjan oletussummasta.

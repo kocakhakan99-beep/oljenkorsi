@@ -1,5 +1,14 @@
 # Testausraportti 10.11.2026
 
+## Tiiviit listat ja budjetin erotukset 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 561 kB; Viten kokohuomautus säilyy.
+- Kaikki 69 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä.
+- Kaikissa kuudessa talouslistassa on kuusi saraketta ja avattava lisätietorivi kattaa ne kaikki. Suljetun vuokrarivin korkeus työpöytätestissä oli enintään 56 px. Mobiilien 320–768 px ylivuototarkistukset ja 44 px toimintopainikkeet läpäisivät. Pitkän menonimen ja muokkaus-/poistopainikkeiden suorakulmiot eivät leikanneet 320 ja 390 px leveydessä.
+- Säästötavoitteen vaje −600,00 ja välttämättömien liikkumavara +500,00 saivat oikeat värit ja etumerkit. Kategorian ohjerajan −100,00 ja oman budjetin −500,00 säilyivät erillisinä vertailuina. Ohjauspaneeli ei käyttänyt näkyvässä tekstissä ylitys-sanaa.
+- Nykyiset tallennus-, palautus-, demo-, tapahtuma-, raportti- ja kompassipolut läpäisivät. File-käyttöä, ruudunlukijaa tai käyttäjien ymmärrystä ei varmennettu.
+
+
 ## Asetukset, tiedonhallinta ja raporttiohjaimet 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 560 kB; Viten kokohuomautus säilyy.

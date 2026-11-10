@@ -1,4 +1,4 @@
-import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions } from "./components/summary";
+import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions, SignedAmount } from "./components/summary";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -1554,7 +1554,7 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
   const unknown = result.categories.filter(category => category.group === "unclassified" && category.allocated > 0);
   const rule = state.settings.budgetGuidance;
   if (!detailed) return <section className="panel budget-guidance-compact" aria-label="Budjetin raamit">
-    <div><strong>Budjetin raamit</strong><p role="status">{result.income <= 0 ? "Lisää kuukauden nettotulot prosenttivertailua varten." : `${outside.length} ryhmäpoikkeamaa · ${excessCategories.length} kategoriaylitystä${unknown.length ? ` · ${unknown.length} luokittelematta` : ""}`}{result.income > 0 && result.totalAllocated > result.income ? ` · rahoitusvaje ${euro(result.totalAllocated - result.income)}` : ""}</p></div>
+    <div><strong>Budjetin raamit</strong><p role="status">{result.income <= 0 ? "Lisää kuukauden nettotulot." : outside.length || excessCategories.length ? `Huomiot · ${outside.length} ryhmää · ${excessCategories.length} kategoriaa` : "Raameissa"}{unknown.length > 0 ? ` · ${unknown.length} luokittelematta` : ""}{result.income > 0 && result.totalAllocated > result.income && <> · Rahoitus <SignedAmount amount={result.income - result.totalAllocated} format={euro} label="Kuukauden tulot miinus varaukset" /></>}</p></div>
     <button onClick={onBudget}>Tarkista budjetissa <ArrowRight size={16} aria-hidden="true" /></button>
   </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
@@ -1563,20 +1563,19 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
     {!result.coverageConfirmed && <p className="ux-status-note">Tietojen kattavuutta ei vahvistettu</p>}
     {result.income <= 0 ? <p className="alert warning" role="status">Tulopohja puuttuu: lisää valitulle kuukaudelle nettotulot ennen prosenttivertailua. Nollatuloista ei lasketa suosituksia.</p> : <>
       <div className="budget-rule-grid">{result.checks.map(check => <article key={check.group} className={`budget-rule-card ${check.group}${check.outside ? " outside" : ""}`}>
-        <h3>{budgetGroupNames[check.group]} <span>{percentText(check.percent)} %</span></h3>
-        <strong>{euro(check.allocated)}</strong><small>Kuukaudelle varattu · toteutunut {euro(check.actual)}</small>
+        <h3>{check.group === "saving" ? "Säästöt ja sijoitukset" : budgetGroupNames[check.group]} <span>{percentText(check.percent)} %</span></h3>
+        <strong>{euro(check.allocated)}</strong><small>Varattu · toteuma {euro(check.actual)}</small>
         <progress max={Math.max(1, check.target, check.allocated)} value={check.allocated} aria-label={`${budgetGroupNames[check.group]}, varattu suhteessa tavoitteeseen`} />
-        <p>{check.group === "saving" ? "Vähintään" : "Enintään"} {euro(check.target)}{check.outside ? ` · ${check.group === "saving" ? "tavoitteesta puuttuu" : "ylitys"} ${euro(check.gap)}` : " · omissa raameissa"}</p>
+        <div className="budget-rule-limit"><small title={check.group === "saving" ? "Vähimmäistavoite" : "Enimmäisraja"}>{check.group === "saving" ? "≥" : "≤"} {euro(check.target)}</small><SignedAmount amount={check.group === "saving" ? check.allocated - check.target : check.target - check.allocated} format={euro} label={`${budgetGroupNames[check.group]}, ${check.group === "saving" ? "erotus vähimmäistavoitteeseen" : "raamia jäljellä"}`} /></div>
       </article>)}</div>
       <div className="budget-rule-alerts" role="status" aria-live="polite">
-        <strong>{outside.length + excessCategories.length ? `${outside.length} ryhmäpoikkeamaa ja ${excessCategories.length} kategoriaylitystä` : "Ryhmät ja kategoriat ovat asetetuissa raameissa"}</strong>
-        {result.totalAllocated > result.income && <p>Kuukaudelle on varattu {euro(result.totalAllocated - result.income)} enemmän kuin tuloja on kirjattu. Tarkista suunnitelman rahoitus ennen uusia sitoumuksia.</p>}
-        {excessCategories.map(category => <div className="budget-rule-alert-row" key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button><strong>Yli {euro(category.excess)}</strong><small>{euro(category.allocated)} / {euro(category.cap!)} · {percentText(category.maxPercent!)} %</small></div>)}
-        {!detailed && excessCategories.length > 3 && <button onClick={onBudget}>Näytä kaikki {excessCategories.length} kategoriaylitystä</button>}
+        <strong>{outside.length + excessCategories.length ? `Huomiot · ${outside.length} ryhmää · ${excessCategories.length} kategoriaa` : "Raameissa"}</strong>
+        {result.totalAllocated > result.income && <div className="budget-funding-delta"><span>Rahoitus</span><SignedAmount amount={result.income - result.totalAllocated} format={euro} label="Kuukauden tulot miinus varaukset" /></div>}
+        {excessCategories.map(category => <div className="budget-rule-alert-row" key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button><SignedAmount amount={category.cap! - category.allocated} format={euro} label={`${category.name}, ohjerajaa jäljellä`} /></div>)}
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
-    <details className="ux-explanation"><summary>Miten raamit lasketaan?</summary><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan.</p></details>
+    <details className="ux-explanation"><summary>Miten raamit lasketaan?</summary><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></details>
     {detailed && <details className="budget-rule-settings"><summary>Muokkaa prosentteja, kategoriaryhmiä ja suosituksia</summary>
       <p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee. Sovita tavoitteet elämäntilanteeseen; älä leikkaa välttämätöntä hoitoa tai ota velkaa säästötavoitteen vuoksi.</p>
       <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
@@ -4358,7 +4357,7 @@ function App() {
                                   </span>
                                 </button>
                                 </div>
-                                {recommendation && <div className="budget-row-recommendation"><StatusBadge>{budgetGroupNames[recommendation.group]}</StatusBadge>{recommendation.excess > 0 && <StatusBadge tone="warning">Ohjeraja +{euro(recommendation.excess)}</StatusBadge>}</div>}
+                                {recommendation && <div className="budget-row-recommendation"><StatusBadge>{budgetGroupNames[recommendation.group]}</StatusBadge>{recommendation.excess > 0 && <SignedAmount amount={-recommendation.excess} format={euro} label={`${c}, ohjerajaa jäljellä`} />}</div>}
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput
@@ -4380,7 +4379,7 @@ function App() {
                                 data-label="Jäljellä"
                                 className={b > 0 && a > b ? "negative" : ""}
                               >
-                                {b > 0 ? euro(b - a) : "—"}
+                                {b > 0 ? <SignedAmount amount={b - a} format={euro} label={`${c}, budjettia jäljellä`} /> : "—"}
                               </td>
                               <td role="cell" data-label="Toteuma">
                                 <BudgetUsage actual={a} budget={b} label={`${c}, budjetin käyttö`} />
@@ -4539,7 +4538,8 @@ function App() {
                       <table className="entry-table" role="table">
                         <thead role="rowgroup">
                           <tr role="row">
-                            <th role="columnheader">Nimi / kategoria</th>
+                            <th role="columnheader">Nimi</th>
+                            <th role="columnheader">Kategoria</th>
                             <th role="columnheader">
                               {page === "investments"
                                 ? "Yksikköhinta"
@@ -4550,7 +4550,7 @@ function App() {
                             </th>
                       <th role="columnheader">
                         {page === "incomes" || page === "expenses"
-                          ? "Toistuvuus / kuukauden tila"
+                          ? "Tapahtuma"
                           : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"}
                       </th>
                             <th role="columnheader">Toiminnot</th>
@@ -4560,7 +4560,7 @@ function App() {
                           {rows.slice(0, limit).map((e) => (
                             <React.Fragment key={e.id}>
                               <tr role="row">
-                                <td role="cell" data-label="Nimi ja kategoria">
+                                <td role="cell" data-label="Nimi">
                                   <div className="row-title">
                                     <button
                                       className="row-expand"
@@ -4584,7 +4584,8 @@ function App() {
                                     </button>
                                     <strong>{e.name}</strong>
                                   </div>
-                                  <small className="entry-category-label">
+                                </td>
+                                <td role="cell" data-label="Kategoria"><span className="entry-category-label">
                                     <CategoryImage
                                       icon={
                                         s.categories.find(
@@ -4594,13 +4595,10 @@ function App() {
                                         )?.icon ||
                                         categoryIconFor(e.category, page)
                                       }
-                                      size={19}
+                                      size={22}
                                     />
-                                    {e.category}
-                                    {userTags(e.tags)
-                                      ? " · " + userTags(e.tags)
-                                      : ""}
-                                  </small>
+                                    <span>{e.category}</span>
+                                  </span>
                                 </td>
                                 <td
                                   role="cell"
@@ -4641,33 +4639,18 @@ function App() {
                                   role="cell"
                                   data-label={
                                     page === "incomes" || page === "expenses"
-                                      ? "Toistuvuus / kuukauden tila"
+                                      ? "Tapahtuma"
                                       : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"
                                   }
                                 >
                                   {page === "incomes" || page === "expenses" ? (
-                                    <>
-                                      {recNames[e.recurrence]}
-                                      <small>
-                                        {monthEntryStatus(e, month)}
-                                        {!e.active ? " · Keskeytetty" : ""}
-                                      </small>
-                                      {Object.keys(e.occurrenceStatuses)
-                                        .length > 0 && (
-                                        <small>
-                                          {
-                                            Object.keys(e.occurrenceStatuses)
-                                              .length
-                                          }{" "}
-                                          tilapoikkeusta
-                                        </small>
-                                      )}
-                                      {page === "expenses" && (
-                                        <small>
-                                          {expenseTypeName(expenseType(e))}
-                                        </small>
-                                      )}
-                                    </>
+                                    <div className="entry-event-summary">
+                                      {e.recurrence !== "once" && <span>{recNames[e.recurrence]}</span>}
+                                      <span title={monthEntryStatus(e, month)}><StatusBadge>{monthEntryStatus(e, month).replace("Päivämäärän mukaan ", "").replace("Ei tapahtumaa tässä kuussa", "Ei tässä kuussa")}</StatusBadge></span>
+                                      {!e.active && <StatusBadge>Keskeytetty</StatusBadge>}
+                                      {page === "expenses" && expenseType(e) !== "consumption" && <StatusBadge>{expenseTypeName(expenseType(e))}</StatusBadge>}
+                                      {Object.keys(e.occurrenceStatuses).length > 0 && <span title="Tapahtumakohtaiset tilakorjaukset">{Object.keys(e.occurrenceStatuses).length} korjausta</span>}
+                                    </div>
                                   ) : page === "assets" ? (
                                     <div className="entry-statuses"><StatusBadge>{percentText(e.ownership)} %</StatusBadge><StatusBadge>{e.liquid ? "Likvidi" : "Ei likvidi"}</StatusBadge></div>
                                   ) : page === "liabilities" ? (
@@ -4695,7 +4678,7 @@ function App() {
                                 <td
                                   role="cell"
                                   id={`entry-details-${e.id}`}
-                                  colSpan={5}
+                                  colSpan={6}
                                 >
                                   <div className="expanded-content">
                                     <span>
