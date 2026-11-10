@@ -5286,3 +5286,9 @@ button.primary,
   .report-detail-metrics { grid-template-columns: 1fr; }
   .budget-event-list .unified-row-actions { margin-left: auto; }
 }
+
+.settings-demo-entry { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.settings-demo-entry h2 { margin: 0 0 6px; }
+.danger-zone > summary, .csv-file-options > summary { cursor: pointer; min-height: 44px; align-content: center; }
+.csv-file-options { margin: 8px 0 16px; }
+.import-summary { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }

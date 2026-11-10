@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Asetukset, tiedonhallinta ja raporttiohjaimet 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 560 kB; Viten kokohuomautus säilyy.
+- Kaikki 67 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Asetusten tiivis demopainike avasi yhteisen neljän talouden valintaikkunan, josta kaikki taloudet ladattiin onnistuneesti. Alkuperäisen selaintallennuksen vienti avattavista lisätyökaluista täsmäsi localStorage-sisältöön eikä muuttanut taloutta.
+- CSV:n merkistö ja erotin olivat oletuksena piilossa mutta muokattavissa. Windows-1252-tiedoston epäonnistunut UTF-8-luku avasi lisäasetukset. Windows-1252-valinta palautti ääkköset esikatseluun ja mahdollisti tuonnin, ja asetukset pysyivät auki seuraavaa valintaa varten. Virheelliseen UTF-8-tulkintaan palaaminen esti vahvistuksen. Esikatselun korjaus ei muuttanut taloustietoja.
+- Kaikkien tietojen poisto avattiin nimetyltä lisävalinnalta. Pysyvä poisto pysyi estettynä ennen POISTA-tekstiä; poisto ja JSON-palautus läpäisivät. Tuonnin rivivirheet, duplikaattien ohitus ja kumoaminen säilyivät.
+- Raportin taulukkomuodossa ei näkynyt zoomausta; kaaviomuodossa historia-taulukko oli piilossa ja zoomaus käytettävissä. Kuukausitilassa ylimääräistä aikaväliotsikkoa ei ollut; aikavälitilan siirtymät ja virherajat läpäisivät.
+- 320–768 px ylivuototarkistuksiin lisättiin Asetukset. Kaikki nykyiset mobiili-, raportti-, kompassi- ja tallennuspolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai manuaalista käyttäjäkoetta ei varmennettu.
+
+
 ## Raportit ja varallisuuslistojen UX 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 559 kB; Viten kokohuomautus säilyy.

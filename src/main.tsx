@@ -1029,27 +1029,7 @@ function ReportRangeControl({
   };
   return (
     <div className={`report-range-control${mode === "month" ? " single-month" : ""}`}>
-      <div className="report-range-heading">
-        <div>
-          <span className="eyebrow">
-            {mode === "month" ? "RAPORTOINTIKUUKAUSI" : "RAPORTOINTIJAKSO"}
-          </span>
-          <strong>
-            {valid
-              ? mode === "month"
-                ? monthLabel(end)
-                : `${monthLabel(start)} – ${monthLabel(end)}`
-              : "Tarkista aikaväli"}
-          </strong>
-        </div>
-        <small>
-          {valid
-            ? mode === "month"
-              ? "Yksi kuukausi"
-              : `${length} ${length === 1 ? "kuukausi" : "kuukautta"}`
-            : "Valitse alku ja loppu"}
-        </small>
-      </div>
+      {mode === "range" && <div className="report-range-heading"><div><span className="eyebrow">RAPORTOINTIJAKSO</span><strong>{valid ? `${monthLabel(start)} – ${monthLabel(end)}` : "Tarkista aikaväli"}</strong></div><small>{valid ? `${length} ${length === 1 ? "kuukausi" : "kuukautta"}` : "Valitse alku ja loppu"}</small></div>}
       <div className="report-period-mode" role="group" aria-label="Raportin aikarajaus">
         <button
           type="button"
@@ -1146,11 +1126,11 @@ function ReportRangeControl({
           );
         })}
       </div>}
-      <p className="report-range-hint">
+      <ContextDetails title="Aikavalinnan ohje"><p className="report-range-hint">
         {mode === "month"
           ? "Valitse kuukausi kalenterista tai siirry nuolilla edelliseen ja seuraavaan."
           : "Valitse alku ja loppu, siirrä aikaväliä nuolilla tai vieritä kuukausilistaa."}
-      </p>
+      </p></ContextDetails>
       {!valid && (
         <p className="alert warning" role="alert">
           Aikavälin pitää olla enintään 120 kuukautta ja loppukuukausi ei voi
@@ -5130,7 +5110,7 @@ function App() {
                         <ContextDetails title="Miten raportin luvut lasketaan?"><p>Tulot ja menot ovat toteutuneiksi laskettuja kirjauksia. Nettokassavirta on tulot miinus kaikki menot, mukaan lukien siirrot. Säästöaste lasketaan kokonaistuloista ja kulutusmenoista, ei siirroista. Kirjausten puuttuminen ei tarkoita, että menoja ei olisi ollut.</p></ContextDetails>
                       </section>
                     )}
-                    <div className="report-chart-controls">
+                    {reportFormat !== "table" && reportHasData && <div className="report-chart-controls">
                       <div
                         className="chart-zoom"
                         role="group"
@@ -5194,7 +5174,7 @@ function App() {
                           <RotateCcw size={16} aria-hidden="true" />
                         </button>
                       </div>
-                    </div>
+                    </div>}
                     {reportHasData ? (
                       <>
                         {reportFormat === "bars" ? (
@@ -5482,7 +5462,7 @@ function App() {
                           : "Ei toteutuneita tuloja tai menoja valitulla jaksolla."}
                       </div>
                     )}
-                    <div className="table-wrap mobile-card-table report-history-table">
+                    <div className="table-wrap mobile-card-table report-history-table" hidden={reportFormat !== "table"}>
                       <table role="table">
                         <thead role="rowgroup">
                           <tr role="row">
@@ -6625,7 +6605,7 @@ function App() {
             {page === "settings" && (
               <>
                 <section className="panel panel-plan">
-                  <h2>Ulkoasu ja yksityisyys</h2>
+                  <h2>Ulkoasu</h2>
                   <div className="form-grid">
                     <label>
                       Teema
@@ -6662,16 +6642,12 @@ function App() {
                           onChange={(e) => settings({ accent: e.target.value })}
                         />
                         <small>
-                          Tekstin väri valitaan automaattisesti parhaan
-                          kontrastin mukaan (vähintään 4,5:1).
+                          Tekstikontrasti säätyy automaattisesti.
                         </small>
                       </label>
                     )}
                   </div>
-                  <p>
-                    Valuutta EUR · kieli Suomi. Summat tallennetaan
-                    kokonaislukusentteinä.
-                  </p>
+                  <StatusBadge>EUR · Suomi</StatusBadge>
                 </section>
                 <section
                   className="panel help-settings"
@@ -6679,10 +6655,7 @@ function App() {
                 >
                   <div>
                     <h2 id="help-settings-title">Ohjelaatikot</h2>
-                    <p className="muted">
-                      Piilotetut opastukset eivät muuta taloustietojasi. Voit
-                      palauttaa ne näytettäväksi täällä.
-                    </p>
+
                   </div>
                   <button
                     type="button"
@@ -6692,41 +6665,18 @@ function App() {
                     Palauta piilotetut ohjeet ({dismissedHelp.size})
                   </button>
                 </section>
-                <section className="panel demo-household-section">
-                  <div className="demo-household-section-heading">
-                    <span className="eyebrow">
-                      NELJÄ TILANNETTA · SAMA DATA KUIN KOMPASSISSA
-                    </span>
-                    <h2>Valitse demotalous testailuun</h2>
-                  </div>
-                  <p>
-                    Nämä neljä kahden aikuisen ja yhden lapsen taloutta ovat
-                    samat fiktiiviset reitit kuin Talouden kompassissa. Voit
-                    testata valitun tilanteen tuloissa, menoissa, budjetissa,
-                    varallisuudessa ja raporteissa. Lataus korvaa selaimen
-                    nykyisen talouden; tee varmuuskopio ensin, jos haluat
-                    palauttaa omat tietosi myöhemmin.
-                  </p>
-                  <button onClick={() => navigate("transfer")}>Avaa varmuuskopiot</button>
-                  <DemoHouseholdGrid
-                    scenarios={compassDemos}
-                    hideNumbers={s.settings.private}
-                    onChoose={loadDemoHousehold}
-                    buttonText="Lataa tämä talous"
-                  />
+                <section className="panel settings-demo-entry" aria-labelledby="settings-demo-title">
+                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2025–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
+                  <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
-                  <p>
-                    {storageOk
-                      ? "Paikallinen tallennus on käytettävissä."
-                      : "Tallennus ei ole käytettävissä."}{" "}
-                    Selaimen asetukset, yksityinen selaus, tiedoston siirtäminen
-                    tai selaindatan poisto voivat hävittää tallennuksen.
-                    JSON-varmuuskopio on siirrettävä kopio tiedoistasi.
-                  </p>
-                  <div className="actions">
-                    <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
+                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{storageOk ? "Tallennus käytettävissä" : "Tallennus ei käytettävissä"}</StatusBadge>
+                  {!storageOk && <p role="alert">Vie varmuuskopio ennen kuin suljet tämän välilehden.</p>}
+                  <p className="ux-status-note">Varmuuskopio ei ole automaattinen.</p>
+                  <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
+                  <ContextDetails title="Miten tiedot säilyvät?"><p>Selaimen asetukset, yksityinen selaus, tiedoston siirtäminen tai selaindatan poisto voivat hävittää tallennuksen. JSON-varmuuskopio on siirrettävä kopio tiedoistasi.</p></ContextDetails>
+                  <ContextDetails title="Tallennuksen lisätyökalut"><p>Alkuperäinen selaintallennus auttaa vian selvittämisessä. Tavalliseen talouden siirtoon käytä JSON-varmuuskopiota.</p>
                     <button
                       onClick={() => {
                         try {
@@ -6744,8 +6694,8 @@ function App() {
                     >
                       Vie alkuperäinen selaintallennus
                     </button>
-                  </div>
-                  <div className="danger-zone">
+                  </ContextDetails>
+                  <details className="danger-zone"><summary>Poista tietoja</summary>
                     <h3>Kaikkien tietojen poisto</h3>
                     <p>
                       Poisto tyhjentää tämän selaimen talouden. Vie
@@ -6761,7 +6711,6 @@ function App() {
                     >
                       Poista kaikki tietoni
                     </button>
-                  </div>
                   {s.settings.demo && (
                     <p>
                       <button
@@ -6781,6 +6730,7 @@ function App() {
                       </button>
                     </p>
                   )}
+                  </details>
                 </section>
               </>
             )}
@@ -6795,7 +6745,7 @@ function App() {
                 <h3>Aloita näin</h3>
                 <ol>
                   <li>
-                    Lisää nettotulot ja menot. Valitse toistuvuus ja tila.
+                    Lisää nettotulot ja menot. Valitse tarvittaessa toistuvuus; tila määräytyy maksupäivästä.
                   </li>
                   <li>Aseta kuukausikohtaiset kategoriabudjetit.</li>
                   <li>
@@ -6807,8 +6757,8 @@ function App() {
                 </ol>
                 <h3>Mitä laskelmat tarkoittavat?</h3>
                 <p>
-                  Kassavirta = toteutuneet tulot − toteutuneet menot. Käyttövara
-                  vähentää lisäksi suunnitellut menot. Säästöaste = (tulot −
+                  Kassavirta = toteutuneet tulot − toteutuneet menot. Kuukauden arvio
+                  vähentää lisäksi suunnitellut menot eikä ole tilisaldo. Säästöaste = (tulot −
                   kulutusmenot) / tulot. Menon tyyppi ratkaisee, kuuluuko
                   kirjaus kulutukseen vai säästö- tai sijoitussiirtoihin.
                   Vanhojen kirjausten Säästäminen- ja Sijoittaminen-kategoriat
@@ -6819,9 +6769,7 @@ function App() {
                 <p>
                   Toistuvuus lasketaan aloituspäivästä. Kuukauden 31. päivän
                   tapahtuma siirtyy lyhyessä kuukaudessa sen viimeiselle
-                  päivälle. Toistuva toteutunut tietue oletetaan toteutuneeksi
-                  jokaisessa esiintymässä. Poikkeuspäivien hallinta ei vielä ole
-                  käytettävissä.
+                  päivälle. Menneet maksupäivät lasketaan toteutuneiksi ja tulevat suunnitelluiksi; sovellus ei varmista maksua pankista. Yksittäisen tapahtuman summan ja tilan voi korjata Tulot- tai Menot-rivin lisätiedoissa. Maksupäivän yksittäistä siirtämistä ei vielä tueta. Toistuvan tulon viikonlopulle tai pankkipyhälle osuvan päivän voi aikaistaa edeltävälle pankkipäivälle.
                 </p>
                 <h3>Yksityisyys ja turvallisuus</h3>
                 <p>
@@ -8473,6 +8421,7 @@ function Transfer({
     [error, setError] = useState(""),
     [encoding, setEncoding] = useState("utf-8"),
     [bytes, setBytes] = useState<ArrayBuffer | null>(null),
+    [fileOptionsOpen, setFileOptionsOpen] = useState(false),
     [skipErrors, setSkipErrors] = useState(false),
     [skipDuplicates, setSkipDuplicates] = useState(true);
   const primaryCSVFields = ["name", "amount", "category", "date"];
@@ -8553,6 +8502,7 @@ function Transfer({
       setMap(mapCSVHeaders(header));
       setError("");
     } catch (e) {
+      setFileOptionsOpen(true);
       setError(
         "Merkistöä ei voitu lukea. Kokeile Windows-1252:ta. " + String(e),
       );
@@ -8562,11 +8512,9 @@ function Transfer({
     <>
       <section className="panel">
         <h2>JSON-varmuuskopio</h2>
-        <p>
-          Varmuuskopio sisältää koko talouden. Palautus validoidaan ja
-          vahvistetaan ennen nykyisten tietojen korvaamista. Eheystarkistus
-          tunnistaa tahattomia muutoksia, ei todista tiedoston aitoutta.
-        </p>
+        <div className="entry-statuses"><StatusBadge>Koko talous</StatusBadge><StatusBadge>Salaamaton tiedosto</StatusBadge></div>
+        <p className="ux-status-note">Palautus korvaa nykyisen talouden vahvistuksen jälkeen.</p>
+        <ContextDetails title="Mitä varmuuskopio sisältää?"><p>Varmuuskopio sisältää koko talouden ja sen asetukset. Palautus validoidaan ennen korvaamista. Eheystarkistus tunnistaa tahattomia muutoksia, ei todista tiedoston aitoutta.</p></ContextDetails>
         <button className="primary" onClick={onBackup}>
           Vie varmuuskopio
         </button>
@@ -8584,13 +8532,8 @@ function Transfer({
       </section>
       <section className="panel">
         <h2>CSV-tuonti ja vienti</h2>
-        <p className="muted">
-          Tuonti lisää tietueita. Tuonnin voi kumota tämän istunnon aikana.
-          Summat ovat CSV:ssä euroina, sisäisesti sentteinä. CSV ei säilytä
-          velkojen ja omaisuuserien välisiä linkkejä; käytä JSON-varmuuskopiota
-          koko tietomallin siirtämiseen. Pankkiaineiston miinusmerkkiset menot
-          tuodaan positiivisina menoina; tulorivit pitää tuoda Tulot-valinnalla.
-        </p>
+        <div className="entry-statuses"><StatusBadge>Tuonti lisää tietueita</StatusBadge><StatusBadge tone="warning">CSV ei ole koko talouden varmuuskopio</StatusBadge></div>
+        <ContextDetails title="CSV:n käyttö ja rajaukset"><p>Tuonnin voi kumota tämän istunnon aikana. Summat ovat euroina. CSV ei säilytä velkojen ja omaisuuserien välisiä linkkejä; käytä JSON-varmuuskopiota koko talouden siirtämiseen. Pankkiaineiston miinusmerkkiset menot tuodaan positiivisina menoina; tulorivit pitää tuoda Tulot-valinnalla. Virhe- ja duplikaattirivit tarkistetaan ennen tuontia.</p></ContextDetails>
         <div className="form-grid">
           <label>
             Tietotyyppi
@@ -8606,6 +8549,8 @@ function Transfer({
               ))}
             </select>
           </label>
+        </div>
+        <details className="csv-file-options" open={fileOptionsOpen} onToggle={event => setFileOptionsOpen(event.currentTarget.open)}><summary>Tiedoston lisäasetukset</summary><div className="form-grid">
           <label>
             Merkistö
             <select
@@ -8640,7 +8585,7 @@ function Transfer({
               <option value=",">Pilkku</option>
             </select>
           </label>
-        </div>
+        </div></details>
         <div className="actions">
           <button
             onClick={() =>
@@ -8794,12 +8739,7 @@ function Transfer({
                 </tbody>
               </table>
             </div>
-            <p>
-              {evaluated.length} {evaluated.length === 1 ? "rivi" : "riviä"} ·{" "}
-              {errors.length} virheellistä ·{" "}
-              {dups.length} mahdollista duplikaattia · {accepted.length}{" "}
-              tuotavaa.
-            </p>
+            <div className="import-summary" role="status" aria-label="CSV-tuonnin yhteenveto"><StatusBadge>{evaluated.length} {evaluated.length === 1 ? "rivi" : "riviä"}</StatusBadge><StatusBadge tone={errors.length ? "warning" : "neutral"}>{errors.length} {errors.length === 1 ? "virhe" : "virhettä"}</StatusBadge><StatusBadge tone={dups.length ? "warning" : "neutral"}>{dups.length} {dups.length === 1 ? "mahdollinen duplikaatti" : "mahdollista duplikaattia"}</StatusBadge><StatusBadge tone="positive">{accepted.length} tuotavaa</StatusBadge></div>
             {errors.slice(0, 10).map((r) => (
               <p key={r.line} className="negative">
                 Rivi {r.line}: {r.error}
