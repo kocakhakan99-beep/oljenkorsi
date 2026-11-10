@@ -33,3 +33,7 @@ Kaikkien neljän esimerkkitalouden tulot, menot ja kategoriabudjetit kattavat ki
 ### Yhteenveto ja budjetin UX 10.11.2026
 
 Otettiin käyttöön yhteiset mittarikortit, tilamerkit, budjetin käyttöastepalkki ja avattava lisätieto. Yhteenvedossa näkyvät ensin tulot, menot ja säästöaste; kulutuksen erittely ja suunnitelman siirrot avautuvat pyynnöstä. Budjettitaulukon ohjerajalaskenta siirtyi kategoriakorttiin ja pitkä toteumaselitys avattavaksi. Yhteenvedon budjettikäyttöaste käyttää nyt samaa kategoriatoteumaa kuin budjetti, myös oman kokonaistoteuman korjauksen kanssa. Yli sadan prosentin toteuma säilyy tekstinä, ja kategoriakohtainen ohjerajaylitys nimetään erikseen. 83 yksikkötestiä ja 64 selainvarmennusta läpäisivät.
+
+### Raportit ja varallisuuslistat 10.11.2026
+
+Yhteiset kuvaketoiminnot talouslistoihin ja kategoriakorttiin; saavutettavat nimet, näppäimistökäyttö ja poiston vahvistus säilyvät. Omaisuuden, velkojen ja sijoitusten pääluvut ja manuaalisuus näkyvät lyhyessä yhteenvetokaistassa. Sijoitusrivillä näkyy hankinta-arvo kategorian toiston sijasta ja tavoiterivi näyttää vain etenemisen sekä aika-arvion. Raportin tietokortti erottaa pääsumman ja tietuemäärän sekä budjetin kolme vertailulukua. Pitkät laskentaselitteet avautuvat tarvittaessa, ja omat toteumat, nykytilan luonne ja FIRE-skenaarion rajaus pysyvät näkyvinä.

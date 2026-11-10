@@ -1,4 +1,4 @@
-import { MetricCard, StatusBadge, BudgetUsage, ContextDetails } from "./components/summary";
+import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions } from "./components/summary";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -4551,33 +4551,9 @@ function App() {
                       </select>
                     </label>
                   </div>
-                  {page === "investments" && (
-                    <p className="muted">
-                      Sijoitushinnat syötetään käsin euroina. Sijoituksia ei
-                      tule kirjata uudelleen omaisuuteen. Salkun arvo{" "}
-                      {euro(m.investments)}; hankinta-arvo{" "}
-                      {euro(
-                        sum(
-                          s.investments.map((e) =>
-                            Math.round(e.purchasePrice * e.quantity),
-                          ),
-                        ),
-                      )}
-                      .
-                    </p>
-                  )}
-                  {page === "assets" && (
-                    <p className="muted">
-                      Nykyarvo on käyttäjän syöttämä arvio. Nettovarallisuudessa
-                      huomioidaan omistusosuus.
-                    </p>
-                  )}
-                  {page === "liabilities" && (
-                    <p className="muted">
-                      Saldo on manuaalinen. Kuukausierä ei luo automaattisesti
-                      menotapahtumaa; kirjaa maksut erikseen.
-                    </p>
-                  )}
+                  {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Manuaaliset EUR-hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
+                  {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Manuaaliset nykyarvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on koko omaisuuserän arvio. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
+                  {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo automaattisesti menotapahtumaa eikä vähennä velan saldoa. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
                     <div className="table-wrap mobile-entry-table">
                       <table className="entry-table" role="table">
@@ -4595,7 +4571,7 @@ function App() {
                       <th role="columnheader">
                         {page === "incomes" || page === "expenses"
                           ? "Toistuvuus / kuukauden tila"
-                          : "Lisätiedot"}
+                          : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"}
                       </th>
                             <th role="columnheader">Toiminnot</th>
                           </tr>
@@ -4657,7 +4633,7 @@ function App() {
                                   {euro(e.amount)}
                                   {page === "investments" && (
                                     <small>
-                                      {e.quantity} kpl · arvo{" "}
+                                      {new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(e.quantity)} kpl · arvo{" "}
                                       {euro(Math.round(e.amount * e.quantity))}
                                     </small>
                                   )}
@@ -4686,7 +4662,7 @@ function App() {
                                   data-label={
                                     page === "incomes" || page === "expenses"
                                       ? "Toistuvuus / kuukauden tila"
-                                      : "Lisätiedot"
+                                      : page === "investments" ? "Hankinta-arvo" : "Lisätiedot"
                                   }
                                 >
                                   {page === "incomes" || page === "expenses" ? (
@@ -4713,36 +4689,22 @@ function App() {
                                       )}
                                     </>
                                   ) : page === "assets" ? (
-                                    `${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
+                                    <div className="entry-statuses"><StatusBadge>{percentText(e.ownership)} %</StatusBadge><StatusBadge>{e.liquid ? "Likvidi" : "Ei likvidi"}</StatusBadge></div>
                                   ) : page === "liabilities" ? (
-                                    `${e.rate} % · erä ${euro(e.payment)}${e.linkedAssetId ? ` · ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "Linkitetty omaisuus"}` : " · Ei omaisuuslinkkiä"}`
+                                    <div className="entry-statuses"><StatusBadge>{percentText(e.rate)} %</StatusBadge><span>{euro(e.payment)}/kk</span><StatusBadge>{e.linkedAssetId ? s.assets.find(asset => asset.id === e.linkedAssetId)?.name || "Linkitetty omaisuus" : "Ei omaisuuslinkkiä"}</StatusBadge></div>
                                   ) : page === "goals" ? (
                                     <Goal
                                       e={e}
                                       euro={euro}
                                       privateMode={s.settings.private}
+                                      compact
                                     />
                                   ) : (
-                                    e.category
+                                    euro(Math.round(e.purchasePrice * e.quantity))
                                   )}
                                 </td>
                                 <td role="cell" data-label="Toiminnot">
-                                  <div className="row-actions">
-                                    <button
-                                      aria-label={"Muokkaa " + e.name}
-                                      onClick={() =>
-                                        setEdit({ kind: page as Kind, item: e })
-                                      }
-                                    >
-                                      Muokkaa
-                                    </button>
-                                    <button
-                                      aria-label={"Poista " + e.name}
-                                      onClick={() => remove(page as Kind, e.id)}
-                                    >
-                                      Poista
-                                    </button>
-                                  </div>
+                                  <RowActions name={e.name} onEdit={() => setEdit({ kind: page as Kind, item: e })} onDelete={() => remove(page as Kind, e.id)} />
                                 </td>
                               </tr>
                               <tr
@@ -4776,9 +4738,9 @@ function App() {
                                     )}
                                     <span>
                                       {page === "assets"
-                                        ? `Omistus ${e.ownership} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
+                                        ? `Omistus ${percentText(e.ownership)} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
                                         : page === "liabilities"
-                                          ? `Korko ${e.rate} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
+                                          ? `Korko ${percentText(e.rate)} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
                                           : page === "incomes" ||
                                               page === "expenses"
                                             ? "Tila perustuu päivämäärään, ei pankkivarmennukseen"
@@ -5025,10 +4987,8 @@ function App() {
                 {(reportView === "wealth" || reportView === "debt") && (
                   <div className="report-snapshot-context">
                     <span className="eyebrow">NYKYTILANNE</span>
-                    <span>
-                      Näkymä perustuu nykyisiin saldotietoihin. Aikaväliä ei voi
-                      valita, koska aiempia arvostuksia ei tallenneta.
-                    </span>
+                    <StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge>Ei arvostushistoriaa</StatusBadge>
+                    <ContextDetails title="Miksi ei aikaväliä?"><p>Näkymä perustuu nykyisiin saldotietoihin. Aikaväliä ei voi valita, koska aiempia arvostuksia ei tallenneta.</p></ContextDetails>
                   </div>
                 )}
                 {reportFormat === "table" && (
@@ -5156,7 +5116,7 @@ function App() {
                               <span className="report-kpi-copy">
                                 <small>{label}</small>
                                 <strong>{value}</strong>
-                                <small>{note}</small>
+                                {metric === "expense" && <small>{note}</small>}
                               </span>
                               <ArrowRight
                                 className="report-kpi-arrow"
@@ -5166,11 +5126,8 @@ function App() {
                             </button>
                           ))}
                         </div>
-                        <p className="report-period-note">
-                          Säästöaste lasketaan kokonaistuloista ja
-                          kulutusmenoista, ei siirroista. Kirjausten puuttuminen
-                          ei tarkoita, että menoja ei olisi ollut.
-                        </p>
+                        <StatusBadge>Kirjaukset eivät yksin varmista kattavuutta</StatusBadge>
+                        <ContextDetails title="Miten raportin luvut lasketaan?"><p>Tulot ja menot ovat toteutuneiksi laskettuja kirjauksia. Nettokassavirta on tulot miinus kaikki menot, mukaan lukien siirrot. Säästöaste lasketaan kokonaistuloista ja kulutusmenoista, ei siirroista. Kirjausten puuttuminen ei tarkoita, että menoja ei olisi ollut.</p></ContextDetails>
                       </section>
                     )}
                     <div className="report-chart-controls">
@@ -6549,11 +6506,8 @@ function App() {
                         </p>
                       )}
                     </div>
-                    <p className="muted">
-                      Tämä karkea laskelma jättää pois verot, inflaation,
-                      kulujen muutokset, sijoitustuotot ja nostojen ajoituksen.
-                      Säästöaste on kuvaus kirjatuista tiedoista, ei ennuste.
-                    </p>
+                    <StatusBadge tone="warning">Skenaario, ei ennuste</StatusBadge>
+                    <ContextDetails title="FIRE-laskelman rajaukset"><p>Tämä karkea laskelma jättää pois verot, inflaation, kulujen muutokset, sijoitustuotot ja nostojen ajoituksen. Säästöaste on kuvaus kirjatuista tiedoista, ei ennuste.</p></ContextDetails>
                   </section>
                 )}
                 {selectedReport && (
@@ -6586,27 +6540,16 @@ function App() {
                         Sulje
                       </button>
                     </div>
-                    <p>
-                      <strong
-                        className={selectedReportTotal < 0 ? "negative" : ""}
-                      >
-                        {euro(selectedReportTotal)}
-                      </strong>{" "}
-                      · {selectedReportEntries.length} tietuetta
-                    </p>
+                    <div className="report-detail-total"><strong className={selectedReportTotal < 0 ? "negative" : ""}>{euro(selectedReportTotal)}</strong><StatusBadge>{selectedReportEntries.length} tietuetta</StatusBadge></div>
                     {selectedReport.type === "budget" && (
                       <>
-                        <p className="muted">
-                          Suunnitelma {euro(selectedReport.planned)} ·
-                          budjetoitujen kategorioiden toteuma{" "}
-                          {euro(selectedReport.actual)} · budjetoimattomat kulut{" "}
-                          {euro(selectedBudgetSummary?.unbudgetedActual || 0)}.{" "}
-                          {selectedReport.manualCategories.length
-                            ? `Käsin syötetty toteuma korvaa kirjaukset kategorioissa ${selectedReport.manualCategories.join(", ")}. `
-                            : "Toteuma lasketaan kirjatuista kulutusmenoista. "}
-                          Alla näkyvät budjetoitujen kategorioiden toteutuneet
-                          kulutustapahtumat.
-                        </p>
+                        <div className="stats report-detail-metrics">
+                          <MetricCard label="Suunnitelma" value={euro(selectedReport.planned)} />
+                          <MetricCard label="Toteuma budjetoiduissa" value={euro(selectedReport.actual)} />
+                          <MetricCard label="Ilman budjettia" value={euro(selectedBudgetSummary?.unbudgetedActual || 0)} />
+                        </div>
+                        {selectedReport.manualCategories.length ? <p className="ux-status-note"><StatusBadge tone="warning">Oma kokonaistoteuma</StatusBadge> Käsin syötetty toteuma korvaa kirjaukset kategorioissa {selectedReport.manualCategories.join(", ")}.</p> : <StatusBadge>Toteuma kirjauksista</StatusBadge>}
+                        <ContextDetails title="Mitä tietokortin kirjaukset sisältävät?"><p>Alla näkyvät budjetoitujen kategorioiden toteutuneet kulutustapahtumat. Mahdollinen oma kokonaistoteuma korvaa budjettivertailun luvun, ei yksittäisiä maksuja tai kassavirtaa.</p></ContextDetails>
                         {!!selectedBudgetSummary?.categories.some(
                           (category) =>
                             category.planned <= 0 && category.actual > 0,
@@ -7020,9 +6963,9 @@ function App() {
             {events.length ? <ul className="budget-event-list" aria-label={`${category}, kuukauden menot`}>
               {events.map(({ item, date, amount, status }) => <li key={`${item.id}-${date}`}>
                 <ReceiptText size={20} aria-hidden="true" />
-                <div className="budget-event-info"><strong>{item.name}</strong><small>{date.split("-").reverse().join(".")} · {entryStatusName(status)} · {recNames[item.recurrence]} · {expenseTypeName(expenseType(item))}</small></div>
+                <div className="budget-event-info"><strong>{item.name}</strong><small>{date.split("-").reverse().join(".")} · {entryStatusName(status)}{item.recurrence !== "once" ? ` · ${recNames[item.recurrence]}` : ""}{expenseType(item) !== "consumption" ? ` · ${expenseTypeName(expenseType(item))}` : ""}</small></div>
                 <strong>{euro(amount)}</strong>
-                <button aria-label={`Muokkaa menoa ${item.name}`} onClick={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }}>Muokkaa</button>
+                <RowActions name={item.name} editLabel={`Muokkaa menoa ${item.name}`} onEdit={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }} />
               </li>)}
             </ul> : <p className="budget-category-empty">Tässä kategoriassa ei ole tapahtumia valitussa kuussa. Lisää ensimmäinen meno yllä olevista painikkeista.</p>}
             <details className="budget-actual-adjustment"><summary>Kokonaistoteuman korjaus (lisävalinta)</summary>
@@ -7325,13 +7268,16 @@ function Goal({
   e,
   euro,
   privateMode,
+  compact = false,
 }: {
   e: Entry;
   euro: (n: number) => string;
   privateMode: boolean;
+  compact?: boolean;
 }) {
   let months = goalMonths(e),
     progress = e.target ? Math.min(100, (e.amount / e.target) * 100) : 100;
+  if (compact) return <div className="goal goal-compact"><span>{privateMode ? "••• %" : `${percentText(progress)} %`}</span><progress value={progress} max={100} aria-label={`${e.name} eteneminen`} /><small>{months === null ? "Aseta kuukausisäästö" : months === 0 ? "Saavutettu" : `Arvio ${months} kk · ilman tuottoa`}</small></div>;
   return (
     <div className="goal">
       <div>
@@ -7339,7 +7285,7 @@ function Goal({
         <span>
           {privateMode
             ? "••• %"
-            : progress.toLocaleString("fi-FI", { maximumFractionDigits: 0 }) +
+            : percentText(progress) +
               " %"}
         </span>
       </div>
