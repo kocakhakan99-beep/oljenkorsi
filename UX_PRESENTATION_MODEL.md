@@ -95,3 +95,11 @@ Budjetin poikkeamia ei nimetä toistuvasti ylityksiksi: näkyvä erotus on etume
 Tulojen ja menojen Tapahtuma-sarakkeessa on kaksi yhteistä kuvaketta: toistuvuus ja valitun kuukauden tila. Kiertonuolen yhteydessä oleva rytmimerkintä erottaa viikko-, kuukausi- ja vuosirytmit; kertatapahtumalla on oma kalenterikuvake. Tilat käyttävät eri symboleja: toteutunut valintamerkkiä, suunniteltu kelloa, ohitettu ohitusmerkkiä, eri tiloja sisältävä kuukausi katkoviivaympyrää ja tapahtumaton kuukausi suljettua kalenteria. Keskeytetty sarja näyttää lisäksi taukomerkin.
 
 Väri täydentää symbolia. Koko selite avautuu napauttamalla tai Enterillä/välilyönnillä ja on myös työkaluvihjeessä sekä saavutettavassa nimessä. Painallusalue on vähintään 44 × 44 px. Suljettuna selite ei lisää rivin korkeutta. Tarkat päivät ja tapahtumakohtaiset korjaukset säilyvät rivin lisätiedoissa.
+
+## Sama rivi, katseluikkuna ja väljempi budjetti 10.11.2026
+
+Kuuden talouslistan nuoli kasvattaa itse riviä: lisätiedot kuuluvat samaan taulukkoriviin ja puhelinkorttiin. Erillistä lisätietokorttia tai toista taulukkoriviä ei luoda. Suljetun rivin perustiedot säilyvät. Tulojen ja menojen tapahtumakohtaiset summa-/tilakorjaukset ovat edelleen rivin sisällä.
+
+Yhteinen toimintojärjestys on katselu (silmä), muokkaus (kynä), poisto (roskakori). Katselu näyttää tallennetut tiedot ja tietotyypin tarkennukset ilman syöttökenttiä. Sen alareunasta pääsee samaan muokkaukseen tai vahvistettavaan poistoon; poiston kumoaminen ja omaisuuden velkalinkkisuoja säilyvät. Katselu ei muuta tallennettua taloutta. Sama ikkuna avautuu budjettikategorian menoluettelosta, pikahausta ja raportin tietueen nimestä. Raportin oma koontikortti säilyy vertailua varten.
+
+Budjetin kategoriariveillä otsikon, lisäyksen ja suosituksen välissä on enemmän tilaa. Työpöydällä sarakkeiden sisämarginaaleja kasvatettiin, puhelimella kategoria muodostaa oman otsikkorivin ja neljä lukukenttää väljän kahden sarakkeen ryhmän. Sisältö, laskenta ja muokattavat summat säilyvät.

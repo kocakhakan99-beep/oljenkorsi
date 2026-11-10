@@ -55,3 +55,5 @@ Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelu
 Toteutettu 10.11.2026: kuuden talouslistan erilliset Nimi/Kategoria-sarakkeet, matalammat suljetut rivit ja puhelimen pitkien nimien tilavaraus. Budjetin poikkeamatekstit korvattiin etumerkillisillä, saavutettavasti selitetyillä erotuksilla. Ks. [UX-malli](UX_PRESENTATION_MODEL.md) ja [testaus](TESTING.md).
 
 Toteutettu 10.11.2026: tulojen ja menojen kahdeksan toistuvuuden sekä tapahtumatilojen yhteinen kuvakesarja. Kosketuksella ja näppäimistöllä avattavat selitteet, 44 px painallusalueet ja erilliset tumman tilan värit; laskenta ja tapahtumakorjaukset säilyvät.
+
+Toteutettu 10.11.2026: rivin sisäinen lisätietojen laajennus, yhteinen katselu/muokkaus/poisto kuudessa talouslistassa ja katselupolku budjetista, pikahausta sekä raportin tietueesta. Budjetin kategoriarivien väljyys ja mobiiliasettelu viimeistelty.

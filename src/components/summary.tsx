@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CircleHelp, Pencil, Trash2 } from "lucide-react";
+import { CircleHelp, Eye, Pencil, Trash2 } from "lucide-react";
 
 /** A value stays primary; a method is available without repeating it underneath. */
 export function MetricCard({ label, value, note, children }: { label: string; value: string; note?: string; children?: ReactNode }) {
@@ -26,9 +26,10 @@ export function BudgetUsage({ actual, budget, label }: { actual: number; budget:
 }
 
 /** Same accessible controls in lists and detail cards; deletion keeps its caller's protection. */
-export function RowActions({ name, onEdit, onDelete, editLabel }: { name: string; onEdit: () => void; onDelete?: () => void; editLabel?: string }) {
+export function RowActions({ name, onEdit, onDelete, editLabel, onOpen }: { name: string; onOpen?: () => void; onEdit: () => void; onDelete?: () => void; editLabel?: string }) {
   const editName = editLabel || `Muokkaa ${name}`;
   return <div className="row-actions unified-row-actions">
+    {onOpen && <button type="button" aria-label={`Avaa ${name}`} title={`Avaa ${name}`} onClick={onOpen}><Eye size={18} aria-hidden="true" /></button>}
     <button type="button" aria-label={editName} title={editName} onClick={onEdit}><Pencil size={18} aria-hidden="true" /></button>
     {onDelete && <button type="button" aria-label={`Poista ${name}`} title={`Poista ${name}`} onClick={onDelete}><Trash2 size={18} aria-hidden="true" /></button>}
   </div>;
