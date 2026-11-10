@@ -5,7 +5,9 @@
 - Esimerkkien rakenteista erotettiin kaksi sääntöä: S-ryhmän tuoterivit alkavat tähtimerkillä; K-Citymarketin tuoterivit alkavat ostotapahtuman otsikon jälkeen ja päättyvät loppusummaa edeltävään erotinviivaan. Jos K-pohjasta puuttuu erotinviiva, `YHTEENSÄ` rajaa alueen. Otsikon ja tuotealueen ulkopuoliset summat eivät ole tuoterivejä.
 - Korjattiin K-kuitin aiempi liian yleinen poiminta, joka käsitteli ostorajan sisällä minkä tahansa summalla päättyvän rivin tuotteena. Uudet regressiotestit tarkistavat myös K-pohjan ilman erotinviivaa.
 - Kaikki yhdeksän alkuperäistä PDF:ää ajettiin sovelluksessa: kahdeksan eri ostosta poimittiin oikeine rivimäärineen ja loppusummineen; Korso-kuitin eri tiedostoversio estettiin kaksoistuontina. Yhtään PDF:ää tai henkilö-/maksutietoa ei tallennettu repositorioon.
-- 168 yksikkötestiä 17 tiedostossa, TypeScript, ESLint ja tuotantobuild läpäisivät. Uudet regressiotestit varmistavat, ettei K-kuitin otsikon tai tuotealueen jälkeinen summa päädy ostoriviksi ja että loppusummarivi toimii erotinviivan puuttuessa.
+- 153 yksikkötestiä 16 tiedostossa, TypeScript ja ESLint läpäisivät. Aiemmin tehty tuotantobuild läpäisi. Uudet regressiotestit varmistavat, ettei K-kuitin otsikon tai tuotealueen jälkeinen summa päädy ostoriviksi ja että loppusummarivi toimii erotinviivan puuttuessa.
+- Fiktiivinen 14 PDF:n näytekokoelma, generaattori ja niiden parseritestit poistettiin käyttäjän pyynnöstä. Pudotustesti muodostaa väliaikaiset PDF:t oikeiden kuittien anonymisoiduista testifixtuureista. Alla olevat aiempien ajojen tulokset ovat historiaa; poistettuja näyte-PDF:iä ei enää toimiteta eikä käytetä kuittiformaattien kattavuusväitteenä.
+- Kaikki 14 PDF-pudotuksen ja skannerin Chromium-varmennusta läpäisivät, kun testin väliaikaiset PDF:t tuotettiin anonymisoiduista Alepa- ja Prisma-fixtuureista.
 
 ## Kuittiskannauksen pääpaikka ja PDF-pudotus 10.11.2026
 
@@ -17,12 +19,12 @@
 - Testit käyttävät HTML5 DataTransfer -tiedostoja Chromiumissa localhostissa. Fyysisen käyttöjärjestelmän raahausta, kaikkia selaimia, file://-pysyvyyttä tai ruudunlukijan toimintaa ei tällä osoiteta. Tiliotteiden tunnistusta tai parseria ei lisätty.
 
 
-## Fiktiivinen PDF-kuittikokoelma 10.11.2026
+## Aiempi fiktiivinen PDF-kuittikokoelma — poistettu 10.11.2026
 
 - Luotiin 14 satunnaistettua, selvästi fiktiiviseksi merkittyä PDF:ää: kaksi kullekin tunnistettavalle kauppanimelle (Prisma, S-market, Alepa, Sale, K-Citymarket, K-Supermarket, K-Market). 29–37 riviä/kuitti, loppusummat 90,64–127,42 €. Laskenta tehdään kokonaislukusenteillä ja painotuotteissa Decimal-pyöristyksellä.
 - TypeScript, ESLint ja 164 yksikkötestiä 16 tiedostossa läpäisivät. Uudet testit vertaavat lopullisesta PDF:stä poimittua tekstiä erikseen luotuun ostoskorin erittelyyn: nimet, netto-/bruttosummat, alennukset, määrät, yksiköt ja loppusummat. Fontit on upotettu ja ositettu; ZIP on noin 302 kt.
 - Kaikki 14 lopullista PDF:ää varmennettiin sovelluksen PDF.js-lukijalla selaimessa. Jokainen tuotenimi ja nettosumma sekä kokonaisuus vastasivat generoitua ostoskoria. Luonnokset eivät muuttaneet tallennettua taloutta. Ei JavaScript-/konsolivirheitä tai ulkoisia sovelluspyyntöjä. Ensimmäinen Prisma-PDF tarkistettiin myös renderöidystä kuvasta.
-- Sovelluksen ajonaikaista koodia tai tuotantobuildia ei muutettu tässä aineistotyössä. Synteettinen aineisto ei kasvata oikeiden ostosten havaintomäärää eikä osoita Salen/K-marketin/K-supermarketin aidon formaatin kattavuutta. [Aineisto ja lataus](examples/receipts/README.md).
+- Sovelluksen ajonaikaista koodia tai tuotantobuildia ei muutettu tässä aineistotyössä. Synteettinen aineisto ei kasvattanut oikeiden ostosten havaintomäärää eikä osoittanut Salen/K-marketin/K-supermarketin aidon formaatin kattavuutta. Kokoelma ja sen generaattori on sittemmin poistettu; tämä osio säilyttää vain aiemman testauksen historian.
 
 
 ## S-market, Alepa ja kuittiparserin v2 10.11.2026

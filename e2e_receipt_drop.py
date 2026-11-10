@@ -1,6 +1,7 @@
 """Exercise the single expense scanner, shortcuts and window-wide PDF dropping."""
 from pathlib import Path
 import base64, json, os
+import fitz
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).parent
 checks=[]
@@ -10,8 +11,17 @@ def nav(page,name):
     page.get_by_role('navigation').get_by_role('button',name=name,exact=True).click()
 def data(page,files):
     return page.evaluate_handle('files=>{const d=new DataTransfer();for(const f of files){const b=Uint8Array.from(atob(f.bytes),c=>c.charCodeAt(0));d.items.add(new File([b],f.name,{type:f.type||"application/pdf"}));}return d}',files)
-def pdf_file(name='alepa-1.pdf'):
-    return {'name':name,'bytes':base64.b64encode((ROOT/'examples/receipts'/name).read_bytes()).decode()}
+def pdf_file(fixture='receipt-alepa',name='alepa-fixture.pdf'):
+    """Build a temporary PDF from an anonymized, user-supplied receipt fixture."""
+    source=json.loads((ROOT/'src/test/fixtures'/f'{fixture}.json').read_text())
+    doc=fitz.open()
+    for source_page in source['pages']:
+        lines=source_page['lines'];page=doc.new_page(width=440,height=max(180,36+len(lines)*12))
+        page.insert_font(fontname='FixtureMono',fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
+        for i,line in enumerate(lines):
+            if line.strip():page.insert_text((18,28+i*12),line,fontname='FixtureMono',fontsize=8)
+    result=base64.b64encode(doc.tobytes()).decode();doc.close()
+    return {'name':name,'bytes':result,'type':'application/pdf'}
 def drop(page,target,dt):
     page.dispatch_event(target,'dragenter',{'dataTransfer':dt});page.dispatch_event(target,'dragover',{'dataTransfer':dt});page.dispatch_event(target,'drop',{'dataTransfer':dt})
 with sync_playwright() as p:
@@ -44,7 +54,7 @@ with sync_playwright() as p:
         expect(page.get_by_role('heading',name='Menot',exact=True)).to_be_visible()
         expect(page.get_by_role('heading',name='Tarkista kuitti',exact=True)).to_be_visible(timeout=30000)
         expect(page.locator('.receipt-review [role=alert]')).to_have_count(0)
-        assert len(page.locator('.receipt-product').all())==29
+        assert len(page.locator('.receipt-product').all())==2
         assert state()==original
         page.get_by_role('button',name='Hylkää luonnos',exact=True).click()
         mark(f'PDF drop anywhere in {section} opens and parses in Expenses without financial writes')
@@ -53,18 +63,18 @@ with sync_playwright() as p:
     first=page.locator('.receipt-product-category select').first;first.select_option('Muu meno')
     page.get_by_role('button',name='Sulje kuittiskannaus',exact=True).click();nav(page,'Budjetti')
     page.get_by_role('button',name='Skannaa kuitti',exact=True).click();expect(first).to_have_value('Muu meno')
-    nav(page,'Budjetti');page.once('dialog',lambda d:d.dismiss());drop(page,'main h1',data(page,[pdf_file('prisma-1.pdf')]))
+    nav(page,'Budjetti');page.once('dialog',lambda d:d.dismiss());drop(page,'main h1',data(page,[pdf_file('receipt-jan','prisma-fixture.pdf')]))
     expect(page.get_by_role('heading',name='Budjetti',exact=True)).to_be_visible()
     page.get_by_role('button',name='Skannaa kuitti',exact=True).click();expect(first).to_have_value('Muu meno')
     mark('Draft and classifications survive closing/navigation; rejecting replacement keeps the original')
-    page.once('dialog',lambda d:d.accept());drop(page,'main h1',data(page,[pdf_file('prisma-1.pdf')]))
-    expect(page.locator('.receipt-product')).to_have_count(30,timeout=30000)
+    page.once('dialog',lambda d:d.accept());drop(page,'main h1',data(page,[pdf_file('receipt-jan','prisma-fixture.pdf')]))
+    expect(page.locator('.receipt-product')).to_have_count(22,timeout=30000)
     mark('Approved replacement parses the new PDF')
     nav(page,'Asetukset')
-    for files,message in [([{'name':'image.png','bytes':base64.b64encode(b'image').decode(),'type':'image/png'}],'vain PDF'),([pdf_file(),pdf_file('prisma-1.pdf')],'yksi PDF')]:
+    for files,message in [([{'name':'image.png','bytes':base64.b64encode(b'image').decode(),'type':'image/png'}],'vain PDF'),([pdf_file(),pdf_file('receipt-jan','prisma-fixture.pdf')],'yksi PDF')]:
         drop(page,'main h1',data(page,files));expect(page.locator('.alert[role=status]')).to_contain_text(message)
         expect(page.get_by_role('heading',name='Asetukset',exact=True)).to_be_visible();assert state()==original
-    nav(page,'Menot');page.get_by_role('button',name='Skannaa kuitti',exact=True).click();expect(page.locator('.receipt-product')).to_have_count(30)
+    nav(page,'Menot');page.get_by_role('button',name='Skannaa kuitti',exact=True).click();expect(page.locator('.receipt-product')).to_have_count(22)
     mark('Non-PDF and multi-file drops are rejected before navigation and do not erase the draft')
     page.get_by_role('button',name='Hylkää luonnos',exact=True).click()
     page.get_by_role('button',name='+ Lisää kertaluonteinen meno',exact=True).click()
@@ -78,8 +88,8 @@ with sync_playwright() as p:
     page.get_by_role('button',name='Kuittiskannaus menoissa',exact=True).click();expect(page.get_by_role('heading',name='Menot',exact=True)).to_be_visible()
     mark('Former import location links to Expenses without a second scanner')
     with page.expect_file_chooser() as chooser: page.get_by_role('button',name='Valitse PDF',exact=True).click()
-    chooser.value.set_files(ROOT/'examples/receipts/alepa-1.pdf')
-    expect(page.locator('.receipt-product')).to_have_count(29,timeout=30000)
+    chooser.value.set_files({'name':'alepa-fixture.pdf','mimeType':'application/pdf','buffer':base64.b64decode(pdf_file()['bytes'])})
+    expect(page.locator('.receipt-product')).to_have_count(2,timeout=30000)
     page.get_by_role('button',name='Hylkää luonnos',exact=True).click()
     mark('Accessible PDF button opens the native file chooser and uses the same parser')
     nav(page,'Asetukset');page.get_by_label('Väritila',exact=True).select_option('dark');nav(page,'Menot')

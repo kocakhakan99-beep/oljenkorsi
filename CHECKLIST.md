@@ -109,7 +109,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - 🟡 CSV ei ole täydellinen varmuuskopio: linkit, arvomallit ja koko tila siirretään JSON:lla. Kaikkia pankkiformaatteja ei tunnisteta.
 - 📋 PDF-laskujen ja sopimusten tunnistus: summat, eräpäivät, kuukausierät, korot ja tarkistettava luonnos.
 - ✅ Testattujen Prisma-/S-market-/Alepa-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
-- ✅ Ladattava fiktiivinen PDF-kuittikokoelma: kaksi kullekin seitsemälle tunnistettavalle kauppanimelle, 14 kuittia yhteensä. [ZIP ja yksittäiset PDF:t](examples/receipts/README.md).
+- ✅ Parserin rakenne varmistetaan anonymisoiduilla, käyttäjän toimittamista oikeista kuiteista tehdyillä fixtuureilla. Ladattavat fiktiiviset kuitit poistettu; niitä ei käytetä kauppojen tosiasiallisen kuittirakenteen osoittamiseen.
 - ✅ Parserin v2: tähtikoristellut loppusummat, määrän/yksikköhinnan ja saatavilla olevien ALV-/korttisummien ristiintarkistus, lähderivin näyttö virheessä.
 - ✅ Kuittiryhmät, tiedosto-/sisältötunnisteella tehtävä kaksoistuonnin esto, JSON-erittely ja välitön kumoaminen.
 - ✅ Täsmäytys samansuuruiseen saman päivän kerta- tai toistuvaan maksuun; sarjasta korvataan vain yksi esiintymä.
@@ -159,7 +159,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 166 yksikkötestiä, yleiset Chromium-selainvarmennukset sekä kuitti-, pudotus- ja fiktiivisten PDF:ien tarkistukset.
+- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 153 yksikkötestiä, yleiset Chromium-selainvarmennukset sekä alkuperäisten kuittien ja PDF-pudotuksen tarkistukset.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.
