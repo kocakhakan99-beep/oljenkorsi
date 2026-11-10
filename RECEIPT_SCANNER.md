@@ -6,7 +6,7 @@
 
 Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella yhden PDF-kuitin voi myös pudottaa mihin tahansa Menot-, Budjetti- tai Asetukset-näkymässä: sovellus siirtyy menoihin, avaa skannerin ja käynnistää poiminnan. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
-1. Valitse Prisman, S-marketin, Alepan tai K-kaupan tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
+1. Valitse Prisman, S-marketin, Alepan tai K-Citymarketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
 3. Vaihda tarvittaessa tuotteen kategoria. Tuntematon tuote jää valittavaksi. **Vain luokittelemattomat**, **Valitse näkyvät** ja kategoriavalinta luokittelevat monta tuotetta kerralla. Valitut valinnaiset oletuskategoriat, kuten Vaatteet, otetaan käyttöön hyväksynnässä.
 4. Jos samalle päivälle löytyy samansuuruinen meno, valitse sama maksu korvattavaksi tai vahvista eri ostos. Toistuvasta sarjasta korvataan vain kuitin päivälle osuva tapahtuma; muut esiintymät säilyvät.
@@ -63,7 +63,7 @@ JSON siirtää ryhmän ja erittelyn. CSV siirtää tavalliset menot, ei kuittiry
 
 ## Testaus
 
-- `src/test/receipt-parser.test.ts`: kolme siivottua tekstifixtureä sekä alennus-, paketti-, painotuote-, tuntematon tuote-, virhe-, palautus- ja ohjetekstikokeet.
+- `src/test/receipt-parser.test.ts` ja `receipt-robustness.test.ts`: käyttäjän toimittamista oikeista kuiteista anonymisoidut tekstifixtuurit, rakenne-, alennus-, paketti-, painotuote-, virhe- ja sivunvaihtovariaatiot.
 - `src/test/receipt-import.test.ts`: kategoriakirjaukset, JSON-yhteensopivuus, kaksoistuonti, täsmäytys kerta-/toistuvaan maksuun, manuaalinen toteuma ja muuttumattoman lähdetilan varmistus.
 - `python e2e_receipts.py`: kehittäjän regressio luo fixtuureistä PDF:t PyMuPDF:llä ja ajaa selaimessa koko polun. Vaatii Python Playwrightin, Chromiumin, PyMuPDF:n ja paikallisen testipalvelimen. `TALOUS_URL` ja `TALOUS_BROWSER` ovat valinnaisia.
 - Samalle komennolle voi antaa kolme vanhaa PDF:ää tai yhdeksän paikallista PDF-polkua järjestyksessä K / Prisma tammikuu / Prisma maaliskuu / S-market Korso / Prisma 2.11. / Prisma 9.11. / Alepa / S-market Koivukylä / Korso-kopio. Ilman argumentteja generoidaan kahdeksan anonymisoidun tekstifixturen PDF:t sekä eri tavalla tallennettu kopio samasta ostoksesta. Alkuperäiset käyttäjän PDF:t tarkistettiin näin; niitä ei lisätä repositorioon. Fixturet eivät sisällä maksukortti- tai jäsenyystietoja.
@@ -98,13 +98,9 @@ Seurattavat asiat erotetaan:
 
 Jatkopolku: lisää edustavia anonymisoituja esimerkkejä, erillinen testijoukko kehitysaineiston ulkopuolelta, OCR omana vaiheena, tarkempi tuotetunnistus ja käyttäjän hallitsema paikallinen luokittelumuisti. Telemetriaa tai kuittien automaattista lähetystä ei lisätä.
 
-## Ladattavat fiktiiviset testikuitit
+## Testiaineiston rajaus
 
-[14 PDF-kuittia ZIP-pakettina](examples/receipts/fiktiiviset-testikuitit.zip) · [PDF:t ja summataulukko](examples/receipts/README.md). Kaksi kuittia jokaiselle tunnistettavalle nimelle: Prisma, S-market, Alepa, Sale, K-Citymarket, K-Supermarket ja K-Market. Ostoskorit on arvottu erikseen, niissä on 29–37 riviä ja loppusummat ovat 90,64–127,42 €. Kaikki tositteet on merkitty fiktiivisiksi.
-
-Tuotteet, määrät, tarjoukset, painotuotteet, pantit ja päiväykset vaihtelevat. Loppusumma syntyy nettotuotteista ilman tasauserää, ALV ja testimaksu täsmäävät. `examples/receipts/manifest.json` sisältää odotetut tuotetiedot ja tekstin valmiista PDF:stä. `python scripts/generate-fictional-receipts.py` arpoo uuden kokoelman; `--replay` käyttää tallennettuja siemeniä. Kehittäjälle tarvitaan PyMuPDF ja skriptissä nimetty paikallinen monospace-fontti.
-
-`src/test/fictional-receipts.test.ts` tarkistaa aineiston laskennan, ja `python e2e_fictional_receipts.py` tarkistaa kaikki PDF:t sovelluksen oikealla PDF-lukijalla selaimessa. Nämä ovat tarkoituksellisesti nykyisen rakenteen mukaisia synteettisiä testejä. Erityisesti Salen, K-marketin ja K-supermarketin oikeiden kuittien kattavuutta ei todisteta generoimalla niille yhteisen S/K-rakenteen mukaista kuittia.
+Parserin testit käyttävät vain oikeista, käyttäjän toimittamista kuiteista anonymisoituja tekstifixtuureja. Ladattava fiktiivinen PDF-kokoelma ja sen testigeneraattori on poistettu: synteettisesti samanmuotoiset kuitit eivät osoita, että kyseisen kauppanimen aidot kuitit toimivat.
 
 ## Yksi pääpaikka ja koko näkymän PDF-pudotus
 
