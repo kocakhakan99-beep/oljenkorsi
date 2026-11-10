@@ -45,3 +45,7 @@ Asetusten demogalleria korvattiin yhteisen valintaikkunan avauksella. Tallennuks
 ### Tiiviit listat ja budjettierot 10.11.2026
 
 Kaikkien kuuden talouslistan nimi ja kuvakkeellinen kategoria erotettiin omiin sarakkeisiin. Suljettuja rivejä madallettiin, tapahtumatietoja tiivistettiin ja pitkien nimien tila korjattiin puhelimella. Budjetin ryhmä-, kategoria- ja rahoituserot esitetään lyhyinä etumerkillisinä lukuina: vihreä plus on suotuisa, punainen miinus vaje. Vertailun saavutettava selite ja avattavat lisätiedot säilyvät. 83 yksikkötestiä ja 69 Chromium-selainvarmennusta läpäisivät.
+
+### Tapahtumakuvakkeet 10.11.2026
+
+Tulojen ja menojen toistuvuus sekä kuukauden tapahtumatila esitetään yhtenäisillä kuvakkeilla. Kahdeksan toistuvuusrytmiä erotetaan pienillä rytmimerkinnöillä, kertatapahtuma omalla kalenterillaan. Tilasymbolit erottavat toteutuneen, suunnitellun, ohitetun, eri tiloja sisältävän ja tapahtumattoman kuukauden sekä keskeytetyn sarjan. Selite avautuu hiirellä, kosketuksella ja näppäimistöllä. Tapahtumakorjauksen perusteella määräytyvä tila nimetään selitteessä erikseen.

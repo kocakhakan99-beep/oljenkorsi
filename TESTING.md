@@ -1,5 +1,13 @@
 # Testausraportti 10.11.2026
 
+## Toistuvuus- ja tilakuvakkeet 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 565 kB; Viten kokohuomautus säilyy.
+- 70 Chromium-selainvarmennusta localhostissa. Toistuvuus vaihdettiin muokkauslomakkeella kaikkien kahdeksan vaihtoehdon läpi ja kunkin rytmimerkintä tarkistettiin. Tuloissa ja menoissa on sama kuvakekomponentti.
+- Toteutunut, suunniteltu, ohitettu, eri tiloja sisältävä ja tapahtumaton kuukausi tarkistettiin sovelluksessa. Toistuvuuden selite aukesi Enterillä ja sulkeutui välilyönnillä; suljettu selite oli piilossa ja painallusalue vähintään 44 × 44 px.
+- Suljettu esimerkkimenorivi säilyi enintään 56 px korkeana. Nykyiset mobiilitarkistukset 320–768 px, pitkät nimet, tapahtumakohtaiset korjaukset, demo- ja raporttipolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjien kuvaketulkintaa ei varmennettu.
+
+
 ## Tiiviit listat ja budjetin erotukset 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 561 kB; Viten kokohuomautus säilyy.

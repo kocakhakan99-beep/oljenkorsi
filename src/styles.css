@@ -5331,3 +5331,21 @@ button.primary,
 @media (max-width: 600px) {
   .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:first-child { padding-right: 112px; }
 }
+
+/* Compact event symbols. Explanations also open by touch and keyboard. */
+.entry-event-summary { gap: 2px 4px; align-items: flex-start; }
+.event-indicator { display: inline-flex; flex-direction: column; max-width: 180px; color: var(--text); }
+.event-indicator > summary { display: flex; align-items: center; justify-content: center; gap: 3px; min-width: 44px; min-height: 44px; padding: 3px 5px; border-radius: 10px; cursor: pointer; list-style: none; }
+.event-indicator > summary::-webkit-details-marker { display: none; }
+.event-indicator > summary:hover, .event-indicator[open] > summary { background: color-mix(in srgb, currentColor 10%, transparent); }
+.event-indicator > summary:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.event-indicator svg { flex: 0 0 20px; width: 20px; height: 20px; }
+.event-rhythm { font-size: 10px; font-weight: 700; white-space: nowrap; }
+.event-indicator-explanation { display: block; padding: 2px 5px 6px; font-size: 11px; line-height: 1.4; color: var(--text); overflow-wrap: anywhere; }
+.event-actual { color: #146c43; }
+.event-planned { color: #245db0; }
+.event-mixed { color: #825410; }
+.event-neutral, .event-recurrence { color: var(--text); }
+[data-mode="dark"] .event-actual { color: #8de5b9; }
+[data-mode="dark"] .event-planned { color: #a5c9ff; }
+[data-mode="dark"] .event-mixed { color: #f4cf83; }

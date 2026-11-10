@@ -1,3 +1,4 @@
+import { RecurrenceIndicator, EventStatusIndicator } from "./components/event-indicators";
 import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions, SignedAmount } from "./components/summary";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
@@ -145,14 +146,17 @@ const entryStatusName = (status: EntryStatus) =>
     : status === "planned"
       ? "Suunniteltu"
       : "Ohitettu";
+const monthEntryState = (item: Entry, month: string) => {
+  const statuses = scheduledOccurrences(item, month).map((date) => occurrenceStatus(item, date));
+  if (!statuses.length) return "none" as const;
+  return statuses.every((status) => status === statuses[0]) ? statuses[0] : "mixed" as const;
+};
 const monthEntryStatus = (item: Entry, month: string) => {
-  const statuses = scheduledOccurrences(item, month).map((date) =>
-    occurrenceStatus(item, date),
-  );
-  if (!statuses.length) return "Ei tapahtumaa tässä kuussa";
-  if (statuses.every((status) => status === statuses[0]))
-    return `Päivämäärän mukaan ${entryStatusName(statuses[0]).toLocaleLowerCase("fi-FI")}`;
-  return "Osittain toteutunut";
+  const status = monthEntryState(item, month);
+  if (status === "none") return "Ei tapahtumaa tässä kuussa";
+  if (status === "mixed") return "Tapahtumilla eri tiloja";
+  const corrected = scheduledOccurrences(item, month).some((date) => item.occurrenceStatuses[date]);
+  return `${corrected ? "Tapahtumakorjauksen mukaan" : "Päivämäärän mukaan"} ${entryStatusName(status).toLocaleLowerCase("fi-FI")}`;
 };
 const expenseTypeName = (type: "consumption" | "saving" | "investment") =>
   type === "consumption"
@@ -4645,9 +4649,9 @@ function App() {
                                 >
                                   {page === "incomes" || page === "expenses" ? (
                                     <div className="entry-event-summary">
-                                      {e.recurrence !== "once" && <span>{recNames[e.recurrence]}</span>}
-                                      <span title={monthEntryStatus(e, month)}><StatusBadge>{monthEntryStatus(e, month).replace("Päivämäärän mukaan ", "").replace("Ei tapahtumaa tässä kuussa", "Ei tässä kuussa")}</StatusBadge></span>
-                                      {!e.active && <StatusBadge>Keskeytetty</StatusBadge>}
+                                      <RecurrenceIndicator recurrence={e.recurrence} label={recNames[e.recurrence]} />
+                                      <EventStatusIndicator status={monthEntryState(e, month)} label={monthEntryStatus(e, month)} />
+                                      {!e.active && <EventStatusIndicator status="paused" label="Sarja keskeytetty" />}
                                       {page === "expenses" && expenseType(e) !== "consumption" && <StatusBadge>{expenseTypeName(expenseType(e))}</StatusBadge>}
                                       {Object.keys(e.occurrenceStatuses).length > 0 && <span title="Tapahtumakohtaiset tilakorjaukset">{Object.keys(e.occurrenceStatuses).length} korjausta</span>}
                                     </div>
