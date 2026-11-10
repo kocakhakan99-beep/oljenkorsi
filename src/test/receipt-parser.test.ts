@@ -25,6 +25,24 @@ it("allocates a K bundle discount and trailing minus exactly", () => {
   expect(d.lines.find(l => l.name.includes("Ristorante"))).toMatchObject({ quantity: 2, net: 550 });
   expect(allocateDiscount(1, [100, 100, 100])).toEqual([1, 0, 0]);
 });
+it("uses K receipt table boundaries so amounts outside the product block are never products", () => {
+  const pages = structuredClone(k.pages);
+  const lines = pages[0].lines;
+  const header = lines.findIndex(line => /K001 M/.test(line));
+  lines.splice(header, 0, "ASIAKASETU 99,99");
+  const total = lines.findIndex(line => /^YHTEENSÄ/.test(line.trim()));
+  lines.splice(total, 0, "KANTA-ASIAKASOSTOT 99,99");
+  const d = parseReceipt(pages);
+  expect(d.issues).toEqual([]);
+  expect(d.total).toBe(3287);
+  expect(d.lines).toHaveLength(15);
+  expect(d.lines.some(line => /99,99/.test(line.name))).toBe(false);
+});
+it("does not guess K product rows when the receipt table delimiters are missing", () => {
+  const pages = structuredClone(k.pages);
+  pages[0].lines = pages[0].lines.filter(line => !/^\s*-{3,}\s*$/.test(line));
+  expect(parseReceipt(pages).issues.some(issue => issue.code === "structure" && issue.blocking)).toBe(true);
+});
 it("preserves weighted quantities and leaves unknown products for manual classification", () => {
   const d = parseReceipt(mar.pages);
   expect(d.lines.find(l => l.name === "KURKKU")).toMatchObject({ quantity: .336, unit: "kg", net: 134 });

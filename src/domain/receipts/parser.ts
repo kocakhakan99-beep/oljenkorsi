@@ -12,6 +12,15 @@ function amountAtEnd(text: string) {
 const merchantPattern = /\b(?:PRISMA|S[ -]MARKET|ALEPA|SALE|K[ -](?:CITYMARKET|SUPERMARKET|MARKET))\b/i;
 const headerPattern = /^\s*\*?\s*K\s*(\d+)\s+M\s*(\d+)\s*\/\s*(\d+)/;
 const plain = (s: string) => s.trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "").trim();
+const isSeparator = (s: ReceiptSource) => /^[-=]{3,}$/.test(s.text.trim());
+const isTotal = (s: ReceiptSource) => /^YHTEENSÄ(?:\s|$)/i.test(plain(s.text));
+function isKProductStart(source: ReceiptSource) {
+  const text = source.text.trim(), semantic = plain(text);
+  if (/^PLUSSA-TASAERÄ\b/i.test(semantic)) return true;
+  if (/^(?:NORM\.|KAMPANJA|PLUSSA-ETU|ALV|VERO|KORTTI|DEBIT|BONUS|YHTEENSÄ)\b/i.test(semantic)) return false;
+  const amount = amountAtEnd(text);
+  return !!amount && /[\p{L}]/u.test(text.slice(0, amount.index));
+}
 function category(name: string): string | null {
   if (/pantti|muovikassi|paperikassi/i.test(name)) return "Päivittäistavara";
   if (/suihkusaip|saippua|silmälasipyyh|pesukinnas|hammastahn|hammasharj|hammaslank|terveysside|nenäliina|wc.paper|shampoo/i.test(name)) return "Hygieniatarvikkeet";
@@ -53,13 +62,37 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
   const issue = (code: string, message: string, blocking = true, source?: ReceiptSource) => { if (draft.issues.length < 199) draft.issues.push({ code, message, blocking, ...(source ? { source } : {}) }); };
   if (chain === "unknown" || header < 0) { issue("unsupported", "Kuitin kauppaa tai rakennetta ei tunnistettu. Tuettuina ovat testatut Prisma-, S-market-, Alepa- ja K-kaupan tekstikuitit."); return receiptDraftSchema.parse(draft); }
   if (!draft.date) issue("date", "Kuitin ostopäivä puuttuu tai on virheellinen.");
-  let started = false, finished = false;
+  // Find the purchase block from receipt structure before looking at any amounts.
+  // K items follow the transaction header and stop at the dashed rule; S receipts
+  // mark product rows and the total with asterisks. Header/footer amounts are not items.
+  const totalSourceIndex = sources.findIndex((s, i) => i > header && isTotal(s));
+  let itemStart = -1, itemEnd = totalSourceIndex >= 0 ? totalSourceIndex : sources.length;
+  const dateRowSet = new Set(dateSources.slice(1));
+  if (chain === "k") {
+    // K-Citymarket's item block starts after the transaction header and ends
+    // at the rule immediately before YHTEENSÄ. The uploaded receipt has no
+    // opening rule, so find its first valid item row within that block.
+    let closingRule = -1;
+    for (let i = itemEnd - 1; i > header; i--) if (isSeparator(sources[i])) { closingRule = i; break; }
+    if (closingRule > header) {
+      itemEnd = closingRule;
+      itemStart = sources.findIndex((s, i) => i > header && i < itemEnd && !dateRowSet.has(s) && isKProductStart(s));
+    }
+  } else {
+    itemStart = sources.findIndex((s, i) => i > header && i < itemEnd && /^\s*\*/.test(s.text) && !isTotal(s));
+  }
+  if (itemStart < 0) {
+    if (totalSourceIndex >= 0) draft.total = amountAtEnd(plain(sources[totalSourceIndex].text))?.cents ?? null;
+    issue("structure", "Kuitin tuotealuetta ei voitu rajata luotettavasti sen rakennerajoista. Tarkista PDF; tallennus estetään.");
+    return receiptDraftSchema.parse(draft);
+  }
+  const finished = totalSourceIndex >= 0;
+  if (totalSourceIndex >= 0) draft.total = amountAtEnd(plain(sources[totalSourceIndex].text))?.cents ?? null;
   let last: ReceiptLine | undefined;
   let kBundle: number[] | null = null;
   let sBundle: ReceiptLine | null = null;
   let sBundleDetails = false;
   const quantityEvidence = new Map<string, { expected: number; source: ReceiptSource }>();
-  let totalSourceIndex = -1;
   let pendingName: ReceiptSource | null = null;
   function add(name: string, net: number, source: ReceiptSource) {
     const kind = net < 0 ? "refund" : /pantti/i.test(name) ? "deposit" : /kassi/i.test(name) ? "bag" : "product";
@@ -69,12 +102,10 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
     if (kBundle) kBundle.push(draft.lines.length - 1);
     return line;
   }
-  const dateRowSet = new Set(dateSources.slice(1));
-  for (const source of sources.slice(header + 1)) {
+  for (const source of sources.slice(itemStart, itemEnd)) {
     const t = source.text.trim(), semantic = plain(t);
     if (dateRowSet.has(source)) continue;
-    if (/^YHTEENSÄ(?:\s|$)/i.test(semantic)) { draft.total = amountAtEnd(semantic)?.cents ?? null; finished = true; totalSourceIndex = sources.indexOf(source); break; }
-    if (/^[-=]{3,}$/.test(t) || /^ASIAKASOMISTAJAN/.test(semantic)) continue;
+    if (isSeparator(source)) continue;
     if (pendingName) {
       if (!t.startsWith("*") && !/^(?:NORM\.|KAMPANJA|PLUSSA|ALV|KORTTI)/i.test(semantic) && amountAtEnd(t)) {
         const a = amountAtEnd(t)!;
@@ -83,9 +114,6 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
       }
       issue("unknown-row", "Tuotteen jatkoriviltä puuttuu tunnistettava hinta.", true, pendingName); pendingName = null;
     }
-    if (!started && chain === "s" && !t.startsWith("*")) continue;
-    if (!started && chain === "k" && !amountAtEnd(t) && !/^PLUSSA-TASAERÄ/.test(t)) continue;
-    started = true;
     if (chain === "k" && /^PLUSSA-TASAERÄ/.test(t)) { if (kBundle?.length) issue("bundle", "Tarjousryhmältä puuttuu alennusrivi."); kBundle = []; continue; }
     if (chain === "k" && /^PLUSSA-ETU\b/.test(t)) {
       const discount = amountAtEnd(t)?.cents;
@@ -126,7 +154,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
       if (sBundle === last && quantity[5]) { last.gross = Math.round(Number(quantity[5].replace(",", ".")) * 100); }
       continue;
     }
-    if (chain === "s" && t.startsWith("*") || chain === "k") {
+    if ((chain === "s" && t.startsWith("*")) || chain === "k") {
       const a = amountAtEnd(t);
       if (a) {
         const name = t.slice(0, a.index).replace(/^\*/, "").trim();
@@ -135,7 +163,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
         sBundle = null; sBundleDetails = false; add(name, a.cents, source); continue;
       }
     }
-    if (chain === "s" && t.startsWith("*") && !amountAtEnd(t) && /[\p{L}]/u.test(semantic) && !/[?]/.test(t)) { pendingName = source; started = true; continue; }
+    if (chain === "s" && t.startsWith("*") && !amountAtEnd(t) && /[\p{L}]/u.test(semantic) && !/[?]/.test(t)) { pendingName = source; continue; }
     issue("unknown-row", `Tuoteriviä ei tunnistettu (sivu ${source.page}, rivi ${source.line}). Tarkista PDF:n rakenne.`, true, source);
   }
   if (pendingName) issue("unknown-row", "Tuotteen nimi löytyi, mutta hinta puuttuu.", true, pendingName);
