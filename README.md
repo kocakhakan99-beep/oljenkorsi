@@ -120,3 +120,5 @@ Ylävalikon kuukausi rajaa tulo-/menolistojen tapahtumat ja omaisuus-/velkalisto
 **Käytössä:** [Prisman, S-marketin, Alepan ja K-kaupan PDF-kuittiskannaus](RECEIPT_SCANNER.md) Tuonti ja vienti -näkymässä: tuoterivit, alennukset, kategoriat, tarkistus ja kirjaus menoihin. Kuitit käsitellään paikallisesti. Kuvallisten PDF:ien OCR ja yleiset lasku-/sopimusparserit ovat vielä [suunnitelmassa](PDF_IMPORT_PLAN.md).
 
 Uutta: arvonmuutoslomake näkyy muokkausvälilehdellä myös silloin, kun mallia ei ole otettu käyttöön. Välilehtivalitsin on selvästi erottuva palkki. Auton porrastettu v2-malli alentaa uuden auton arvoa alkuvaiheessa nopeammin ja huomioi 20 merkin arvio-oletukset. Neljä demotaloutta sisältävät yhteensä 4 480 tulo-/menokirjausta vuosille 2024–2026, tallennetut arvomallit, opintolainat, tavoitteet ja lähdehintoihin kytketyt salkut. [Kurssien lähteet](MARKET_DATA_SOURCES.md) · [Maksuttomien API:en suunnitelma](FREE_API_INTEGRATION_PLAN.md).
+
+Kuittiskannauksen testailuun: [14 fiktiivistä PDF-kuittia ZIP-pakettina](examples/receipts/fiktiiviset-testikuitit.zip) tai [yksittäiset kuitit ja summat](examples/receipts/README.md).

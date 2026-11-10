@@ -1,5 +1,13 @@
 # Testausraportti 10.11.2026
 
+## Fiktiivinen PDF-kuittikokoelma 10.11.2026
+
+- Luotiin 14 satunnaistettua, selvästi fiktiiviseksi merkittyä PDF:ää: kaksi kullekin tunnistettavalle kauppanimelle (Prisma, S-market, Alepa, Sale, K-Citymarket, K-Supermarket, K-Market). 29–37 riviä/kuitti, loppusummat 90,64–127,42 €. Laskenta tehdään kokonaislukusenteillä ja painotuotteissa Decimal-pyöristyksellä.
+- TypeScript, ESLint ja 164 yksikkötestiä 16 tiedostossa läpäisivät. Uudet testit vertaavat lopullisesta PDF:stä poimittua tekstiä erikseen luotuun ostoskorin erittelyyn: nimet, netto-/bruttosummat, alennukset, määrät, yksiköt ja loppusummat. Fontit on upotettu ja ositettu; ZIP on noin 302 kt.
+- Kaikki 14 lopullista PDF:ää varmennettiin sovelluksen PDF.js-lukijalla selaimessa. Jokainen tuotenimi ja nettosumma sekä kokonaisuus vastasivat generoitua ostoskoria. Luonnokset eivät muuttaneet tallennettua taloutta. Ei JavaScript-/konsolivirheitä tai ulkoisia sovelluspyyntöjä. Ensimmäinen Prisma-PDF tarkistettiin myös renderöidystä kuvasta.
+- Sovelluksen ajonaikaista koodia tai tuotantobuildia ei muutettu tässä aineistotyössä. Synteettinen aineisto ei kasvata oikeiden ostosten havaintomäärää eikä osoita Salen/K-marketin/K-supermarketin aidon formaatin kattavuutta. [Aineisto ja lataus](examples/receipts/README.md).
+
+
 ## S-market, Alepa ja kuittiparserin v2 10.11.2026
 
 - TypeScript, ESLint, 149 yksikkötestiä 15 tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 2 389 kB; Viten kokohuomautus säilyy.

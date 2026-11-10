@@ -94,3 +94,11 @@ Seurattavat asiat erotetaan:
 99,9 %:n tavoitteen tilastollinen arviointi vaatisi suuren edustavan, riippumattoman testijoukon. Esimerkiksi noin 2 995 nollavirheistä riippumatonta tapausta antaisi yhden puolen 95 % binomisen luottamusrajan virheosuudelle alle 0,1 %:n (1 − 0,05^(1/n)). Tämä koskisi vain määriteltyä virhettä ja aineiston edustamaa jakaumaa, ei kaikkia tulevia kuitteja. Havaittu virhe, valikoituminen tai uusi formaatti muuttaa tulkintaa.
 
 Jatkopolku: lisää edustavia anonymisoituja esimerkkejä, erillinen testijoukko kehitysaineiston ulkopuolelta, OCR omana vaiheena, tarkempi tuotetunnistus ja käyttäjän hallitsema paikallinen luokittelumuisti. Telemetriaa tai kuittien automaattista lähetystä ei lisätä.
+
+## Ladattavat fiktiiviset testikuitit
+
+[14 PDF-kuittia ZIP-pakettina](examples/receipts/fiktiiviset-testikuitit.zip) · [PDF:t ja summataulukko](examples/receipts/README.md). Kaksi kuittia jokaiselle tunnistettavalle nimelle: Prisma, S-market, Alepa, Sale, K-Citymarket, K-Supermarket ja K-Market. Ostoskorit on arvottu erikseen, niissä on 29–37 riviä ja loppusummat ovat 90,64–127,42 €. Kaikki tositteet on merkitty fiktiivisiksi.
+
+Tuotteet, määrät, tarjoukset, painotuotteet, pantit ja päiväykset vaihtelevat. Loppusumma syntyy nettotuotteista ilman tasauserää, ALV ja testimaksu täsmäävät. `examples/receipts/manifest.json` sisältää odotetut tuotetiedot ja tekstin valmiista PDF:stä. `python scripts/generate-fictional-receipts.py` arpoo uuden kokoelman; `--replay` käyttää tallennettuja siemeniä. Kehittäjälle tarvitaan PyMuPDF ja skriptissä nimetty paikallinen monospace-fontti.
+
+`src/test/fictional-receipts.test.ts` tarkistaa aineiston laskennan, ja `python e2e_fictional_receipts.py` tarkistaa kaikki PDF:t sovelluksen oikealla PDF-lukijalla selaimessa. Nämä ovat tarkoituksellisesti nykyisen rakenteen mukaisia synteettisiä testejä. Erityisesti Salen, K-marketin ja K-supermarketin oikeiden kuittien kattavuutta ei todisteta generoimalla niille yhteisen S/K-rakenteen mukaista kuittia.
