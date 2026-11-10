@@ -103,3 +103,11 @@ Kuuden talouslistan nuoli kasvattaa itse riviä: lisätiedot kuuluvat samaan tau
 Yhteinen toimintojärjestys on katselu (silmä), muokkaus (kynä), poisto (roskakori). Katselu näyttää tallennetut tiedot ja tietotyypin tarkennukset ilman syöttökenttiä. Sen alareunasta pääsee samaan muokkaukseen tai vahvistettavaan poistoon; poiston kumoaminen ja omaisuuden velkalinkkisuoja säilyvät. Katselu ei muuta tallennettua taloutta. Sama ikkuna avautuu budjettikategorian menoluettelosta, pikahausta ja raportin tietueen nimestä. Raportin oma koontikortti säilyy vertailua varten.
 
 Budjetin kategoriariveillä otsikon, lisäyksen ja suosituksen välissä on enemmän tilaa. Työpöydällä sarakkeiden sisämarginaaleja kasvatettiin, puhelimella kategoria muodostaa oman otsikkorivin ja neljä lukukenttää väljän kahden sarakkeen ryhmän. Sisältö, laskenta ja muokattavat summat säilyvät.
+
+## Yksi avauspolku ja tiivis budjetti — tarkennus 10.11.2026
+
+Tämä tarkennus korvaa edellisen rivilaajennuksen: kuuden talouslistan nuoli ja rivin sisäiset lisätiedot on poistettu. Tiedot avataan silmäpainikkeella yhteiseen katseluikkunaan. Solut täyttävät saman rivikorkeuden ja kohdistuvat keskelle; otsikkoteksti ei tarvitse nuolen tilavarausta. Nykyiset muokkaus- ja poistopainikkeet säilyvät. Katseluikkuna on oletuksena ilman syöttökenttiä. Tulojen ja menojen tapahtumakohtaisia summia ja tiloja voi korjata erillisellä ”Korjaa kuukauden tapahtumia” -valinnalla samassa ikkunassa.
+
+Budjettitaulukon Kategoria-sarake sisältää vain kuvakkeen ja nimen. Erillinen Toiminnot-sarake sisältää saman silmäpainikkeen ja pienen lisäyskuvakkeen, joiden painallusalue säilyy 44 px:n kokoisena. Automaattisen toteuman ”Kirjauksista”-leima on poistettu riviltä; käsin korjatun toteuman merkintä säilyy. Ryhmäluokitus sekä ohjerajan erotus näkyvät kategoriakortissa. Oman budjetin Jäljellä-sarake ja käyttöaste säilyvät listassa.
+
+Yläosan Huomiot koostuu avattavista kategoriakorteista: kategorian kuvake ja nimi, käyttäjän budjetoitu summa, etumerkillinen poikkeama sekä ”Ohjerajan ylitys” -etiketti. Jos vertailuun käytetty varaus eroaa budjetista, myös varattu summa näytetään. Etiketti erottaa tulopohjaan perustuvan ohjerajan käyttäjän omasta budjetista. Kortti avaa saman kategorian kuin taulukon silmäpainike.

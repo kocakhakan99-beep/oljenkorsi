@@ -1575,7 +1575,7 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
       <div className="budget-rule-alerts" role="status" aria-live="polite">
         <strong>{outside.length + excessCategories.length ? `Huomiot · ${outside.length} ryhmää · ${excessCategories.length} kategoriaa` : "Raameissa"}</strong>
         {result.totalAllocated > result.income && <div className="budget-funding-delta"><span>Rahoitus</span><SignedAmount amount={result.income - result.totalAllocated} format={euro} label="Kuukauden tulot miinus varaukset" /></div>}
-        {excessCategories.map(category => <div className="budget-rule-alert-row" key={category.key}><button className="budget-rule-category-link" onClick={() => onCategory(category.name)}>{category.name} <ArrowRight size={14} aria-hidden="true" /></button><SignedAmount amount={category.cap! - category.allocated} format={euro} label={`${category.name}, ohjerajaa jäljellä`} /></div>)}
+        <div className="budget-attention-grid">{excessCategories.map(category => <button type="button" className="budget-attention-card" key={category.key} aria-label={`Avaa kategorian ${category.name} huomiot`} onClick={() => onCategory(category.name)}><span className="budget-attention-category"><CategoryImage icon={state.categories.find(item => item.kind === "expenses" && item.name === category.name)?.icon || categoryIconFor(category.name, "expenses")} size={24} /><strong>{category.name}</strong></span><span className="budget-attention-amount"><small>Budjetoitu</small><strong>{euro(state.budgets[month]?.[category.name] || 0)}</strong></span><span className="budget-attention-labels"><SignedAmount amount={-category.excess} format={euro} label={`${category.name}, ohjerajaa jäljellä`} /><StatusBadge tone="warning">Ohjerajan ylitys</StatusBadge></span>{category.allocated !== (state.budgets[month]?.[category.name] || 0) && <small>Varattu {euro(category.allocated)}</small>}</button>)}</div>
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
@@ -1866,7 +1866,7 @@ function App() {
     [deleteText, setDeleteText] = useState(""),
     [categoryEdit, setCategoryEdit] = useState(false),
     [undo, setUndo] = useState<State | null>(null),
-    [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set()),
+    [correctOccurrences, setCorrectOccurrences] = useState(false),
     [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
     [budgetCategory, setBudgetCategory] = useState<string | null>(null),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
@@ -2212,6 +2212,7 @@ function App() {
       contrastForeground(s.settings.accent),
     );
   }, [s.settings.theme, dark, s.settings.accent]);
+  useEffect(() => { setCorrectOccurrences(false); }, [viewEntry]);
   function saveEntry(kind: Kind, item: Entry) {
     let exists = s[kind].some((e) => e.id === item.id);
     if (
@@ -4300,7 +4301,7 @@ function App() {
                           <th role="columnheader">Suunniteltu €</th>
                           <th role="columnheader">Toteutunut kulutus €</th>
                           <th role="columnheader">Jäljellä</th>
-                          <th role="columnheader">Toteuma</th>
+                          <th role="columnheader">Toteuma</th><th role="columnheader">Toiminnot</th>
                         </tr>
                       </thead>
                       <tbody role="rowgroup">
@@ -4322,7 +4323,6 @@ function App() {
                             a = hasManual
                               ? s.budgetActuals[month][c]
                               : observed;
-                          const recommendation = monthGuidance.categories.find(category => category.name === c);
                           return (
                             <tr role="row" key={month + c}>
                               <th
@@ -4330,41 +4330,7 @@ function App() {
                                 scope="row"
                                 data-label="Kategoria"
                               >
-                                <div className="budget-category-heading">
-                                <button
-                                  type="button"
-                                  className="budget-category-title"
-                                  aria-label={`Näytä kategorian ${c} menot`}
-                                  onClick={() => setBudgetCategory(c)}
-                                >
-                                  <CategoryImage
-                                    icon={s.categories.find((category) => category.kind === "expenses" && category.name === c)?.icon || categoryIconFor(c, "expenses")}
-                                    size={32}
-                                  />
-                                  <span>{c}</span>
-                                  <ChevronRight size={16} aria-hidden="true" />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="budget-category-add"
-                                  aria-label={`Lisää meno kategoriaan ${c}`}
-                                  title={`Lisää meno kategoriaan ${c}`}
-                                  onClick={() =>
-                                    beginQuickEntry(
-                                      "expenses",
-                                      undefined,
-                                      "once",
-                                      c,
-                                    )
-                                  }
-                                >
-                                  <span className="expense-add-icon" aria-hidden="true">
-                                    <ReceiptText size={23} />
-                                    <Plus size={12} />
-                                  </span>
-                                </button>
-                                </div>
-                                {recommendation && <div className="budget-row-recommendation"><StatusBadge>{budgetGroupNames[recommendation.group]}</StatusBadge>{recommendation.excess > 0 && <SignedAmount amount={-recommendation.excess} format={euro} label={`${c}, ohjerajaa jäljellä`} />}</div>}
+                                <span className="budget-category-label"><CategoryImage icon={s.categories.find(category => category.kind === "expenses" && category.name === c)?.icon || categoryIconFor(c, "expenses")} size={22} /><span>{c}</span></span>
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput
@@ -4379,7 +4345,7 @@ function App() {
                               </td>
                               <td role="cell" data-label="Toteutunut kulutus">
                                 <strong>{euro(a)}</strong>
-                                <StatusBadge>{hasManual ? "Oma toteuma" : "Kirjauksista"}</StatusBadge>
+                                {hasManual && <StatusBadge tone="warning">Oma toteuma</StatusBadge>}
                               </td>
                               <td
                                 role="cell"
@@ -4391,6 +4357,7 @@ function App() {
                               <td role="cell" data-label="Toteuma">
                                 <BudgetUsage actual={a} budget={b} label={`${c}, budjetin käyttö`} />
                               </td>
+                              <td role="cell" data-label="Toiminnot"><div className="budget-row-actions"><button type="button" aria-label={`Näytä kategorian ${c} menot`} title={`Avaa ${c}`} onClick={() => setBudgetCategory(c)}><Eye size={18} aria-hidden="true" /></button><button type="button" aria-label={`Lisää meno kategoriaan ${c}`} title={`Lisää meno kategoriaan ${c}`} onClick={() => beginQuickEntry("expenses", undefined, "once", c)}><span className="expense-add-icon" aria-hidden="true"><ReceiptText size={18} /><Plus size={10} /></span></button></div></td>
                             </tr>
                           );
                         })}
@@ -4566,29 +4533,9 @@ function App() {
                         <tbody role="rowgroup">
                           {rows.slice(0, limit).map((e) => (
                             <React.Fragment key={e.id}>
-                              <tr role="row" className="entry-record" data-expanded={expandedRows.has(e.id)}>
+                              <tr role="row" className="entry-record">
                                 <td role="cell" data-label="Nimi">
                                   <div className="row-title">
-                                    <button
-                                      className="row-expand"
-                                      type="button"
-                                      aria-label={`${expandedRows.has(e.id) ? "Piilota" : "Näytä"} ${e.name} lisätiedot`}
-                                      aria-expanded={expandedRows.has(e.id)}
-                                      aria-controls={`entry-details-${e.id}`}
-                                      onClick={() =>
-                                        setExpandedRows((current) => {
-                                          const next = new Set(current);
-                                          next.has(e.id)
-                                            ? next.delete(e.id)
-                                            : next.add(e.id);
-                                          return next;
-                                        })
-                                      }
-                                    >
-                                      <span aria-hidden="true">
-                                        {expandedRows.has(e.id) ? "⌄" : "›"}
-                                      </span>
-                                    </button>
                                     <strong>{e.name}</strong>
                                   </div>
                                 </td>
@@ -4675,148 +4622,6 @@ function App() {
                                 </td>
                                 <td role="cell" data-label="Toiminnot">
                                   <RowActions name={e.name} onOpen={() => setViewEntry({ kind: page as Kind, id: e.id })} onEdit={() => setEdit({ kind: page as Kind, item: e })} onDelete={() => remove(page as Kind, e.id)} />
-                                  <div className="entry-inline-details" id={`entry-details-${e.id}`} hidden={!expandedRows.has(e.id)}>
-                                  <div className="expanded-content">
-                                    <span>
-                                      Kuvaus: {e.description || "Ei kuvausta"}
-                                    </span>
-                                    <span>
-                                      Päiväys:{" "}
-                                      {e.date.split("-").reverse().join(".")}
-                                    </span>
-                                    {(page === "incomes" ||
-                                      page === "expenses") && (
-                                      <span>
-                                        Toistuvuus: {recNames[e.recurrence]}
-                                      </span>
-                                    )}
-                                    {userTags(e.tags) && (
-                                      <span>
-                                        Tunnisteet: {userTags(e.tags)}
-                                      </span>
-                                    )}
-                                    <span>
-                                      {page === "assets"
-                                        ? `Omistus ${percentText(e.ownership)} % · ${e.liquid ? "Likvidi" : "Ei likvidi"}`
-                                        : page === "liabilities"
-                                          ? `Korko ${percentText(e.rate)} % · kuukausierä ${euro(e.payment)} · ${e.linkedAssetId ? `Linkitetty omaisuuteen ${s.assets.find((asset) => asset.id === e.linkedAssetId)?.name || "tuntematon omaisuuserä"}` : "Ei linkitettyä omaisuutta"}`
-                                          : page === "incomes" ||
-                                              page === "expenses"
-                                            ? "Tila perustuu päivämäärään, ei pankkivarmennukseen"
-                                            : null}
-                                    </span>
-                                  </div>
-                                  {(page === "incomes" ||
-                                    page === "expenses") && (
-                                      <fieldset className="occurrence-statuses">
-                                        <legend>
-                                          Valitun kuukauden tapahtumat
-                                        </legend>
-                                        <p className="occurrence-amount-note">
-                                          Sarjan oletussumma {euro(e.amount)}.
-                                          Päiväkohtainen summa muuttaa vain
-                                          kyseistä tapahtumaa.
-                                        </p>
-                                        {scheduledOccurrences(e, month)
-                                          .length ? (
-                                          scheduledOccurrences(e, month).map(
-                                            (date) => (
-                                              <div
-                                                className="occurrence-item"
-                                                key={date}
-                                              >
-                                                <strong>
-                                                  {date
-                                                    .split("-")
-                                                    .reverse()
-                                                    .join(".")}
-                                                </strong>
-                                                <label>
-                                                  Tila
-                                                  <select
-                                                    aria-label={`${e.name} ${date} tila`}
-                                                    value={
-                                                      e.occurrenceStatuses[date] ||
-                                                      (e.status === "skipped"
-                                                        ? "skipped"
-                                                        : "auto")
-                                                    }
-                                                    onChange={(event) =>
-                                                      updateOccurrenceStatus(
-                                                        page === "incomes"
-                                                          ? "incomes"
-                                                          : "expenses",
-                                                        e.id,
-                                                        date,
-                                                        event.target.value as
-                                                          | EntryStatus
-                                                          | "auto",
-                                                      )
-                                                    }
-                                                  >
-                                                    <option value="auto">
-                                                      Automaattinen päivästä
-                                                    </option>
-                                                    <option value="actual">
-                                                      Toteutunut
-                                                    </option>
-                                                    <option value="planned">
-                                                      Suunniteltu
-                                                    </option>
-                                                    <option value="skipped">
-                                                      Ohitettu
-                                                    </option>
-                                                  </select>
-                                                </label>
-                                                <label>
-                                                  Summa (€)
-                                                  <MoneyInput
-                                                    aria-label={`${e.name} ${date} tapahtuman summa euroina`}
-                                                    defaultCents={occurrenceAmount(
-                                                      e,
-                                                      date,
-                                                    )}
-                                                    onBlur={(event) => {
-                                                      const value =
-                                                        event.currentTarget.value.trim();
-                                                      if (!value) {
-                                                        event.currentTarget.value =
-                                                          formatMoneyCents(
-                                                            occurrenceAmount(
-                                                              e,
-                                                              date,
-                                                            ),
-                                                          );
-                                                        return;
-                                                      }
-                                                      try {
-                                                        updateOccurrenceAmount(
-                                                          page === "incomes"
-                                                            ? "incomes"
-                                                            : "expenses",
-                                                          e.id,
-                                                          date,
-                                                          money(value),
-                                                        );
-                                                      } catch {
-                                                        setNotice(
-                                                          "Tarkista yksittäisen tapahtuman summa.",
-                                                        );
-                                                      }
-                                                    }}
-                                                  />
-                                                </label>
-                                              </div>
-                                            ),
-                                          )
-                                        ) : (
-                                          <p>
-                                            Tälle kuukaudelle ei ole esiintymiä.
-                                          </p>
-                                        )}
-                                      </fieldset>
-                                    )}
-                                  </div>
                                 </td>
                               </tr>
                             </React.Fragment>
@@ -6879,7 +6684,7 @@ function App() {
         return (
           <Modal title={`${category} · ${month}`} onClose={() => setBudgetCategory(null)}>
             <div className="category-context-status"><StatusBadge>Kuukauden kirjaukset</StatusBadge>{events.some(event => event.item.recurrence !== "once") && <StatusBadge>Muokkaus koskee sarjaa</StatusBadge>}{Object.hasOwn(s.budgetActuals[month] || {}, category) && <StatusBadge tone="warning">Budjetissa oma kokonaistoteuma</StatusBadge>}</div>
-            {recommendation && <ContextDetails title="Ryhmitys ja ohjeraja"><p>{budgetGroupNames[recommendation.group]} · {recommendation.maxPercent === null ? "Ei kategoriakohtaista enimmäisrajaa" : `${percentText(recommendation.maxPercent)} % nettotuloista${recommendation.cap === null ? " · tulopohja puuttuu" : ` · ${euro(recommendation.cap)}`}`}. Ohjearvoja voi muuttaa budjetin raamien asetuksista. Kategoriakortti näyttää kirjaukset; budjetin oma kokonaistoteuman korjaus on erillinen tieto.</p></ContextDetails>}
+            {recommendation && <div className="budget-category-policy"><StatusBadge>{budgetGroupNames[recommendation.group]}</StatusBadge>{recommendation.cap !== null && <SignedAmount amount={recommendation.cap - recommendation.allocated} format={euro} label={`${category}, ohjerajaa jäljellä`} />}<ContextDetails title="Ryhmitys ja ohjeraja"><p>{budgetGroupNames[recommendation.group]} · {recommendation.maxPercent === null ? "Ei kategoriakohtaista enimmäisrajaa" : `${percentText(recommendation.maxPercent)} % nettotuloista${recommendation.cap === null ? " · tulopohja puuttuu" : ` · ${euro(recommendation.cap)}`}`}. Ohjearvoja voi muuttaa budjetin raamien asetuksista. Kategoriakortti näyttää kirjaukset; budjetin oma kokonaistoteuman korjaus on erillinen tieto.</p></ContextDetails></div>}
             <div className="stats budget-category-totals">
               {stat("Kirjatut toteutuneet menot", euro(sum(events.filter((event) => event.status === "actual").map((event) => event.amount))))}
               {stat("Tulevat / suunnitellut menot", euro(sum(events.filter((event) => event.status === "planned").map((event) => event.amount))))}
@@ -6927,6 +6732,113 @@ function App() {
             {cash && <><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
           </section>
+          {cash && <div className="entry-corrections"><button type="button" aria-expanded={correctOccurrences} aria-controls="reader-occurrence-editor" onClick={() => setCorrectOccurrences(value => !value)}>{correctOccurrences ? "Sulje tapahtumakorjaukset" : "Korjaa kuukauden tapahtumia"}</button>{correctOccurrences && <div id="reader-occurrence-editor">                                      <fieldset className="occurrence-statuses">
+                                        <legend>
+                                          Valitun kuukauden tapahtumat
+                                        </legend>
+                                        <p className="occurrence-amount-note">
+                                          Sarjan oletussumma {euro(item.amount)}.
+                                          Päiväkohtainen summa muuttaa vain
+                                          kyseistä tapahtumaa.
+                                        </p>
+                                        {scheduledOccurrences(item, month)
+                                          .length ? (
+                                          scheduledOccurrences(item, month).map(
+                                            (date) => (
+                                              <div
+                                                className="occurrence-item"
+                                                key={date}
+                                              >
+                                                <strong>
+                                                  {date
+                                                    .split("-")
+                                                    .reverse()
+                                                    .join(".")}
+                                                </strong>
+                                                <label>
+                                                  Tila
+                                                  <select
+                                                    aria-label={`${item.name} ${date} tila`}
+                                                    value={
+                                                      item.occurrenceStatuses[date] ||
+                                                      (item.status === "skipped"
+                                                        ? "skipped"
+                                                        : "auto")
+                                                    }
+                                                    onChange={(event) =>
+                                                      updateOccurrenceStatus(
+                                                        kind === "incomes"
+                                                          ? "incomes"
+                                                          : "expenses",
+                                                        item.id,
+                                                        date,
+                                                        event.target.value as
+                                                          | EntryStatus
+                                                          | "auto",
+                                                      )
+                                                    }
+                                                  >
+                                                    <option value="auto">
+                                                      Automaattinen päivästä
+                                                    </option>
+                                                    <option value="actual">
+                                                      Toteutunut
+                                                    </option>
+                                                    <option value="planned">
+                                                      Suunniteltu
+                                                    </option>
+                                                    <option value="skipped">
+                                                      Ohitettu
+                                                    </option>
+                                                  </select>
+                                                </label>
+                                                <label>
+                                                  Summa (€)
+                                                  <MoneyInput
+                                                    aria-label={`${item.name} ${date} tapahtuman summa euroina`}
+                                                    defaultCents={occurrenceAmount(
+                                                      item,
+                                                      date,
+                                                    )}
+                                                    onBlur={(event) => {
+                                                      const value =
+                                                        event.currentTarget.value.trim();
+                                                      if (!value) {
+                                                        event.currentTarget.value =
+                                                          formatMoneyCents(
+                                                            occurrenceAmount(
+                                                              item,
+                                                              date,
+                                                            ),
+                                                          );
+                                                        return;
+                                                      }
+                                                      try {
+                                                        updateOccurrenceAmount(
+                                                          kind === "incomes"
+                                                            ? "incomes"
+                                                            : "expenses",
+                                                          item.id,
+                                                          date,
+                                                          money(value),
+                                                        );
+                                                      } catch {
+                                                        setNotice(
+                                                          "Tarkista yksittäisen tapahtuman summa.",
+                                                        );
+                                                      }
+                                                    }}
+                                                  />
+                                                </label>
+                                              </div>
+                                            ),
+                                          )
+                                        ) : (
+                                          <p>
+                                            Tälle kuukaudelle ei ole esiintymiä.
+                                          </p>
+                                        )}
+                                      </fieldset></div>}</div>}
           <div className="entry-reader-actions"><RowActions name={item.name} onEdit={() => { setViewEntry(null); setEdit({ kind, item }); }} onDelete={() => { if (remove(kind, id)) setViewEntry(null); }} /><button onClick={() => setViewEntry(null)}>Takaisin</button></div>
         </Modal>;
       })()}

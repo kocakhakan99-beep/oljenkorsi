@@ -1,5 +1,16 @@
 # Testausraportti 10.11.2026
 
+## Silmäavaus, rivien kohdistus ja budjetin huomiokortit 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 570 kB; Viten kokohuomautus säilyy.
+- 73 Chromium-selainvarmennusta localhostissa. Suljetun talousrivin kuuden solun ylä- ja alareunat täsmäsivät alle 1 px tarkkuudella. Nuolta ja rivilaajennusta ei ole. Silmä avaa katselun Enterillä; Escape sulkee sen ja palauttaa kohdistuksen.
+- Tapahtuman summan ja tilan korjaus, automatiikkaan palautus sekä ohitus varmennettiin katseluikkunan erillisestä korjaustoiminnosta. Oletuskatselussa ei ole syöttökenttiä. Kaikkien kuuden listan katselu, muokkaus, poisto, kumoaminen ja pikahaku läpäisivät.
+- Budjettirivillä on erillinen silmä ja pienempi lisäyskuvake; leima ”Kirjauksista”, ryhmäluokitus ja ohjerajapoikkeama puuttuvat riviltä. Työpöydän testirivin korkeus oli enintään 66 px. Kategoriakuvake on 22 px ja toimintopainikkeet vähintään 44 px.
+- Viimeisestä buildista tarkistettiin lisäksi kuvakaappauksin työpöytärivi, mobiilibudjetti ja huomiokortit. Erillinen selaintarkistus varmisti, että toimintopainikkeet pysyvät rivin sisällä, huomiokortti avaa kategorian ja käytöstä poistettu kategoriaraja ei näytä keksittyä nollaerotusta.
+- Huomiokortit näyttävät budjetoidun summan ja ohjerajan poikkeaman erikseen. Ryhmän ja ohjerajan muutos päivittää huomiot. Ohjerajan −100,00 € löytyy kategoriakortista ja oman budjetin −500,00 € säilyy Jäljellä-sarakkeessa.
+- Nykyiset 320–768 px ylivuototarkistukset ja pitkien nimien päällekkäisyystarkistus 320/390 px läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Rivilaajennukset ja katseluikkunat 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 570 kB; Viten kokohuomautus säilyy.
