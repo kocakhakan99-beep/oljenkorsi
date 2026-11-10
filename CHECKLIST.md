@@ -120,14 +120,16 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 
 ### Uusi käyttäjätoive: tiedoston pudotus ja tiliotteet
 
-**Tila: ⬜ Toteutusjonossa; tarkempi suunnittelu ja toteutus aloittamatta.**
+**Tila: 🟡 PDF-kuittien pudotus toteutettu nykyisen rajauksen mukaan; tilioteparseri ja Tulot-näkymän pudotus jonossa.**
 
-- ⬜ Tietokoneella tiedoston drag and drop missä tahansa Tulot-, Menot- ja Budjetti-näkymän kohdassa.
+- ✅ PDF-kuittien drag and drop missä tahansa Menot-, Budjetti- ja Asetukset-näkymässä; avaa Menojen yhteisen kuittiskannerin ja käynnistää lukemisen.
+- ✅ Skannerin pääpaikka Menot; sama pikapainike budjetissa, luonnoksen säilytys ja yhden PDF:n tarkistus ennen navigointia.
+- ⬜ Tulot-näkymän pudotus alkuperäisen jatkotoiveen mukaan.
 - ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.
 - ⬜ Tilioteparserin suunnittelu ja myöhempi toteutus. Käyttäjä voi toimittaa aluksi kahden pankin esimerkkitiliotteet; aineistoa ei ole vielä saatu eikä pankkiformaatteja määritelty.
 - ⬜ Quick-start-käyttöpolku: nopea käyttöönotto sekä menojen ja tulojen syötön helpottaminen tiedostoista.
 
-Kirjattu käyttäjän pyynnöstä vain työjonoon. Tiedoston pudotus ei itsessään tarkoita talouskirjausten automaattista hyväksyntää.
+Kuitin/tiliotteen erottelu ja tilioteparseri ovat edelleen vain työjonossa. Tiedoston pudotus ei itsessään tarkoita talouskirjausten automaattista hyväksyntää.
 
 ## 9. Ulkoasu, helppokäyttöisyys ja saavutettavuus
 
@@ -157,7 +159,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 164 yksikkötestiä, 82 yleistä Chromium-selainvarmennusta, 27 kuittivarmennusta ja 14 fiktiivisen PDF:n tarkistusta.
+- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 166 yksikkötestiä, yleiset Chromium-selainvarmennukset sekä kuitti-, pudotus- ja fiktiivisten PDF:ien tarkistukset.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.

@@ -1,20 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { FileText, ScanLine, Check, X, AlertTriangle } from "lucide-react";
 import type { State } from "../domain/model";
 import { validDate } from "../domain/calculations";
 import { parseReceipt } from "../domain/receipts/parser";
 import type { ReceiptDraft } from "../domain/receipts/schema";
 import { duplicateReceipt, prepareReceiptImport, receiptCategoryTotals, receiptMatches, receiptCategoryOptions } from "../domain/receipts/import";
+import { receiptFileError } from "../domain/receipts/files";
 import { receiptPDF } from "../services/receipt-pdf";
 
 const euro = (n: number) => new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR" }).format(n / 100);
-export function ReceiptScanner({ state, onImport }: { state: State; onImport: (next: State) => boolean }) {
+export interface ReceiptScannerHandle { scanFile: (file: File) => boolean; focusPanel: () => void }
+export function ReceiptScanButton({ onClick, label = "Skannaa kuitti", expanded }: { onClick: () => void; label?: string; expanded?: boolean }) {
+  return <button type="button" onClick={onClick} aria-controls="receipt-workspace" aria-expanded={expanded} className="receipt-scan-button" title={label === "Skannaa kuitti" ? "PDF-kuitti · voit myös pudottaa tiedoston näkymään" : "Avaa kuittiskannaus Menot-näkymässä"}><ScanLine size={18} aria-hidden="true" />{label}</button>;
+}
+export const ReceiptScanner = forwardRef<ReceiptScannerHandle, { state: State; onImport: (next: State) => boolean; onClose: () => void }>(function ReceiptScanner({ state, onImport, onClose }, ref) {
   const [draft, setDraft] = useState<ReceiptDraft | null>(null), [hash, setHash] = useState("");
   const [categories, setCategories] = useState<Record<string, string>>({}), [selected, setSelected] = useState<string[]>([]);
   const [onlyReview, setOnlyReview] = useState(false), [busy, setBusy] = useState(false), [progress, setProgress] = useState("");
   const [error, setError] = useState(""), [success, setSuccess] = useState("");
   const [checked, setChecked] = useState(false), [clearActuals, setClearActuals] = useState(false), [match, setMatch] = useState("");
-  const controller = useRef<AbortController | null>(null), focus = useRef<HTMLHeadingElement>(null);
+  const controller = useRef<AbortController | null>(null), focus = useRef<HTMLHeadingElement>(null), title = useRef<HTMLHeadingElement>(null), fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const available = receiptCategoryOptions(state);
   const unresolved = draft?.lines.filter(l => !available.some(c => c.name === categories[l.id])) || [];
@@ -29,15 +34,25 @@ export function ReceiptScanner({ state, onImport }: { state: State; onImport: (n
     controller.current?.abort(); const current = new AbortController(); controller.current = current;
     setBusy(true); setDraft(null); setError(""); setSuccess(""); setChecked(false); setClearActuals(false); setMatch(""); setSelected([]); setProgress("Luetaan PDF paikallisesti…");
     try {
-      const result = await receiptPDF(file, current.signal, (page, total) => setProgress(`Luetaan sivua ${page}/${total}`));
+      const result = await receiptPDF(file, current.signal, (page, total) => { if (controller.current === current && !current.signal.aborted) setProgress(`Luetaan sivua ${page}/${total}`); });
       if (current.signal.aborted) return;
       const parsed = parseReceipt(result.pages);
       setDraft(parsed); setHash(result.hash);
       setCategories(Object.fromEntries(parsed.lines.map(l => [l.id, available.some(c => c.name === l.suggestedCategory) ? l.suggestedCategory! : ""])));
-      setOnlyReview(false); setTimeout(() => focus.current?.focus(), 0);
+      setOnlyReview(false); setTimeout(() => { if (focus.current?.getClientRects().length) focus.current.focus(); }, 0);
     } catch (e) { if (!current.signal.aborted) setError(e instanceof Error ? e.message : "PDF:n lukeminen epäonnistui."); }
     finally { if (controller.current === current) { setBusy(false); setProgress(""); } }
   }
+  function requestFile(file: File) {
+    const validation = receiptFileError([file]);
+    if (validation) { setError(validation); return false; }
+    if ((draft || busy) && !window.confirm("Korvataanko nykyinen kuittiluonnos uudella PDF:llä? Tallentamattomat luokittelut menetetään.")) return false;
+    void scan(file); return true;
+  }
+  useImperativeHandle(ref, () => ({ scanFile: requestFile, focusPanel: () => {
+    const target = focus.current || title.current;
+    if (target?.getClientRects().length) { target.focus(); target.scrollIntoView({ block: "start" }); }
+  } }));
   function cancel() { controller.current?.abort(); controller.current = null; setBusy(false); setDraft(null); setProgress(""); setError(""); }
   function save() {
     if (!draft || blocked) return;
@@ -47,9 +62,10 @@ export function ReceiptScanner({ state, onImport }: { state: State; onImport: (n
     } catch (e) { setError(e instanceof Error ? e.message : "Tuonti epäonnistui."); }
   }
   return <section className="panel receipt-scanner" aria-labelledby="receipt-scanner-title">
-    <div className="receipt-heading"><ScanLine aria-hidden="true" size={25} /><div><h2 id="receipt-scanner-title">Kuittiskannaus</h2><p className="muted">Prisma, S-market, Alepa ja K-kaupat · PDF-kuitit · käsittely omassa selaimessa</p></div></div>
+    <div className="receipt-heading"><ScanLine aria-hidden="true" size={25} /><div><h2 id="receipt-scanner-title" ref={title} tabIndex={-1}>Kuittiskannaus</h2><p className="muted">Prisma, S-market, Alepa ja K-kaupat · PDF-kuitit · käsittely omassa selaimessa</p></div><button type="button" className="receipt-close" aria-label="Sulje kuittiskannaus" title="Sulje kuittiskannaus · luonnos säilyy" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
     <ol className="receipt-steps" aria-label="Kuittiskannauksen vaiheet"><li aria-current={!draft ? "step" : undefined}>1 Valitse PDF</li><li aria-current={draft ? "step" : undefined}>2 Tarkista</li><li>3 Kirjaa menot</li></ol>
-    <label className="file-label"><FileText size={18} aria-hidden="true" /> Valitse kuitti (PDF)<input aria-label="Skannaa PDF-kuitti" type="file" accept="application/pdf,.pdf" disabled={busy} onChange={e => { const f = e.target.files?.[0]; if (f) void scan(f); e.target.value = ""; }} /></label>
+    <button type="button" className="receipt-scan-button" disabled={busy} onClick={() => fileInput.current?.click()}><FileText size={18} aria-hidden="true" />Valitse PDF</button>
+    <input ref={fileInput} hidden aria-label="Skannaa PDF-kuitti" type="file" accept="application/pdf,.pdf" disabled={busy} onChange={e => { const f = e.target.files?.[0]; if (f) requestFile(f); e.target.value = ""; }} />
     <p className="ux-status-note">Enintään 20 Mt / 50 sivua. Tekstimuotoiset PDF-kuitit; kuvallinen skannaus tarvitsee myöhemmin OCR:n. Alkuperäistä PDF:ää ei tallenneta.</p>
     {busy && <div className="receipt-busy" role="status"><span>{progress}</span><button onClick={cancel}><X size={16} aria-hidden="true" /> Peruuta käsittely</button></div>}
     {error && <p className="alert" role="alert">{error}</p>}
@@ -77,4 +93,4 @@ export function ReceiptScanner({ state, onImport }: { state: State; onImport: (n
     </div>}
     {!!state.receiptImports?.length && <details className="receipt-history"><summary>Tuodut kuitit ({state.receiptImports.length})</summary>{state.receiptImports.slice(-10).reverse().map(g => <details key={g.id}><summary>{g.draft.date.split("-").reverse().join(".")} · {g.draft.merchant} · {euro(g.draft.total!)}</summary><p className="ux-status-note">Alkuperäinen tuontierittely. Myöhemmät menomuokkaukset eivät muuta tätä lähdekuvaa.</p><ul>{g.draft.lines.map(l => <li key={l.id}>{l.name} · {g.categories[l.id]} · {euro(l.net)}</li>)}</ul></details>)}</details>}
   </section>;
-}
+});

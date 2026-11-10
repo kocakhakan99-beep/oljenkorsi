@@ -2,7 +2,9 @@
 
 ## Käyttö
 
-**Tuonti ja vienti → Kuittiskannaus → Valitse kuitti (PDF) → Tarkista → Kirjaa menoihin.**
+**Menot → Skannaa kuitti → Valitse PDF → Tarkista → Kirjaa menoihin.**
+
+Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella yhden PDF-kuitin voi myös pudottaa mihin tahansa Menot-, Budjetti- tai Asetukset-näkymässä: sovellus siirtyy menoihin, avaa skannerin ja käynnistää poiminnan. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
 1. Valitse Prisman, S-marketin, Alepan tai K-kaupan tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
@@ -102,3 +104,11 @@ Jatkopolku: lisää edustavia anonymisoituja esimerkkejä, erillinen testijoukko
 Tuotteet, määrät, tarjoukset, painotuotteet, pantit ja päiväykset vaihtelevat. Loppusumma syntyy nettotuotteista ilman tasauserää, ALV ja testimaksu täsmäävät. `examples/receipts/manifest.json` sisältää odotetut tuotetiedot ja tekstin valmiista PDF:stä. `python scripts/generate-fictional-receipts.py` arpoo uuden kokoelman; `--replay` käyttää tallennettuja siemeniä. Kehittäjälle tarvitaan PyMuPDF ja skriptissä nimetty paikallinen monospace-fontti.
 
 `src/test/fictional-receipts.test.ts` tarkistaa aineiston laskennan, ja `python e2e_fictional_receipts.py` tarkistaa kaikki PDF:t sovelluksen oikealla PDF-lukijalla selaimessa. Nämä ovat tarkoituksellisesti nykyisen rakenteen mukaisia synteettisiä testejä. Erityisesti Salen, K-marketin ja K-supermarketin oikeiden kuittien kattavuutta ei todisteta generoimalla niille yhteisen S/K-rakenteen mukaista kuittia.
+
+## Yksi pääpaikka ja koko näkymän PDF-pudotus
+
+Skanneri on menoissa oletuksena suljettu työkalu, jonka avaa lyhyt kuvakkeellinen painike. Budjetissa on sama pikatoiminto. PDF:n valintaan on nimetty painike; selaimen ylimääräinen englanninkielinen tiedostokenttä ei vie tilaa. Skannerin sulkeminen piilottaa työkalun ja palauttaa kohdistuksen avauspainikkeeseen. Keskeneräinen luonnos ja luokittelut säilyvät myös näkymää vaihdettaessa; koko talouden vaihtaminen luo uuden skanneri-istunnon.
+
+Pudotusalue näkyy vain tiedostoa raahatessa. Se kattaa koko ikkunan eikä estä itse pudotusta. Menot, Budjetti ja Asetukset hyväksyvät yhden .pdf-tiedoston kerrallaan (myös isoilla kirjaimilla oleva pääte); enimmäiskoko on 20 MiB. PDF:n todellinen sisältö tarkistetaan edelleen lukijassa. Muut tiedostot, tyhjät tai liian suuret tiedostot ja monen tiedoston pudotus hylätään ennen navigointia. Muissa näkymissä tiedoston pudotus ei käynnistä skannausta tai avaa tiedostoa selaimen nykyisen sovelluksen tilalle. Tekstin raahaamista ei käsitellä tiedostopudotuksena.
+
+Escape, ikkunasta poistuminen ja pudotus poistavat pudotuskorostuksen. Avoimen muokkaus-/katseluikkunan aikana pyydetään sulkemaan ikkuna ensin. Uusi PDF vaatii vahvistuksen, jos skannerissa on luonnos tai käsittely kesken; hylkääminen säilyttää aiemmat tiedot. Pudotus ei kirjaa menoja eikä muuta budjettia ilman normaalia hyväksyntää. Tilioteparseri ja kuitin/tiliotteen automaattinen reititys ovat edelleen jonossa; tämä toimitus koskee PDF-kuittien käynnistämistä.

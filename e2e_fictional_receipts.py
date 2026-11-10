@@ -14,7 +14,8 @@ with sync_playwright() as p:
     page.on('request',lambda r:network.append(r.url) if not r.url.startswith(('http://127.0.0.1:','http://localhost:','data:','blob:','file:')) else None)
     page.goto(os.environ.get('TALOUS_URL','http://127.0.0.1:8765/index.html'))
     page.get_by_role('button',name='Aloita tyhjästä',exact=True).click()
-    page.get_by_role('navigation').get_by_role('button',name='Tuonti ja vienti',exact=True).click()
+    page.get_by_role('navigation').get_by_role('button',name='Menot',exact=True).click()
+    page.get_by_role('button',name='Skannaa kuitti',exact=True).click()
     baseline=page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     for receipt in manifest['receipts']:
         page.get_by_label('Skannaa PDF-kuitti',exact=True).set_input_files(ROOT/'examples/receipts'/receipt['file'])

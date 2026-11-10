@@ -6,7 +6,7 @@ Tuotteet, määrät, tarjoukset ja päivät arvotaan; jokaisen generointisiemen 
 
 Prisman, S-marketin, Alepan ja K-Citymarketin rakenne perustuu varmennettuihin esimerkkimuotoihin. Salen, K-marketin ja K-supermarketin fiktiiviset kuitit käyttävät yhteisen S/K-sovittimen rakennetta; ne eivät vahvista näiden aitoja formaatteja.
 
-Käyttö: Tuonti ja vienti → Kuittiskannaus → valitse PDF. Kategoriat ovat ehdotuksia ja epäselvät tuotteet luokitellaan käsin.
+Käyttö: Menot → Skannaa kuitti → Valitse PDF. Voit myös pudottaa PDF:n Menot-, Budjetti- tai Asetukset-näkymään. Kategoriat ovat ehdotuksia ja epäselvät tuotteet luokitellaan käsin.
 
 | PDF | Tuoterivejä | Yhteensä |
 | --- | ---: | ---: |

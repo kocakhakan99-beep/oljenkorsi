@@ -5,6 +5,7 @@
 | Toiminto | Pääpaikka | Muut näkymät |
 | --- | --- | --- |
 | Tulon tai menon kirjaus ja sarjan muokkaus | Tulot / Menot, yhteinen kirjauslomake | Yhteenveto, budjetti ja haku avaavat saman lomakkeen esitäytettynä |
+| PDF-kuittiskannaus | Menot, yhteinen avattava skanneri | Budjetin pikapainike, Menot/Budjetti/Asetukset PDF-pudotus ja Tuonti ja vienti -siirtymä avaavat saman työkalun |
 | Päivittäinen toteuma | Menojen tapahtumat | Budjetti ja raportit laskevat toteuman kirjauksista |
 | Kategorian kokonaistoteuman poikkeus | Budjetin kategoriakortin edistyneet korjaukset | Budjettitaulukossa näkyy arvo ja lähde, ei toinen rinnakkainen perussyöttö |
 | 50/30/20 ja kategoriarajat | Budjetti | Tulot/Menot näyttävät vain tiiviin tilan ja linkin; kompassi ehdottaa tarkistusta |
@@ -29,3 +30,5 @@ Ohjeen korjaus: päiväperusteinen toteuma ei ole pankkivarmennus. Kategorian ko
 - [x] Seuraavan UX-kierroksen [12-tasoinen esittämismalli](UX_PRESENTATION_MODEL.md) dokumentoitu ja lisätty jonoon.
 
 Koko sovelluksen esittämisen yhdenmukaistaminen on seuraava työpaketti, ei tämän kierroksen valmis väite. Yksikään nykyinen datalaji tai laskuri ei poistu.
+
+Kuittiskannauksen pääpaikka siirretty 10.11.2026 menoihin. Muissa näkymissä ei ole rinnakkaista parseria, tallennusta tai kuittilomaketta. Työkalun piilottaminen ja navigointi säilyttävät luonnoksen; PDF:n pudottaminen avaa saman tarkistuspolun.

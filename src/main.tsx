@@ -1,4 +1,5 @@
-import { ReceiptScanner } from "./components/receipt-scanner";
+import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
+import { ReceiptDropZone } from "./components/receipt-drop-zone";
 import { marketQuote, marketSnapshot } from "./domain/market-history";
 import { brandWearFactor } from "./domain/vehicle-profiles";
 import { selectedValuationDate, datedValue, datedState, visibleInMonth } from "./domain/dated-values";
@@ -1854,6 +1855,8 @@ function CashEntryForm({
   );
 }
 function App() {
+  const receiptScanner = useRef<ReceiptScannerHandle>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
   const [s, setS] = useState<State>(loaded.data),
     [page, setPage] = useState(location.hash.slice(1) || "dashboard"),
     [notice, setNotice] = useState(loaded.error),
@@ -2126,6 +2129,16 @@ function App() {
       () => document.querySelector<HTMLElement>("main h1")?.focus(),
       0,
     );
+  }
+  function closeReceipt() {
+    setReceiptOpen(false);
+    setTimeout(() => document.querySelector<HTMLButtonElement>(".page-head .receipt-scan-button")?.focus(), 0);
+  }
+  function openReceipt(file?: File) {
+    if (file && !receiptScanner.current?.scanFile(file)) return;
+    setReceiptOpen(true);
+    navigate("expenses");
+    setTimeout(() => receiptScanner.current?.focusPanel(), 0);
   }
   function selectReportView(view: ReportView) {
     setReportView(view);
@@ -3320,6 +3333,7 @@ function App() {
                       ? "+ Lisää kertaluonteinen meno"
                       : "+ Lisää tulo"}
                   </button>
+                  {page === "expenses" && <ReceiptScanButton expanded={receiptOpen} onClick={() => openReceipt()} />}
                   <button
                     onClick={() => beginQuickEntry(page, undefined, "monthly")}
                   >
@@ -3329,6 +3343,7 @@ function App() {
                   </button>
                 </div>
               )}
+              {page === "budget" && <ReceiptScanButton onClick={() => openReceipt()} />}
               {kinds.includes(page as Kind) &&
                 page !== "incomes" &&
                 page !== "expenses" && (
@@ -4254,6 +4269,13 @@ function App() {
                   </section>
                 </>
               ))}
+            <ReceiptDropZone enabled={s.settings.onboarded && ["expenses", "budget", "settings"].includes(page)} onFile={openReceipt} onError={setNotice} />
+            <div id="receipt-workspace" className="receipt-home" hidden={page !== "expenses" || !receiptOpen}>
+              <ReceiptScanner key={s.createdAt} ref={receiptScanner} state={s} onClose={closeReceipt} onImport={(next) => {
+                if (!commit(next)) return false;
+                setUndo(s); receiptUndoActive.current = true; return true;
+              }} />
+            </div>
             {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onSave={rule => settings({ budgetGuidance: rule })} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} />}
             {page === "budget" && (
               <>
@@ -6383,12 +6405,7 @@ function App() {
                 s={s}
                 onBackup={exportBackup}
                 onRestore={importBackup}
-                onReceiptImport={(next) => {
-                  if (!commit(next)) return false;
-                  setUndo(s);
-                  receiptUndoActive.current = true;
-                  return true;
-                }}
+                onReceipts={() => openReceipt()}
                 onImport={(kind, es) => {
                   if (commit({ ...s, [kind]: [...s[kind], ...es] })) {
                     setUndo(s);
@@ -8436,13 +8453,13 @@ function Transfer({
   onBackup,
   onRestore,
   onImport,
-  onReceiptImport,
+  onReceipts,
 }: {
   s: State;
   onBackup: () => void;
   onRestore: (f: File) => void;
   onImport: (k: Kind, e: Entry[]) => void;
-  onReceiptImport: (next: State) => boolean;
+  onReceipts: () => void;
 }) {
   const [kind, setKind] = useState<Kind>("expenses"),
     [text, setText] = useState(""),
@@ -8540,7 +8557,7 @@ function Transfer({
   }
   return (
     <>
-      <ReceiptScanner state={s} onImport={onReceiptImport} />
+      <div className="transfer-shortcuts"><ReceiptScanButton onClick={onReceipts} label="Kuittiskannaus menoissa" /></div>
       <section className="panel">
         <h2>JSON-varmuuskopio</h2>
         <div className="entry-statuses"><StatusBadge>Koko talous</StatusBadge><StatusBadge>Salaamaton tiedosto</StatusBadge></div>

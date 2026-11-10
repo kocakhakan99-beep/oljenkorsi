@@ -141,3 +141,7 @@ Arvonmuutosmalli on omaisuuden muokkausikkunan oma välilehti Perustietojen rinn
 Omaisuuden Arvonmuutos-välilehti ja sen lomake näkyvät aina, myös mallin ollessa pois käytöstä. Käyttövalinta ohjaa tallennusta ja riviarvioita. Tablist käyttää editor-tabbar-tyyliä: erottuva tausta, sisäinen aktiivinen pinta, kontrastiteksti, varjo ja näppäimistökohdistus. Tyyli on myöhemmin käytettävissä muissakin muokkausikkunoissa.
 
 Auton merkkipaino näytetään lukuna ja kerrotaan arvio-oletukseksi. Porrastettu/aiempi arvokäyrä on nimetty valinta, ei käyttäjän laskettava prosenttilomake. Sijoituskortissa näkyvät päivätty hinta, EUR-muunnoksen lähdepäivä ja offline-historia; vanhentunutta tai keskeneräistä hintaa ei esitetä livekurssina.
+
+## Kuittiskannaus: yksi pääpaikka menoissa
+
+Menojen ja budjetin pikatoiminto on yksi tuttu kuvake ja lyhyt nimi: Skannaa kuitti. Koko työkalu näkyy vain avattuna Menot-näkymässä. Tuonti ja vienti ohjaa samaan paikkaan. Tiedoston raahaus tuo esiin hetkellisen pudotuskorostuksen, ei pysyvää ohjekorttia tai toista lomaketta. Menojen, budjetin ja asetusten PDF-pudotus käyttää samaa poimintaa, tarkistusta ja tallennusta. Piilotettu luonnos säilyy; sulkeminen palauttaa kohdistuksen ja uuden tiedoston tuonti suojaa aiempaa luonnosta vahvistuksella.

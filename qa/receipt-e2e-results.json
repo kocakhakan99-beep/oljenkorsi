@@ -28,7 +28,7 @@
     "Unknown structural row is shown with its source, blocks saving and fits 320px",
     "No JavaScript errors, console errors or external application requests"
   ],
-  "suppliedPDFs": true,
+  "suppliedPDFs": false,
   "documentCount": 9,
   "uniquePurchases": 8,
   "errors": [],
