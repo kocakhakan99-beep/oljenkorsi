@@ -1,3 +1,5 @@
+import { investmentCatalog } from "./domain/investment-catalog";
+import { loanEstimate } from "./domain/loan-estimate";
 import { goalPlan } from "./domain/goal-plan";
 import { RecurrenceIndicator, EventStatusIndicator } from "./components/event-indicators";
 import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions, SignedAmount } from "./components/summary";
@@ -100,6 +102,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Pencil,
   Link2,
   FileChartColumn,
   Goal as GoalIcon,
@@ -4507,6 +4510,7 @@ function App() {
                     </label>
                   </div>
                   {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Manuaaliset EUR-hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
+                  {page === "investments" && <details className="panel investment-catalog"><summary>Valitse sijoituskohde · 20 esimerkkiä</summary><p>Valintapohjat, eivät suosituimmuuslista tai sijoitussuosituksia. Kurssilähdettä ei ole kytketty. Syötä varmennettu EUR-yksikköhinta ja arvostuspäivä; ulkomaisen kohteen valuuttamuunnos tehdään erikseen.</p><div className="investment-catalog-grid">{investmentCatalog.map(([name, symbol]) => <button type="button" key={symbol} onClick={() => setEdit({ kind: "investments", item: { ...newEntry("investments"), name, category: symbol.endsWith(".DE") ? "ETF" : "Osakkeet", description: `Tunnus: ${symbol}. Hinta ja valuuttamuunnos tarkistettava lähteestä.`, amount: 0, quantity: 1 } })}><strong>{name}</strong><small>{symbol} · Kurssi puuttuu</small></button>)}</div></details>}
                   {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Manuaaliset nykyarvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on koko omaisuuserän arvio. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
                   {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo automaattisesti menotapahtumaa eikä vähennä velan saldoa. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
@@ -4521,9 +4525,7 @@ function App() {
                                 ? "Yksikköhinta"
                                 : "Summa"}
                             </th>
-                            <th role="columnheader">
-                              {page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : "Päivämäärä"}
-                            </th>
+                            <th role="columnheader">{page === "assets" ? "Omistusosuus" : page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : page === "incomes" ? "Maksupäivä" : "Päivämäärä"}</th>
                       {page === "liabilities" && <th role="columnheader">Kuukausierä</th>}
                       <th role="columnheader">
                         {page === "incomes" || page === "expenses"
@@ -4576,10 +4578,10 @@ function App() {
                                 <td
                                   role="cell"
                                   data-label={
-                                    page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : "Päivämäärä"
+                                    page === "assets" ? "Omistusosuus" : page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : page === "incomes" ? "Maksupäivä" : "Päivämäärä"
                                   }
                                 >
-                                  {page === "goals"
+                                  {page === "assets" ? `${percentText(e.ownership)} %` : page === "goals"
                                     ? euro(e.target)
                                     : page === "liabilities" ? `${percentText(e.rate)} %` : page === "incomes" &&
                                         e.adjustToPreviousBankDay &&
@@ -4592,7 +4594,7 @@ function App() {
                                         `Alkaa ${e.date.split("-").reverse().join(".")}`
                                       : e.date.split("-").reverse().join(".")}
                                 </td>
-                                {page === "liabilities" && <td role="cell" data-label="Kuukausierä">{euro(e.payment)}</td>}
+                                {page === "liabilities" && <td role="cell" data-label="Kuukausierä">{e.payment > 0 ? euro(e.payment) : <span className="muted" title="Takaisinmaksuerää ei ole asetettu">Ei maksuerää</span>}</td>}
                                 <td
                                   role="cell"
                                   data-label={
@@ -4607,10 +4609,10 @@ function App() {
                                       <EventStatusIndicator status={monthEntryState(e, month)} label={monthEntryStatus(e, month)} />
                                       {!e.active && <EventStatusIndicator status="paused" label="Sarja keskeytetty" />}
                                       {page === "expenses" && expenseType(e) !== "consumption" && <StatusBadge>{expenseTypeName(expenseType(e))}</StatusBadge>}
-                                      {Object.keys(e.occurrenceStatuses).length > 0 && <span title="Tapahtumakohtaiset tilakorjaukset">{Object.keys(e.occurrenceStatuses).length} korjausta</span>}
+                                      {Object.keys(e.occurrenceStatuses).length > 0 && <span className="correction-indicator" role="img" aria-label={`${Object.keys(e.occurrenceStatuses).length} tapahtumakohtaista korjausta`} title="Tapahtumakohtaisia korjauksia — tarkemmat tiedot kortilla"><Pencil size={14} aria-hidden="true" /></span>}
                                     </div>
                                   ) : page === "assets" ? (
-                                    <div className="entry-statuses"><StatusBadge>{percentText(e.ownership)} %</StatusBadge><StatusBadge>{e.liquid ? "Likvidi" : "Ei likvidi"}</StatusBadge></div>
+                                    <div className="entry-statuses"><StatusBadge>{e.liquid ? "Likvidi" : "Ei likvidi"}</StatusBadge></div>
                                   ) : page === "liabilities" ? (
                                     (() => { const asset = s.assets.find(asset => asset.id === e.linkedAssetId); return asset ? <button type="button" className="asset-link-indicator" aria-label={`Avaa linkitetty omaisuus: ${asset.name}`} title={`Linkitetty omaisuus: ${asset.name} · ${asset.category}`} onClick={() => setViewEntry({ kind: "assets", id: asset.id })}><Link2 size={18} aria-hidden="true" /><CategoryImage icon={categoryIconFor(asset.category, "assets")} size={22} /></button> : <span className="muted" aria-label="Ei linkitettyä omaisuutta">—</span>; })()
                                   ) : page === "goals" ? (
@@ -6734,7 +6736,8 @@ function App() {
               {userTags(item.tags) && <div><dt>Tunnisteet</dt><dd>{userTags(item.tags)}</dd></div>}
             </dl>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
-            {cash && <><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
+            {cash && <><p className="muted">{Object.keys(item.occurrenceStatuses).length} tallennettua tilakorjausta · {Object.keys(item.occurrenceAmounts).length} summakorjausta. Korjaukset koskevat yksittäisiä tapahtumia.</p><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
+            {kind === "liabilities" && <DebtEstimate item={item} euro={euro} />}
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
@@ -7135,6 +7138,14 @@ function Empty({ text }: { text: string }) {
       <p>{text}</p>
     </div>
   );
+}
+function DebtEstimate({ item, euro }: { item: Entry; euro: (n: number) => string }) {
+ const [expanded, setExpanded] = useState(false);
+ const [asOf, setAsOf] = useState(today() < item.date ? item.date : today());
+ const [fee, setFee] = useState(0), [opening, setOpening] = useState(0);
+ let result: ReturnType<typeof loanEstimate> | null = null, error = "";
+ try { result = loanEstimate(item.amount, item.rate, item.payment, item.date, asOf, fee, opening); } catch (e) { error = String(e).replace(/^Error: /, ""); }
+ return <details className="debt-estimate" onToggle={event => setExpanded(event.currentTarget.open)}><summary>Maksusuunnitelma ja todellinen vuosikorko</summary>{expanded && <><p>Arvio kirjatusta saldosta {item.date}. Olettaa erät maksetuiksi kuukausittain samana päivänä. Ei pankin vahvistama saldo; ei muuta kirjattua velkaa.</p><DatePickerField name="loan-estimate-date" label="Laskentapäivä" value={asOf} minDate={item.date} onChange={setAsOf} /><div className="form-grid"><label>Eräkohtainen lisäkulu (€)<MoneyInput defaultCents={fee} onChange={e => setFee(e.target.value ? money(e.target.value) : 0)} /></label><label>Alussa perittävä kulu (€)<MoneyInput defaultCents={opening} onChange={e => setOpening(e.target.value ? money(e.target.value) : 0)} /></label></div><p>Nimelliskorko {percentText(item.rate)} % vuodessa. Maksuerä {euro(item.payment)} sisältää koron ja lyhennyksen; kulut maksetaan sen lisäksi. Kulut ovat tämän laskelman oletuksia.</p>{error ? <p role="alert">{error}</p> : result && <><div className="stats"><MetricCard label="Arvioitu saldo valittuna päivänä" value={euro(result.balance)} /><MetricCard label="Todellisen vuosikoron arvio" value={result.apr === null ? "Ei laskettavissa" : `${percentText(result.apr)} %`} /><MetricCard label="Maksetuiksi oletetut erät kuluineen" value={euro(result.paid)} /></div><small>{item.payment === 0 ? "Takaisinmaksu ei ole laskelmassa käynnissä. Korkoa arvioidaan yksinkertaisena päiväkorolla; opintolainan todellinen pääomitus on tarkistettava pankista." : "Vakioitu korko, actual/365-päiväkorko ja kuukausierät. Ei koron muutoksia, lyhennysvapaita tai sopimuskohtaisia pyhäpäiväsiirtoja. Vuosikorko ratkaistaan kaikkien tulevien erien kassavirrasta tämän saldon päivämäärästä, ei alkuperäisen lainan virallisena vuosikorkona."}</small></>}</>}</details>;
 }
 function Goal({
   e,
@@ -8002,8 +8013,9 @@ function ScenarioView({
   };
   return (
     <>
+      <section className="panel scenario-start"><h2>Mitä haluat selvittää?</h2><p>Valitse laskuri, muuta oletuksia ja vertaile tulosta. Laskelmat eivät muuta kirjattua taloutta.</p><div role="group" className="scenario-shortcuts" aria-label="Skenaariolaskurit"><button type="button" onClick={() => document.getElementById("scenario-fi")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Milloin taloudellinen riippumattomuus?</button><button type="button" onClick={() => document.getElementById("scenario-invest")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Miten säästöni voivat kasvaa?</button><button type="button" onClick={() => document.getElementById("scenario-compare")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Vertaa tallennettuja suunnitelmia</button><button type="button" onClick={() => document.getElementById("scenario-debt")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Miten velan maksaminen etenee?</button></div></section>
       <section className="panel panel-plan">
-        <h2>FI-pääomatavoite</h2>
+        <h2 id="scenario-fi" tabIndex={-1}>FI-pääomatavoite</h2>
         <p className="muted">
           Yhden vaiheen havainnollistus omilla oletuksillasi. Syötä vuosikulut
           ja muut vuosittaiset nettotulot nykyrahassa. Pääoma tarkoittaa
@@ -8154,7 +8166,7 @@ function ScenarioView({
         </p>
       </section>
       <section className="panel panel-cash">
-        <h2>Korkoa korolle ja kulujen vaikutus</h2>
+        <h2 id="scenario-invest" tabIndex={-1}>Korkoa korolle ja kulujen vaikutus</h2>
         <p className="muted">
           Oletukset ovat muokattavia arvioita, eivät historiallisia tuottoja tai
           sijoitussuosituksia.
@@ -8248,7 +8260,7 @@ function ScenarioView({
         </button>
       </section>
       <section className="panel">
-        <h2>Skenaarioiden vertailu</h2>
+        <h2 id="scenario-compare" tabIndex={-1}>Skenaarioiden vertailu</h2>
         <p>Voit tallentaa ja vertailla useita omia oletuksia.</p>
         {scenarios.length ? (
           <div className="table-wrap mobile-card-table scenario-table">
@@ -8304,7 +8316,7 @@ function ScenarioView({
         )}
       </section>
       <section className="panel">
-        <h2>Velanmaksuskenaariot</h2>
+        <h2 id="scenario-debt" tabIndex={-1}>Velanmaksuskenaariot</h2>
         <p className="muted">
           Vakioitu vuosikorko, kuukausittainen korko ja erä. Ei muita kuluja
           eikä koron muutoksia. Ei luotonottosuositus.
