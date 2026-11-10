@@ -114,3 +114,5 @@ Velan katselukortissa voi avata valitun päivän saldoarvion ja kuluja huomioiva
 Omaisuuden kortin **Arvonmuutoksen arvio** tarjoaa asunto-, ajoneuvo-, laite-, maa- ja muun omaisuuden mallit. Rakennusvuosi/vuosimalli sekä käyttäjän markkina- ja kulumisoletukset tuottavat erillisen arvion valitulle päivälle. Oletukset voi tallentaa JSON-varmuuskopioon ilman kirjatun lähtöarvon muuttamista. Tallennetun mallin arvio näkyy valitun ajankohdan rivillä ja yhteenvedoissa. [Kaavat ja rajaukset](ASSET_VALUATION_PLAN.md).
 
 Ylävalikon kuukausi rajaa tulo-/menolistojen tapahtumat ja omaisuus-/velkalistojen tilanteen. Raportoinnilla on oma erillinen jakso. Auton arviointiin syötetään vuosimalli, lähtökilometrit ja vuotuinen ajo; asuntoon rakennusvuosi. Sovellus antaa perustilan kertoimet. [Kuukausisuodatus ja saldot](MONTH_SCOPE_PLAN.md).
+
+Suunnitteilla: [PDF-laskujen, sopimusten ja S/K-kuittien tuonti](PDF_IMPORT_PLAN.md). Kyseessä on suunnitelma, ei vielä käytettävissä oleva ominaisuus.

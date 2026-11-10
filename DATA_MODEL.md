@@ -82,3 +82,7 @@ Valinnainen Entry.assetModel sisältää mallin (home/vehicle/equipment/land/cus
 ## Ajankohtaiset tilannearvot ja automaattimallit
 
 AssetModel sai valinnaiset automatic-, initialMileage-, brand- ja powertrain-kentät. Vanhat oletukset säilyvät mukautettuina. Lähtöarvon amount/date pysyvät muuttumattomina; datedState tuottaa valitun päivän omaisuus-/velka-arviot ja suodattaa arvostuspäivää myöhemmät kohteet pois. Velan positiivinen payment käynnistää lyhennysarvion, ei tallennettuja maksutapahtumia. Positiivinen korko ilman erää antaa vain yksinkertaisen päiväkoron kertymäarvion. Tavoitteen näkyvyys perustuu createdAt-päivään. Demotavoitteille määritettiin aloituspäivä 1.1.2025. Raportointijakso on käyttöliittymässä erillinen yleisestä kuukaudesta.
+
+## Suunnitteilla: PDF-tuonnin ryhmät ja täsmäytys
+
+[PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md) määrittelee vasta ehdotuksen: DocumentDraft, ImportGroup/ReceiptGroup, lähdeviitteet, kategorioidut tuoterivit, kuluhyvityksen suunnan sekä ennusteen ja maksun erottelun. Näitä ei ole nykyisessä skeemassa. Monikategorista kuittia tai velkasopimuksen kaikkia kuluja ei saa tuoda nykyiseen Entryyn kiertämällä validointia. Mahdollinen migraatio ja JSON-/CSV-rajaukset toteutetaan ennen ominaisuuden käyttöönottoa.
