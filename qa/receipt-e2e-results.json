@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "PDF 1: 15 products, exact total 3287 cents, no draft writes",
+    "PDF 1: grouped expenses saved in purchase month, no duplicate total/payment/VAT",
+    "Duplicate receipt blocked; undo restores exact state and allows re-import",
+    "PDF 2: 22 products, exact total 12146 cents, no draft writes",
+    "Receipt review fits 320/390/768 px; bulk classification and confirmation work",
+    "PDF 2: grouped expenses saved in purchase month, no duplicate total/payment/VAT",
+    "PDF 3: 27 products, exact total 7385 cents, no draft writes",
+    "PDF 3: grouped expenses saved in purchase month, no duplicate total/payment/VAT",
+    "Later saved change expires receipt undo safely",
+    "All three receipt groups and product details persist after reload",
+    "Invalid PDF does not change financial state",
+    "Image-only PDF clearly requests OCR and creates no guessed expenses",
+    "Password-protected PDF is rejected without financial changes",
+    "PDF size limit is enforced before parsing",
+    "No JavaScript errors, console errors or external application requests"
+  ],
+  "suppliedPDFs": true,
+  "errors": [],
+  "externalRequests": []
+}

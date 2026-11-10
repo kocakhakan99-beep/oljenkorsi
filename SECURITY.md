@@ -20,3 +20,9 @@ Haittaohjelmat, laitteen muut käyttäjät, selainlaajennukset, selaimen omat ve
 ## Jatkotehtävät
 
 Kryptografinen backup-tarkiste, valinnainen salasanasalaus, riippuvuusauditointi, kattava fuzz-testaus sekä manuaalinen tietoturvakatselmointi. Npm-lukitustiedosto on käytössä, mutta riippuvuuksien CVE-auditointia ei ole tehty tässä kierroksessa.
+
+## PDF-kuittien paikallinen käsittely
+
+PDF.js 6.5.438 ja sen käsittelijä on pakattu HTML:ään ilman ulkoista workeria tai CDN:ää. PDF:stä luetaan tekstikerros ja koordinaatit; dokumentin JavaScriptiä, linkkejä tai liitteitä ei suoriteta. CSP:n connect-src none säilyy. Tiedosto-, sivu- ja tekstirajat sekä peruutus rajaavat käsittelyä, mutta pääsäikeen synkronista työtä ei voi katkaista välittömästi. Lähde-PDF ei tallennu; tuoterivit ovat salaamatonta paikallista talousdataa. SHA-256 tunnistaa saman tiedoston, ei todista kuitin aitoutta. [Tarkemmat rajat](RECEIPT_SCANNER.md).
+
+PDF-kierroksen tuotantoriippuvuuksien npm-audit: Zod päivitettiin versioon 4.6.7 muistinkulutushaavoittuvuuden korjaamiseksi; tarkistus raportoi päivityksen jälkeen 0 tunnettua tuotantoriippuvuuksien haavoittuvuutta. Kattava riippuvuus-/manuaaliauditointi säilyy jatkotyönä.

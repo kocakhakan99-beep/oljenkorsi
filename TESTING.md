@@ -1,5 +1,17 @@
 # Testausraportti 10.11.2026
 
+## Prisma- ja K-kaupan PDF-kuittiskannaus 10.11.2026
+
+- TypeScript, ESLint, 130 yksikkötestiä 14 tiedostossa ja tuotantobuild läpäisivät. PDF.js kasvattaa JavaScriptin noin 2 386 kB:iin ja itsenäisen HTML:n noin 2,69 Mt:iin; Viten kokohuomautus säilyy.
+- Alkuperäiset käyttäjän toimittamat kolme PDF-kuittia testattiin selaimessa: K-Citymarket 15 tuoteriviä / 32,87 €, Prisma 22 / 121,46 € ja Prisma 27 / 73,85 €. Kaikkien nettotuoterivien ja kategoriakirjausten summat täsmäävät sentilleen loppusummaan.
+- Kuittien erillisessä selainajossa 15 varmennusta: poiminta, luonnoksen muuttumattomuus, monivalinnan luokittelu, hyväksynnän vaatimus, ostopäivän kuukauteen tallennus, lähde-erittely, kaksoistuonnin esto, välitön kumoaminen/uudelleentuonti, kumoamisen vanheneminen myöhemmän tallennuksen jälkeen ja uudelleenlatauksen pysyvyys. Virheellinen, kuvallinen, salattu ja yli 20 Mt PDF eivät muuttaneet taloustietoja. Ei JavaScript-/konsolivirheitä tai ulkoisia sovelluspyyntöjä.
+- Yksikkötestit varmentavat erityisesti Prisman jo alennetun pääsumman, TASAERÄ:n sisärivien laskemisen vain kerran, K-kaupan PLUSSA-alennusten senttijaon (myös suurilla rahaluvuilla), painotuotteet ja erilliset valuuttaglyfit. Lisäksi alkuperäisen tilan muuttumattomuus, JSON-palautus/vanhan varmuuskopion oletus, semanttinen kaksoistuonti, kerta-/sarjamaksun täsmäytys, poikkeustilat sekä käsin korjatut lähde-/kohdekategoriatoteumat.
+- Sovelluksen 82 yleistä Chromium-selainvarmennusta läpäisi PDF.js- ja Zod-päivitysten jälkeen. Kuittinäkymä ei ylivuotanut 320/390/768 px leveydessä, ja 390 px näkymä tarkistettiin kuvakaappauksesta.
+- Myös repositorion siivotuista tekstifixtureistä generoitujen PDF:ien selainpolku läpäisi; alkuperäisiä PDF-tiedostoja tai kortti-/jäsenyystietoja ei lisätty repositorioon.
+- Tuotantoriippuvuuksien npm-audit löysi vanhasta Zodista muistinkulutushaavoittuvuuden. Päivityksen 4.6.7 jälkeen audit raportoi 0 tunnettua haavoittuvuutta. Tämä ei ole koko sovelluksen tietoturva-auditointi.
+- Suora file://-käynnistys offline-selaimessa yritettiin, mutta Chromiumin hallintapolitiikka esti sen ERR_BLOCKED_BY_ADMINISTRATOR-virheellä. Uusi kokonaisuus varmennettiin localhostissa tiukalla CSP:llä; file://-, fyysisen puhelimen ja ruudunlukijan toimivuutta ei väitetä tässä varmennetuksi. Kuvallisten PDF:ien OCR ei ole käytössä.
+
+
 ## Kurssihistoria, automallit ja neljä laajaa demoa 10.11.2026
 
 - TypeScript, ESLint, 112 yksikkötestiä 12 tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 678 kB; Viten kokohuomautus säilyy.

@@ -1,3 +1,4 @@
+import type { ReceiptImport } from "./receipts/schema";
 import type { AssetModel } from "./asset-valuation";
 import type { BudgetGuidanceSettings } from "./budget-guidance";
 import {
@@ -131,6 +132,7 @@ export interface State {
   budgetActuals: Record<string, Record<string, number>>;
   coverage: { incomeMonths: string[]; expenseMonths: string[] };
   actionStates: Record<string, ActionState>;
+  receiptImports: ReceiptImport[];
   investmentTransactions: unknown[];
   scenarios: Scenario[];
   themes: unknown[];
@@ -181,6 +183,7 @@ export function empty(): State {
     budgetActuals: {},
     coverage: { incomeMonths: [], expenseMonths: [] },
     actionStates: {},
+    receiptImports: [],
     investmentTransactions: [],
     scenarios: [],
     themes: [],

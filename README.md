@@ -52,7 +52,7 @@ Budjetin, tulojen ja menojen yhteinen 50/30/20-näkymä vertaa kuukauden nettotu
 
 ## Kehitysteknologiat
 
-React 19.2.1, TypeScript strict, Vite 8.0.16, React Hook Form 7.66.0, Zod 4.1.12, Tailwind CSS 4.3 ja Lucide React 1.68. Tailwind toimii vain build-vaiheessa: CSS kootaan suoraan itsenäiseen HTML-tiedostoon. Lucide-kuvakkeet sisällytetään samaan tiedostoon; sovellus ei hae kuvakkeita verkosta. Vanha design system on edelleen `src/styles.css`-tiedostossa, ja uusia sekä uudistettuja alueita voidaan siirtää Tailwind-luokkiin asteittain. Kaaviot ovat omia, paikallisia HTML/SVG-toteutuksia ja niiden rinnalla on taulukkomuotoinen tietosisältö. Testit: Vitest ja ESLint; E2E käyttää Python Playwrightia vain kehitysympäristössä.
+React 19.2.1, TypeScript strict, Vite 8.0.16, React Hook Form 7.66.0, Zod 4.6.7, Tailwind CSS 4.3 ja Lucide React 1.68. Tailwind toimii vain build-vaiheessa: CSS kootaan suoraan itsenäiseen HTML-tiedostoon. Lucide-kuvakkeet sisällytetään samaan tiedostoon; sovellus ei hae kuvakkeita verkosta. Vanha design system on edelleen `src/styles.css`-tiedostossa, ja uusia sekä uudistettuja alueita voidaan siirtää Tailwind-luokkiin asteittain. Kaaviot ovat omia, paikallisia HTML/SVG-toteutuksia ja niiden rinnalla on taulukkomuotoinen tietosisältö. Testit: Vitest ja ESLint; E2E käyttää Python Playwrightia vain kehitysympäristössä.
 
 ## Kehittäjän asennus ja komennot
 
@@ -117,6 +117,6 @@ Omaisuuden muokkausikkunan **Arvonmuutos**-välilehti tarjoaa asunto-, ajoneuvo-
 
 Ylävalikon kuukausi rajaa tulo-/menolistojen tapahtumat ja omaisuus-/velkalistojen tilanteen. Raportoinnilla on oma erillinen jakso. Auton arviointiin syötetään vuosimalli, lähtökilometrit ja vuotuinen ajo; asuntoon rakennusvuosi. Sovellus antaa perustilan kertoimet. [Kuukausisuodatus ja saldot](MONTH_SCOPE_PLAN.md).
 
-Suunnitteilla: [PDF-laskujen, sopimusten ja S/K-kuittien tuonti](PDF_IMPORT_PLAN.md). Kyseessä on suunnitelma, ei vielä käytettävissä oleva ominaisuus.
+**Käytössä:** [Prisman ja K-kaupan PDF-kuittiskannaus](RECEIPT_SCANNER.md) Tuonti ja vienti -näkymässä: tuoterivit, alennukset, kategoriat, tarkistus ja kirjaus menoihin. Kuitit käsitellään paikallisesti. Kuvallisten PDF:ien OCR ja yleiset lasku-/sopimusparserit ovat vielä [suunnitelmassa](PDF_IMPORT_PLAN.md).
 
 Uutta: arvonmuutoslomake näkyy muokkausvälilehdellä myös silloin, kun mallia ei ole otettu käyttöön. Välilehtivalitsin on selvästi erottuva palkki. Auton porrastettu v2-malli alentaa uuden auton arvoa alkuvaiheessa nopeammin ja huomioi 20 merkin arvio-oletukset. Neljä demotaloutta sisältävät yhteensä 4 480 tulo-/menokirjausta vuosille 2024–2026, tallennetut arvomallit, opintolainat, tavoitteet ja lähdehintoihin kytketyt salkut. [Kurssien lähteet](MARKET_DATA_SOURCES.md) · [Maksuttomien API:en suunnitelma](FREE_API_INTEGRATION_PLAN.md).

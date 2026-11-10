@@ -96,3 +96,7 @@ Entry.marketSymbol on valinnainen, oletuksena tyhjä. Se kytkee sijoituksen glob
 AssetModel.vehicleCurve erottaa legacy-v1- ja staged-v2-mallit. Puuttuva versio tulkitaan vanhaksi v1:ksi. AssetModel.newAtBase tarkoittaa, että auto oli uusi lähtöarvon päivänä; sen ensimmäinen nopea alenemavuosi alkaa siitä. Brand vaikuttaa v2:n näkyvään arvio-oletukseen; powertrain on toistaiseksi taustatieto.
 
 Demojen tiedot ja 36 kuukauden sisältö on kuvattu [DEMO_DATA_PLAN.md](DEMO_DATA_PLAN.md). Hintahavaintojen lähteet ja valuuttaoikaisu on kuvattu [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md). Talouden JSON ei kopioi koko 720 pisteen hintakirjastoa, vaan nykyinen sovellus sisältää sen; päivitys on aina nimenomainen kehitystoiminto.
+
+## Kuittiryhmät 10.11.2026
+
+`receiptImports` täydentää skeemaa 1 valinnaisena palautuskenttänä; puuttuva lista alustetaan tyhjäksi. Ryhmään tallentuvat lähdetiiviste, semanttinen tunniste, tarkistettu kuittiluonnos, kategoriat ja luotujen menojen ID:t. Ryhmä ei itsessään ole rahavirta. Ryhmän euromäärät ja rakenne validoidaan myös palautuksessa. Alkuperäistä PDF:ää tai maksukortti-/jäsenyystietoja ei säilytetä. Tuodut menot ovat kertamenoja, täsmäytetty aiempi kertameno poistetaan tai sarjan yksittäinen esiintymä ohitetaan. JSON säilyttää erittelyn; CSV ei. Kuluhyvityksiä tai ennusteiden jäännösmallia ei vielä lisätty. [Tarkemmat rajat](RECEIPT_SCANNER.md).

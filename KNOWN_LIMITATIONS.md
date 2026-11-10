@@ -46,3 +46,7 @@ Tätä toimitusta ei tule kutsua alkuperäisen määrittelyn täysin hyväksytyk
 - Viten kehitysmalli on `src/index.html`, ja tuotantokooste kirjoittaa yhden valmiin `index.html`-tiedoston projektin juureen. Chromium-pääpolku on testattu loopback HTTP -palvelun kautta; hallittu selain esti suoran file://-avauksen. Testi ei varmista file://-pysyvyyttä tai offline-tilaa eri selaimissa.
 
 Katso [ominaisuuskartoitus](FEATURE_RESEARCH.md) ja [toteutussuunnitelma](FIRE_PLAN.md). Nämä eivät muuta nykyisiä laskentatuloksia.
+
+## PDF-kuittien nykyinen rajaus 10.11.2026
+
+Prisma-/K-kaupan tekstikuitit ovat nyt käytössä testatuilla kolmella formaatilla, ks. [kuittiskannaus](RECEIPT_SCANNER.md). Kuvallisten kuittien OCR, salasanan syöttö, kuluhyvitykset ja yleiset lasku-/sopimusparserit puuttuvat. Koko kuukauden menoarviota ei automaattisesti vähennetä ostoksilla: mahdollinen päällekkäisyys tarkistetaan hyväksynnässä. Kuittituonnin kumoaminen on käytettävissä vain seuraavaan tallennettuun muutokseen asti. Kirjaston pääsäie kasvattaa tiedostoa ja tarvitsee myöhemmin suorituskykyvarmennuksen fyysisillä puhelimilla.
