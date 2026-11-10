@@ -1,5 +1,14 @@
 # Testausraportti 10.11.2026
 
+## Arvonmuutos muokkausikkunan välilehdellä 10.11.2026
+
+- TypeScript, ESLint, 104 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 594 kB; Viten kokohuomautus säilyy.
+- 80 Chromium-selainvarmennusta localhostissa. Katselukortista puuttuu arviointilomake. Arvonmuutos-välilehdeltä otettiin malli käyttöön ja tallennettiin yhteisellä Tallenna-painikkeella; vuodesta 2020 ja lähtökilometreistä muodostui tallennettu malli lähtöarvon pysyessä ennallaan.
+- Välilehtien vaihto ja nuolinäppäimet säilyttivät muuttuneen vuosimallin. Peruuta palautti talouden täsmälleen aiempaan tilaan myös perustietojen kuvauksen muuttuessa. Mallin poiskytkentä ja yhteinen tallennus palauttivat kirjatun arvon käyttöön.
+- Lopullisen buildin erillinen puhelintarkistus varmisti tyhjän summan estävän tallennuksen ja avaavan Perustiedot-välilehden. Arvonmuutoksen luonnos säilyi ja peruutus ei muuttanut tallennusta. Muokkausikkuna mahtui 390 px leveyteen ja tarkistettiin kuvakaappauksesta.
+- Nykyiset kuukausi-, saldo-, tavoite-, raportti-, CSV-/JSON-, demo- ja mobiilipolut läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Yhteinen kuukausi ja helppo arvomalli 10.11.2026
 
 - TypeScript, ESLint, 104 yksikkötestiä kymmenessä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 592 kB; Viten kokohuomautus säilyy.

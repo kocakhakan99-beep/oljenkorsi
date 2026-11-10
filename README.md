@@ -111,7 +111,7 @@ Velkalistassa korolle ja kuukausierälle on omat sarakkeet. Omaisuuslinkin kuvak
 
 Velan katselukortissa voi avata valitun päivän saldoarvion ja kuluja huomioivan vuosikorkolaskelman. Arvio olettaa erät maksetuiksi eikä muuta kirjattua velkaa; opintolainan pääomitus tarkistetaan pankista. Skenaarioiden alussa valitaan kysymykseen sopiva laskuri. Sijoitusten 20 valintapohjalla ei vielä ole kurssiyhteyttä tai kahden vuoden historiaa: [kurssidatan jatkosuunnitelma](INVESTMENT_MARKET_DATA_PLAN.md).
 
-Omaisuuden kortin **Arvonmuutoksen arvio** tarjoaa asunto-, ajoneuvo-, laite-, maa- ja muun omaisuuden mallit. Rakennusvuosi/vuosimalli sekä käyttäjän markkina- ja kulumisoletukset tuottavat erillisen arvion valitulle päivälle. Oletukset voi tallentaa JSON-varmuuskopioon ilman kirjatun lähtöarvon muuttamista. Tallennetun mallin arvio näkyy valitun ajankohdan rivillä ja yhteenvedoissa. [Kaavat ja rajaukset](ASSET_VALUATION_PLAN.md).
+Omaisuuden muokkausikkunan **Arvonmuutos**-välilehti tarjoaa asunto-, ajoneuvo-, laite-, maa- ja muun omaisuuden mallit. Rakennusvuosi/vuosimalli sekä käyttäjän markkina- ja kulumisoletukset tuottavat erillisen arvion valitulle päivälle. Oletukset voi tallentaa JSON-varmuuskopioon ilman kirjatun lähtöarvon muuttamista. Tallennetun mallin arvio näkyy valitun ajankohdan rivillä ja yhteenvedoissa. [Kaavat ja rajaukset](ASSET_VALUATION_PLAN.md).
 
 Ylävalikon kuukausi rajaa tulo-/menolistojen tapahtumat ja omaisuus-/velkalistojen tilanteen. Raportoinnilla on oma erillinen jakso. Auton arviointiin syötetään vuosimalli, lähtökilometrit ja vuotuinen ajo; asuntoon rakennusvuosi. Sovellus antaa perustilan kertoimet. [Kuukausisuodatus ja saldot](MONTH_SCOPE_PLAN.md).
 

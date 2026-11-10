@@ -131,3 +131,7 @@ Arviointimalli on omaisuuden katselukortin avattava lisätieto, joten oletuskats
 ## Kuukausirajaus ja helppo omaisuusarvio 10.11.2026
 
 Listan alussa näkyy sovellettava kuukausi tai tilannepäivä. Arviorivi merkitään Arvio-tekstillä; kirjattu lähtöarvo löytyy kortin yläosasta. Omaisuusarvio on heti pääsumman jälkeen avattavana osiona. Perustila kysyy kohteen tiedot, ei prosentteja; mukautetut oletukset ovat erillinen valinta. Asunnon, auton ja muiden tunnistettujen kategorioiden mallia ei voi vaihtaa ristiriitaiseksi. Raportoinnin oma jakso säilyy ylävalikon kuukauden muuttuessa.
+
+## Arvonmuutos muokkausikkunan välilehdellä
+
+Arvonmuutosmalli on omaisuuden muokkausikkunan oma välilehti Perustietojen rinnalla. Katselukortin nuolen takana ollutta arviointilomaketta ei enää ole. Yhteinen Tallenna tallentaa perustiedot ja mallin atomisesti; Peruuta tai ikkunan sulkeminen hylkää molemmat. Välilehtien vaihto ei hukkaa luonnosta. Mallin käyttöönotto/poiskytkentä tehdään samalla välilehdellä. Mallin esikatselu käyttää myös tallentamattomia perustietoja: nykyarvoa, arvostuspäivää, kategoriaa ja omistusosuutta. Näppäimistön vasen/oikea nuoli sekä Home/End vaihtavat välilehteä. Virheellinen mallin lähtötieto ohjaa Arvonmuutos-välilehdelle; puuttuva perustieto Perustietoihin.

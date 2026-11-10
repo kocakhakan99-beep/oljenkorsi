@@ -32,9 +32,9 @@ Sijainti, pinta-ala, kunto, taloyhtiön korjausvelka, toteutuneet remontit, auto
 
 ## Tallennus ja käyttö
 
-Omaisuuden katselukortin avattava Arvonmuutoksen arvio sisältää mallin valinnan, tiedot, arviointipäivän ja kaavaselitteen. Mallia voi vaihtaa; vuodella on pakollinen rooli rakennus-, ajoneuvo- ja laitemallissa. Oletukset tallennetaan erikseen tai poistetaan. Arviointipäivä on istuntokohtainen.
+Omaisuuden muokkausikkunan Arvonmuutos-välilehti sisältää mallin valinnan, tiedot, arviointipäivän ja kaavaselitteen. Mallia voi vaihtaa; vuodella on pakollinen rooli rakennus-, ajoneuvo- ja laitemallissa. Malli otetaan käyttöön tai pois käytöstä välilehden valinnalla ja tallennetaan yhdessä perustietojen kanssa. Peruuta hylkää molempien välilehtien luonnokset. Arviointipäivä on istuntokohtainen.
 
-Entry.assetModel on valinnainen ja vanhat tietueet saavat null-arvon. JSON-varmuuskopio sisältää oletukset. CSV ei siirrä näitä malliasetuksia. Kirjattua arvoa ei korvata automaattisesti lasketulla arvolla.
+Entry.assetModel on valinnainen ja vanhat tietueet saavat null-arvon. JSON-varmuuskopio sisältää oletukset. CSV ei siirrä näitä malliasetuksia. Kirjattua lähtöarvoa ei korvata automaattisesti lasketulla arvolla. Katselukortissa ei enää ole arviointilomaketta tai erillistä mallin tallennuspainiketta.
 
 ## Menetelmien tausta
 

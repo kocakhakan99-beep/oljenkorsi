@@ -86,3 +86,5 @@ AssetModel sai valinnaiset automatic-, initialMileage-, brand- ja powertrain-ken
 ## Suunnitteilla: PDF-tuonnin ryhmät ja täsmäytys
 
 [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md) määrittelee vasta ehdotuksen: DocumentDraft, ImportGroup/ReceiptGroup, lähdeviitteet, kategorioidut tuoterivit, kuluhyvityksen suunnan sekä ennusteen ja maksun erottelun. Näitä ei ole nykyisessä skeemassa. Monikategorista kuittia tai velkasopimuksen kaikkia kuluja ei saa tuoda nykyiseen Entryyn kiertämällä validointia. Mahdollinen migraatio ja JSON-/CSV-rajaukset toteutetaan ennen ominaisuuden käyttöönottoa.
+
+Arvonmuutosmallin siirto muokkausvälilehdelle ei muuta skeemaa. Perustietojen ja assetModel-kentän muutokset ovat yhteinen tallennus; mallin käytöstä poistaminen tallentaa null-arvon. Välilehtien luonnokset ovat paikallista käyttöliittymätilaa, eivät automaattisesti tallennettua talousdataa.

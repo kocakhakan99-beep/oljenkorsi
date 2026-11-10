@@ -6718,7 +6718,7 @@ function App() {
         return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
           <section className="entry-reader" aria-label="Tietueen tiedot">
             <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round(item.amount * item.quantity) : item.amount)}</strong></div>
-            {kind === "assets" && <AssetValuation key={item.id} item={item} atDate={valuationDate} euro={euro} onSave={model => commit({ ...s, assets: s.assets.map(asset => asset.id === item.id ? { ...asset, assetModel: model, updatedAt: new Date().toISOString() } : asset) })} />}
+
             {(kind === "assets" || kind === "liabilities") && <p className="ux-status-note">{valuationDate} · {datedValue(item,kind,valuationDate).note} · {euro(datedValue(item,kind,valuationDate).value)}. Kirjattu lähtöarvo näkyy yllä.</p>}
             <dl className="entry-facts">
               <div><dt>{kind === "assets" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
@@ -6852,7 +6852,7 @@ function App() {
           title={"Muokkaa / lisää " + singular[edit.kind]}
           onClose={() => setEdit(null)}
         >
-          {edit.kind === "incomes" || edit.kind === "expenses" ? <CashEntryForm key={edit.item.id} kind={edit.kind} item={edit.item} editing={s[edit.kind].some(item => item.id === edit.item.id)} categories={categoryChoices(edit.kind)} onSave={item => saveEntry(edit.kind, item)} onCancel={() => setEdit(null)} /> : <EntryForm
+          {edit.kind === "incomes" || edit.kind === "expenses" ? <CashEntryForm key={edit.item.id} kind={edit.kind} item={edit.item} editing={s[edit.kind].some(item => item.id === edit.item.id)} categories={categoryChoices(edit.kind)} onSave={item => saveEntry(edit.kind, item)} onCancel={() => setEdit(null)} /> : <EntryForm key={edit.item.id} euro={euro} atDate={valuationDate}
             kind={edit.kind}
             item={edit.item}
             categories={categoryChoices(edit.kind)}
@@ -7134,19 +7134,16 @@ function Empty({ text }: { text: string }) {
     </div>
   );
 }
-function AssetValuation({ item, euro, onSave, atDate }: { atDate: string; item: Entry; euro: (n: number) => string; onSave: (model: AssetModel | null) => boolean }) {
- const [open, setOpen] = useState(false);
+function AssetValuation({ item, euro, model, setModel, atDate }: { atDate: string; item: Entry; euro: (n: number) => string; model: AssetModel; setModel: React.Dispatch<React.SetStateAction<AssetModel>> }) {
  const lockedModel = defaultAssetModel(item.category).model;
- const [model, setModel] = useState<AssetModel>(() => ({...(item.assetModel || defaultAssetModel(item.category)), automatic: item.assetModel ? item.assetModel.automatic === true : true, model: lockedModel === "custom" ? item.assetModel?.model || lockedModel : lockedModel}));
  const [at, setAt] = useState(atDate < item.date ? item.date : atDate);
  useEffect(() => setAt(atDate < item.date ? item.date : atDate),[atDate,item.date]);
- const [notice, setNotice] = useState("");
  let result: ReturnType<typeof assetValuation> | null = null, error = "";
  try { result = assetValuation(item.amount, item.date, at, model); } catch (e) { error = e instanceof Error && e.message.startsWith("[") ? "Tarkista vuosiluku ja prosenttien rajat." : String(e).replace(/^Error: /, ""); }
- const numberField = (label: string, key: "year" | "life" | "annualMileage" | "initialMileage" | "marketRate" | "annualWear" | "residual" | "buildingShare" | "mileagePenalty" | "uncertainty", min: number, max: number) => !["year", "life", "annualMileage", "initialMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); setNotice(""); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); setNotice(""); }} /></label>;
- return <details className="asset-valuation" onToggle={event => setOpen(event.currentTarget.open)}><summary>Arvon arviointi ja ajankohtainen arvo {item.assetModel ? "· oletukset tallennettu" : "· ei vielä oletuksia"}</summary>{open && <>
+ const numberField = (label: string, key: "year" | "life" | "annualMileage" | "initialMileage" | "marketRate" | "annualWear" | "residual" | "buildingShare" | "mileagePenalty" | "uncertainty", min: number, max: number) => !["year", "life", "annualMileage", "initialMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); }} /></label>;
+ return <section className="asset-valuation">
  <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Tallennettu malli päivittää rivin ja yhteenvedon arviot valitun ajankohdan mukaan. Kirjattu lähtöarvo säilyy. Perustilassa sovellus valitsee kertoimet. Ne ovat yleisen kulumismallin oletuksia, eivät kauppahintadataan kalibroituja. Merkki ja käyttövoima tallentuvat tietoihin; niille ei keksitä hintakertoimia ilman vertailukauppoja.</p>
- <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" disabled={lockedModel !== "custom"} value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year, automatic:true }); setNotice(""); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
+ <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" disabled={lockedModel !== "custom"} value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year, automatic:true }); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
  {!["land", "custom"].includes(model.model) && numberField(model.model === "home" ? "Rakennusvuosi / viimeisen kokonaisuudistuksen vertailuvuosi" : "Vuosimalli / valmistusvuosi", "year", 1000, 2100)}
  <DatePickerField name="asset-estimate-date" label="Arvion päivämäärä" value={at} minDate={item.date} onChange={setAt} />
  {model.model === "vehicle" && <><label>Automerkki<select aria-label="Automerkki" value={model.brand || ""} onChange={e=>setModel({...model,brand:e.target.value})}><option value="">Muu / ei tiedossa</option>{vehicleBrands.map(brand=><option key={brand}>{brand}</option>)}</select></label><label>Käyttövoima<select aria-label="Käyttövoima" value={model.powertrain||"other"} onChange={e=>setModel({...model,powertrain:e.target.value as AssetModel["powertrain"]})}>{Object.entries({petrol:"Bensiini",diesel:"Diesel",hybrid:"Hybridi",plugin:"Lataushybridi",electric:"Sähkö",other:"Muu / ei tiedossa"}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{numberField("Kilometrit arvostuspäivänä", "initialMileage", 0, 3000000)}{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)","annualMileage",0,300000)}</>}
@@ -7160,8 +7157,7 @@ function AssetValuation({ item, euro, onSave, atDate }: { atDate: string; item: 
  </div>
  {error ? <p role="alert">{error}</p> : result && <div className="stats"><MetricCard label="Laskennallinen arvio" value={euro(result.value)} /><MetricCard label="Oletusväli" value={`${euro(result.low)} – ${euro(result.high)}`} /><MetricCard label="Oman osuuden arvio" value={euro(Math.round(result.value * item.ownership / 100))} /></div>}
  <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Automaattisessa automallissa C(ikä, km) = 0,1 + 0,9 × 0,88^ikä × 0,98^(km / 10 000). Ikä- ja kilometrivaikutus suhteutetaan lähtöhetken C-arvoon. Merkillä tai käyttövoimalla ei ole keksittyä kerrointa. Mukautetussa mallissa auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
- <div className="actions"><button type="button" disabled={!!error} onClick={() => { if (onSave(model)) setNotice("Arviointioletukset tallennettu. Rivin arvio päivittyy valitun ajankohdan mukaan."); }}>Tallenna arviointioletukset</button>{item.assetModel && <button type="button" onClick={() => { if (onSave(null)) setNotice("Tallennetut arviointioletukset poistettu."); }}>Poista arviointioletukset</button>}</div><p role="status">{notice}</p>
- </>}</details>;
+ </section>;
 }
 function DebtEstimate({ item, euro, atDate }: { atDate: string; item: Entry; euro: (n: number) => string }) {
  const [expanded, setExpanded] = useState(false);
@@ -7216,12 +7212,16 @@ function Goal({
 function EntryForm({
   kind,
   item,
+  euro,
+  atDate,
   categories,
   assets,
   onSave,
   onCancel,
 }: {
   kind: Exclude<Kind, "incomes" | "expenses">;
+  euro: (n: number) => string;
+  atDate: string;
   item: Entry;
   categories: CategoryChoice[];
   assets: Entry[];
@@ -7231,9 +7231,18 @@ function EntryForm({
   const { register, handleSubmit, setValue, watch } =
     useForm<Record<string, string>>();
   const [error, setError] = useState("");
+  const [editorTab, setEditorTab] = useState<"basic" | "valuation">("basic");
+  const editorId = React.useId();
+  const [valuationEnabled, setValuationEnabled] = useState(!!item.assetModel);
+  const [assetDraft, setAssetDraft] = useState<AssetModel>(() => ({ ...(item.assetModel || defaultAssetModel(item.category)), automatic: item.assetModel ? item.assetModel.automatic === true : true }));
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryActiveIndex, setCategoryActiveIndex] = useState(-1);
   const categoryValue = watch("category") || item.category;
+  useEffect(() => {
+    if (kind !== "assets") return;
+    const selected = defaultAssetModel(categoryValue);
+    if (selected.model !== "custom") setAssetDraft(current => current.model === selected.model ? current : { ...selected, automatic: true });
+  }, [categoryValue,kind]);
   const matchingCategories = categories.filter((category) =>
     category.name
       .toLocaleLowerCase("fi-FI")
@@ -7272,6 +7281,7 @@ function EntryForm({
   }
   function submit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault();
+    let validationArea: "basic" | "valuation" = "basic";
     try {
       let f = new FormData(ev.target as HTMLFormElement),
         v = { ...item, updatedAt: new Date().toISOString() };
@@ -7302,12 +7312,21 @@ function EntryForm({
         }
       for (let k of ["quantity", "ownership", "rate"] as const)
         if (f.has(k)) v[k] = Number(String(f.get(k)).replace(",", "."));
-      if (kind === "assets") v.liquid = f.has("liquid");
+      if (kind === "assets") {
+        if (!String(f.get("amount") ?? "").trim()) throw Error("Syötä kirjattu arvo; myös 0 euroa on sallittu.");
+        v.liquid = f.has("liquid");
+      }
       if (kind === "goals") { const planned = goalPlan(v.amount, goalTarget, goalMonthly, v.date, goalMode); v.target = planned.target; v.monthly = planned.monthly; }
+      if (kind === "assets") {
+        validateEntry({ ...v, assetModel: null });
+        v.assetModel = valuationEnabled ? assetDraft : null;
+        if (valuationEnabled) { validationArea = "valuation"; assetValuation(v.amount,v.date,atDate < v.date ? v.date : atDate,assetDraft); }
+      }
       validateEntry(v);
       onSave(v);
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof Error ? e.message : String(e));
+      if (kind === "assets") setEditorTab(validationArea);
     }
   }
   const field = (
@@ -7402,7 +7421,7 @@ function EntryForm({
     );
   };
   return (
-    <form
+    <form noValidate={kind === "assets"} onChangeCapture={() => { if (kind === "assets" && error) setError(""); }}
       onSubmit={handleSubmit((_values, event) =>
         submit(event as React.FormEvent<HTMLFormElement>),
       )}
@@ -7412,6 +7431,8 @@ function EntryForm({
           {error}
         </div>
       )}
+      {kind === "assets" && <div role="tablist" aria-label="Omaisuuden muokkaus" className="asset-editor-tabs">{(["basic", "valuation"] as const).map((tab,index) => <button key={tab} type="button" role="tab" id={`${editorId}-${tab}-tab`} aria-controls={`${editorId}-${tab}-panel`} aria-selected={editorTab === tab} tabIndex={editorTab === tab ? 0 : -1} onClick={() => setEditorTab(tab)} onKeyDown={event => { if (["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) { event.preventDefault(); const next = event.key === "Home" ? "basic" : event.key === "End" ? "valuation" : index === 0 ? "valuation" : "basic"; setEditorTab(next); document.getElementById(`${editorId}-${next}-tab`)?.focus(); } }}>{tab === "basic" ? "Perustiedot" : "Arvonmuutos"}</button>)}</div>}
+      <div id={`${editorId}-basic-panel`} role={kind === "assets" ? "tabpanel" : undefined} aria-labelledby={kind === "assets" ? `${editorId}-basic-tab` : undefined} hidden={kind === "assets" && editorTab !== "basic"}>
       <div className="form-grid">
         {field("Nimi", "name", item.name, "text", true)}
         <label>
@@ -7648,6 +7669,12 @@ function EntryForm({
           maxLength={2000}
         />
       </label>
+      </div>
+      {kind === "assets" && <div id={`${editorId}-valuation-panel`} role="tabpanel" aria-labelledby={`${editorId}-valuation-tab`} hidden={editorTab !== "valuation"}>
+        <label className="check"><input type="checkbox" checked={valuationEnabled} onChange={event => setValuationEnabled(event.target.checked)} /> Käytä arvonmuutosmallia</label>
+        <p className="muted">Malli ja muut omaisuuden tiedot tallentuvat yhdessä. Peruuta hylkää kaikki tämän ikkunan muutokset.</p>
+        {editorTab === "valuation" && valuationEnabled && <AssetValuation item={{ ...item, category: categoryValue, date: entryDate, ownership: formPercents.ownership, amount: (() => { try { return goalAmountText === undefined ? item.amount : money(goalAmountText || "0"); } catch { return item.amount; } })() }} euro={euro} atDate={atDate} model={assetDraft} setModel={setAssetDraft} />}
+      </div>}
       <div className="actions">
         <button type="submit" className="primary">
           Tallenna
