@@ -1,5 +1,7 @@
 # Taloussuunnittelu 0.1.0
 
+Ajantasainen selkokielinen kokonaiskuva: [checklist ja dokumentaatio aiheittain](CHECKLIST.md).
+
 Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus. Tarkoitus on auttaa käyttäjää hyötymään omasta taloudestaan, ei myydä hänen tietojaan.
 
 ## Käyttö ilman asennusta
