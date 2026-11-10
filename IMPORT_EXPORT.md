@@ -19,3 +19,9 @@ Nimi, summa ja päivämäärä ovat pakollisia. Puuttuva kategoria on Muu. Yleis
 Tuonti näyttää sarakekartoituksen, viisi esimerkkiriviä, virheet ja duplikaattimäärät. Harvemmin tarvittavien kenttien kartoitus on suljettavissa. Virheet voidaan ohittaa tai korjata alkuperäisessä CSV:ssä ja valita tiedosto uudelleen. Duplikaattiheuristiikka: sama nimi, päivä, summa ja kategoria, myös tuontierän sisällä. Ei pankkikohtaista parseria. Viimeisin tuonti voidaan kumota istunnon aikana; kumoaminen palauttaa koko aiemman tilan, joten tee se ennen muita muutoksia.
 
 CSV ei säilytä ID:tä tai koko sovellustilaa. Käytä JSON:ia täydelliseen palautukseen. Kaavasuoja voi lisätä tekstin alkuun apostrofin, joka voi jäädä näkyviin CSV:n takaisinluvussa.
+
+## Käyttöliittymän pääpaikat
+
+Tavallinen JSON-varmuuskopiointi ja CSV-siirto ovat Tuonti ja vienti -näkymässä. Asetukset ohjaa sinne. Alkuperäinen selaintallennus voidaan edelleen viedä Asetusten ”Tallennuksen lisätyökalut” -kohdasta vian selvittämistä varten.
+
+CSV:n tietotyyppi on perusvalinta; merkistö ja erotin ovat ”Tiedoston lisäasetukset” -kohdassa. Virheellinen UTF-8 avaa asetukset ja esikatselun voi korjata valitsemalla esimerkiksi Windows-1252. Virhe ei itsessään muuta taloustietoja, eikä tuontia voi vahvistaa ratkaisemattoman tiedoston lukuvirheen aikana. Sarakekartoitus, rivivirheet, duplikaattien ohitus ja tuonnin kumoaminen säilyvät. JSON-palautus korvaa nykyisen talouden erillisen vahvistuksen jälkeen.

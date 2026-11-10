@@ -37,3 +37,7 @@ Otettiin käyttöön yhteiset mittarikortit, tilamerkit, budjetin käyttöastepa
 ### Raportit ja varallisuuslistat 10.11.2026
 
 Yhteiset kuvaketoiminnot talouslistoihin ja kategoriakorttiin; saavutettavat nimet, näppäimistökäyttö ja poiston vahvistus säilyvät. Omaisuuden, velkojen ja sijoitusten pääluvut ja manuaalisuus näkyvät lyhyessä yhteenvetokaistassa. Sijoitusrivillä näkyy hankinta-arvo kategorian toiston sijasta ja tavoiterivi näyttää vain etenemisen sekä aika-arvion. Raportin tietokortti erottaa pääsumman ja tietuemäärän sekä budjetin kolme vertailulukua. Pitkät laskentaselitteet avautuvat tarvittaessa, ja omat toteumat, nykytilan luonne ja FIRE-skenaarion rajaus pysyvät näkyvinä.
+
+### Asetukset ja tiedonhallinnan UX 10.11.2026
+
+Asetusten demogalleria korvattiin yhteisen valintaikkunan avauksella. Tallennuksen tila ja varmuuskopioinnin pääpaikka näkyvät lyhyesti; raakadatan vienti ja poistot säilyvät avattavissa lisävalinnoissa. CSV:n merkistö ja erotin siirrettiin tiedoston lisäasetuksiin, jotka avautuvat merkistövirheessä ja pysyvät auki korjauksen jälkeen. Virheet, duplikaatit ja tuotavien rivien määrä näkyvät tilamerkkeinä. Raportin kaavio ja taulukko ovat vaihtoehtoisia esityksiä, eikä taulukossa näy kaavion zoomausta. Kuukausivalinnan otsikkotoisto ja vanhentuneet toteumatilan käyttöohjeet korjattiin. 83 yksikkötestiä ja 67 selainvarmennusta läpäisivät.

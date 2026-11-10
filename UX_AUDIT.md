@@ -116,3 +116,9 @@ Tämä vähentää sarakekartoitusta, mutta ei kata kaikkien pankkien omia CSV-m
 Saman toiminnon rinnakkaisia toteutuksia tunnistettiin tulo-/menolomakkeista (pika vs täydellinen), kategoriatoteumasta (kirjatut maksut vs rinnakkainen koontisyöttö), 50/30/20:n kolmesta täydestä paneelista ja tavallisen varmuuskopioinnin paikoista. Lisäys ja muokkaus käyttävät nyt yhtä lomaketta, jossa harvemmat kentät ovat lisävalinnoissa. Budjetin päätaulukko näyttää toteuman; koontikorjaus säilyy kategoriakortin erillisenä lisävalintana ja sen vaikutus erotetaan kassavirrasta. Raamien asetukset ovat budjetissa, muut kirjaussivut näyttävät vain tiiviin tilan ja linkin. Tavallinen varmuuskopiointi on Tuonti ja vienti -näkymässä.
 
 [Toimintokartta](UNIFICATION_PLAN.md) määrittää pääpaikat. [UX-esittämisen malli](UX_PRESENTATION_MODEL.md) määrittää seuraavan kierroksen: vähemmän oletuksena näkyvää tekstiä ja ominaisuudet säilyttäviä lisätietotasoja. Malli on suunniteltu, koko sovelluksen käyttökokemusta ei tämän perusteella julisteta valmiiksi tai auditoiduksi.
+
+## Asetukset, tiedonhallinta ja raporttiohjaimet 10.11.2026
+
+Asetusten neljän talouden galleria korvattiin yhteisen demoikkunan avauksella. Raakavienti ja poistot säilyvät avattavissa, ja korvaamisen/poiston varoitukset sekä vahvistukset pysyvät ennallaan. CSV:n tekniset tiedostoasetukset eivät enää kilpaile tietotyypin kanssa perusnäkymässä; merkistövirhe tuo ne esiin. JSON:n ja CSV:n eri roolit esitetään lyhyesti.
+
+Tulot/menot-raportissa oli kaavion alla aina taulukko, vaikka käyttäjä valitsi esitysmuodon. Taulukko näkyy nyt vain sitä valittaessa, ja kaavion zoomaus on piilotettu taulukkomuodossa. Kuukausivalinnan otsikkotoisto poistettiin. Käyttöohjeen vanhat toistuvuuden ja toteumatilan kuvaukset korjattiin nykyiseen päiväperusteiseen laskentaan. Muutokset eivät ole näyttö käyttäjän ymmärryksen paranemisesta; manuaalinen käytettävyys- ja ruudunlukijavarmennus on edelleen tekemättä.

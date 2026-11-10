@@ -47,10 +47,12 @@ Välttämättömän yksikön, tunnisteen, saavutettavan nimen ja kriittisen varo
 - [x] Kompassi: havainto ja seuraava askel näkyviin; lähde ja toistava perustelu avattaviksi, myös esimerkeissä.
 - [x] Raporttien yhteenveto ja budjettitietokortti: pääluku, yhteiset mittarit ja avattava laskentaselite; omat toteumakorjaukset näkyvät erikseen.
 - [x] Nykytilaraportit ja FIRE: manuaalisuus, puuttuva arvostushistoria ja skenaarioluonne lyhyinä näkyvinä tiloina.
-- [ ] Raporttikohtaisten muiden selitteiden ja kaavio-ohjainten jatkoläpikäynti.
+- [x] Raportin pääohjaimet: kaavio ja taulukko vaihtoehtoina, zoomaus vain kaaviossa, yksi kuukausinäyttö kuukausitilassa ja aikavalinnan ohje avattavana.
 - [x] Omaisuuden, velkojen ja sijoitusten yhteenvetorakenne, tilamerkit ja avattavat lisätiedot. Tavoitetaulukossa tiivis eteneminen ilman nimen ja summien toistoa.
-- [ ] Asetukset ja datan hallinta: selkeät pääpaikat, lyhyet nimet ja vahvistukset.
-- [ ] Käyttäjä-, näppäimistö-, ruudunlukija- ja mobiilivarmennus.
+- [x] Asetukset ja tiedonhallinta: yhteinen demoikkuna, tallennuksen tila, avattavat lisätyökalut ja poistot sekä CSV:n tekniset lisäasetukset. Vahvistukset ja kriittiset varoitukset säilyvät.
+- [x] Automaattiset näppäimistöpolut ja 320–768 px responsiivisuuspolut myös asetuksissa ja tiedonhallinnassa.
+- [ ] Manuaalinen käyttäjätestaus, ruudunlukija ja fyysinen kosketuslaite.
+- [ ] Käyttäjätestin perusteella jäljelle jäävien termien, toimintojen löydettävyyden ja tietotiheyden loppuhionta.
 
 ## Soveltamisen päätöstesti
 
@@ -73,3 +75,11 @@ Yhteenvedon budjettiprosentti käyttää samaa kategoriatoteumaa kuin budjettin�
 Muokkaus ja poisto käyttävät samaa kuvakekomponenttia talouslistoissa, ja kategoriakortti samaa muokkauspainiketta. Saavutettava nimi, työkaluvihje, 44 px painallusalue, alkuperäinen lomake ja poiston vahvistus säilyvät. Omaisuusrivin omistusosuus, likvidiys ja velkarivin korko/erä/linkki esitetään lyhyesti. Sijoitusrivin toistuva kategoria korvattiin hankinta-arvolla; tavoitteessa ei toisteta taulukon muissa sarakkeissa olevia tietoja.
 
 Raportin tietokortissa pääsumma ja tietuemäärä ovat ensin. Budjettivalinnan kolme vertailulukua käyttävät yhteisiä mittareita; oma kokonaistoteuman korjaus säilyy näkyvänä varoituksena. Nykytilan manuaalisuus ja arvostushistorian puuttuminen sekä FIRE-laskelman skenaarioluonne ovat näkyvissä, pitkät selitteet avautuvat tarvittaessa. Kategoriakortin tila-/toistuvuus-/menotyyppirivi näyttää vain tilanteeseen soveltuvat tiedot.
+
+## Asetusten ja tiedonhallinnan kierros 10.11.2026
+
+Asetuksissa on teema, väritila, ohjeiden palautus, demovalitsimen avaus ja tallennuksen tila. Sama demoikkuna palvelee käyttöönottoa ja asetuksia. Alkuperäisen tallennuksen vienti säilyy lisätyökaluissa, ja poistotoiminnot löytyvät nimetystä avattavasta kohdasta. Poistojen nykyiset vahvistukset ja tietojen korvaamisen varoitukset säilyvät.
+
+Tiedonhallinnassa JSON on koko talouden kopio, CSV tietuelistojen siirto. Perusnäkymä näyttää eron lyhyesti. CSV:n merkistö ja erotin ovat lisäasetuksissa; merkistövirhe avaa ne korjausta varten. Virheet ja duplikaatit sekä tuotavien rivien määrä pysyvät näkyvissä. Ohjeista korjattiin vanhat väitteet käsin valittavasta toteumatilasta ja tapahtumakohtaisten poikkeusten puuttumisesta.
+
+Tulot/menot-raportin kaavio ja taulukko eivät enää näy oletuksena yhtä aikaa: esitysmuodon valinta määrää näkyvän sisällön, ja taulukkomuodossa ei näy kaavion zoomausta. Kuukausitilassa samaa päivämäärää ei toisteta ylimääräisessä otsikossa.
