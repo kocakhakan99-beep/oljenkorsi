@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Yhteinen kuukausi ja helppo arvomalli 10.11.2026
+
+- TypeScript, ESLint, 104 yksikkötestiä kymmenessä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 592 kB; Viten kokohuomautus säilyy.
+- Viisi uutta testiä kattavat tilannepäivän (nykyinen päivä tai kuukauden loppu, myös karkausvuosi), malliin perustuvat asset/debt-arvot ilman lähdedatan muuttamista, mallin kategoriaristiriidan, nollaerän, alkukilometrien/ajon vaikutuksen, merkkitiedon neutraaliuden ilman kalibrointia sekä kerta-/toistuva-/keskeytetty-/päättynyt-kirjausten ja tavoitteiden aikarajauksen.
+- 79 Chromium-selainvarmennusta localhostissa. Kuukauden vaihto muutti omaisuuden riviarviota ja korottoman 2 000 euron velan joulukuun saldoarvioksi 1 900 euroa (100 €/kk, lähtöpäivä 1.11.). Alkuperäinen pääoma säilyi. Arviomallin poistaminen palautti kirjatun arvon käyttöön.
+- Lokakuussa alkamaton marraskuun sarja ja tulevan joulukuun kertameno eivät näkyneet marraskuun ulkopuolisessa listassa. Raportin oma kuukausi säilyi ylävalikon kuukauden vaihtuessa. Varallisuusraportti käyttää omaa tilannepäivää ja erottaa arvion historiasta.
+- Erillinen puhelintarkistus varmisti kategoriaan lukitun automallin, puuttuvat prosenttisyötteet perustilassa, 20 merkin luettelon, käyttövoiman ja lähtökilometrien tallennuksen sekä kuukauden vaikutuksen skenaarion velkapohjaan, vuoden 2025 tuloihin ja omaisuusrivien rajaukseen. Autolomake tarkistettiin kuvakaappauksesta.
+- Nykyiset tallennus-, palautus-, demo-, tavoite-, raportti- ja mobiilipolut 320–768 px läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Omaisuuden arvonmuutosmallit 10.11.2026
 
 - TypeScript, ESLint, 99 yksikkötestiä yhdeksässä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 587 kB; Viten kokohuomautus säilyy.

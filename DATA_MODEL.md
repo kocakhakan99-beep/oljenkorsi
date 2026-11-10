@@ -78,3 +78,7 @@ SchemaVersion säilyy. Velan laskentapäivä ja kulut ovat istuntokohtaisia lask
 ## Omaisuuden arviointioletukset 10.11.2026
 
 Valinnainen Entry.assetModel sisältää mallin (home/vehicle/equipment/land/custom), vuosiluvun year, marketRate-, annualWear-, life-, residual-, buildingShare-, annualMileage-, mileagePenalty- ja uncertainty-oletukset. Parametrit validoidaan ja siirtyvät JSON-varmuuskopiossa. Puuttuva kenttä normalisoidaan null-arvoksi, schemaVersion säilyy. Arviointipäivä ja laskettu arvo eivät tallennu. Amount, date ja ownership ovat edelleen kirjatun arvon lähde. CSV ei sisällä arviointioletuksia.
+
+## Ajankohtaiset tilannearvot ja automaattimallit
+
+AssetModel sai valinnaiset automatic-, initialMileage-, brand- ja powertrain-kentät. Vanhat oletukset säilyvät mukautettuina. Lähtöarvon amount/date pysyvät muuttumattomina; datedState tuottaa valitun päivän omaisuus-/velka-arviot ja suodattaa arvostuspäivää myöhemmät kohteet pois. Velan positiivinen payment käynnistää lyhennysarvion, ei tallennettuja maksutapahtumia. Positiivinen korko ilman erää antaa vain yksinkertaisen päiväkoron kertymäarvion. Tavoitteen näkyvyys perustuu createdAt-päivään. Demotavoitteille määritettiin aloituspäivä 1.1.2025. Raportointijakso on käyttöliittymässä erillinen yleisestä kuukaudesta.

@@ -127,3 +127,7 @@ Skenaariot alkavat neljällä käyttäjän kysymyksellä: FI-ajankohta, sääst�
 ## Omaisuuden arviot 10.11.2026
 
 Arviointimalli on omaisuuden katselukortin avattava lisätieto, joten oletuskatselu säilyy ilman syöttökenttiä. Laskettu arvo ja kirjattu arvo erotetaan. Muokattavat prosentit käyttävät yhteistä säädintä. Mallin vaatima vuosiluku pyydetään ennen tallennusta; virhe näkyy syöttökohdassa. Oletusten tallennus ja poistaminen ovat erilliset toiminnot, eivät omaisuuden arvon päivitys. Pitkät menetelmäselitteet avautuvat pyynnöstä.
+
+## Kuukausirajaus ja helppo omaisuusarvio 10.11.2026
+
+Listan alussa näkyy sovellettava kuukausi tai tilannepäivä. Arviorivi merkitään Arvio-tekstillä; kirjattu lähtöarvo löytyy kortin yläosasta. Omaisuusarvio on heti pääsumman jälkeen avattavana osiona. Perustila kysyy kohteen tiedot, ei prosentteja; mukautetut oletukset ovat erillinen valinta. Asunnon, auton ja muiden tunnistettujen kategorioiden mallia ei voi vaihtaa ristiriitaiseksi. Raportoinnin oma jakso säilyy ylävalikon kuukauden muuttuessa.

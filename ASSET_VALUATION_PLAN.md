@@ -1,6 +1,6 @@
 # Omaisuuden arvonmuutosarviot
 
-Toteutettu 10.11.2026. Mallit ovat käyttäjän oletuksiin perustuvia herkkyyslaskelmia, eivät tilastollisesti estimoituja markkinahintaennusteita. Kirjattu arvo ja arvostuspäivä ankkuroivat laskennan. Malli ei muuta tasearvoja, velkoja tai nettovarallisuutta.
+Toteutettu 10.11.2026. Mallit ovat käyttäjän oletuksiin perustuvia herkkyyslaskelmia, eivät tilastollisesti estimoituja markkinahintaennusteita. Kirjattu arvo ja arvostuspäivä ankkuroivat laskennan. Kirjattu lähtöarvo säilyy. Tallennettu malli muuttaa valitun ajankohdan riviarviota ja johdettuja yhteenvetoja.
 
 | Kohde | Syöttötiedot | Menetelmä |
 | --- | --- | --- |
@@ -41,3 +41,15 @@ Entry.assetModel on valinnainen ja vanhat tietueet saavat null-arvon. JSON-varmu
 Geometrinen ja lineaarinen kuluminen ovat vakiintuneita pääoman ikääntymisen malliperheitä (OECD, Measuring Capital, 2009; Hulten & Wykoff, The Measurement of Economic Depreciation, 1981). Asuntojen markkinahinnan ominaisuuksista riippuvaa luonnetta kuvaa hedonisten hintojen kirjallisuus (Rosen, Hedonic Prices and Implicit Markets, 1974). Näistä ei seuraa tämän sovelluksen parametrien empiiristä oikeellisuutta.
 
 Jatkossa: paikkakuntakohtainen varmennettu asuntohintaindeksi, ajoneuvon vertailukaupat, remontti-/kuntotapahtumat, metsävaratiedot sekä arvostuksen historiatietomalli.
+
+## Tarkennus: helppo perustila ja ajankohtaiset arvot
+
+Uudet mallit käyttävät oletuksena sovelluksen kertoimia. Auto tarvitsee vuosimallin, kilometrit arvostuspäivänä ja vuotuisen ajon. Asunto/rakennus tarvitsee rakennusvuoden tai kokonaisuudistuksen vertailuvuoden. Prosentteja ei kysytä perustilassa; ne löytyvät vain valinnaisesta mukautetusta tilasta. Vanhat tallennetut mukautetut mallit säilyvät, kunnes käyttäjä vaihtaa sovelluksen oletuksiin.
+
+Automaattisen automallin C(a, km) = 0,1 + 0,9 × 0,88^a × 0,98^(km / 10 000). Arvio = lähtöarvo × C(a+t, alkukm + vuotuinen ajo × t) / C(a, alkukm). Näin lähtökilometrit vaikuttavat käyrän muotoon, mutta käytetyn auton arvoa ei vähennetä kahteen kertaan. Autoille on 20 merkin esimerkkiluettelo ja käyttövoimavalinta. Tiedot tallentuvat, mutta merkkien tai käyttövoimien hintakertoimia ei keksitä ilman kalibroitua vertailuaineistoa. Luetteloa ei esitetä virallisena suosituimmuusjärjestyksenä.
+
+Automaattisen asuntomallin markkinamuutos on neutraali 0 %, tekninen käyttöikä 60 vuotta, rakennusosuus 70 % ja tekninen jäännösosuus 10 %. Laitteen geometrinen perusalenema on 20 %. Automaattisten mallien oletusväli on ±25 %. Nämä ovat läpinäkyviä heuristisia laskentaoletuksia, eivät yleispäteviä tutkimuksen osoittamia hintaprosentteja. Yleinen kaavaperhe ei tee parametrien arvoista empiirisesti oikeita.
+
+Kategoria lukitsee asunto-, ajoneuvo-, laite- ja maamallin. Muissa kategorioissa mallin voi valita tai käyttää mukautettua mallia. Jos vanha tallennettu malli on eri tyyppiä kuin nykyinen kategoria, rivillä käytetään kirjattua arvoa ja pyydetään tallentamaan oikea malli.
+
+Rivin ja yhteenvedon arvio lasketaan valitun kuukauden tilannepäivään: kuluvalle kuukaudelle tämä päivä, muille kuun viimeinen päivä. Ennen arvostuspäivää arvoa ei päätellä. Ennen tilannepäivää kirjaamattomia kohteita ei näytetä tilannekuvassa. Raportointi käyttää omaa loppukuukauttaan. Jatkokehityksessä automaattisten oletusten versio on tallennettava, jos kertoimia muutetaan.
