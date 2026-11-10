@@ -31,6 +31,7 @@
     "Omaisuus, velka, sijoitus ja tavoite lisätty",
     "Velan korko ja kuukausierä ovat omissa sarakkeissaan, kuvakelinkki avaa omaisuuden ja velkakortti nimeää linkin",
     "Velan kulut muuttavat vuosikorkoarviota; omaisuuden ja tulojen otsikot sekä 20 sijoituspohjaa toimivat",
+    "Omaisuuden arviointimalli vaatii vuosimallin, tallentaa oletukset ja säilyttää kirjatun arvon",
     "Tavoitesumma laskee kuukausisäästön, kuukausisäästö laskee tavoitteen ja molemmat tallentuvat oikein",
     "Varallisuuslistojen kuvaketoiminnot toimivat näppäimistöllä, sijoituksen menetelmä avautuu ja tavoiterivi ei toista nimeä",
     "Kassavirta 2100 EUR ja nettovarallisuus 4200 EUR",

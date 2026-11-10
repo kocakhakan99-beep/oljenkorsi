@@ -1,3 +1,4 @@
+import { assetModelSchema } from "../domain/asset-valuation";
 import { z } from "zod";
 import {
   empty,
@@ -390,6 +391,7 @@ const defaultsEntry = {
   quantity: 1,
   purchasePrice: 0,
   ownership: 100,
+  assetModel: null,
   liquid: false,
   linkedAssetId: "",
   rate: 0,
@@ -402,6 +404,7 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+  if (e.assetModel != null) assetModelSchema.parse(e.assetModel);
   if (typeof e.adjustToPreviousBankDay !== "boolean")
     throw Error("Virheellinen tulon pankkipäiväasetus.");
   if (!["consumption", "saving", "investment"].includes(e.expenseType))

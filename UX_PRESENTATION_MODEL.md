@@ -123,3 +123,7 @@ Tavoitelomakkeessa kumpikin rahakenttä on muokattava: tavoitesumman muuttaminen
 Omaisuuden rivillä arvostuspäivän tilalla on omistusosuus; arvostuspäivä säilyy kortilla. Tuloissa päiväys nimetään maksupäiväksi. Tapahtumakohtaisista tilakorjauksista näkyy pieni kynämerkki saavutettavalla selitteellä; kortti kertoo tila- ja summakorjausten määrän. Velan nollaerää ei esitetä rahalukuna vaan ”Ei maksuerää” -merkintänä, joka ei väitä takaisinmaksun alkaneen.
 
 Skenaariot alkavat neljällä käyttäjän kysymyksellä: FI-ajankohta, säästöjen kasvu, tallennettujen suunnitelmien vertailu ja velanmaksu. Valinta vierittää oikeaan laskuriin, eikä vaihda sovelluksen pääsivua. Oletukset ja tulokset säilyvät samassa näkymässä. Velkakortin laskuri on avattava lisätieto; sen syöttökenttiä ei näytetä oletuskatselussa.
+
+## Omaisuuden arviot 10.11.2026
+
+Arviointimalli on omaisuuden katselukortin avattava lisätieto, joten oletuskatselu säilyy ilman syöttökenttiä. Laskettu arvo ja kirjattu arvo erotetaan. Muokattavat prosentit käyttävät yhteistä säädintä. Mallin vaatima vuosiluku pyydetään ennen tallennusta; virhe näkyy syöttökohdassa. Oletusten tallennus ja poistaminen ovat erilliset toiminnot, eivät omaisuuden arvon päivitys. Pitkät menetelmäselitteet avautuvat pyynnöstä.

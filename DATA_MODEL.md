@@ -74,3 +74,7 @@ Velan rate ja payment näkyvät erillisissä korko- ja kuukausieräsarakkeissa. 
 ## Velkakortin arvio ja sijoituspohjat 10.11.2026
 
 SchemaVersion säilyy. Velan laskentapäivä ja kulut ovat istuntokohtaisia laskurin oletuksia, eivät tallennettu velan maksuaikataulu. Maksetuiksi oletetut erät eivät muuta velkaa tai luo menoja. Sijoituspohja esitäyttää vain nimen, luokan ja tunnuksen kuvaukseen. Kurssihistoria tai valuuttamalli ei kuulu vielä tietomalliin; ks. INVESTMENT_MARKET_DATA_PLAN.md.
+
+## Omaisuuden arviointioletukset 10.11.2026
+
+Valinnainen Entry.assetModel sisältää mallin (home/vehicle/equipment/land/custom), vuosiluvun year, marketRate-, annualWear-, life-, residual-, buildingShare-, annualMileage-, mileagePenalty- ja uncertainty-oletukset. Parametrit validoidaan ja siirtyvät JSON-varmuuskopiossa. Puuttuva kenttä normalisoidaan null-arvoksi, schemaVersion säilyy. Arviointipäivä ja laskettu arvo eivät tallennu. Amount, date ja ownership ovat edelleen kirjatun arvon lähde. CSV ei sisällä arviointioletuksia.

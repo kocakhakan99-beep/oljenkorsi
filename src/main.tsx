@@ -1,3 +1,4 @@
+import { assetValuation, defaultAssetModel, assetModelNames, type AssetModel } from "./domain/asset-valuation";
 import { investmentCatalog } from "./domain/investment-catalog";
 import { loanEstimate } from "./domain/loan-estimate";
 import { goalPlan } from "./domain/goal-plan";
@@ -6737,6 +6738,7 @@ function App() {
             </dl>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
             {cash && <><p className="muted">{Object.keys(item.occurrenceStatuses).length} tallennettua tilakorjausta · {Object.keys(item.occurrenceAmounts).length} summakorjausta. Korjaukset koskevat yksittäisiä tapahtumia.</p><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
+            {kind === "assets" && <AssetValuation item={item} euro={euro} onSave={model => commit({ ...s, assets: s.assets.map(asset => asset.id === item.id ? { ...asset, assetModel: model, updatedAt: new Date().toISOString() } : asset) })} />}
             {kind === "liabilities" && <DebtEstimate item={item} euro={euro} />}
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
@@ -7138,6 +7140,30 @@ function Empty({ text }: { text: string }) {
       <p>{text}</p>
     </div>
   );
+}
+function AssetValuation({ item, euro, onSave }: { item: Entry; euro: (n: number) => string; onSave: (model: AssetModel | null) => boolean }) {
+ const [open, setOpen] = useState(false);
+ const [model, setModel] = useState<AssetModel>(item.assetModel || defaultAssetModel(item.category));
+ const [at, setAt] = useState(today() < item.date ? item.date : today());
+ const [notice, setNotice] = useState("");
+ let result: ReturnType<typeof assetValuation> | null = null, error = "";
+ try { result = assetValuation(item.amount, item.date, at, model); } catch (e) { error = e instanceof Error && e.message.startsWith("[") ? "Tarkista vuosiluku ja prosenttien rajat." : String(e).replace(/^Error: /, ""); }
+ const numberField = (label: string, key: Exclude<keyof AssetModel, "model">, min: number, max: number) => !["year", "life", "annualMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); setNotice(""); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); setNotice(""); }} /></label>;
+ return <details className="asset-valuation" onToggle={event => setOpen(event.currentTarget.open)}><summary>Arvonmuutoksen arvio {item.assetModel ? "· oletukset tallennettu" : "· ei vielä oletuksia"}</summary>{open && <>
+ <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Laskelma ei muuta omaisuuden arvoa tai nettovarallisuutta. Aloitusluvut ovat muokattavia esimerkkejä, eivät tutkimukseen sovitettuja markkinaennusteita.</p>
+ <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year }); setNotice(""); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
+ {!["land", "custom"].includes(model.model) && numberField(model.model === "home" ? "Rakennusvuosi / viimeisen kokonaisuudistuksen vertailuvuosi" : "Vuosimalli / valmistusvuosi", "year", 1000, 2100)}
+ <DatePickerField name="asset-estimate-date" label="Arvion päivämäärä" value={at} minDate={item.date} onChange={setAt} />
+ {numberField("Markkinan vuosimuutos (%)", "marketRate", -50, 50)}
+ {model.model === "home" && <>{numberField("Rakennuksen osuus arvosta (%)", "buildingShare", 0, 100)}{numberField("Tekninen vertailukäyttöikä (vuotta)", "life", 1, 300)}</>}
+ {["vehicle", "equipment"].includes(model.model) && numberField("Ikäkulumisen perusalenema (% vuodessa)", "annualWear", 0, 90)}
+ {!["land", "custom"].includes(model.model) && numberField("Teknisen jäännösarvon osuus (%)", "residual", 1, 100)}
+ {model.model === "vehicle" && <>{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)", "annualMileage", 0, 300000)}{numberField("Lisäalenema / 10 000 km (%)", "mileagePenalty", 0, 50)}</>}
+ {numberField("Oletusväli arvion ympärillä (± %)", "uncertainty", 0, 90)}</div>
+ {error ? <p role="alert">{error}</p> : result && <div className="stats"><MetricCard label="Laskennallinen arvio" value={euro(result.value)} /><MetricCard label="Oletusväli" value={`${euro(result.low)} – ${euro(result.high)}`} /><MetricCard label="Oman osuuden arvio" value={euro(Math.round(result.value * item.ownership / 100))} /></div>}
+ <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
+ <div className="actions"><button type="button" disabled={!!error} onClick={() => { if (onSave(model)) setNotice("Arviointioletukset tallennettu. Kirjattu arvo säilyi."); }}>Tallenna arviointioletukset</button>{item.assetModel && <button type="button" onClick={() => { if (onSave(null)) setNotice("Tallennetut arviointioletukset poistettu."); }}>Poista arviointioletukset</button>}</div><p role="status">{notice}</p>
+ </>}</details>;
 }
 function DebtEstimate({ item, euro }: { item: Entry; euro: (n: number) => string }) {
  const [expanded, setExpanded] = useState(false);
