@@ -65,3 +65,7 @@ Velan korko ja kuukausierä erotettiin omiin sarakkeisiinsa. Omaisuuslinkki näk
 ### Talousrivien ja laskurien selkeys 10.11.2026
 
 Omaisuuden arvostuspäivä siirrettiin kortille ja omistusosuus omaan sarakkeeseen; tuloissa käytetään Maksupäivä-otsikkoa ja tilakorjausten kuvakemerkkiä. Nollakuukausierä korvattiin selitteellä. Velkakortissa on erillisillä kuluilla toimiva jäljellä olevan suunnitelman vuosikorkoarvio ja valitun päivän saldoarvio, maksetuiksi oletetuin erinä. Skenaariot saivat kysymyskohtaisen aloitusvalinnan. Sijoituksiin lisättiin 20 valintapohjaa; nykykurssit ja kahden vuoden historia odottavat varmennettua tietolähdettä.
+
+### Omaisuuden arvonmuutosarviot 10.11.2026
+
+Lisättiin omaisuuskortille avattavat asunto-, ajoneuvo-, laite-, maa- ja yleismallit. Rakennusvuosi/vuosimalli, tekninen kuluminen, markkinamuutos sekä valinnainen ajomäärän lisävaikutus ovat muokattavissa. Nykyarvoon ankkuroitu laskenta näyttää arvion, oman osuuden ja käyttäjän oletusvälin. Oletukset tallentuvat ja palautuvat JSON-varmuuskopiosta; kirjattu arvo säilyy. Mallin aloitusparametrit ovat havainnollistavia, eivät markkinadataan kalibroituja.

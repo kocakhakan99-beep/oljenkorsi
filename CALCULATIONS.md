@@ -84,3 +84,7 @@ Velkakortin avattava laskelma käyttää kirjattua pääomaa ja sen päivämää
 Vuosikorkoarvio ratkaistaan kassavirran diskonttauksesta: kirjattu saldo miinus alussa perittävä kulu = tulevien kuukausierien ja eräkulujen nykyarvo, diskonttaus todellisten päivien / 365 mukaan. Se kuvaa oletettua jäljellä olevaa maksusuunnitelmaa, ei alkuperäisen luoton lakisääteistä todellista vuosikorkoa. Alkuperäisen luoton nettonosto, toteutuneet rahavirrat ja kaikki sopimuskulut eivät ole mallissa. Jos takaisinmaksu ei valmistu 1 200 erässä tai nettomäärä on nolla, vuosikorkoa ei näytetä.
 
 Kun maksuerä on nolla, ei oleteta lyhennyksiä eikä anneta vuosikorkoarviota. Saldoarvio käyttää yksinkertaista päiväkoron kertymää; opintolainan sopimuskohtaista korkojen pääomitusta, lyhennysvapaata tai tukihyvitystä ei mallinneta. Eräkulut ja alkukulu ovat vain avatun laskelman oletuksia, eivät tallennettuja velan kenttiä. Tuotantokelpoinen automaattiseuranta vaatii erillisen maksuaikataulu-/kulutietomallin.
+
+## Omaisuuden arvonmuutosmallit
+
+Omaisuuden katselukortissa on nykyarvoon ankkuroitu, valittuun päivään ulottuva arviointimalli. Asunto käyttää erillistä rakennuksen teknistä kulumista ja markkinaoletusta; auto ja laite ikääntymistä loiventavaa geometriaa; maa ja muu omaisuus vain käyttäjän markkinaoletusta. Kaavat, lähtötiedot ja rajaukset ovat [arviointimallien kuvauksessa](ASSET_VALUATION_PLAN.md). Kirjattu tasearvo ja nettovarallisuus eivät muutu. Vanhasta depreciation-apufunktiosta poiketen käytetyn kohteen aiempaa ikää ei vähennetä uudelleen nykyisestä arvosta.

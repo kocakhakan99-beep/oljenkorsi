@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Omaisuuden arvonmuutosmallit 10.11.2026
+
+- TypeScript, ESLint, 99 yksikkötestiä yhdeksässä tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 587 kB; Viten kokohuomautus säilyy.
+- Kuusi uutta testiä varmentavat kaikkien mallien ankkuroinnin kirjattuun arvoon, auton ikääntymisen ja ajokertoimen, maa-/markkinamallin, rakennuksen nollan arvo-osuuden, oletusvälin, puuttuvat/virheelliset lähtötiedot ja laskentarajan sekä asetusten JSON-palautuksen ja vanhan tietueen yhteensopivuuden.
+- 77 Chromium-selainvarmennusta localhostissa. Arviointimalli vaati vuosimallin ajoneuvolle, laski arvion ja tallensi valinnat; kortin uudelleenavaus palautti vuosimallin 2020. Kirjattu 6 000 euron arvo säilyi.
+- Oletuskatselu säilyi ilman syöttökenttiä. Nykyiset velka-, tavoite-, tapahtumakorjaus-, raportti-, demo- ja varmuuskopiopolut sekä 320–768 px mobiilitarkistukset läpäisivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+- Erillinen mobiilitarkistus varmisti asuntomallin rakennusvuoden ja tulevan päivän laskennan sekä kolmen arviomittarin asettelun 390 px leveydessä ilman sivuttaisylivuotoa. Mittarit tarkistettiin kuvakaappauksesta.
+- Mallien parametreja ei ole empiirisesti kalibroitu; testi todentaa laskennan ja tallennuksen, ei markkinaennusteen osuvuutta.
+
+
 ## Arvostus, korjausmerkki, velka-arvio ja sijoituspohjat 10.11.2026
 
 - TypeScript, ESLint, 93 yksikkötestiä kahdeksassa tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 580 kB; Viten kokohuomautus säilyy.

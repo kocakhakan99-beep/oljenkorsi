@@ -1,3 +1,4 @@
+import type { AssetModel } from "./asset-valuation";
 import type { BudgetGuidanceSettings } from "./budget-guidance";
 import {
   categoryIconFor,
@@ -67,6 +68,7 @@ export interface Entry {
   quantity: number;
   purchasePrice: number;
   ownership: number;
+  assetModel?: AssetModel | null;
   liquid: boolean;
   linkedAssetId: string;
   rate: number;
@@ -204,6 +206,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     quantity: 1,
     purchasePrice: 0,
     ownership: 100,
+    assetModel: null,
     liquid: false,
     linkedAssetId: "",
     rate: 0,
