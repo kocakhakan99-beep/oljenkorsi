@@ -1,6 +1,6 @@
 # Roadmap
 
-Päivitetty 9.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
+Päivitetty 10.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus.
 
 ## Suunniteltu: PDF-laskut, sopimukset ja S/K-kuitit
 
@@ -73,3 +73,5 @@ Toteutettu 10.11.2026: [omaisuuden arviointimallit](ASSET_VALUATION_PLAN.md), ra
 Toteutettu 10.11.2026: [yhteinen kuukausisuodatus](MONTH_SCOPE_PLAN.md), omaisuuden malliin perustuvat riviarvot, velan maksetuiksi oletettujen erien mukainen saldo ja johdettujen yhteenvetojen yhtenäistys. Raportointi käyttää erillistä jaksoa. Omaisuusarvio siirrettiin näkyviin kortin yläosaan, perustila ei pyydä prosentteja, ajoneuvo saa lähtökilometrit/ajomäärän/merkki- ja käyttövoimavalinnan. Kategoriakohtaiset mallit lukitaan. Kesken: merkkikohtainen empiirinen kalibrointi, todellinen arvostushistoria ja pankkivarmennetut maksut.
 
 Toteutettu 10.11.2026: omaisuuden arvonmuutosmalli siirrettiin muokkausikkunan omalle välilehdelle. Katselukortin lomake poistettiin; perustiedot ja malli tallentuvat/peruutetaan yhdessä ja luonnokset säilyvät välilehteä vaihdettaessa.
+
+Toteutettu 10.11.2026: arvonmuutoslomake on aina nähtävissä omaisuuden omalla muokkausvälilehdellä ja välilehtivalitsin on erottuva, uudelleenkäytettävä palkki. Autojen 20 merkkipainoa ja porrastettu v2-käyrä, uuden auton ensimmäisen vuoden aloituspäivä sekä vanhan v1:n säilytys on toteutettu. [Kaikki neljä demoa](DEMO_DATA_PLAN.md) kattavat 2024–2026 ja 4 480 tulo-/menokirjausta. Kaikille 20 sijoituskohteelle lisättiin lähteistetty offline-historia ja EKP-muunnokset. [Ilmaisten API:en suunnitelma](FREE_API_INTEGRATION_PLAN.md) on valmis; ajonaikainen verkkopäivitys ja avainten hallinta eivät ole vielä käytössä.

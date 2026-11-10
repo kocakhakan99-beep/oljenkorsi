@@ -1,5 +1,16 @@
 # Testausraportti 10.11.2026
 
+## Kurssihistoria, automallit ja neljä laajaa demoa 10.11.2026
+
+- TypeScript, ESLint, 112 yksikkötestiä 12 tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 678 kB; Viten kokohuomautus säilyy.
+- 82 Chromium-selainvarmennusta läpäisi. Arvonmuutos-lomake pysyy näkyvissä myös mallin ollessa pois käytöstä; välilehden aktiivinen tausta ja teksti erottuvat. Merkin vaihtaminen Toyotasta Teslaan muuttaa laskettua arvoa. Peruuttaminen säilyttää alkuperäisen datan.
+- Yksikkötestit kattavat 20 merkin vaikutukset, porrastetun arvonaleneman jatkuvuuden ja voimakkaamman alkuvaiheen, uutena ostetun auton lähtöiän sekä vanhan malliversion yhteensopivuuden. Kertoimet ovat skenaario-oletuksia, eivät mitattuja Suomen jälleenmyyntihintoja.
+- Kaikkien 20 sijoituskohteen 720 lähdehavaintoa ja 730 valuuttakurssihavaintoa tarkistettiin. Kuukauden vaihto päivittää sijoituksen hinnan ja havaintopäivän muuttamatta kirjattua lähtöarvoa. Tulevaa kurssi- tai valuuttahavaintoa ei käytetä. Kortin 36 havaintoa ja kuvaaja varmennettiin selaimessa.
+- Neljän demon 36 kuukautta kattavat vuodet 2024–2026: yhteensä 496 tulokirjausta ja 3 984 menokirjausta. Kaikissa on omaisuutta, velkoja, sijoituksia, tavoitteita, skenaarioita ja tallennettuja arvonmuutosmalleja. Demojen tulevat tapahtumat ovat suunnitelmia, eivät toteutuneita markkinahintoja.
+- Nykyiset raportti-, velka-, tavoite-, tapahtumakorjaus-, JSON-/CSV- ja mobiilipolut 320–768 px läpäisivät. Erillinen lopullisen buildin 390 px tarkistus varmisti lomakkeen ja sijoituksen historiakortin mahtuvan ikkunaan ilman sivuttaisylivuotoa.
+- Ei sovelluksen JavaScript-/konsolivirheitä tai ulkoisia ajonaikaisia verkkopyyntöjä. Hintojen haku on erillinen kehittäjäskripti; vapaaehtoinen tuleva API-käyttö on suunniteltu dokumentaatioon. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Arvonmuutos muokkausikkunan välilehdellä 10.11.2026
 
 - TypeScript, ESLint, 104 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 594 kB; Viten kokohuomautus säilyy.

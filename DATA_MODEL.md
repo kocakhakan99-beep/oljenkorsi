@@ -88,3 +88,11 @@ AssetModel sai valinnaiset automatic-, initialMileage-, brand- ja powertrain-ken
 [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md) määrittelee vasta ehdotuksen: DocumentDraft, ImportGroup/ReceiptGroup, lähdeviitteet, kategorioidut tuoterivit, kuluhyvityksen suunnan sekä ennusteen ja maksun erottelun. Näitä ei ole nykyisessä skeemassa. Monikategorista kuittia tai velkasopimuksen kaikkia kuluja ei saa tuoda nykyiseen Entryyn kiertämällä validointia. Mahdollinen migraatio ja JSON-/CSV-rajaukset toteutetaan ennen ominaisuuden käyttöönottoa.
 
 Arvonmuutosmallin siirto muokkausvälilehdelle ei muuta skeemaa. Perustietojen ja assetModel-kentän muutokset ovat yhteinen tallennus; mallin käytöstä poistaminen tallentaa null-arvon. Välilehtien luonnokset ovat paikallista käyttöliittymätilaa, eivät automaattisesti tallennettua talousdataa.
+
+## Kurssihistoria ja porrastettu automalli
+
+Entry.marketSymbol on valinnainen, oletuksena tyhjä. Se kytkee sijoituksen globaaliin päivättyyn offline-aineistoon. Symboli säilyy JSON-varmuuskopiossa; CSV ei sisällä kytkentää. Amount ja purchasePrice säilyvät kirjattuina EUR-sentteinä, mutta päivätty tilannekuva voi käyttää tarkkaa lähdehintaa EUR-senttien murto-osina ja pyöristää vasta koko position arvon. Näitä johdettuja murto-osia ei tallenneta Entry.amount-kenttään.
+
+AssetModel.vehicleCurve erottaa legacy-v1- ja staged-v2-mallit. Puuttuva versio tulkitaan vanhaksi v1:ksi. AssetModel.newAtBase tarkoittaa, että auto oli uusi lähtöarvon päivänä; sen ensimmäinen nopea alenemavuosi alkaa siitä. Brand vaikuttaa v2:n näkyvään arvio-oletukseen; powertrain on toistaiseksi taustatieto.
+
+Demojen tiedot ja 36 kuukauden sisältö on kuvattu [DEMO_DATA_PLAN.md](DEMO_DATA_PLAN.md). Hintahavaintojen lähteet ja valuuttaoikaisu on kuvattu [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md). Talouden JSON ei kopioi koko 720 pisteen hintakirjastoa, vaan nykyinen sovellus sisältää sen; päivitys on aina nimenomainen kehitystoiminto.

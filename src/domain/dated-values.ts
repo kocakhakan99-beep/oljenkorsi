@@ -1,3 +1,4 @@
+import { marketQuote } from "./market-history";
 import { scheduledOccurrences } from "./calculations";
 import type { Kind } from "./model";
 import type { Entry, State } from "./model";
@@ -19,7 +20,7 @@ export function datedValue(item: Entry, kind: 'assets'|'liabilities', at: string
  return {value:item.amount,estimated:false,note:kind==='assets'?'Kirjattu arvo, ei tallennettua mallia':'Kirjattu saldo, takaisinmaksua ei oleteta'};
 }
 export function datedState(state:State,at:string):State {
- return {...state,investments:state.investments.filter(e=>e.date<=at),assets:state.assets.filter(e=>e.date<=at).map(e=>({...e,amount:datedValue(e,'assets',at).value})),liabilities:state.liabilities.filter(e=>e.date<=at).map(e=>({...e,amount:datedValue(e,'liabilities',at).value}))};
+ return {...state,investments:state.investments.filter(e=>e.date<=at).map(e=>({...e,amount:e.marketSymbol?marketQuote(e.marketSymbol,at)?.exactUnitCents??e.amount:e.amount})),assets:state.assets.filter(e=>e.date<=at).map(e=>({...e,amount:datedValue(e,'assets',at).value})),liabilities:state.liabilities.filter(e=>e.date<=at).map(e=>({...e,amount:datedValue(e,'liabilities',at).value}))};
 }
 
 export function visibleInMonth(item:Entry,kind:Kind,month:string) {

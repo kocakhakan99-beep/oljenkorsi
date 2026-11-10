@@ -46,10 +46,37 @@ Jatkossa: paikkakuntakohtainen varmennettu asuntohintaindeksi, ajoneuvon vertail
 
 Uudet mallit käyttävät oletuksena sovelluksen kertoimia. Auto tarvitsee vuosimallin, kilometrit arvostuspäivänä ja vuotuisen ajon. Asunto/rakennus tarvitsee rakennusvuoden tai kokonaisuudistuksen vertailuvuoden. Prosentteja ei kysytä perustilassa; ne löytyvät vain valinnaisesta mukautetusta tilasta. Vanhat tallennetut mukautetut mallit säilyvät, kunnes käyttäjä vaihtaa sovelluksen oletuksiin.
 
-Automaattisen automallin C(a, km) = 0,1 + 0,9 × 0,88^a × 0,98^(km / 10 000). Arvio = lähtöarvo × C(a+t, alkukm + vuotuinen ajo × t) / C(a, alkukm). Näin lähtökilometrit vaikuttavat käyrän muotoon, mutta käytetyn auton arvoa ei vähennetä kahteen kertaan. Autoille on 20 merkin esimerkkiluettelo ja käyttövoimavalinta. Tiedot tallentuvat, mutta merkkien tai käyttövoimien hintakertoimia ei keksitä ilman kalibroitua vertailuaineistoa. Luetteloa ei esitetä virallisena suosituimmuusjärjestyksenä.
+Aiemman v1-automallin C(a, km) = 0,1 + 0,9 × 0,88^a × 0,98^(km / 10 000). Arvio = lähtöarvo × C(a+t, alkukm + vuotuinen ajo × t) / C(a, alkukm). Näin lähtökilometrit vaikuttavat käyrän muotoon, mutta käytetyn auton arvoa ei vähennetä kahteen kertaan. Autoille on 20 merkin esimerkkiluettelo ja käyttövoimavalinta. Aiemmassa v1-mallissa merkki ja käyttövoima ovat taustatietoja. Uuden v2-mallin läpinäkyvät merkkipainot on kuvattu alla. Luetteloa ei esitetä virallisena suosituimmuusjärjestyksenä.
 
 Automaattisen asuntomallin markkinamuutos on neutraali 0 %, tekninen käyttöikä 60 vuotta, rakennusosuus 70 % ja tekninen jäännösosuus 10 %. Laitteen geometrinen perusalenema on 20 %. Automaattisten mallien oletusväli on ±25 %. Nämä ovat läpinäkyviä heuristisia laskentaoletuksia, eivät yleispäteviä tutkimuksen osoittamia hintaprosentteja. Yleinen kaavaperhe ei tee parametrien arvoista empiirisesti oikeita.
 
 Kategoria lukitsee asunto-, ajoneuvo-, laite- ja maamallin. Muissa kategorioissa mallin voi valita tai käyttää mukautettua mallia. Jos vanha tallennettu malli on eri tyyppiä kuin nykyinen kategoria, rivillä käytetään kirjattua arvoa ja pyydetään tallentamaan oikea malli.
 
 Rivin ja yhteenvedon arvio lasketaan valitun kuukauden tilannepäivään: kuluvalle kuukaudelle tämä päivä, muille kuun viimeinen päivä. Ennen arvostuspäivää arvoa ei päätellä. Ennen tilannepäivää kirjaamattomia kohteita ei näytetä tilannekuvassa. Raportointi käyttää omaa loppukuukauttaan. Jatkokehityksessä automaattisten oletusten versio on tallennettava, jos kertoimia muutetaan.
+
+## Porrastettu v2 ja merkkipainot
+
+Uudet automallit ja demot käyttävät staged-v2-versiota. Vanhat ilman versiokenttää tallennetut automaattimallit käyttävät legacy-v1-käyrää, kunnes käyttäjä valitsee v2:n tai vaihtaa merkin. Vanha mukautettu malli säilyy. Vaihtoehdot näkyvät Arvokäyrä-valinnassa.
+
+Peruskäyrän vuosialenemat ovat 0–1 vuotta 22 %, 1–3 vuotta 14 %, 3–5 vuotta 10 %, 5–10 vuotta 7 % ja yli 10 vuotta 4 %. Vaiheiden kertymä lasketaan logaritmisesti, jolloin käyrä on jatkuva rajakohdissa: R(a) = exp(sum(vaiheeseen kulunut aika × ln(1 − vaiheen alenema))). Merkkipaino w muuttaa kulumista muodossa R(a)^w.
+
+C(a, km) = 0,06 + 0,94 × R(a)^w × 0,98^(km/10 000). V = V0 × C(a+t, alkukm + vuotuinen ajo × t) / C(a, alkukm). Arvostuspäivänä V = V0 myös käytetylle autolle. Jos Auto oli uusi arvostuspäivänä on valittu, a = 0 kyseisenä päivänä: loppuvuonna uutena ostetun auton ensimmäinen vuosi ei ala takautuvasti tammikuusta. Muuten ikä arvioidaan vuosimallin vuoden alusta.
+
+| Merkki | Kulumispaino w | Merkki | Kulumispaino w |
+| --- | ---: | --- | ---: |
+| Toyota | 0,85 | Volkswagen | 0,96 |
+| Volvo | 0,95 | Škoda | 0,94 |
+| Ford | 1,05 | Mercedes-Benz | 1,04 |
+| BMW | 1,08 | Nissan | 1,03 |
+| Kia | 0,94 | Opel | 1,09 |
+| Audi | 1,04 | Hyundai | 0,97 |
+| Peugeot | 1,12 | Renault | 1,10 |
+| Honda | 0,88 | Mazda | 0,91 |
+| Citroën | 1,14 | SEAT | 1,02 |
+| Mitsubishi | 1,01 | Tesla | 1,16 |
+
+Tuntematon/muu merkki käyttää painoa 1. **Nämä painot ja vaiherajat ovat sovelluksen arvio-oletuksia, eivät Suomen toteutuneista kaupoista laskettuja merkkikohtaisia ennusteita.** Pienempi paino loiventaa kulumista. Merkki on karkea taustatekijä: saman merkin eri mallit, kunto ja kysyntä voivat poiketa paljon. Käyttövoimasta ei tehdä erillistä hintakerrointa ilman kalibrointia. Merkkiluettelo ei ole virallinen 20 yleisimmän järjestys.
+
+Taustatarkistus: iSeeCarsin 2026 tutkimus käsittelee eri mallien ja käyttövoimien 5 vuoden arvonaleneman vaihtelua: https://www.iseecars.com/cars-that-hold-their-value-study . Aineisto on Yhdysvalloista eikä kalibroi yllä olevia suomalaisen sovelluksen painoja. Empiirinen Suomi-kalibrointi vertailukaupoista on edelleen jatkotyö.
+
+Arvonmuutosvälilehti ja sen lomake näkyvät omaisuudessa aina, vaikka Käytä arvonmuutosmallia olisi pois päältä. Valinta ohjaa mallin tallentumista ja käyttöä riveillä, ei lomakkeen näkyvyyttä. Käytöstä poissa olevan keskeneräisen mallin puuttuvat tiedot näytetään neutraalina esikatseluhuomiona.

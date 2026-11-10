@@ -1,22 +1,16 @@
-# Sijoitusten kurssit ja historia
+# Sijoitusten kurssit ja historia — tilanne 10.11.2026
 
-## Toteutettu 10.11.2026
+## Toteutettu
 
-20 yleisen osake-/ETF-esimerkin valintapohjaa. Nimi, kaupankäyntitunnus ja alustava luokka esitäytetään nykyiseen sijoituslomakkeeseen. Tämä ei ole suosituimmuuslista. Kurssin puuttuminen kerrotaan näkyvästi; EUR-hinta ja arvostuspäivä ovat manuaalisia.
+- Kaikille 20 valitulle kohteelle 2024–2026 päivätty lähdehistoria: 720 hintahavaintoa ja 730 EKP-valuuttahavaintoa.
+- Lähdehinta valittuun päivään, EUR-muunnos hintapäivän tai aiemman päivän valuuttakurssilla, päivämäärän ja keskeneräisyyden merkintä.
+- Offline-kurssikuvaaja ja havaintotaulukko sijoituksen kortilla; demojen fiktiiviset omistukset kytketty lähdeaineistoon.
+- Omat EUR-hinnat säilyvät vaihtoehtona. JSON-varmuuskopio sisältää symbolikytkennän.
 
-## Vielä tekemättä
+[Lähteet ja hintojen semantiikka](MARKET_DATA_SOURCES.md). [Ilmaisten API:en kartoitus ja turvallinen käyttöönotto](FREE_API_INTEGRATION_PLAN.md).
 
-- Varmennettu nykykurssi sekä aikaleima, alkuperäisvaluutta ja EUR-muunnos.
-- Kahden vuoden historiatiedot kaikille kohteille ja yhteiset demotalouksien aineistot.
-- Historiaa säilyttävä tietomalli ja arvostuksen ajankohtainen raportointi.
-- Myöhempi kurssien päivitys, välimuisti, vanhentuneen hinnan merkintä ja verkkovirheiden käsittely.
+## Suunniteltu, ei toteutettu
 
-Kurssilähteen ensimmäinen haku estyi komentoympäristön verkkorajoitukseen. Sallitulla yhteydellä Yahoo Finance palautti HTTP 429 ja vaihtoehtoinen Stooq-haku HTTP 404. Tämän kierroksen aikana ei saatu varmennettua hintadataa. Demohintoja ei merkitä tämän päivän markkinahinnoiksi.
+Valinnainen EOD-/viiveellinen verkkopäivitys, FMP/Alpha Vantage -BYOK-koe, kattavuus ja näyttöoikeudet jokaiselle instrumentille, rajattu CSP, kiintiöt sekä välimuisti. Reaaliaikaista kurssilupausta ei anneta. Pankin omistustapahtumat, osingot ja yhtiötapahtumien automaattinen käsittely ovat erillisiä jatkotöitä.
 
-## Toteutusjärjestys
-
-1. Valitaan käyttötarkoitukseen soveltuva lähde ja varmistetaan sen ehdot, tunnukset ja 20 kohteen saatavuus.
-2. Tallennetaan kohteen pysyvä tunniste, pörssi, kaupankäyntivaluutta, lähde sekä kurssin päivä/aika. Ulkomaisen hinnan EUR-muunnos tarvitsee päivätyn valuuttakurssin.
-3. Tuodaan 24 kuukauden historia kiinteänä, päivättyinä demo-fixtureina. Erotetaan hintahistoria, osinkokorjattu historia ja todellinen sijoitustuotto.
-4. Lisätään validointi puuttuvalle hinnalle, valuutalle ja päivämäärälle. Viimeisintä saatavilla olevaa kurssia ei kutsuta tämän päivän kurssiksi.
-5. Kytketään historiakuvaaja ja vasta sen jälkeen livepäivitys. Offline-versio käyttää viimeksi varmennettua tietoa aikaleimoineen.
+Vuoden 2026 tulevat päivät eivät saa keksittyä toteutunutta hintaa. Historiallinen hintasarja ei ole osingot sisältävä kokonaistuotto. API-avaimia tai henkilökohtaisia taloustietoja ei lähetetä nykyisessä offline-versiossa.

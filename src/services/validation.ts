@@ -390,6 +390,7 @@ const defaultsEntry = {
   tags: "",
   quantity: 1,
   purchasePrice: 0,
+  marketSymbol: "",
   ownership: 100,
   assetModel: null,
   liquid: false,
@@ -404,6 +405,7 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+  if (e.marketSymbol !== undefined && (typeof e.marketSymbol !== "string" || !/^[A-Z0-9.^=-]{0,30}$/.test(e.marketSymbol))) throw Error("Virheellinen sijoitustunnus.");
   if (e.assetModel != null) assetModelSchema.parse(e.assetModel);
   if (typeof e.adjustToPreviousBankDay !== "boolean")
     throw Error("Virheellinen tulon pankkipäiväasetus.");

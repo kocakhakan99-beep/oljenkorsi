@@ -5245,7 +5245,7 @@ button.primary,
 @media (max-width: 600px) { .budget-income-basis > small, .budget-rule-alert-row > small { flex-basis: 100%; } }
 
 .demo-data-period { display: block; color: var(--muted); margin-bottom: 12px; }
-.compass-story-bars { grid-template-columns: repeat(24, minmax(84px, 1fr)); max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 12px; }
+.compass-story-bars { grid-template-columns: repeat(36, minmax(84px, 1fr)); max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: 12px; }
 .compass-story-chart { min-width: 0; }
 
 .metric-card { position: relative; padding: 16px; }
@@ -5469,8 +5469,14 @@ button.primary,
   .asset-valuation .stats { grid-template-columns: minmax(0, 1fr); }
 }
 
-.asset-editor-tabs { display: flex; gap: 6px; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
-.asset-editor-tabs [role="tab"] { flex: 1; min-height: 44px; }
-.asset-editor-tabs [aria-selected="true"] { background: var(--soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
-.asset-editor-tabs + [role="tabpanel"] { min-width: 0; }
+/* Reusable horizontal editor navigation, visually separated from content. */
+.editor-tabbar { position: sticky; top: -1px; z-index: 3; display: flex; gap: 4px; padding: 6px; margin: 0 0 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); box-shadow: 0 4px 14px rgb(0 0 0 / 8%); }
+.editor-tabbar [role="tab"] { flex: 1; min-height: 46px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 14px; font-weight: 600; box-shadow: none; }
+.editor-tabbar [aria-selected="true"] { background: var(--accent); color: var(--accent-on, #fff); box-shadow: 0 2px 5px rgb(0 0 0 / 15%); }
+.editor-tabbar [role="tab"]:focus-visible { outline: 2px solid var(--text); outline-offset: -3px; }
+.editor-tabbar + [role="tabpanel"] { min-width: 0; }
 [role="tabpanel"][hidden] { display: none; }
+.market-history { margin: 20px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.market-history svg { width: 100%; height: auto; color: var(--accent-ink); }
+.market-history-years { display: flex; justify-content: space-between; margin-bottom: 12px; color: var(--muted); font-size: 11px; }
+.vehicle-profile-note { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }

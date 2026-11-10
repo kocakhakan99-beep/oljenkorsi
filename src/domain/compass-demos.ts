@@ -1,3 +1,6 @@
+import { defaultAssetModel } from "./asset-valuation";
+import { marketQuote } from "./market-history";
+import { investmentCatalog } from "./investment-catalog";
 import { expenseType, previousFinnishBankDay, total } from "./calculations";
 import { categoryIconFor, optionalCategoryDefinitions } from "./categories";
 import { empty, entry, today, type State } from "./model";
@@ -120,7 +123,7 @@ const series: Record<
   },
 };
 
-export const demoMonths = Array.from({ length: 24 }, (_, index) => `${2025 + Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, "0")}`);
+export const demoMonths = Array.from({ length: 36 }, (_, index) => `${2024 + Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, "0")}`);
 
 export function demoMonthSummary(state: State, month: string) {
   const income = total(state.incomes, month);
@@ -129,7 +132,7 @@ export function demoMonthSummary(state: State, month: string) {
 }
 
 export function createCompassDemoCases(requestedMonth: string): CompassDemoCase[] {
-  const month = requestedMonth < "2025-01" ? "2025-01" : requestedMonth > "2026-12" ? "2026-12" : requestedMonth;
+  const month = requestedMonth < "2024-01" ? "2024-01" : requestedMonth > "2026-12" ? "2026-12" : requestedMonth;
   return compassDemoProfiles.map((profile) => {
     const values = series[profile.id];
     const state = empty();
@@ -140,13 +143,13 @@ export function createCompassDemoCases(requestedMonth: string): CompassDemoCase[
     const mortgagePayment = { strained: 85000, everyday: 60000, steady: 55000, shock: 85000 }[profile.id];
     const saving = { strained: 1000, everyday: 12000, steady: 120000, shock: 0 }[profile.id];
     // One actual recurring series demonstrates editing without double-counting monthly rows.
-    state.expenses.push(entry({ id: `${profile.id}-internet`, name: "Kodin internet", category: "Internet", amount: 3400, date: "2025-01-05", endDate: "2026-12-31", recurrence: "monthly", essential: true, description: "Kuvitteellinen kahden vuoden sopimus." }));
+    state.expenses.push(entry({ id: `${profile.id}-internet`, name: "Kodin internet", category: "Internet", amount: 3400, date: "2024-01-05", endDate: "2026-12-31", recurrence: "monthly", occurrenceAmounts:{"2024-07-05":2990,"2025-04-05":3790,"2026-10-05":3490}, essential: true, description: "Fiktiivinen jatkuva internetliittymä vuosille 2024–2026. Muutamassa kuussa kampanja tai lisämaksu." }));
     demoMonths.forEach((period, ordinal) => {
       const m = Number(period.slice(5));
       const index = (ordinal + 1) % 6;
       const shock = profile.id === "shock" && period >= "2026-08";
-      const yearFactor = period.startsWith("2025") ? 0.96 : 1;
-      let income = Math.round(values.income[index] * yearFactor);
+      const yearFactor = period.startsWith("2024") ? .92 : period.startsWith("2025") ? .96 : 1;
+      let income = Math.round((values.income[index] + (profile.id === "everyday" ? 35000 : 0)) * yearFactor);
       if (profile.id === "shock") income = shock ? values.income[2 + ((ordinal - 19) % 4)] : Math.round((410000 + [4000, -3000, 9000, -6000, 2000, 0][index]) * yearFactor);
       const benefit = 9400;
       const bonus = !shock && (m === 6 || m === 12) ? Math.round(income * 0.06) : 0;
@@ -181,14 +184,16 @@ export function createCompassDemoCases(requestedMonth: string): CompassDemoCase[
         const amount = part - (category === "Asuminen" ? 3400 : 0);
         plans[category] = Math.round(amount * (category === "Ruoka" ? .96 : 1));
         if (category === "Asuminen") {
-          plans.Asuminen = amount - values.payment;
+          const housingAmount = Math.max(amount,mortgagePayment+values.payment+10000);
+          plans.Asuminen = housingAmount - values.payment;
           plans.Lainat = values.payment;
           addExpense("mortgage-payment", "Asuntolainan kuukausierä", "Asuminen", mortgagePayment, 3, true);
-          addExpense("housing-maintenance", "Vastike ja kodin ylläpito", "Asuminen", amount - mortgagePayment - values.payment, 3, true);
+          addExpense("housing-maintenance", "Vastike ja kodin ylläpito", "Asuminen", housingAmount - mortgagePayment - values.payment, 3, true);
           addExpense("consumer-payment", "Kulutusluoton kuukausierä", "Lainat", values.payment, 11, true);
         } else if (category === "Ruoka") {
-          const weekly = Math.floor(amount / 4);
-          [2, 9, 16, 23].forEach((d, week) => addExpense(`food-${week}`, name, category, week === 3 ? amount - weekly * 3 : weekly, d, true));
+          const major = Math.round(amount*.75), weekly = Math.floor(major / 4), minor=amount-major, small=Math.floor(minor/4);
+          [2, 9, 16, 23].forEach((d, week) => addExpense(`food-${week}`, `${week%2?"K-supermarket":"Prisma"} · ${name}`, category, week === 3 ? major - weekly * 3 : weekly, d, true));
+          [5,12,19,26].forEach((d,week)=>addExpense(`food-small-${week}`,`${week%2?"K-Market":"S-market"} · täydennysostos`,category,week===3?minor-small*3:small,d,true));
         } else addExpense(`essential-${i}`, name, category, amount, day, true);
       });
       let flexibleAllocated = 0;
@@ -207,27 +212,65 @@ export function createCompassDemoCases(requestedMonth: string): CompassDemoCase[
         plans.Säästäminen = monthlySaving - investmentPart;
         plans.Sijoittaminen = investmentPart;
       }
+      // Everyday purchases and calendar-specific bills: distinct names make category drill-down useful.
+      const extra = (key:string,name:string,category:string,amount:number,day:number,necessary=true) => {
+        addExpense(key,name,category,amount,day,necessary);plans[category]=(plans[category]||0)+Math.round(amount*(shock ? .9 : 1.03));
+      };
+      extra("hygiene",m%2?"S-kauppa · hygienia ja pesuaineet":"K-kauppa · kodin tarvikkeet","Hygieniatarvikkeet",1850+(ordinal%5)*430,10);
+      extra("medicine","Apteekki · perheen lääkkeet","Lääkkeet",900+(ordinal%4)*670,19);
+      extra("car-fuel","Tankkaus ja lataaminen","Autoilu",4200+(index%3)*1800,6);
+      if(m===4||m===10)extra("tyres","Renkaiden vaihto ja säilytys","Autoilu",6500+(profile.id==="steady"?2500:0),18);
+      if(m===9)extra("car-service",m===9?"Auton vuosihuolto":"Auton tarkastus","Autoilu",profile.id==="strained"?38500:24800,20);
+      if(m===3)extra("dental","Hammastarkastus ja omavastuu","Terveys",profile.id==="shock"?12500:8900,12);
+      if(m===8)extra("school","Lapsen harrastuskauden tarvikkeet","Lapset ja perhe",6900+(index%3)*1400,13);
+      if(m===11)extra("insurance-extra","Matka- ja tapaturmavakuutuksen vuosimaksu","Vakuutukset",11800,18);
+      if(m===2&&profile.id!=="shock")extra("repair","Kodinkoneen korjaus / huoltokäynti","Kodin ylläpito",15900,24);
+      if(m===7&&profile.id==="steady")extra("holiday","Perheen kesäloma Suomessa","Matkailu",98000,8,false);
+      if(m===12)extra("gifts","Lahjat ja joulun valmistelut","Lahjat",profile.id==="steady"?24000:12500,17,false);
+      if(period==="2025-05"&&profile.id==="strained")extra("unexpected-repair","Auton odottamaton korjaus","Autoilu",74500,22);
+      if(period==="2026-09"&&shock)extra("crisis-invoice","Välttämätön lääkärikäynti tulokatkoksen aikana","Terveys",13200,16);
       state.budgets[period] = plans;
     });
     const completeMonths = demoMonths.filter(period => period < today().slice(0, 7));
     state.coverage.incomeMonths = [...completeMonths];
     state.coverage.expenseMonths = [...completeMonths];
     const homeId = `${profile.id}-home`;
+    const car = {strained:{brand:"Ford",year:2016,km:155000,annual:18000,value:980000,powertrain:"diesel" as const},everyday:{brand:"Toyota",year:2020,km:70000,annual:14000,value:1850000,powertrain:"hybrid" as const},steady:{brand:"Tesla",year:2024,km:0,annual:16000,value:4990000,powertrain:"electric" as const},shock:{brand:"Škoda",year:2018,km:125000,annual:21000,value:1290000,powertrain:"petrol" as const}}[profile.id];
     state.assets = [
-      entry({ id: `${profile.id}-cash`, name: "Heti käytettävissä oleva puskuri", category: "Talletukset", amount: values.liquid, date: `${month}-01`, liquid: true }),
-      entry({ id: homeId, name: "Perheen koti", category: "Asunto", amount: 28200000, date: `${month}-01` }),
-      entry({ id: `${profile.id}-car`, name: "Perheen käytetty auto", category: "Auto", amount: 980000, date: `${month}-01` }),
+      entry({ id: `${profile.id}-cash`, name: "Heti käytettävissä oleva puskuri", category: "Talletukset", amount: values.liquid, date:"2024-01-01", liquid: true,description:"Fiktiivinen kirjattu likvidi lähtöpuskuri. Kassavirta ei päivitä pankkitilin saldoa automaattisesti." }),
+      entry({ id: homeId, name: "Perheen koti", category: "Asunto", amount:profile.id==="steady"?36500000:28200000,date:"2024-01-01",assetModel:{...defaultAssetModel("Asunto"),automatic:true,year:profile.id==="steady"?2016:profile.id==="strained"?1985:2003},description:"Fiktiivinen omistusasunto. Tekninen kuluminen on skenaario, ei paikkakunnan hintaennuste." }),
+      entry({ id: `${profile.id}-car`, name: "Perheen käytetty auto", category: "Auto", amount:car.value,date:"2024-01-01",assetModel:{...defaultAssetModel("Auto"),automatic:true,year:car.year,initialMileage:car.km,annualMileage:car.annual,brand:car.brand,powertrain:car.powertrain,newAtBase:profile.id==="steady",vehicleCurve:"staged-v2"},description:"Fiktiivinen auto. Porrastettu arvokäyrä ja näkyvä merkkipaino ovat arvio-oletuksia." }),
+      entry({id:`${profile.id}-equipment`,name:"Perheen tietokone ja kodin laitteet",category:"Laitteet",amount:profile.id==="steady"?420000:145000,date:"2024-01-01",assetModel:{...defaultAssetModel("Laite"),automatic:true,year:2022},description:"Käyttöomaisuutta: ei likvidi hätävara."}),
     ];
     state.liabilities = [
-      entry({ id: `${profile.id}-mortgage`, name: "Asuntolaina", category: "Asuntolaina", amount: profile.id === "steady" ? 7100000 : profile.id === "everyday" ? 12000000 : 16000000, rate: 3.4, payment: mortgagePayment, linkedAssetId: homeId, date: `${month}-01` }),
-      entry({ id: `${profile.id}-consumer-loan`, name: "Kulutusluotto", category: "Kulutusluotto", amount: values.debt, rate: values.rate, payment: values.payment, date: `${month}-01`, description: "Kirjattu esimerkkisaldo säilyy. Rivin valitun päivän saldoarvio olettaa kuukausierät maksetuiksi." }),
+      entry({ id: `${profile.id}-mortgage`, name: "Asuntolaina", category: "Asuntolaina", amount: profile.id === "steady" ? 7100000 : profile.id === "everyday" ? 12000000 : 16000000, rate: 3.4, payment: mortgagePayment, linkedAssetId: homeId, date:"2024-01-01" }),
+      entry({ id: `${profile.id}-consumer-loan`, name: "Kulutusluotto", category: "Kulutusluotto", amount:values.debt*(profile.id==="strained"||profile.id==="everyday"?2:1), rate: values.rate, payment: values.payment, date:"2024-01-01", description: "Kirjattu esimerkkisaldo säilyy. Rivin valitun päivän saldoarvio olettaa kuukausierät maksetuiksi." }),
+      entry({id:`${profile.id}-student-loan`,name:"Opintolaina · takaisinmaksu ei alkanut",category:"Opintolaina",amount:profile.id==="steady"?1200000:1850000,rate:3.1,payment:0,date:"2024-01-01",description:"Fiktiivinen esimerkki: maksuja ei oleteta. Koron pääomitus on tarkistettava pankista."}),
     ];
-    const investmentPrices: Record<CompassDemoId, [number, number]> = { strained: [9000, 8100], everyday: [24500, 22000], steady: [48200, 42500], shock: [17000, 15100] };
-    const [investmentPrice, purchasePrice] = investmentPrices[profile.id];
-    state.investments = [entry({ id: `${profile.id}-index-fund`, name: "Laajasti hajautettu indeksirahasto", category: "Rahastot", amount: investmentPrice, purchasePrice, quantity: values.investment / investmentPrice, date: `${month}-01`, description: "Kuvitteellinen manuaalinen omistus, ei arvostushistoria." })];
-    state.goals = [entry({ createdAt: "2025-01-01T00:00:00.000Z", id: `${profile.id}-buffer-goal`, name: profile.id === "shock" ? "Ensimmäinen 1 000 euron turva" : "Perheen puskuritavoite", category: "Hätävara", amount: profile.id === "shock" ? values.liquid : Math.min(values.liquid, values.essential[5] * 3), target: profile.id === "shock" ? 100000 : Math.max(values.essential[5] * 3, values.liquid + 100000), monthly: saving || 5000, date: "2026-12-31" })];
+    const baskets:Record<CompassDemoId,readonly string[]>={strained:["NOKIA.HE","NDA-FI.HE","FORTUM.HE","NESTE.HE"],everyday:["VWCE.DE","EUNL.DE","KNEBV.HE","SAMPO.HE","UPM.HE","ELISA.HE","KESKOB.HE"],steady:["EUNL.DE","AAPL","MSFT","NVDA","GOOGL","AMZN","BRK-B","META","WRT1V.HE"],shock:["TSLA","NOKIA.HE"]};
+    const basket=baskets[profile.id];
+    state.investments=basket.map((symbol,index)=>{
+      const quote=marketQuote(symbol,"2024-01-31")!;
+      const share=index===0&&basket.length>4?.5: (basket.length>4?.5/(basket.length-1):1/basket.length);
+      const invested=Math.round(values.investment*share);
+      return entry({id:`${profile.id}-holding-${symbol}`,name:investmentCatalog.find(([,code])=>code===symbol)![0],category:symbol.endsWith(".DE")?"ETF":"Osakkeet",marketSymbol:symbol,amount:quote.eurCents,purchasePrice:quote.eurCents,quantity:Number((invested/quote.exactUnitCents).toFixed(6)),date:quote.date,description:`Fiktiivinen omistus. Lähdehinta Yahoo Finance ${quote.date}; EUR-muunnos EKP. Määrä on split-oikaistussa yksikössä, ei varmennettu tapahtumahistoria.`});
+    });
+    // Quarterly lots are funded by the already-recorded monthly investment transfers: no duplicate cash expense.
+    for(let quarter=0;quarter<12;quarter++) {
+      const periods=demoMonths.slice(quarter*3,quarter*3+3),last=periods[2];
+      const contribution=state.expenses.filter(e=>periods.includes(e.date.slice(0,7))&&e.expenseType==="investment").reduce((sum,e)=>sum+e.amount,0);
+      const symbol=basket[0],date=`${last}-${new Date(Date.UTC(Number(last.slice(0,4)),Number(last.slice(5)),0)).getUTCDate()}`,quote=marketQuote(symbol,date);
+      if(contribution>0&&quote&&quote.date.slice(0,7)===last)state.investments.push(entry({id:`${profile.id}-lot-${last}`,name:`${investmentCatalog.find(([,code])=>code===symbol)![0]} · lisäosto ${last}`,category:symbol.endsWith(".DE")?"ETF":"Osakkeet",marketSymbol:symbol,amount:quote.eurCents,purchasePrice:quote.eurCents,quantity:Number((contribution/quote.exactUnitCents).toFixed(6)),date:quote.date,description:"Fiktiivinen neljännesvuosittainen lisäosto. Rahoitus sisältyy jo menojen sijoitussiirtoihin. Ei uutta kassavirtakirjausta."}));
+    }
+    state.goals = [
+      entry({ createdAt:"2024-01-01T00:00:00.000Z",id:`${profile.id}-buffer-goal`,name:profile.id==="shock"?"Ensimmäinen 1 000 euron turva":"Perheen puskuritavoite",category:"Hätävara",amount:profile.id==="shock"?values.liquid:Math.min(values.liquid,values.essential[5]*3),target:profile.id==="shock"?100000:Math.max(values.essential[5]*3,values.liquid+100000),monthly:saving||5000,date:"2026-12-31"}),
+      entry({createdAt:"2024-01-01T00:00:00.000Z",id:`${profile.id}-car-goal`,name:"Auton huolto- ja vaihtovara",category:"Autoilu",amount:profile.id==="steady"?420000:35000,target:600000,monthly:profile.id==="steady"?30000:8000,date:"2027-12-31"}),
+      entry({createdAt:"2025-01-01T00:00:00.000Z",id:`${profile.id}-child-goal`,name:"Lapsen tulevaisuuden säästö",category:"Perhe",amount:profile.id==="steady"?360000:75000,target:500000,monthly:profile.id==="steady"?15000:4000,date:"2028-12-31"}),
+    ];
+    state.expenses.push(entry({id:`${profile.id}-paused`,name:"Kuntosali · tauolla",category:"Harrastukset",amount:2990,date:"2025-01-01",endDate:"2026-12-31",recurrence:"monthly",active:false,essential:false,description:"Keskeytetty sarja näkyy hallintaa varten, mutta ei lisää toteumaa."}));
     state.scenarios = [
       { id: `${profile.id}-scenario-base`, name: "Esimerkki · maltillinen tuotto-oletus", initial: values.investment, monthly: saving, rate: 3, fee: .2, inflation: 2, years: 15 },
+      { id:`${profile.id}-scenario-fees`,name:"Esimerkki · suuremmat kulut",initial:values.investment,monthly:saving,rate:3,fee:1.5,inflation:2,years:15 },
       { id: `${profile.id}-scenario-stress`, name: "Esimerkki · nollatuotto ja inflaatio", initial: values.investment, monthly: saving, rate: 0, fee: .2, inflation: 3, years: 15 },
     ];
     // Optional categories used in the demo must also exist in its category editor.

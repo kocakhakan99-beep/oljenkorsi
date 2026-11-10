@@ -1,3 +1,5 @@
+import { marketQuote, marketSnapshot } from "./domain/market-history";
+import { brandWearFactor } from "./domain/vehicle-profiles";
 import { selectedValuationDate, datedValue, datedState, visibleInMonth } from "./domain/dated-values";
 import { assetValuation, defaultAssetModel, assetModelNames, vehicleBrands, type AssetModel } from "./domain/asset-valuation";
 import { investmentCatalog } from "./domain/investment-catalog";
@@ -496,7 +498,7 @@ function DemoCashflowSparkline({
       className="demo-cashflow-sparkline"
       viewBox="0 0 220 48"
       role="img"
-      aria-label="Vuosien 2025–2026 kuukausisuunnitelman kassavirta"
+      aria-label="Vuosien 2024–2026 kuukausisuunnitelman kassavirta"
       preserveAspectRatio="none"
     >
       <line x1="7" y1="24" x2="213" y2="24" />
@@ -551,7 +553,7 @@ function DemoHouseholdGrid({
               </div>
             </header>
             <p>{profile.story}</p>
-            <small className="demo-data-period">2025–2026 · 24 kk · kaikki tietonäkymät</small>
+            <small className="demo-data-period">2024–2026 · 36 kk · kaikki tietonäkymät</small>
             <div className="demo-household-snapshot">
               <span>
                 <small>Kuukausisuunnitelma · {latest.month}</small>
@@ -3686,7 +3688,7 @@ function App() {
                       >
                         <div className="compass-story-section-heading">
                           <div>
-                            <span className="eyebrow">2025–2026 · 24 KUUKAUTTA</span>
+                            <span className="eyebrow">2024–2026 · 36 KUUKAUTTA</span>
                             <h4 id="compass-demo-chart-title">
                               Kuukausisuunnitelmat
                             </h4>
@@ -3705,7 +3707,7 @@ function App() {
                         <div
                           className="compass-story-bars"
                           role="group"
-                          aria-label="Vuosien 2025 ja 2026 kuukausittaiset tulo- ja menopylväät"
+                          aria-label="Vuosien 2024, 2025 ja 2026 kuukausittaiset tulo- ja menopylväät"
                           tabIndex={0}
                         >
                           {activeCompassDemo.timeline.map((point) => {
@@ -4071,7 +4073,7 @@ function App() {
                       {stat(
                         "Sijoitussalkku",
                         euro(m.investments),
-                        "Manuaaliset EUR-hinnat",
+                        "Lähdehistoria / omat hinnat",
                       )}
                     </div>
                   </section>
@@ -4511,8 +4513,9 @@ function App() {
                       </select>
                     </label>
                   </div>
-                  {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Manuaaliset EUR-hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
-                  {page === "investments" && <details className="panel investment-catalog"><summary>Valitse sijoituskohde · 20 esimerkkiä</summary><p>Valintapohjat, eivät suosituimmuuslista tai sijoitussuosituksia. Kurssilähdettä ei ole kytketty. Syötä varmennettu EUR-yksikköhinta ja arvostuspäivä; ulkomaisen kohteen valuuttamuunnos tehdään erikseen.</p><div className="investment-catalog-grid">{investmentCatalog.map(([name, symbol]) => <button type="button" key={symbol} onClick={() => setEdit({ kind: "investments", item: { ...newEntry("investments"), name, category: symbol.endsWith(".DE") ? "ETF" : "Osakkeet", description: `Tunnus: ${symbol}. Hinta ja valuuttamuunnos tarkistettava lähteestä.`, amount: 0, quantity: 1 } })}><strong>{name}</strong><small>{symbol} · Kurssi puuttuu</small></button>)}</div></details>}
+                  {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Lähdehistoria / omat hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
+                  {page === "investments" && <details className="panel investment-catalog"><summary>Valitse sijoituskohde · 20 esimerkkiä</summary><p>Lähdehistoria 2024–2026 · aineistopäivä {marketSnapshot.asOf}. Päivitetty offline-otos, ei livekurssi. Lähde- ja valuuttapäivät näkyvät kortilla.</p><div className="investment-catalog-grid">{investmentCatalog.map(([name,symbol]) => { const quote=marketQuote(symbol,valuationDate); return <button type="button" key={symbol} onClick={() => setEdit({kind:"investments",item:{...newEntry("investments"),name,marketSymbol:symbol,category:symbol.endsWith(".DE")?"ETF":"Osakkeet",date:quote?.date||valuationDate,description:`Tunnus: ${symbol}. Päivätty lähdehistoria, ei livekurssi.`,amount:quote?.eurCents||0,quantity:1}})}><strong>{name}</strong><small>{symbol} · {quote?`${euro(quote.eurCents)} · ${quote.date}${quote.provisional?" · päivän havainto":""}`:"Ei havaintoa valitulle päivälle"}</small></button>; })}</div></details>}
+
                   {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Arviot ja kirjatut arvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on valitun päivän laskennallinen arvio, kun malli on tallennettu; muulloin kirjattu arvo. Aiemmille kuukausille käytetään kuun viimeistä päivää, kuluvalle kuulle tätä päivää. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
                   {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Arviot ja kirjatut saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo menotapahtumaa. Rivin saldoarvio olettaa kuukausierät maksetuiksi; alkuperäinen kirjattu saldo säilyy kortilla. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
@@ -4569,13 +4572,14 @@ function App() {
                                       : "Summa"
                                   }
                                 >
-                                  {page === "assets" || page === "liabilities" ? (() => { const value=datedValue(e,page,valuationDate); return <span className="dated-row-value" title={`${value.note} · ${valuationDate} · kirjattu ${euro(e.amount)} (${e.date})`}><strong>{euro(value.value)}</strong><small>{value.estimated ? "Arvio" : "Kirjattu"}</small></span>; })() : euro(page === "incomes" || page === "expenses" ? occurrenceSum(e,month) : e.amount)}
+                                  {page === "assets" || page === "liabilities" ? (() => { const value=datedValue(e,page,valuationDate); return <span className="dated-row-value" title={`${value.note} · ${valuationDate} · kirjattu ${euro(e.amount)} (${e.date})`}><strong>{euro(value.value)}</strong><small>{value.estimated ? "Arvio" : "Kirjattu"}</small></span>; })() : euro(page === "investments" && e.marketSymbol ? marketQuote(e.marketSymbol,valuationDate)?.eurCents ?? e.amount : page === "incomes" || page === "expenses" ? occurrenceSum(e,month) : e.amount)}
                                   {page === "investments" && (
                                     <small>
                                       {new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(e.quantity)} kpl · arvo{" "}
-                                      {euro(Math.round(e.amount * e.quantity))}
+                                      {euro(Math.round((e.marketSymbol ? marketQuote(e.marketSymbol,valuationDate)?.exactUnitCents ?? e.amount : e.amount) * e.quantity))}
                                     </small>
                                   )}
+                                  {page === "investments" && e.marketSymbol && <small className="market-observation-date">{marketQuote(e.marketSymbol,valuationDate)?.date || "Ei havaintoa"} · lähdehinta</small>}
                                 </td>
                                 <td
                                   role="cell"
@@ -6449,7 +6453,7 @@ function App() {
                   </button>
                 </section>
                 <section className="panel settings-demo-entry" aria-labelledby="settings-demo-title">
-                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2025–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
+                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
                 <section className="panel">
@@ -6710,29 +6714,32 @@ function App() {
       })()}
       {viewEntry && (() => {
         const { kind, id } = viewEntry;
+        const viewDate = page === "reports" ? selectedValuationDate(reportEnd) : valuationDate;
         const item = s[kind].find(entry => entry.id === id);
         if (!item) return null;
+        const positionQuote = kind === "investments" && item.marketSymbol ? marketQuote(item.marketSymbol,viewDate) : null;
         const cash = kind === "incomes" || kind === "expenses";
         const linkedAsset = kind === "liabilities" ? s.assets.find(asset => asset.id === item.linkedAssetId) : undefined;
         const linkedDebts = kind === "assets" ? s.liabilities.filter(debt => debt.linkedAssetId === id) : [];
         return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
           <section className="entry-reader" aria-label="Tietueen tiedot">
-            <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round(item.amount * item.quantity) : item.amount)}</strong></div>
+            <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round((positionQuote?.exactUnitCents ?? item.amount) * item.quantity) : item.amount)}</strong></div>
 
-            {(kind === "assets" || kind === "liabilities") && <p className="ux-status-note">{valuationDate} · {datedValue(item,kind,valuationDate).note} · {euro(datedValue(item,kind,valuationDate).value)}. Kirjattu lähtöarvo näkyy yllä.</p>}
+            {(kind === "assets" || kind === "liabilities") && <p className="ux-status-note">{viewDate} · {datedValue(item,kind,viewDate).note} · {euro(datedValue(item,kind,viewDate).value)}. Kirjattu lähtöarvo näkyy yllä.</p>}
             <dl className="entry-facts">
-              <div><dt>{kind === "assets" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
+              <div><dt>{kind === "assets" || kind === "investments" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{(positionQuote?.date || item.date).split("-").reverse().join(".")}</dd></div>
               {cash && <><div><dt>Toistuvuus</dt><dd>{recNames[item.recurrence]}</dd></div><div><dt>Kuukauden tila</dt><dd>{monthEntryStatus(item, month)}</dd></div><div><dt>Sarja</dt><dd>{item.active ? "Aktiivinen" : "Keskeytetty"}</dd></div>{item.endDate && <div><dt>Päättyy</dt><dd>{item.endDate.split("-").reverse().join(".")}</dd></div>}{kind === "incomes" && <div><dt>Maksupäivän siirto</dt><dd>{item.adjustToPreviousBankDay ? "Edeltävä pankkipäivä" : "Ei siirtoa"}</dd></div>}{kind === "expenses" && <><div><dt>Menotyyppi</dt><dd>{expenseTypeName(expenseType(item))}</dd></div><div><dt>Välttämätön meno</dt><dd>{item.essential ? "Kyllä" : "Ei"}</dd></div></>}</>}
               {kind === "assets" && <><div><dt>Omistusosuus</dt><dd>{percentText(item.ownership)} %</dd></div><div><dt>Likvidiys</dt><dd>{item.liquid ? "Likvidi" : "Ei likvidi"}</dd></div><div><dt>Oman osuuden arvo</dt><dd>{euro(Math.round(item.amount * item.ownership / 100))}</dd></div><div><dt>Linkitetyt velat</dt><dd>{linkedDebts.map(debt => debt.name).join(", ") || "Ei linkkejä"}</dd></div></>}
               {kind === "liabilities" && <><div><dt>Korko</dt><dd>{percentText(item.rate)} %</dd></div><div><dt>Kuukausierä</dt><dd>{euro(item.payment)}</dd></div><div><dt>Linkitetty omaisuus</dt><dd>{linkedAsset ? `${linkedAsset.name} · ${linkedAsset.category}` : "Ei linkkiä"}</dd></div></>}
-              {kind === "investments" && <><div><dt>Määrä</dt><dd>{new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(item.quantity)} kpl</dd></div><div><dt>Yksikköhinta</dt><dd>{euro(item.amount)}</dd></div><div><dt>Hankinta-arvo</dt><dd>{euro(Math.round(item.purchasePrice * item.quantity))}</dd></div></>}
+              {kind === "investments" && <><div><dt>Määrä</dt><dd>{new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(item.quantity)} kpl</dd></div><div><dt>Yksikköhinta</dt><dd>{euro(positionQuote?.eurCents ?? item.amount)}</dd></div><div><dt>Hankinta-arvo</dt><dd>{euro(Math.round(item.purchasePrice * item.quantity))}</dd></div></>}
               {kind === "goals" && <><div><dt>Tavoite</dt><dd>{euro(item.target)}</dd></div><div><dt>Kuukausisäästö</dt><dd>{euro(item.monthly)}</dd></div></>}
               {userTags(item.tags) && <div><dt>Tunnisteet</dt><dd>{userTags(item.tags)}</dd></div>}
             </dl>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
             {cash && <><p className="muted">{Object.keys(item.occurrenceStatuses).length} tallennettua tilakorjausta · {Object.keys(item.occurrenceAmounts).length} summakorjausta. Korjaukset koskevat yksittäisiä tapahtumia.</p><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
 
-            {kind === "liabilities" && <DebtEstimate item={item} atDate={valuationDate} euro={euro} />}
+            {kind === "investments" && item.marketSymbol && <MarketHistory symbol={item.marketSymbol} at={viewDate} euro={euro} />}
+            {kind === "liabilities" && <DebtEstimate item={item} atDate={viewDate} euro={euro} />}
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
@@ -7134,7 +7141,16 @@ function Empty({ text }: { text: string }) {
     </div>
   );
 }
-function AssetValuation({ item, euro, model, setModel, atDate }: { atDate: string; item: Entry; euro: (n: number) => string; model: AssetModel; setModel: React.Dispatch<React.SetStateAction<AssetModel>> }) {
+function MarketHistory({symbol,at,euro}:{symbol:string;at:string;euro:(n:number)=>string}) {
+ const series=marketSnapshot.series[symbol],quote=marketQuote(symbol,at);
+ if(!series)return <p>Ei lähdehistoriaa tunnukselle {symbol}.</p>;
+ const points=series.observations.map(point=>marketQuote(symbol,point.date)).filter(point=>point!==null);
+ const min=Math.min(...points.map(point=>point.exactUnitCents)),max=Math.max(...points.map(point=>point.exactUnitCents));
+ const first=Date.parse(points[0].date),last=Date.parse(points[points.length-1].date);
+ const path=points.map(point=>`${10+(Date.parse(point.date)-first)/Math.max(1,last-first)*380},${105-(point.exactUnitCents-min)/Math.max(1,max-min)*90}`).join(" ");
+ return <section className="market-history"><h3>Kurssihistoria · {symbol}</h3><p>{quote?`${euro(quote.eurCents)} · havainto ${quote.date}${quote.provisional?" · päivä keskeneräinen":""}`:"Valitulle päivälle ei ole havaintoa."}</p><svg viewBox="0 0 400 120" role="img" aria-label={`${symbol}, euroiksi muunnettu hintahistoria vuosilta 2024–2026`}><polyline points={path} fill="none" stroke="currentColor" strokeWidth="2.5" /></svg><div className="market-history-years"><span>2024</span><span>2025</span><span>2026</span></div><small>Offline-aineisto {marketSnapshot.asOf}. Ei livekurssi, tulevia hintoja ei ennusteta. Kuukausihavainnot eivät kata jokaista kaupankäyntipäivää. Historiallinen hinta on lähteen split-oikaistu Close. Osakkeiden rahana maksettuja osinkoja ei lisätä erikseen.</small><ContextDetails title="Havainnot ja lähdetiedot"><p>Yahoo Finance · {series.currency}. {quote?.currency==="USD"?`EUR-muunnos: 1 EUR = ${quote.fxRate} USD, EKP ${quote.fxDate}.`:"EUR-noteeraus, ei valuuttamuunnosta."} Määrät on tulkittava samassa split-oikaistussa yksikössä kuin hinnat.</p><div className="table-wrap"><table><thead><tr><th>Päivä</th><th>Lähdehinta ({series.currency})</th><th>EUR</th></tr></thead><tbody>{points.map(point=><tr key={point.date}><td>{point.date}{point.provisional?" *":""}</td><td>{new Intl.NumberFormat("fi-FI",{maximumFractionDigits:4}).format(point.close)}</td><td>{euro(point.eurCents)}</td></tr>)}</tbody></table></div></ContextDetails></section>;
+}
+function AssetValuation({ item, euro, model, setModel, atDate, enabled }: { enabled: boolean; atDate: string; item: Entry; euro: (n: number) => string; model: AssetModel; setModel: React.Dispatch<React.SetStateAction<AssetModel>> }) {
  const lockedModel = defaultAssetModel(item.category).model;
  const [at, setAt] = useState(atDate < item.date ? item.date : atDate);
  useEffect(() => setAt(atDate < item.date ? item.date : atDate),[atDate,item.date]);
@@ -7142,11 +7158,11 @@ function AssetValuation({ item, euro, model, setModel, atDate }: { atDate: strin
  try { result = assetValuation(item.amount, item.date, at, model); } catch (e) { error = e instanceof Error && e.message.startsWith("[") ? "Tarkista vuosiluku ja prosenttien rajat." : String(e).replace(/^Error: /, ""); }
  const numberField = (label: string, key: "year" | "life" | "annualMileage" | "initialMileage" | "marketRate" | "annualWear" | "residual" | "buildingShare" | "mileagePenalty" | "uncertainty", min: number, max: number) => !["year", "life", "annualMileage", "initialMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); }} /></label>;
  return <section className="asset-valuation">
- <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Tallennettu malli päivittää rivin ja yhteenvedon arviot valitun ajankohdan mukaan. Kirjattu lähtöarvo säilyy. Perustilassa sovellus valitsee kertoimet. Ne ovat yleisen kulumismallin oletuksia, eivät kauppahintadataan kalibroituja. Merkki ja käyttövoima tallentuvat tietoihin; niille ei keksitä hintakertoimia ilman vertailukauppoja.</p>
+ <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Tallennettu malli päivittää rivin ja yhteenvedon arviot valitun ajankohdan mukaan. Kirjattu lähtöarvo säilyy. Perustilassa sovellus valitsee kertoimet. Ne ovat yleisen kulumismallin oletuksia, eivät kauppahintadataan kalibroituja. Porrastetussa mallissa merkki vaikuttaa kulumiskertoimeen. Merkkipainot ovat sovelluksen näkyviä arvio-oletuksia, eivät Suomessa mitattuja hintatilastoja. Käyttövoima on tässä vaiheessa taustatieto.</p>
  <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" disabled={lockedModel !== "custom"} value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year, automatic:true }); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
  {!["land", "custom"].includes(model.model) && numberField(model.model === "home" ? "Rakennusvuosi / viimeisen kokonaisuudistuksen vertailuvuosi" : "Vuosimalli / valmistusvuosi", "year", 1000, 2100)}
  <DatePickerField name="asset-estimate-date" label="Arvion päivämäärä" value={at} minDate={item.date} onChange={setAt} />
- {model.model === "vehicle" && <><label>Automerkki<select aria-label="Automerkki" value={model.brand || ""} onChange={e=>setModel({...model,brand:e.target.value})}><option value="">Muu / ei tiedossa</option>{vehicleBrands.map(brand=><option key={brand}>{brand}</option>)}</select></label><label>Käyttövoima<select aria-label="Käyttövoima" value={model.powertrain||"other"} onChange={e=>setModel({...model,powertrain:e.target.value as AssetModel["powertrain"]})}>{Object.entries({petrol:"Bensiini",diesel:"Diesel",hybrid:"Hybridi",plugin:"Lataushybridi",electric:"Sähkö",other:"Muu / ei tiedossa"}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{numberField("Kilometrit arvostuspäivänä", "initialMileage", 0, 3000000)}{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)","annualMileage",0,300000)}</>}
+ {model.model === "vehicle" && <><label className="check"><input type="checkbox" checked={!!model.newAtBase} onChange={e=>setModel({...model,newAtBase:e.target.checked,...(e.target.checked?{initialMileage:0}:{})})} /> Auto oli uusi arvostuspäivänä</label><label>Arvokäyrä<select aria-label="Arvokäyrä" value={model.vehicleCurve || "legacy-v1"} onChange={e=>setModel({...model,vehicleCurve:e.target.value as AssetModel["vehicleCurve"]})}><option value="staged-v2">Porrastettu · uusi auto alenee nopeammin</option><option value="legacy-v1">Aiempi tasainen malli</option></select></label><label>Automerkki<select aria-label="Automerkki" value={model.brand || ""} onChange={e=>setModel({...model,brand:e.target.value,vehicleCurve:"staged-v2"})}><option value="">Muu / ei tiedossa</option>{vehicleBrands.map(brand=><option key={brand}>{brand}</option>)}</select></label><label>Käyttövoima<select aria-label="Käyttövoima" value={model.powertrain||"other"} onChange={e=>setModel({...model,powertrain:e.target.value as AssetModel["powertrain"]})}>{Object.entries({petrol:"Bensiini",diesel:"Diesel",hybrid:"Hybridi",plugin:"Lataushybridi",electric:"Sähkö",other:"Muu / ei tiedossa"}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><p className="vehicle-profile-note">Merkkipaino {brandWearFactor(model.brand).toLocaleString("fi-FI")} × · {model.vehicleCurve === "staged-v2" ? "vaikuttaa porrastetun käyrän kulumiseen" : "aiemmassa mallissa ei merkkivaikutusta"}. Paino ei ole tilastollinen ennuste.</p>{numberField("Kilometrit arvostuspäivänä", "initialMileage", 0, 3000000)}{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)","annualMileage",0,300000)}</>}
  <label className="check"><input type="checkbox" checked={model.automatic !== false} onChange={e=>setModel({...model,automatic:e.target.checked})} /> Sovelluksen laskentaoletukset</label>
  {!model.automatic && <details className="valuation-advanced"><summary>Mukautetut oletukset</summary> {numberField("Markkinan vuosimuutos (%)", "marketRate", -50, 50)}
  {model.model === "home" && <>{numberField("Rakennuksen osuus arvosta (%)", "buildingShare", 0, 100)}{numberField("Tekninen vertailukäyttöikä (vuotta)", "life", 1, 300)}</>}
@@ -7155,8 +7171,8 @@ function AssetValuation({ item, euro, model, setModel, atDate }: { atDate: strin
  {model.model === "vehicle" && <>{numberField("Lisäalenema / 10 000 km (%)", "mileagePenalty", 0, 50)}</>}
  {numberField("Oletusväli arvion ympärillä (± %)", "uncertainty", 0, 90)}</details>}
  </div>
- {error ? <p role="alert">{error}</p> : result && <div className="stats"><MetricCard label="Laskennallinen arvio" value={euro(result.value)} /><MetricCard label="Oletusväli" value={`${euro(result.low)} – ${euro(result.high)}`} /><MetricCard label="Oman osuuden arvio" value={euro(Math.round(result.value * item.ownership / 100))} /></div>}
- <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Automaattisessa automallissa C(ikä, km) = 0,1 + 0,9 × 0,88^ikä × 0,98^(km / 10 000). Ikä- ja kilometrivaikutus suhteutetaan lähtöhetken C-arvoon. Merkillä tai käyttövoimalla ei ole keksittyä kerrointa. Mukautetussa mallissa auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
+ {error ? <p role={enabled ? "alert" : "status"} className={enabled ? "" : "muted"}>{error}</p> : result && <div className="stats"><MetricCard label="Laskennallinen arvio" value={euro(result.value)} /><MetricCard label="Oletusväli" value={`${euro(result.low)} – ${euro(result.high)}`} /><MetricCard label="Oman osuuden arvio" value={euro(Math.round(result.value * item.ownership / 100))} /></div>}
+ <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Aiemmassa v1-automallissa C(ikä, km) = 0,1 + 0,9 × 0,88^ikä × 0,98^(km / 10 000). Ikä- ja kilometrivaikutus suhteutetaan lähtöhetken C-arvoon. Porrastettu v2: 0–1 vuotta 22 %/v, 1–3 vuotta 14 %/v, 3–5 vuotta 10 %/v, 5–10 vuotta 7 %/v ja sen jälkeen 4 %/v; merkkipaino muuttaa käyrän jyrkkyyttä. Näiden lisäksi ajokertymä 2 %/10 000 km ja tekninen jäännösosuus 6 %. Painot ovat arvio-oletuksia. Aiempi v1 säilyy vanhoille tallennetuille malleille. Mukautetussa mallissa auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
  </section>;
 }
 function DebtEstimate({ item, euro, atDate }: { atDate: string; item: Entry; euro: (n: number) => string }) {
@@ -7297,6 +7313,7 @@ function EntryForm({
           const raw = String(f.get(k));
           v[k] = k === "date" || k === "endDate" ? dateTextToIso(raw) : raw;
         }
+      if (kind === "investments") v.marketSymbol = String(f.get("marketSymbol") || "");
       if (kind === "liabilities")
         v.linkedAssetId = String(f.get("linkedAssetId") || "");
       for (let k of [
@@ -7431,7 +7448,7 @@ function EntryForm({
           {error}
         </div>
       )}
-      {kind === "assets" && <div role="tablist" aria-label="Omaisuuden muokkaus" className="asset-editor-tabs">{(["basic", "valuation"] as const).map((tab,index) => <button key={tab} type="button" role="tab" id={`${editorId}-${tab}-tab`} aria-controls={`${editorId}-${tab}-panel`} aria-selected={editorTab === tab} tabIndex={editorTab === tab ? 0 : -1} onClick={() => setEditorTab(tab)} onKeyDown={event => { if (["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) { event.preventDefault(); const next = event.key === "Home" ? "basic" : event.key === "End" ? "valuation" : index === 0 ? "valuation" : "basic"; setEditorTab(next); document.getElementById(`${editorId}-${next}-tab`)?.focus(); } }}>{tab === "basic" ? "Perustiedot" : "Arvonmuutos"}</button>)}</div>}
+      {kind === "assets" && <div role="tablist" aria-label="Omaisuuden muokkaus" className="asset-editor-tabs editor-tabbar">{(["basic", "valuation"] as const).map((tab,index) => <button key={tab} type="button" role="tab" id={`${editorId}-${tab}-tab`} aria-controls={`${editorId}-${tab}-panel`} aria-selected={editorTab === tab} tabIndex={editorTab === tab ? 0 : -1} onClick={() => setEditorTab(tab)} onKeyDown={event => { if (["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) { event.preventDefault(); const next = event.key === "Home" ? "basic" : event.key === "End" ? "valuation" : index === 0 ? "valuation" : "basic"; setEditorTab(next); document.getElementById(`${editorId}-${next}-tab`)?.focus(); } }}>{tab === "basic" ? "Perustiedot" : "Arvonmuutos"}</button>)}</div>}
       <div id={`${editorId}-basic-panel`} role={kind === "assets" ? "tabpanel" : undefined} aria-labelledby={kind === "assets" ? `${editorId}-basic-tab` : undefined} hidden={kind === "assets" && editorTab !== "basic"}>
       <div className="form-grid">
         {field("Nimi", "name", item.name, "text", true)}
@@ -7620,6 +7637,7 @@ function EntryForm({
         )}
         {kind === "investments" && (
           <>
+            <label>Kurssiaineisto<select name="marketSymbol" defaultValue={item.marketSymbol || ""}><option value="">Oma EUR-hinta · ei lähdehistoriaa</option>{investmentCatalog.map(([name,symbol])=><option key={symbol} value={symbol}>{name} · {symbol}</option>)}</select><small>Lähdehistoria päivittää rivin hinnan valitun ajankohdan havaintoon. Oma EUR-hinta käyttää käsin syötettyä arvoa.</small></label>
             {field("Määrä", "quantity", item.quantity, "text", true)}
             {field(
               "Hankintahinta / yksikkö (€)",
@@ -7672,8 +7690,8 @@ function EntryForm({
       </div>
       {kind === "assets" && <div id={`${editorId}-valuation-panel`} role="tabpanel" aria-labelledby={`${editorId}-valuation-tab`} hidden={editorTab !== "valuation"}>
         <label className="check"><input type="checkbox" checked={valuationEnabled} onChange={event => setValuationEnabled(event.target.checked)} /> Käytä arvonmuutosmallia</label>
-        <p className="muted">Malli ja muut omaisuuden tiedot tallentuvat yhdessä. Peruuta hylkää kaikki tämän ikkunan muutokset.</p>
-        {editorTab === "valuation" && valuationEnabled && <AssetValuation item={{ ...item, category: categoryValue, date: entryDate, ownership: formPercents.ownership, amount: (() => { try { return goalAmountText === undefined ? item.amount : money(goalAmountText || "0"); } catch { return item.amount; } })() }} euro={euro} atDate={atDate} model={assetDraft} setModel={setAssetDraft} />}
+        <p className="muted">Mallin tietoja voi tarkastella ja kokeilla aina. Valitse Käytä arvonmuutosmallia, kun haluat arvion riveille. Malli ja muut omaisuuden tiedot tallentuvat yhdessä. Peruuta hylkää kaikki tämän ikkunan muutokset.</p>
+        {editorTab === "valuation" && <AssetValuation enabled={valuationEnabled} item={{ ...item, category: categoryValue, date: entryDate, ownership: formPercents.ownership, amount: (() => { try { return goalAmountText === undefined ? item.amount : money(goalAmountText || "0"); } catch { return item.amount; } })() }} euro={euro} atDate={atDate} model={assetDraft} setModel={setAssetDraft} />}
       </div>}
       <div className="actions">
         <button type="submit" className="primary">
