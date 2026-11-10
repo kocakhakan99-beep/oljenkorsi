@@ -33,3 +33,9 @@ export function RowActions({ name, onEdit, onDelete, editLabel }: { name: string
     {onDelete && <button type="button" aria-label={`Poista ${name}`} title={`Poista ${name}`} onClick={onDelete}><Trash2 size={18} aria-hidden="true" /></button>}
   </div>;
 }
+
+/** Positive always means room in the frame or savings above the minimum. */
+export function SignedAmount({ amount, format, label }: { amount: number; format: (amount: number) => string; label: string }) {
+  const value = `${amount > 0 ? "+" : amount < 0 ? "−" : ""}${format(Math.abs(amount))}`;
+  return <span className={`signed-amount ${amount > 0 ? "is-positive" : amount < 0 ? "is-negative" : "is-zero"}`} title={label}><span className="sr-only">{label}: </span><span className="signed-value">{value}</span></span>;
+}

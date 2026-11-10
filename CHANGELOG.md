@@ -41,3 +41,7 @@ Yhteiset kuvaketoiminnot talouslistoihin ja kategoriakorttiin; saavutettavat nim
 ### Asetukset ja tiedonhallinnan UX 10.11.2026
 
 Asetusten demogalleria korvattiin yhteisen valintaikkunan avauksella. Tallennuksen tila ja varmuuskopioinnin pääpaikka näkyvät lyhyesti; raakadatan vienti ja poistot säilyvät avattavissa lisävalinnoissa. CSV:n merkistö ja erotin siirrettiin tiedoston lisäasetuksiin, jotka avautuvat merkistövirheessä ja pysyvät auki korjauksen jälkeen. Virheet, duplikaatit ja tuotavien rivien määrä näkyvät tilamerkkeinä. Raportin kaavio ja taulukko ovat vaihtoehtoisia esityksiä, eikä taulukossa näy kaavion zoomausta. Kuukausivalinnan otsikkotoisto ja vanhentuneet toteumatilan käyttöohjeet korjattiin. 83 yksikkötestiä ja 67 selainvarmennusta läpäisivät.
+
+### Tiiviit listat ja budjettierot 10.11.2026
+
+Kaikkien kuuden talouslistan nimi ja kuvakkeellinen kategoria erotettiin omiin sarakkeisiin. Suljettuja rivejä madallettiin, tapahtumatietoja tiivistettiin ja pitkien nimien tila korjattiin puhelimella. Budjetin ryhmä-, kategoria- ja rahoituserot esitetään lyhyinä etumerkillisinä lukuina: vihreä plus on suotuisa, punainen miinus vaje. Vertailun saavutettava selite ja avattavat lisätiedot säilyvät. 83 yksikkötestiä ja 69 Chromium-selainvarmennusta läpäisivät.

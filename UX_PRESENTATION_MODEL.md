@@ -66,7 +66,7 @@ Ensimmäinen toteutuskierros: yhteiset ohjelaatikot ovat oletuksena lyhyitä ava
 
 ## Yhteenvedon ja budjetin kierros 10.11.2026
 
-Yhteisten komponenttien ensimmäinen joukko on käytössä. Mittari näyttää nimen ja luvun; menetelmä avautuu tietokuvakkeesta. Yhteenvedossa kulutuksen lisäerittely ja suunnitellut siirrot ovat avattavia, mutta talouden pääluvut ja ”ei tilisaldo” -rajaus säilyvät näkyvissä. Varallisuuden manuaalinen nykyarvoluonne ilmaistaan lyhyesti. Budjetin kategoriariviltä ei toisteta ohjerajan koko laskentaa; se löytyy kategoriakortista. Ohjerajaylitys ja budjettiylitys nimetään erikseen, koska niiden vertailusummat voivat erota. Palkki pysähtyy 100 prosenttiin, mutta tekstilukema näyttää myös esimerkiksi 200 %.
+Yhteisten komponenttien ensimmäinen joukko on käytössä. Mittari näyttää nimen ja luvun; menetelmä avautuu tietokuvakkeesta. Yhteenvedossa kulutuksen lisäerittely ja suunnitellut siirrot ovat avattavia, mutta talouden pääluvut ja ”ei tilisaldo” -rajaus säilyvät näkyvissä. Varallisuuden manuaalinen nykyarvoluonne ilmaistaan lyhyesti. Budjetin kategoriariviltä ei toisteta ohjerajan koko laskentaa; se löytyy kategoriakortista. Ohjerajan ja oman budjetin erotuksella on erilliset saavutettavat selitteet, koska niiden vertailusummat voivat erota. Palkki pysähtyy 100 prosenttiin, mutta tekstilukema näyttää myös esimerkiksi 200 %.
 
 Yhteenvedon budjettiprosentti käyttää samaa kategoriatoteumaa kuin budjettinäkymä, myös käyttäjän kokonaistoteuman poikkeuksia. Tämä poistaa eri näkymien aiemman prosenttieron; kassavirtaa ei muuteta.
 
@@ -83,3 +83,9 @@ Asetuksissa on teema, väritila, ohjeiden palautus, demovalitsimen avaus ja tall
 Tiedonhallinnassa JSON on koko talouden kopio, CSV tietuelistojen siirto. Perusnäkymä näyttää eron lyhyesti. CSV:n merkistö ja erotin ovat lisäasetuksissa; merkistövirhe avaa ne korjausta varten. Virheet ja duplikaatit sekä tuotavien rivien määrä pysyvät näkyvissä. Ohjeista korjattiin vanhat väitteet käsin valittavasta toteumatilasta ja tapahtumakohtaisten poikkeusten puuttumisesta.
 
 Tulot/menot-raportin kaavio ja taulukko eivät enää näy oletuksena yhtä aikaa: esitysmuodon valinta määrää näkyvän sisällön, ja taulukkomuodossa ei näy kaavion zoomausta. Kuukausitilassa samaa päivämäärää ei toisteta ylimääräisessä otsikossa.
+
+## Tiiviit listat ja etumerkilliset erotukset 10.11.2026
+
+Kaikissa kuudessa talouslistassa Nimi ja Kategoria ovat erilliset sarakkeet. Kategoria sisältää pienen kuvakkeen ja nimen. Suljettu rivi näyttää olennaisen lyhyesti; tunnisteet ja tarkennukset löytyvät avattavista tiedoista. Puhelimella samat kentät esitetään korttina ja pitkälle nimelle varataan tila toimintopainikkeiden vierestä. Muokkaus-, poisto- ja avauspainikkeiden 44 px painallusalue säilyy.
+
+Budjetin poikkeamia ei nimetä toistuvasti ylityksiksi: näkyvä erotus on etumerkillinen luku. Vihreä plus tarkoittaa liikkumavaraa tai vähimmäissäästötavoitteen ylittävää varausta, punainen miinus vajetta; nolla on neutraali. Työkaluvihje ja ruudunlukijan selite kertovat vertailun. Ryhmän enimmäisraja näkyy ≤-merkinnällä ja säästöjen vähimmäistavoite ≥-merkinnällä. Tarkempi laskentaselite avautuu pyynnöstä.

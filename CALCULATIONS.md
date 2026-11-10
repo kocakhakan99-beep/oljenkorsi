@@ -64,3 +64,7 @@ Kategorian enimmäisraja = tulopohja × maxPercent, ylitys = max(0, kategorian v
 ## Yhteenvedon budjettikäyttöaste
 
 ”Budjetoiduista käytetty” = budjetoitujen kategorioiden toteuma / näiden kategoriabudjettien summa × 100. Sama kategoriatoteuman lähde kuin budjettinäkymässä: oma kokonaistoteuman korjaus korvaa kyseisen kategorian kulutustoteuman, ja budjetoimaton kulutus näytetään erikseen. Tämä ei muuta kassavirtaa. Käyttöaste voi ylittää 100 %; visuaalinen palkki rajataan sataan, mutta tekstilukema näyttää todellisen prosenttiosuuden. Ilman budjettia prosenttia ei lasketa. Kategorian 50/30/20-ohjeraja perustuu nettotuloihin ja on eri vertailu kuin käyttäjän oma kategoriabudjetti.
+
+## Budjetin näkyvien erotusten etumerkki
+
+Esitystapa ei muuta edellä määriteltyjä laskentasääntöjä. Välttämättömien ja valinnaisten erotus = ryhmäraja − varattu; säästöjen erotus = varattu − vähimmäistavoite. Kategorian ohjerajan erotus = enimmäisraja − varattu, oman budjetin jäljellä = budjetti − toteuma ja rahoituksen erotus = tulopohja − kokonaisvaraus. Positiivinen on vihreä ja sisältää plusmerkin, negatiivinen punainen ja sisältää miinusmerkin; nolla on neutraali. Vertailun nimi säilyy saavutettavassa selitteessä. Eurot käyttävät samaa suomalaista muotoilua ja summien piilotusta kuin muutkin rahaluvut.

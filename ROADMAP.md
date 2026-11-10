@@ -51,3 +51,5 @@ Lisää joustavat nostorajat, pitkä elinikä ja samojen tuottojen eri järjesty
 Aiemman versiopolun suunta säilyy: V1 offline-ydin, V1.1 käytettävyys/saavutettavuus, V1.2 edistyneet raportit/laskurit, V2 valinnainen hosted/PWA, V3 valinnainen tili ja salattu synkronointi, V4 markkinadata, V5 pankki-integraatiot, V6 mahdolliset eettiset yhteistyöt. P0–P3:n työpaketit kohdistetaan versioihin vasta hyväksytyn laajuuden perusteella. Integraatio ei ole FI-laskennan edellytys eikä ohita laskennan laatua.
 
 Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Paikallinen HTML säilyy hyödyllisenä ilman verkkopalveluita. Tämä roadmap kuvaa seuraavia toimituksia; jokaisen muutoksen toteutus ja validointi kirjataan erikseen.
+
+Toteutettu 10.11.2026: kuuden talouslistan erilliset Nimi/Kategoria-sarakkeet, matalammat suljetut rivit ja puhelimen pitkien nimien tilavaraus. Budjetin poikkeamatekstit korvattiin etumerkillisillä, saavutettavasti selitetyillä erotuksilla. Ks. [UX-malli](UX_PRESENTATION_MODEL.md) ja [testaus](TESTING.md).

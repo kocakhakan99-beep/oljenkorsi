@@ -17,6 +17,7 @@
     "Suomalainen summamaski, mukautettu päivämäärävalitsin sekä keskitetty ja resizable ikkuna",
     "Tulo lisätty",
     "Toistuva meno lisätty",
+    "Kuusisarakkeinen lista erottaa nimen ja kuvakkeellisen kategorian; suljettu menorivi on enintään 56 px korkea",
     "Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön",
     "Toistuvan tapahtuman tila voidaan korjata yhdelle esiintymälle ja palauttaa päiväautomatiikkaan",
     "Menon muokkaus säilyttää valitun kuukauden summapoikkeuksen",
@@ -69,6 +70,7 @@
     "Kompassin demotalous ladattavissa koko sovellukseen: Äkillinen kriisi",
     "Kompassista ladataan sama valittu kriisitalous ja sen kuukausisummat",
     "Kahden vuoden demo täyttää kaikki tietonäkymät ja kompassissa on 24 kuukausipylvästä",
+    "Pitkä menorivin nimi ja kuvaketoiminnot eivät mene päällekkäin 320 tai 390 px leveydellä",
     "Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä"
   ],
   "pageErrors": [],

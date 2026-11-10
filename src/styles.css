@@ -5292,3 +5292,42 @@ button.primary,
 .danger-zone > summary, .csv-file-options > summary { cursor: pointer; min-height: 44px; align-content: center; }
 .csv-file-options { margin: 8px 0 16px; }
 .import-summary { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+
+.signed-amount { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.signed-amount.is-positive { color: #146c43; }
+.signed-amount.is-negative { color: #b42332; }
+.signed-amount.is-zero { color: var(--muted); }
+[data-mode="dark"] .signed-amount.is-positive { color: #8de5b9; }
+[data-mode="dark"] .signed-amount.is-negative { color: #ff9a9f; }
+.budget-rule-card { padding: 12px; }
+.budget-rule-card h3 { font-size: 13px; margin-top: 0; }
+.budget-rule-card > strong { font-size: 20px; }
+.budget-rule-card > small { margin: 5px 0; }
+.budget-rule-limit { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 5px; }
+.budget-rule-limit small { margin: 0; }
+.budget-rule-alerts { padding: 10px 12px; }
+.budget-rule-alert-row { justify-content: space-between; padding: 3px 0; margin-top: 3px; gap: 6px; min-height: 36px; }
+.budget-rule-alert-row .budget-rule-category-link { min-height: 36px; }
+.budget-funding-delta { display: flex; gap: 12px; justify-content: space-between; margin: 7px 0; }
+.entry-table tbody tr:not(.expanded-row) > td { padding: 3px 8px; }
+.entry-table .row-title { min-height: 44px; }
+.entry-table .row-title strong { line-height: 1.3; }
+.entry-category-label { font-size: 12px; max-width: 100%; }
+.entry-category-label > .category-icon-frame { flex-shrink: 0; }
+.entry-category-label > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.entry-event-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font-size: 11px; }
+.entry-event-summary .status-badge { margin: 0; }
+@media (max-width: 600px) {
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) { position: relative; padding: 5px 8px; }
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td { padding: 4px 2px; }
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:first-child { padding: 0 98px 2px 0; }
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:first-child::before,
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:last-child::before { display: none; }
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:last-child { position: absolute; top: 5px; right: 6px; padding: 0; border: 0; width: auto; }
+  .mobile-entry-table .entry-table .row-title { gap: 4px; }
+}
+.entry-table .row-title { width: 100%; min-width: 0; }
+.entry-table .row-title strong { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .mobile-entry-table .entry-table tbody tr:not(.expanded-row) > td:first-child { padding-right: 112px; }
+}
