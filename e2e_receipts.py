@@ -1,5 +1,5 @@
-"""Local receipt regression. Optional positional PDFs: K example, Prisma January, Prisma March.
-Without files, generates payment-detail-free PDFs from committed text fixtures (PyMuPDF).
+"""Local receipt regression. Accepts three legacy PDFs or the documented nine-document suite.
+Without files, generates anonymized PDFs from committed text fixtures (PyMuPDF).
 Never copies supplied PDFs into the repository or test artifacts.
 """
 from pathlib import Path
@@ -10,7 +10,7 @@ ROOT = Path(__file__).parent
 parser = argparse.ArgumentParser()
 parser.add_argument('pdfs', nargs='*', type=Path)
 args = parser.parse_args()
-assert len(args.pdfs) in (0, 3), 'Give no files, or three PDFs: K, Prisma January, Prisma March'
+assert len(args.pdfs) in (0, 3, 9), 'Give no files, three legacy PDFs, or nine PDFs in the documented suite order'
 results = []
 def mark(name):
     results.append(name)
@@ -25,14 +25,16 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
     if not files:
         import fitz
         files = []
-        for key in ['example', 'jan', 'mar']:
-            lines = json.loads((ROOT / f'src/test/fixtures/receipt-{key}.json').read_text())['pages'][0]['lines']
+        for key in ['example', 'jan', 'mar', 'smarket-korso', 'prisma-nov2', 'prisma-nov9', 'alepa', 'smarket-koivukyla']:
+            lines = [line for p in json.loads((ROOT / f'src/test/fixtures/receipt-{key}.json').read_text())['pages'] for line in p['lines']]
             doc = fitz.open()
             for offset in range(0, len(lines), 60):
                 page = doc.new_page()
                 page.insert_font(fontname='FixtureMono', fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
                 for i, line in enumerate(lines[offset:offset + 60]): page.insert_text((25, 30+i*12), line, fontsize=9, fontname='FixtureMono')
             path = Path(tmp) / f'{key}.pdf'; doc.save(path); doc.close(); files.append(path)
+        copy = fitz.open(files[3]); copy.set_metadata({'title':'Different PDF encoding of same purchase'})
+        copy_path = Path(tmp) / 'duplicate.pdf'; copy.save(copy_path); copy.close(); files.append(copy_path)
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get('TALOUS_BROWSER', '/usr/bin/chromium'), headless=True, args=['--no-sandbox'])
         ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
@@ -42,7 +44,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
         page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Tuonti ja vienti')
-        expected = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16')]
+        expected = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
         initial = state(page)
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
@@ -57,7 +59,8 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             # Force one unknown category, then classify it through the multi-select path.
             selector = page.locator('.receipt-product-category select').first
             selector.select_option('')
-            page.get_by_role('checkbox', name=f'Vain luokittelemattomat (1)', exact=True).check()
+            unresolved = sum(1 for select in page.locator('.receipt-product-category select').all() if not select.input_value())
+            page.get_by_role('checkbox', name=f'Vain luokittelemattomat ({unresolved})', exact=True).check()
             page.get_by_role('button', name='Valitse näkyvät', exact=True).click()
             page.get_by_label('Luokittele valitut tuotteet', exact=True).select_option('Ruoka')
             page.locator('.receipt-controls input[type=checkbox]').uncheck()
@@ -104,6 +107,15 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 expect(page.locator('.receipt-review')).to_have_count(0)
                 mark('Duplicate receipt blocked; undo restores exact state and allows re-import')
         saved = state(page)
+        if len(files) == 9:
+            import hashlib
+            assert hashlib.sha256(files[3].read_bytes()).digest() != hashlib.sha256(files[-1].read_bytes()).digest()
+            page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(files[-1])
+            expect(page.get_by_text('Tämä kuitti on jo tuotu. Uutta kirjausta ei tehdä.', exact=True)).to_be_visible(timeout=30000)
+            expect(page.get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
+            assert state(page) == saved
+            page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
+            mark('A different PDF of the same purchase is blocked by semantic identity')
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_be_visible()
         # Receipt undo must expire after a later saved change, never erase that change.
         nav(page, 'Asetukset'); page.get_by_label('Väritila', exact=True).select_option('dark')
@@ -112,7 +124,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         mark('Later saved change expires receipt undo safely')
         page.reload(); nav(page, 'Tuonti ja vienti')
         assert state(page)['receiptImports'] == saved['receiptImports']
-        mark('All three receipt groups and product details persist after reload')
+        mark('All receipt groups and product details persist after reload')
         bad = Path(tmp) / 'bad.pdf'; bad.write_text('not a PDF')
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(bad)
         expect(page.get_by_text('Tiedosto ei ole PDF.', exact=True)).to_be_visible()
@@ -139,9 +151,24 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         expect(page.get_by_text('PDF saa olla enintään 20 Mt.', exact=True)).to_be_visible()
         assert state(page) == saved
         mark('PDF size limit is enforced before parsing')
+        # A blocked structural row is visible to the user; it is never silently discarded.
+        ambiguous = Path(tmp) / 'ambiguous.pdf'; ambiguous_doc = fitz.open(); ambiguous_page = ambiguous_doc.new_page()
+        ambiguous_page.insert_font(fontname='FixtureMono', fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
+        for i, line in enumerate(['ALEPA ESIMERKKI', 'K001 M000001/0001 9.11.2026 12:00', '*TUNTEMATON ??? *', '*MAITO 1,25 *', '*YHTEENSÄ 1,25 *']): ambiguous_page.insert_text((25, 30+i*15), line, fontsize=9, fontname='FixtureMono')
+        ambiguous_doc.save(ambiguous); ambiguous_doc.close()
+        page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(ambiguous)
+        expect(page.locator('.receipt-issue-source')).to_contain_text('TUNTEMATON ???')
+        page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
+        expect(page.get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
+        page.set_viewport_size({'width':320, 'height':900})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+        page.locator('.receipt-issue-source').scroll_into_view_if_needed(); page.screenshot(path='/tmp/receipt-source-error.png')
+        assert state(page) == saved
+        mark('Unknown structural row is shown with its source, blocks saving and fits 320px')
         assert not errors, errors
         assert not consoles, consoles
         assert not network, network
         mark('No JavaScript errors, console errors or external application requests')
+        unique_purchases = len(state(page)["receiptImports"])
         browser.close()
-(ROOT / 'qa/receipt-e2e-results.json').write_text(json.dumps({'checks':results, 'suppliedPDFs':bool(args.pdfs), 'errors':errors, 'externalRequests':network}, ensure_ascii=False, indent=2)+'\n')
+Path(os.environ.get('TALOUS_RECEIPT_REPORT', str(ROOT / 'qa/receipt-e2e-results.json'))).write_text(json.dumps({'checks':results, 'suppliedPDFs':bool(args.pdfs), 'documentCount':len(files), 'uniquePurchases':unique_purchases, 'errors':errors, 'externalRequests':network}, ensure_ascii=False, indent=2)+'\n')

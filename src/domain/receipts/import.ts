@@ -29,6 +29,7 @@ export function validateReceiptGroup(group: ReceiptImport) {
   if (!d.date || !validDate(d.date) || d.total === null || d.total <= 0 || d.chain === "unknown" || !d.merchant || !d.receiptId || !d.lines.length || d.issues.some(i => i.blocking)) throw Error("Kuitti ei ole valmis kirjattavaksi.");
   if (new Set(d.lines.map(l => l.id)).size !== d.lines.length) throw Error("Kuittirivien tunnisteet toistuvat.");
   if (d.lines.some(l => l.net < 0 || l.gross - l.discount !== l.net || !group.categories[l.id])) throw Error("Tuotteiden luokittelu tai alennuserittely on virheellinen.");
+  if (d.lines.some(l => l.unitPrice != null && (l.quantity === null || l.unit === null || ![l.gross, l.net].includes(Math.round(l.quantity * l.unitPrice))))) throw Error("Tuotteen määrä ja yksikköhinta eivät täsmää kuittierittelyyn.");
   if (d.lines.reduce((n, l) => n + l.net, 0) !== d.total) throw Error("Tuoterivit eivät täsmää kuitin loppusummaan.");
   if (group.semanticKey !== receiptKey(d)) throw Error("Kuitin tunniste ei vastaa erittelyä.");
 }

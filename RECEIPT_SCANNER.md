@@ -4,7 +4,7 @@
 
 **Tuonti ja vienti → Kuittiskannaus → Valitse kuitti (PDF) → Tarkista → Kirjaa menoihin.**
 
-1. Valitse Prisman tai K-kaupan tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
+1. Valitse Prisman, S-marketin, Alepan tai K-kaupan tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
 3. Vaihda tarvittaessa tuotteen kategoria. Tuntematon tuote jää valittavaksi. **Vain luokittelemattomat**, **Valitse näkyvät** ja kategoriavalinta luokittelevat monta tuotetta kerralla. Valitut valinnaiset oletuskategoriat, kuten Vaatteet, otetaan käyttöön hyväksynnässä.
 4. Jos samalle päivälle löytyy samansuuruinen meno, valitse sama maksu korvattavaksi tai vahvista eri ostos. Toistuvasta sarjasta korvataan vain kuitin päivälle osuva tapahtuma; muut esiintymät säilyvät.
@@ -21,6 +21,11 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 | K-Citymarket | 5.4.2026 | 15 | 32,87 € |
 | Prisma | 2.1.2026 | 22 | 121,46 € |
 | Prisma | 16.3.2026 | 27 | 73,85 € |
+| S-market | 1.11.2026 | 9 | 24,00 € |
+| Prisma | 2.11.2026 | 9 | 22,44 € |
+| Prisma | 9.11.2026 | 20 | 92,85 € |
+| Alepa | 9.11.2026 | 2 | 1,65 € |
+| S-market | 7.11.2026 | 6 | 16,92 € |
 
 - **Prisman NORM./KAMPANJA:** tuotteen pääsumma on jo alennettu. Esimerkiksi 69,95 € − 21,00 € = 48,95 €; alennusta ei vähennetä 48,95 eurosta uudelleen.
 - **Prisman TASAERÄ:** paketin 4,00 € sisältää sisällä esitetyt 4,58 € tuotteet ja 0,58 € alennuksen. Tuodaan yksi erä, ei otsikkoa ja sisätuotteita kahdesti.
@@ -28,6 +33,8 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 - Kappale-/kilomäärä ja yksikkö erotetaan rivihinnasta. Pantti ja kassi säilyvät omana rivinään.
 - Tuote-erittely päättyy ensimmäiseen ostosten loppusummaan. Maksutapa, asiakasomistajatiedot ja ALV-yhteenveto eivät ole uusia ostoksia.
 - PDF-sivujen tekstikohdat järjestetään sijainnin mukaan riveiksi. Valuuttamerkin ja yksikön väliset PDF-tekstikatkot sallitaan.
+
+Yhteensä yhdeksän alkuperäistä PDF-tiedostoa, kahdeksan eri ostosta: samasta Korso-ostoksesta toimitettiin kaksi erilaista PDF-tiedostoa. Jälkimmäinen tunnistetaan kaksoistuonniksi myös eri SHA-256:lla.
 
 Tuki tarkoittaa näitä testattuja kuittirakenteita. Muun K- tai S-kaupan formaatin toimivuutta ei luvata ilman esimerkkitestiä. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
 
@@ -56,6 +63,34 @@ JSON siirtää ryhmän ja erittelyn. CSV siirtää tavalliset menot, ei kuittiry
 - `src/test/receipt-parser.test.ts`: kolme siivottua tekstifixtureä sekä alennus-, paketti-, painotuote-, tuntematon tuote-, virhe-, palautus- ja ohjetekstikokeet.
 - `src/test/receipt-import.test.ts`: kategoriakirjaukset, JSON-yhteensopivuus, kaksoistuonti, täsmäytys kerta-/toistuvaan maksuun, manuaalinen toteuma ja muuttumattoman lähdetilan varmistus.
 - `python e2e_receipts.py`: kehittäjän regressio luo fixtuureistä PDF:t PyMuPDF:llä ja ajaa selaimessa koko polun. Vaatii Python Playwrightin, Chromiumin, PyMuPDF:n ja paikallisen testipalvelimen. `TALOUS_URL` ja `TALOUS_BROWSER` ovat valinnaisia.
-- Samalle komennolle voi antaa kolme paikallista PDF-polkua järjestyksessä K / Prisma tammikuu / Prisma maaliskuu. Alkuperäiset käyttäjän PDF:t tarkistettiin näin; niitä ei lisätä repositorioon. Fixturet eivät sisällä maksukortti- tai jäsenyystietoja.
+- Samalle komennolle voi antaa kolme vanhaa PDF:ää tai yhdeksän paikallista PDF-polkua järjestyksessä K / Prisma tammikuu / Prisma maaliskuu / S-market Korso / Prisma 2.11. / Prisma 9.11. / Alepa / S-market Koivukylä / Korso-kopio. Ilman argumentteja generoidaan kahdeksan anonymisoidun tekstifixturen PDF:t sekä eri tavalla tallennettu kopio samasta ostoksesta. Alkuperäiset käyttäjän PDF:t tarkistettiin näin; niitä ei lisätä repositorioon. Fixturet eivät sisällä maksukortti- tai jäsenyystietoja.
 
 Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md).
+
+
+## Parseri v2: yleiset rakenteet ja lisätarkistukset
+
+- Tunnistaa sekä `YHTEENSÄ` että tähtikoristellun `*YHTEENSÄ … *` -rivin. Tähtirivi ei ole tuote. Sama rakenne palvelee Prismaa, S-marketia ja Alepaa; myymälän nimeä tai kuittisummaa ei käytetä poimintasääntönä.
+- Normalisoi Unicode-välilyönnit ja miinusmerkit, tukee rivin/sivun vaihtumista ja erilleen poimittua päivää/kellonaikaa. Ostopäivä etsitään vain tapahtumaotsikon läheltä.
+- Tukee kahdelle riville jakautunutta S-ryhmän tuotenimeä ja hintaa, säilyttäen molemmat lähdeviitteet. Epäselvää jatkoriviä ei arvata.
+- Määrä × yksikköhinta tarkistetaan rivi- tai normaalihintaa vasten; bruttosumma − alennus = maksettu summa tarkistetaan jokaiselta tuotteelta myös ennen hyväksyntää. Tallennettu yksikköhinta validoidaan uudelleen JSON-palautuksessa.
+- ALV-yhteenvedon loppusumma ja yksittäinen `Debit/Veloitus` tarkistetaan, jos ne ovat saatavilla. Useat maksutavat eivät käytä yksittäisen veloituksen vertailua; yleinen monimaksutäsmäytys on jatkotyötä. ALV-sarakkeen desimaaliosaa ei saa tulkita seuraavan sarakkeen tuhaterottimeksi.
+- Useamman tapahtumaotsikon sisältävä PDF estetään yhden kuitin tuonnissa, jotta toista ostosta ei ohiteta huomaamatta.
+- Tunnistamaton erittelyrivi näytetään lähdetekstinä sivu-/riviviitteellä. Rakennevirhe estää tallennuksen, vaikka tunnistettujen tuotteiden summa täsmäisi.
+- Vaipat luokitellaan ennen housuihin perustuvaa vaatesääntöä. Ruoka-/hygienia-/vaate-ehdotuksia täydennettiin, mutta esimerkiksi epäselvä setti, puhdistuspyyhe tai keräilytuote jää käsin valittavaksi.
+- Uusien luonnosten versio on `receipt-2`. Vanhat `receipt-1`-kuittiryhmät säilyvät palautettavina; uusi valinnainen `unitPrice` ei riko vanhoja lähde-erittelyjä.
+
+## Mitä 99,9 % luotettavuus tarkoittaisi?
+
+Täydellistä tunnistusta ei luvata tuntemattomille kuittiversioille tai OCR-kuville. Nykyiset yhdeksän PDF:ää eivät ole yhdeksän riippumatonta ostosta, ja 512 synteettistä ulkoasu-/sivunvaihtovariaatiota eivät korvaa uutta tosielämän aineistoa. Kaikki summat voivat täsmätä myös väärällä tuotekategorialla tai toisensa kumoavilla poimintavirheillä.
+
+Seurattavat asiat erotetaan:
+
+1. **Poiminnan kattavuus:** kuinka monesta tuetun formaatin kuitista saadaan kaikki rivit ja pääkentät oikein ilman rakennekorjausta.
+2. **Virheellisesti hyväksytyt tulokset:** kuinka moni väärä tuote-/summaerittely pääsee tarkistusportista läpi. Tavoite on estää tunnetut ristiriidat, ei väittää kaikkien mahdollisten virheiden havaitsemista.
+3. **Kategoriat:** nimisääntöjen osuvuus ja käsin valittavien tuotteiden määrä mitataan erikseen. Käyttäjän vahvistusta ei lasketa automaattisen luokituksen onnistumiseksi.
+4. **Koko työnkulku:** hyväksyntä, saman maksun täsmäytys, kaksoistuonti, kumoaminen ja varmuuskopion palautus.
+
+99,9 %:n tavoitteen tilastollinen arviointi vaatisi suuren edustavan, riippumattoman testijoukon. Esimerkiksi noin 2 995 nollavirheistä riippumatonta tapausta antaisi yhden puolen 95 % binomisen luottamusrajan virheosuudelle alle 0,1 %:n (1 − 0,05^(1/n)). Tämä koskisi vain määriteltyä virhettä ja aineiston edustamaa jakaumaa, ei kaikkia tulevia kuitteja. Havaittu virhe, valikoituminen tai uusi formaatti muuttaa tulkintaa.
+
+Jatkopolku: lisää edustavia anonymisoituja esimerkkejä, erillinen testijoukko kehitysaineiston ulkopuolelta, OCR omana vaiheena, tarkempi tuotetunnistus ja käyttäjän hallitsema paikallinen luokittelumuisti. Telemetriaa tai kuittien automaattista lähetystä ei lisätä.

@@ -1,0 +1,30 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "lines": [
+        "                *S-MARKET ESIMERKKI*",
+        "",
+        "",
+        "",
+        "",
+        "K001 M000001/0001      7.11.2026       15:58",
+        "",
+        "",
+        "ASIAKASOMISTAJAN edut on huomioitu.",
+        "------------------------------------------",
+        "*MUOVIKASSI SM HARMAA                        0,59 *",
+        "*NO SUGAR SAROS 0,5L                         3,08 *",
+        "    2 KPL                1,54 €/KPL",
+        "*PANTTI 0,15 EUR TÖLKKI                      0,30 *",
+        "    2 KPL                0,15 €/KPL",
+        "*SMOOTHIE OMENA/BANAANI/MANGO 6KK            2,37 *",
+        "    3 KPL                0,79 €/KPL",
+        "*POKE ME05 BOOSTER REL 17/7                  6,75 *",
+        "*TERVEYSSIDE SEC NIG EXT 5                   3,83 *",
+        "------------------------------------------",
+        "*YHTEENSÄ                                   16,92 *"
+      ]
+    }
+  ]
+}

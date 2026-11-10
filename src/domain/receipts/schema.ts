@@ -6,17 +6,18 @@ export const receiptSourceSchema = z.object({ page: z.number().int().min(1).max(
 export const receiptLineSchema = z.object({
   id: z.string().max(80), name: z.string().min(1).max(300),
   quantity: z.number().positive().max(100000).nullable(), unit: z.enum(["kpl", "kg", "l"]).nullable(),
+  unitPrice: cents.nonnegative().nullable().optional(),
   gross: cents, discount: z.number().int().nonnegative().max(MAX), net: cents,
   kind: z.enum(["product", "deposit", "bag", "refund"]),
   suggestedCategory: z.string().max(100).nullable(),
   source: z.array(receiptSourceSchema).min(1).max(30),
 });
 export const receiptDraftSchema = z.object({
-  parserVersion: z.literal("receipt-1"), chain: z.enum(["s", "k", "unknown"]),
+  parserVersion: z.enum(["receipt-1", "receipt-2"]), chain: z.enum(["s", "k", "unknown"]),
   merchant: z.string().max(200), date: z.string().refine(v => !v || validDate(v)),
   receiptId: z.string().max(100), currency: z.literal("EUR"), total: cents.nullable(),
   lines: z.array(receiptLineSchema).max(2000),
-  issues: z.array(z.object({ code: z.string().max(80), message: z.string().max(500), blocking: z.boolean() })).max(200),
+  issues: z.array(z.object({ code: z.string().max(80), message: z.string().max(500), blocking: z.boolean(), source: receiptSourceSchema.optional() })).max(200),
 });
 export type ReceiptLine = z.infer<typeof receiptLineSchema>;
 export type ReceiptDraft = z.infer<typeof receiptDraftSchema>;

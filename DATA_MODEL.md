@@ -100,3 +100,5 @@ Demojen tiedot ja 36 kuukauden sisältö on kuvattu [DEMO_DATA_PLAN.md](DEMO_DAT
 ## Kuittiryhmät 10.11.2026
 
 `receiptImports` täydentää skeemaa 1 valinnaisena palautuskenttänä; puuttuva lista alustetaan tyhjäksi. Ryhmään tallentuvat lähdetiiviste, semanttinen tunniste, tarkistettu kuittiluonnos, kategoriat ja luotujen menojen ID:t. Ryhmä ei itsessään ole rahavirta. Ryhmän euromäärät ja rakenne validoidaan myös palautuksessa. Alkuperäistä PDF:ää tai maksukortti-/jäsenyystietoja ei säilytetä. Tuodut menot ovat kertamenoja, täsmäytetty aiempi kertameno poistetaan tai sarjan yksittäinen esiintymä ohitetaan. JSON säilyttää erittelyn; CSV ei. Kuluhyvityksiä tai ennusteiden jäännösmallia ei vielä lisätty. [Tarkemmat rajat](RECEIPT_SCANNER.md).
+
+Kuittiparseri v2 säilyttää `receipt-1`-luonnokset ja lisää `receipt-2`-version, valinnaisen `unitPrice`-senttikentän sekä valinnaisen lähdeviitteen havaintoon. Yksikköhinnan ja määrän yhteys netto-/normaalihintaan tarkistetaan palautuksessa. Tämä ei todista kuitin aitoutta. Lähde-PDF:tä, maksukorttitietoja tai koko footer-tekstiä ei tallenneta.
