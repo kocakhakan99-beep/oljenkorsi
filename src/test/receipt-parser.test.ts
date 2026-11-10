@@ -38,10 +38,13 @@ it("uses K receipt table boundaries so amounts outside the product block are nev
   expect(d.lines).toHaveLength(15);
   expect(d.lines.some(line => /99,99/.test(line.name))).toBe(false);
 });
-it("does not guess K product rows when the receipt table delimiters are missing", () => {
+it("uses YHTEENSÄ as the K product boundary when there is no closing divider", () => {
   const pages = structuredClone(k.pages);
   pages[0].lines = pages[0].lines.filter(line => !/^\s*-{3,}\s*$/.test(line));
-  expect(parseReceipt(pages).issues.some(issue => issue.code === "structure" && issue.blocking)).toBe(true);
+  const d = parseReceipt(pages);
+  expect(d.issues).toEqual([]);
+  expect(d.total).toBe(3287);
+  expect(d.lines).toHaveLength(15);
 });
 it("preserves weighted quantities and leaves unknown products for manual classification", () => {
   const d = parseReceipt(mar.pages);

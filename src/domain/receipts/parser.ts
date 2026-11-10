@@ -69,13 +69,13 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
   let itemStart = -1, itemEnd = totalSourceIndex >= 0 ? totalSourceIndex : sources.length;
   const dateRowSet = new Set(dateSources.slice(1));
   if (chain === "k") {
-    // K-Citymarket's item block starts after the transaction header and ends
-    // at the rule immediately before YHTEENSÄ. The uploaded receipt has no
-    // opening rule, so find its first valid item row within that block.
+    // K item rows follow the transaction header. End at the closing rule when
+    // present; some K layouts omit it, in which case the explicit YHTEENSÄ row
+    // is the boundary. The uploaded K-Citymarket receipt has no opening rule.
     let closingRule = -1;
     for (let i = itemEnd - 1; i > header; i--) if (isSeparator(sources[i])) { closingRule = i; break; }
-    if (closingRule > header) {
-      itemEnd = closingRule;
+    if (closingRule > header) itemEnd = closingRule;
+    if (itemEnd > header) {
       itemStart = sources.findIndex((s, i) => i > header && i < itemEnd && !dateRowSet.has(s) && isKProductStart(s));
     }
   } else {
