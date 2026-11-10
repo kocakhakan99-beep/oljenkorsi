@@ -33,7 +33,7 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 - **Prisman TASAERÄ:** paketin 4,00 € sisältää sisällä esitetyt 4,58 € tuotteet ja 0,58 € alennuksen. Tuodaan yksi erä, ei otsikkoa ja sisätuotteita kahdesti.
 - **K-kaupan PLUSSA-ETU:** loppuun merkitty miinus vähennetään tuotteesta tai edeltävästä tarjousryhmästä. Ryhmäalennus jaetaan suhteellisesti suurimpien senttijäännösten menetelmällä, tasatilanteessa lähdejärjestyksessä.
 - Kappale-/kilomäärä ja yksikkö erotetaan rivihinnasta. Pantti ja kassi säilyvät omana rivinään.
-- Tuotealue rajataan ennen summien lukemista: K-kuitissa se alkaa ostotapahtuman otsikon jälkeen ja päättyy loppusummaa edeltävään erotinviivaan; S-ryhmän kuitissa käytetään tähtimerkityistä tuoteriveistä loppusummaan ulottuvaa aluetta. Maksutapa, asiakasomistajatiedot ja ALV-yhteenveto eivät ole uusia ostoksia.
+- Tuotealue rajataan ennen summien lukemista: K-kuitissa se alkaa ostotapahtuman otsikon jälkeen ja päättyy `YHTEENSÄ`-riviin (tai sitä edeltävään erotinviivaan); S-ryhmän kuitissa käytetään tähtimerkityistä tuoteriveistä loppusummaan ulottuvaa aluetta. Maksutapa, asiakasomistajatiedot ja ALV-yhteenveto eivät ole uusia ostoksia.
 - Kuitin otsikon tai tuotealueen jälkeisiä summia ei käsitellä tuotteina. Jos K-kuitin tuotealueen alkua ei voi tunnistaa rakennerajasta, skannaus pysähtyy eikä arvaa.
 - PDF-sivujen tekstikohdat järjestetään sijainnin mukaan riveiksi. Valuuttamerkin ja yksikön väliset PDF-tekstikatkot sallitaan.
 
