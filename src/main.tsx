@@ -1,3 +1,4 @@
+import { ReceiptScanner } from "./components/receipt-scanner";
 import { marketQuote, marketSnapshot } from "./domain/market-history";
 import { brandWearFactor } from "./domain/vehicle-profiles";
 import { selectedValuationDate, datedValue, datedState, visibleInMonth } from "./domain/dated-values";
@@ -2018,11 +2019,13 @@ function App() {
       ),
     };
   }
+  const receiptUndoActive = useRef(false);
   function commit(next: State) {
     try {
       if (next.coverage === s.coverage)
         next = { ...next, coverage: coverageAfterEntryChanges(s, next) };
       let valid = validate(next);
+      if (receiptUndoActive.current) { receiptUndoActive.current = false; setUndo(null); }
       try {
         storage.update(valid);
         setStorageOk(true);
@@ -2348,8 +2351,8 @@ function App() {
         "Poistetaanko tietue? Voit kumota viimeisimmän poiston tämän istunnon aikana.",
       )
     ) {
-      setUndo(s);
       if (commit({ ...s, [kind]: s[kind].filter((e) => e.id !== id) })) {
+        setUndo(s);
         setNotice("Tietue poistettu.");
         return true;
       }
@@ -3361,7 +3364,7 @@ function App() {
             )}
             {undo && (
               <div className="alert">
-                Viimeisin poisto tai CSV-tuonti voidaan kumota.{" "}
+                Viimeisin poisto tai tuonti voidaan kumota.{" "}
                 <button
                   onClick={() => {
                     commit(undo);
@@ -6380,12 +6383,19 @@ function App() {
                 s={s}
                 onBackup={exportBackup}
                 onRestore={importBackup}
-                onImport={(kind, es) => {
+                onReceiptImport={(next) => {
+                  if (!commit(next)) return false;
                   setUndo(s);
-                  if (commit({ ...s, [kind]: [...s[kind], ...es] }))
+                  receiptUndoActive.current = true;
+                  return true;
+                }}
+                onImport={(kind, es) => {
+                  if (commit({ ...s, [kind]: [...s[kind], ...es] })) {
+                    setUndo(s);
                     setNotice(
                       `${es.length} tietuetta tuotu. Tuonnin voi kumota.`,
                     );
+                  }
                 }}
               />
             )}
@@ -8426,11 +8436,13 @@ function Transfer({
   onBackup,
   onRestore,
   onImport,
+  onReceiptImport,
 }: {
   s: State;
   onBackup: () => void;
   onRestore: (f: File) => void;
   onImport: (k: Kind, e: Entry[]) => void;
+  onReceiptImport: (next: State) => boolean;
 }) {
   const [kind, setKind] = useState<Kind>("expenses"),
     [text, setText] = useState(""),
@@ -8528,6 +8540,7 @@ function Transfer({
   }
   return (
     <>
+      <ReceiptScanner state={s} onImport={onReceiptImport} />
       <section className="panel">
         <h2>JSON-varmuuskopio</h2>
         <div className="entry-statuses"><StatusBadge>Koko talous</StatusBadge><StatusBadge>Salaamaton tiedosto</StatusBadge></div>

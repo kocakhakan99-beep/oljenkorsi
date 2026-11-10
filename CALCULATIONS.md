@@ -98,3 +98,7 @@ Yhteinen rajaus ja tilannepäivän valinta on määritelty [kuukausisuodatuksen 
 Porrastettu v2 säilyttää arvon ankkuroinnin arvostuspäivään. Uuden auton alkuvaihe on jyrkempi, myöhemmät vaiheet loivenevat, ja 20 merkin näkyvä skenaariopaino vaikuttaa käyrään. Täsmällinen kaava ja oletukset: [ASSET_VALUATION_PLAN.md](ASSET_VALUATION_PLAN.md). Vanha v1 ei saa merkkipainoa jälkikäteen ilman version vaihtoa.
 
 Symboliin kytketty sijoitus käyttää valitun päivän tai sitä aiemman snapshot-havainnon lähdehintaa. USD muunnetaan EUR:ksi saman päivän tai aiemman EKP-havainnon avulla. Position arvo = round(määrä × tarkka EUR-yksikköhinta sentteinä). Käyttöliittymän yksikköhinnan kahden desimaalin näyttö ei leikkaa laskennan tarkkuutta. Hintasarja ei yksin ole toteutunut sijoitustuotto; puuttuvat osingot, kulut, verot ja todelliset ostot on erotettava siitä.
+
+## Kuittien rivit ja alennukset
+
+Prisman pääsumma on jo alennettu; NORM./KAMPANJA tarkistetaan, ei vähennetä uudelleen. TASAERÄ-otsikko ja sisätuote tuottavat vain yhden maksetun erän. K-kaupan erillinen PLUSSA-ETU vähentää edellistä tuotetta tai tarjousryhmää; ryhmäjako käyttää suurimpia senttijäännöksiä lähdejärjestyksellä tasatilanteessa. Nettorivien summa = kuitin loppusumma = kategoriakirjausten summa sentilleen. ALV ja maksutapa eivät lisää menoja. Tuonti ei muuta suunniteltuja budjetteja, ja kategoriatoteuman manuaalinen poikkeus poistetaan vain erillisellä hyväksynnällä.

@@ -25,3 +25,7 @@ CSV ei säilytä ID:tä tai koko sovellustilaa. Käytä JSON:ia täydelliseen pa
 Tavallinen JSON-varmuuskopiointi ja CSV-siirto ovat Tuonti ja vienti -näkymässä. Asetukset ohjaa sinne. Alkuperäinen selaintallennus voidaan edelleen viedä Asetusten ”Tallennuksen lisätyökalut” -kohdasta vian selvittämistä varten.
 
 CSV:n tietotyyppi on perusvalinta; merkistö ja erotin ovat ”Tiedoston lisäasetukset” -kohdassa. Virheellinen UTF-8 avaa asetukset ja esikatselun voi korjata valitsemalla esimerkiksi Windows-1252. Virhe ei itsessään muuta taloustietoja, eikä tuontia voi vahvistaa ratkaisemattoman tiedoston lukuvirheen aikana. Sarakekartoitus, rivivirheet, duplikaattien ohitus ja tuonnin kumoaminen säilyvät. JSON-palautus korvaa nykyisen talouden erillisen vahvistuksen jälkeen.
+
+## PDF-kuittiskannaus
+
+Tuonti ja vienti sisältää paikallisen Prisma-/K-kuittiskannauksen: [käyttöohje ja testatut muodot](RECEIPT_SCANNER.md). PDF:n valinta ei muuta taloutta. Hyväksytyt kategoriakirjaukset ja lähderyhmä tallentuvat yhdessä, kuitti täsmäytetään tarvittaessa aiempaan maksuun ja ostokuukausi määrää budjettitoteuman. JSON säilyttää tuoterivit ja kaksoistuontitunnisteet; CSV ei. Kumoaminen palauttaa koko aiemman tilan heti tuonnin jälkeen. OCR ja yleiset lasku-/sopimusparserit ovat jatkotyötä.

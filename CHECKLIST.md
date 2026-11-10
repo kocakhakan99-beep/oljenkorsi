@@ -108,10 +108,12 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Kuuden tietotyypin CSV-tuonti/vienti, sarakekartoitus, suomalaiset otsikot, virhe- ja duplikaattitarkistus sekä tuonnin kumoaminen.
 - 🟡 CSV ei ole täydellinen varmuuskopio: linkit, arvomallit ja koko tila siirretään JSON:lla. Kaikkia pankkiformaatteja ei tunnisteta.
 - 📋 PDF-laskujen ja sopimusten tunnistus: summat, eräpäivät, kuukausierät, korot ja tarkistettava luonnos.
-- 📋 S/K-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja vienti olemassa olevan budjetin toteumaan.
-- 📋 PDF-tuonnin täsmäytys, kaksoiskirjausten esto, kuluhyvitykset, tuontiryhmät ja kumoaminen.
+- ✅ Testattujen Prisma-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
+- ✅ Kuittiryhmät, tiedosto-/sisältötunnisteella tehtävä kaksoistuonnin esto, JSON-erittely ja välitön kumoaminen.
+- ✅ Täsmäytys samansuuruiseen saman päivän kerta- tai toistuvaan maksuun; sarjasta korvataan vain yksi esiintymä.
+- 🟡 Kuittituonnin täsmäytys ja ryhmät käytössä; yleisen PDF-tuonnin kuluhyvitykset ja ennuste/maksu-erottelu puuttuvat.
 - 📋 Paikallinen OCR kuvallisille PDF:ille, luokittelumuisti ja usean PDF:n tuonti jatkovaiheina.
-- ⬜ Anonymisoidut todelliset PDF-esimerkit ja kirjausmallin muutokset ennen parserin toteuttamista.
+- 🟡 Kolme todellista PDF-kuittia varmennettu; lisää formaatteja, kuvakuitteja ja lasku-/sopimusesimerkkejä tarvitaan jatkoon.
 - ⬜ Tilit, alkusaldot, sisäiset siirrot ja pankkitapahtumiin täsmäytys.
 
 ## 9. Ulkoasu, helppokäyttöisyys ja saavutettavuus
@@ -142,7 +144,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 112 yksikkötestiä ja 82 Chromium-selainvarmennusta.
+- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 130 yksikkötestiä, 82 yleistä Chromium-selainvarmennusta ja 15 kuittivarmennusta.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.
@@ -183,7 +185,7 @@ Tämä järjestys on ehdotus. Kohdat eivät ole aikataululupauksia; aiemmin mä�
 | Tutkimuspohja ja FIRE | [ominaisuuskartoitus](FEATURE_RESEARCH.md), [tutkimuslähteet](RESEARCH_SOURCES.md), [FIRE-suunnitelma](FIRE_PLAN.md) |
 | Budjetti, kompassi ja ajankohta | [budjettiraamit](BUDGET_RULE_PLAN.md), [kompassi](COMPASS_ENGINE.md), [kuukausirajaus](MONTH_SCOPE_PLAN.md), [laskenta](CALCULATIONS.md) |
 | Omaisuus, sijoitukset ja demot | [arvonmuutos](ASSET_VALUATION_PLAN.md), [kurssisuunnitelma](INVESTMENT_MARKET_DATA_PLAN.md), [kurssilähteet](MARKET_DATA_SOURCES.md), [demot](DEMO_DATA_PLAN.md) |
-| Rajapinnat ja tiedonsiirto | [ilmaiset API:t](FREE_API_INTEGRATION_PLAN.md), [PDF-tuonti](PDF_IMPORT_PLAN.md), [JSON/CSV](IMPORT_EXPORT.md) |
+| Rajapinnat ja tiedonsiirto | [ilmaiset API:t](FREE_API_INTEGRATION_PLAN.md), [PDF-tuonti](PDF_IMPORT_PLAN.md), [kuittiskannaus](RECEIPT_SCANNER.md), [JSON/CSV](IMPORT_EXPORT.md) |
 | Käyttöliittymä ja käyttäjäpalaute | [UX-priorisointi](UX_PRESENTATION_MODEL.md), [toimintojen pääpaikat](UNIFICATION_PLAN.md), [auditointi](UX_AUDIT.md), [käyttäjäpalaute](USER_TESTING_PLAN.md), [benchmark](UI_BENCHMARK.md), [ilme ja navigaatio](UX_REDESIGN_PLAN.md), [budjetti/raportit](UI_BUDGET_REPORTS_PLAN.md), [saavutettavuus](ACCESSIBILITY.md) |
 | Tekniikka ja tietosuoja | [arkkitehtuuri](ARCHITECTURE.md), [offline-rakenne](OFFLINE_ARCHITECTURE.md), [päätökset](DECISIONS.md), [tietomalli](DATA_MODEL.md), [turvallisuus](SECURITY.md), [tietosuoja](PRIVACY.md) |
 | Varmennus ja puutteet | [testaus](TESTING.md), [tunnetut rajoitukset](KNOWN_LIMITATIONS.md) |

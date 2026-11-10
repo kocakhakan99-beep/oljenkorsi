@@ -4,7 +4,7 @@ Päivitetty 10.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja e
 
 ## Suunniteltu: PDF-laskut, sopimukset ja S/K-kuitit
 
-[PDF-tuonnin suunnitelma](PDF_IMPORT_PLAN.md) on valmis suunnitelmatasolla; toteutusta ei ole vielä aloitettu. PDF-poiminta tuottaa tarkistettavan skeeman, josta voi luoda tai täsmäyttää menon/velan. S/K-kuitti eritellään tuoteriveiksi ja kategorioiksi, ja hyväksytyt kirjaukset päivittävät olemassa olevan budjetin toteumaa. Ennen parseria ratkaistaan tuontiryhmät, kuluhyvitykset ja ennusteiden/maksujen täsmäytys kaksoiskirjausten estämiseksi. OCR sisältyy paikallisen käsittelyn jatkovaiheeseen. Formaattikohtainen toteutus tarvitsee anonymisoidut PDF-fixturet.
+[PDF-tuonnin suunnitelman](PDF_IMPORT_PLAN.md) kuittiosan ensimmäinen toteutus on valmis: [Prisma- ja K-kaupan PDF-kuittiskannaus](RECEIPT_SCANNER.md) poimii testatut tekstimuodot, täsmäyttää summan, luokittelee tarkistettavasti ja kirjaa menot. Lasku-/sopimuspoiminta ja OCR ovat vielä toteuttamatta. PDF-poiminta tuottaa tarkistettavan skeeman, josta voi luoda tai täsmäyttää menon/velan. S/K-kuitti eritellään tuoteriveiksi ja kategorioiksi, ja hyväksytyt kirjaukset päivittävät olemassa olevan budjetin toteumaa. Ennen parseria ratkaistaan tuontiryhmät, kuluhyvitykset ja ennusteiden/maksujen täsmäytys kaksoiskirjausten estämiseksi. OCR sisältyy paikallisen käsittelyn jatkovaiheeseen. Formaattikohtainen toteutus tarvitsee anonymisoidut PDF-fixturet.
 
 ## Käynnissä ja seuraavaksi: yhtenäistäminen
 
