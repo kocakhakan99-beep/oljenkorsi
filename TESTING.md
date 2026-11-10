@@ -1,5 +1,12 @@
 # Testausraportti 10.11.2026
 
+## Kuittien tuoterajauksen korjaus 10.11.2026
+
+- Esimerkkien rakenteista erotettiin kaksi sääntöä: S-ryhmän tuoterivit alkavat tähtimerkillä; K-Citymarketin tuoterivit alkavat ostotapahtuman otsikon jälkeen ja jatkuvat loppusummaa edeltävään erotinviivaan. Otsikon päivämäärä-, kortti-, bonus- ja muut summat eivät ole tuoterivejä.
+- Korjattiin K-kuitin aiempi liian yleinen poiminta, joka käsitteli ostorajan sisällä minkä tahansa summalla päättyvän rivin tuotteena. Jos loppusummaa edeltävää tuotealueen erotinta ei tunnisteta, parseri pysähtyy.
+- Kaikki yhdeksän alkuperäistä PDF:ää ajettiin sovelluksessa: kahdeksan eri ostosta poimittiin oikeine rivimäärineen ja loppusummineen; Korso-kuitin eri tiedostoversio estettiin kaksoistuontina. Yhtään PDF:ää tai henkilö-/maksutietoa ei tallennettu repositorioon.
+- 168 yksikkötestiä 17 tiedostossa, TypeScript, ESLint ja tuotantobuild läpäisivät. Uudet regressiotestit varmistavat, ettei K-kuitin otsikon tai tuotealueen jälkeinen summa päädy ostoriviksi ja että puuttuva rakenneraja estää arvailun.
+
 ## Kuittiskannauksen pääpaikka ja PDF-pudotus 10.11.2026
 
 - TypeScript, ESLint, 166 yksikkötestiä 17 tiedostossa ja tuotantobuild läpäisivät. Uusi tiedostovalinnan portti kattaa yhden PDF:n, kirjainkoon, puuttuvan/tyhjän/ylisuuren tiedoston ja usean tiedoston hylkäyksen. PDF:n sisältötarkistus säilyy lukijassa.
