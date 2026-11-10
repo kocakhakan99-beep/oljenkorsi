@@ -89,3 +89,9 @@ Tulot/menot-raportin kaavio ja taulukko eivät enää näy oletuksena yhtä aika
 Kaikissa kuudessa talouslistassa Nimi ja Kategoria ovat erilliset sarakkeet. Kategoria sisältää pienen kuvakkeen ja nimen. Suljettu rivi näyttää olennaisen lyhyesti; tunnisteet ja tarkennukset löytyvät avattavista tiedoista. Puhelimella samat kentät esitetään korttina ja pitkälle nimelle varataan tila toimintopainikkeiden vierestä. Muokkaus-, poisto- ja avauspainikkeiden 44 px painallusalue säilyy.
 
 Budjetin poikkeamia ei nimetä toistuvasti ylityksiksi: näkyvä erotus on etumerkillinen luku. Vihreä plus tarkoittaa liikkumavaraa tai vähimmäissäästötavoitteen ylittävää varausta, punainen miinus vajetta; nolla on neutraali. Työkaluvihje ja ruudunlukijan selite kertovat vertailun. Ryhmän enimmäisraja näkyy ≤-merkinnällä ja säästöjen vähimmäistavoite ≥-merkinnällä. Tarkempi laskentaselite avautuu pyynnöstä.
+
+## Toistuvuuden ja tapahtumatilan kuvakkeet 10.11.2026
+
+Tulojen ja menojen Tapahtuma-sarakkeessa on kaksi yhteistä kuvaketta: toistuvuus ja valitun kuukauden tila. Kiertonuolen yhteydessä oleva rytmimerkintä erottaa viikko-, kuukausi- ja vuosirytmit; kertatapahtumalla on oma kalenterikuvake. Tilat käyttävät eri symboleja: toteutunut valintamerkkiä, suunniteltu kelloa, ohitettu ohitusmerkkiä, eri tiloja sisältävä kuukausi katkoviivaympyrää ja tapahtumaton kuukausi suljettua kalenteria. Keskeytetty sarja näyttää lisäksi taukomerkin.
+
+Väri täydentää symbolia. Koko selite avautuu napauttamalla tai Enterillä/välilyönnillä ja on myös työkaluvihjeessä sekä saavutettavassa nimessä. Painallusalue on vähintään 44 × 44 px. Suljettuna selite ei lisää rivin korkeutta. Tarkat päivät ja tapahtumakohtaiset korjaukset säilyvät rivin lisätiedoissa.

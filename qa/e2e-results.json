@@ -18,6 +18,7 @@
     "Tulo lisätty",
     "Toistuva meno lisätty",
     "Kuusisarakkeinen lista erottaa nimen ja kuvakkeellisen kategorian; suljettu menorivi on enintään 56 px korkea",
+    "Kahdeksan toistuvuuskuvaketta, tulojen ja menojen tilasymbolit sekä napautus-/näppäimistöselite toimivat 44 px alueella",
     "Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön",
     "Toistuvan tapahtuman tila voidaan korjata yhdelle esiintymälle ja palauttaa päiväautomatiikkaan",
     "Menon muokkaus säilyttää valitun kuukauden summapoikkeuksen",

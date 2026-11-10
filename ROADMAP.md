@@ -53,3 +53,5 @@ Aiemman versiopolun suunta säilyy: V1 offline-ydin, V1.1 käytettävyys/saavute
 Ei mainoksia, käyttäjädatan myyntiä tai luotonoton aggressiivista suosittelua. Paikallinen HTML säilyy hyödyllisenä ilman verkkopalveluita. Tämä roadmap kuvaa seuraavia toimituksia; jokaisen muutoksen toteutus ja validointi kirjataan erikseen.
 
 Toteutettu 10.11.2026: kuuden talouslistan erilliset Nimi/Kategoria-sarakkeet, matalammat suljetut rivit ja puhelimen pitkien nimien tilavaraus. Budjetin poikkeamatekstit korvattiin etumerkillisillä, saavutettavasti selitetyillä erotuksilla. Ks. [UX-malli](UX_PRESENTATION_MODEL.md) ja [testaus](TESTING.md).
+
+Toteutettu 10.11.2026: tulojen ja menojen kahdeksan toistuvuuden sekä tapahtumatilojen yhteinen kuvakesarja. Kosketuksella ja näppäimistöllä avattavat selitteet, 44 px painallusalueet ja erilliset tumman tilan värit; laskenta ja tapahtumakorjaukset säilyvät.
