@@ -116,6 +116,17 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - 🟡 Kolme todellista PDF-kuittia varmennettu; lisää formaatteja, kuvakuitteja ja lasku-/sopimusesimerkkejä tarvitaan jatkoon.
 - ⬜ Tilit, alkusaldot, sisäiset siirrot ja pankkitapahtumiin täsmäytys.
 
+### Uusi käyttäjätoive: tiedoston pudotus ja tiliotteet
+
+**Tila: ⬜ Toteutusjonossa; tarkempi suunnittelu ja toteutus aloittamatta.**
+
+- ⬜ Tietokoneella tiedoston drag and drop missä tahansa Tulot-, Menot- ja Budjetti-näkymän kohdassa.
+- ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.
+- ⬜ Tilioteparserin suunnittelu ja myöhempi toteutus. Käyttäjä voi toimittaa aluksi kahden pankin esimerkkitiliotteet; aineistoa ei ole vielä saatu eikä pankkiformaatteja määritelty.
+- ⬜ Quick-start-käyttöpolku: nopea käyttöönotto sekä menojen ja tulojen syötön helpottaminen tiedostoista.
+
+Kirjattu käyttäjän pyynnöstä vain työjonoon. Tiedoston pudotus ei itsessään tarkoita talouskirjausten automaattista hyväksyntää.
+
 ## 9. Ulkoasu, helppokäyttöisyys ja saavutettavuus
 
 - ✅ Viisi navigaatioryhmää, mobiilivalikko, pikatoiminnot ja toimintojen pääpaikat.

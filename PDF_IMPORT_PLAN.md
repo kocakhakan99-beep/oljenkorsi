@@ -192,3 +192,11 @@ Suositus on tämä järjestys: ensin talouskirjausten oikeellisuus, sitten autom
 ## Vielä tarvittava aineisto
 
 Kolme käyttäjän toimittamaa todellista PDF-kuittia (K-Citymarket ja kaksi Prismaa) on nyt varmennettu. Muiden formaattien, kuvallisten kuittien sekä lasku-/sopimustyyppien toteutukseen tarvitaan vielä anonymisoituja esimerkkejä. Mukaan vähintään yksi kuvallinen PDF ja yksi alennuksia/pantteja sisältävä kuitti. Ilman näitä voi tehdä parserin rungon ja synteettiset testit, mutta ei rehellisesti luvata formaattikohtaista tunnistustarkkuutta.
+
+## Jonossa: koko näkymän drag and drop ja tilioteparseri
+
+Käyttäjätoive 10.11.2026. **Vain kirjattu toteutuslistalle; ei vielä suunniteltu tai toteutettu.**
+
+Tietokoneella tiedoston voi jatkossa pudottaa mihin tahansa Tulot-, Menot- tai Budjetti-näkymässä. Sovellus tunnistaa, onko kyse kuitista vai tiliotteesta, siirtyy tarvittavaan näkymään ja käynnistää sopivan parserin/prosessin. Tavoitteena on hyödyllinen quick-start sekä helpompi tulojen ja menojen syöttö. Kirjausten nykyinen tarkistus- ja hyväksyntäperiaate säilyy lähtökohtana.
+
+Jatkotyöhön kuuluu myös tilioteparserin suunnittelu. Käyttäjä voi toimittaa tässä vaiheessa kahden pankin esimerkkitiliotteet; näitä ei ole vielä saatu, eikä pankkeja, tiedostomuotoja tai poimintasääntöjä ole määritelty. Tarkempi suunnittelu tehdään myöhemmin esimerkkiaineiston pohjalta.
