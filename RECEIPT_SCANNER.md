@@ -28,16 +28,21 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 | Prisma | 9.11.2026 | 20 | 92,85 € |
 | Alepa | 9.11.2026 | 2 | 1,65 € |
 | S-market | 7.11.2026 | 6 | 16,92 € |
+| Prisma | 17.10.2026 | 22 | 75,56 € |
+| Prisma | 12.4.2026 | 15 | 47,67 € |
+| Prisma | 9.11.2026 | 20 | 92,85 € |
 
 - **Prisman NORM./KAMPANJA:** tuotteen pääsumma on jo alennettu. Esimerkiksi 69,95 € − 21,00 € = 48,95 €; alennusta ei vähennetä 48,95 eurosta uudelleen.
 - **Prisman TASAERÄ:** paketin 4,00 € sisältää sisällä esitetyt 4,58 € tuotteet ja 0,58 € alennuksen. Tuodaan yksi erä, ei otsikkoa ja sisätuotteita kahdesti.
 - **K-kaupan PLUSSA-ETU:** loppuun merkitty miinus vähennetään tuotteesta tai edeltävästä tarjousryhmästä. Ryhmäalennus jaetaan suhteellisesti suurimpien senttijäännösten menetelmällä, tasatilanteessa lähdejärjestyksessä.
 - Kappale-/kilomäärä ja yksikkö erotetaan rivihinnasta. Pantti ja kassi säilyvät omana rivinään.
-- Tuotealue rajataan ennen summien lukemista: K-kuitissa se alkaa ostotapahtuman otsikon jälkeen ja päättyy `YHTEENSÄ`-riviin (tai sitä edeltävään erotinviivaan); S-ryhmän kuitissa käytetään tähtimerkityistä tuoteriveistä loppusummaan ulottuvaa aluetta. Maksutapa, asiakasomistajatiedot ja ALV-yhteenveto eivät ole uusia ostoksia.
+- Tuotealue rajataan ennen summien lukemista: K-kuitissa se alkaa ostotapahtuman otsikon jälkeen ja päättyy `YHTEENSÄ`-riviin (tai sitä edeltävään erotinviivaan). S-ryhmän kuitissa käytetään joko tähtimerkittyjä tuoterivejä tai, tähdettömässä Prisma-taitossa, tuotealueen avaavaa ja sulkevaa erotinviivaa. Maksutapa, asiakasomistajatiedot ja ALV-yhteenveto eivät ole uusia ostoksia.
+- Tähdettömässä taitossa tuotteiksi hyväksytään vain erotinviivojen välinen alue. Jos rajaviivoja tai rivirakennetta ei löydy, tallennus estetään. Prisma-kampanja-alennus, määrä-/yksikköhinta sekä rivien netto- ja loppusummat täsmäytetään kuten aiemmissa kuiteissa.
+- Maksusumman tarkistus tunnistaa `Debit/Veloitus`- ja `Credit/Veloitus`-rivit sekä `VISA Debit:` / `VISA Credit:` -muodot, joissa valuuttamerkki voi olla ennen summaa. Maksurivi ei muutu menoksi.
 - Kuitin otsikon tai tuotealueen jälkeisiä summia ei käsitellä tuotteina. Jos K-kuitin tuotealueen alkua ei voi tunnistaa rakennerajasta, skannaus pysähtyy eikä arvaa.
 - PDF-sivujen tekstikohdat järjestetään sijainnin mukaan riveiksi. Valuuttamerkin ja yksikön väliset PDF-tekstikatkot sallitaan.
 
-Yhteensä yhdeksän alkuperäistä PDF-tiedostoa, kahdeksan eri ostosta: samasta Korso-ostoksesta toimitettiin kaksi erilaista PDF-tiedostoa. Jälkimmäinen tunnistetaan kaksoistuonniksi myös eri SHA-256:lla.
+Yhteensä 13 käyttäjän toimittamaa PDF-tiedostoa sisältää 10 eri ostosta. Kolme tiedostoa ovat jo testattujen ostosten kopioita: Korso-ostoksen eri PDF, saman 17.10. ostoksen kaksi identtistä PDF:ää sekä 9.11. ostoksen tähdellinen ja tähdetön PDF-taitto. Semanttinen tunniste estää saman ostoksen toisen tuonnin tiedoston SHA-256:sta riippumatta.
 
 Tuki tarkoittaa näitä testattuja kuittirakenteita. Muun K- tai S-kaupan formaatin toimivuutta ei luvata ilman esimerkkitestiä. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
 
@@ -63,10 +68,10 @@ JSON siirtää ryhmän ja erittelyn. CSV siirtää tavalliset menot, ei kuittiry
 
 ## Testaus
 
-- `src/test/receipt-parser.test.ts` ja `receipt-robustness.test.ts`: käyttäjän toimittamista oikeista kuiteista anonymisoidut tekstifixtuurit, rakenne-, alennus-, paketti-, painotuote-, virhe- ja sivunvaihtovariaatiot.
+- `src/test/receipt-parser.test.ts` ja `receipt-robustness.test.ts`: käyttäjän toimittamista oikeista kuiteista anonymisoidut tekstifixtuurit, myös Prisman tähdetön taitto, Credit-maksu ja valuuttamerkin jälkeinen Visa-summa; rakenne-, alennus-, paketti-, painotuote-, virhe- ja sivunvaihtovariaatiot.
 - `src/test/receipt-import.test.ts`: kategoriakirjaukset, JSON-yhteensopivuus, kaksoistuonti, täsmäytys kerta-/toistuvaan maksuun, manuaalinen toteuma ja muuttumattoman lähdetilan varmistus.
 - `python e2e_receipts.py`: kehittäjän regressio luo fixtuureistä PDF:t PyMuPDF:llä ja ajaa selaimessa koko polun. Vaatii Python Playwrightin, Chromiumin, PyMuPDF:n ja paikallisen testipalvelimen. `TALOUS_URL` ja `TALOUS_BROWSER` ovat valinnaisia.
-- Samalle komennolle voi antaa kolme vanhaa PDF:ää tai yhdeksän paikallista PDF-polkua järjestyksessä K / Prisma tammikuu / Prisma maaliskuu / S-market Korso / Prisma 2.11. / Prisma 9.11. / Alepa / S-market Koivukylä / Korso-kopio. Ilman argumentteja generoidaan kahdeksan anonymisoidun tekstifixturen PDF:t sekä eri tavalla tallennettu kopio samasta ostoksesta. Alkuperäiset käyttäjän PDF:t tarkistettiin näin; niitä ei lisätä repositorioon. Fixturet eivät sisällä maksukortti- tai jäsenyystietoja.
+- `python e2e_receipts.py` generoi 11 test-PDF:ää 11 anonymisoidusta fixtuurista, joista kaksi edustaa samaa ostosta, ja testaa 10 eri ostosta koko kirjauspolussa. Kolme tai yhdeksän paikallista PDF:ää voi edelleen antaa aiemman regressiosarjan järjestyksessä. Neljä uusinta alkuperäistä PDF:ää ajettiin lisäksi erikseen selaimen PDF.js-lukijassa, tallentamatta niiden luonnoksia. Testifixtuurit eivät sisällä maksukortti- tai jäsenyystietoja.
 
 Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md).
 
@@ -85,7 +90,7 @@ Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPOR
 
 ## Mitä 99,9 % luotettavuus tarkoittaisi?
 
-Täydellistä tunnistusta ei luvata tuntemattomille kuittiversioille tai OCR-kuville. Nykyiset yhdeksän PDF:ää eivät ole yhdeksän riippumatonta ostosta, ja 512 synteettistä ulkoasu-/sivunvaihtovariaatiota eivät korvaa uutta tosielämän aineistoa. Kaikki summat voivat täsmätä myös väärällä tuotekategorialla tai toisensa kumoavilla poimintavirheillä.
+Täydellistä tunnistusta ei luvata tuntemattomille kuittiversioille tai OCR-kuville. Nykyiset 13 PDF:ää edustavat kymmentä ostosta, ja 704 synteettistä rakenne-/sivunvaihtovariaatiota eivät korvaa laajaa tosielämän aineistoa. Kaikki summat voivat täsmätä myös väärällä tuotekategorialla tai toisensa kumoavilla poimintavirheillä.
 
 Seurattavat asiat erotetaan:
 
@@ -100,7 +105,7 @@ Jatkopolku: lisää edustavia anonymisoituja esimerkkejä, erillinen testijoukko
 
 ## Testiaineiston rajaus
 
-Parserin testit käyttävät vain oikeista, käyttäjän toimittamista kuiteista anonymisoituja tekstifixtuureja. Ladattava fiktiivinen PDF-kokoelma ja sen testigeneraattori on poistettu: synteettisesti samanmuotoiset kuitit eivät osoita, että kyseisen kauppanimen aidot kuitit toimivat.
+Parserin testit käyttävät vain oikeista, käyttäjän toimittamista kuiteista anonymisoituja tekstifixtuureja. Ladattava fiktiivinen PDF-kokoelma, sen generaattori ja fiktiivisiä kuitteja käyttäneet parseritestit on poistettu: synteettisesti samanmuotoiset kuitit eivät osoita, että kyseisen kauppanimen aidot kuitit toimivat.
 
 ## Yksi pääpaikka ja koko näkymän PDF-pudotus
 

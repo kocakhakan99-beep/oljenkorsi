@@ -9,6 +9,12 @@ function amountAtEnd(text: string) {
   const n = Number(match[1].replace(/[ \u00a0]/g, "").replace(",", "."));
   return { cents: Math.round(n * 100) * (match[2] ? -1 : 1), index: match.index };
 }
+function paymentAmount(text: string) {
+  const line = plain(text);
+  const currencyFirst = /(?:EUR|€)\s*(-?(?:\d{1,3}(?:[ \u00a0]\d{3})+|\d+)[,.]\d{2})(-)?\s*$/iu.exec(line);
+  if (currencyFirst) return Math.round(Number(currencyFirst[1].replace(/[ \u00a0]/g, "").replace(",", ".")) * 100) * (currencyFirst[2] ? -1 : 1);
+  return amountAtEnd(line)?.cents ?? null;
+}
 const merchantPattern = /\b(?:PRISMA|S[ -]MARKET|ALEPA|SALE|K[ -](?:CITYMARKET|SUPERMARKET|MARKET))\b/i;
 const headerPattern = /^\s*\*?\s*K\s*(\d+)\s+M\s*(\d+)\s*\/\s*(\d+)/;
 const plain = (s: string) => s.trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "").trim();
@@ -68,6 +74,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
   const totalSourceIndex = sources.findIndex((s, i) => i > header && isTotal(s));
   let itemStart = -1, itemEnd = totalSourceIndex >= 0 ? totalSourceIndex : sources.length;
   const dateRowSet = new Set(dateSources.slice(1));
+  let sStarredFormat = false;
   if (chain === "k") {
     // K item rows follow the transaction header. End at the closing rule when
     // present; some K layouts omit it, in which case the explicit YHTEENSÄ row
@@ -79,7 +86,20 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
       itemStart = sources.findIndex((s, i) => i > header && i < itemEnd && !dateRowSet.has(s) && isKProductStart(s));
     }
   } else {
-    itemStart = sources.findIndex((s, i) => i > header && i < itemEnd && /^\s*\*/.test(s.text) && !isTotal(s));
+    const starredStart = sources.findIndex((s, i) => i > header && i < itemEnd && /^\s*\*/.test(s.text) && !isTotal(s));
+    if (starredStart >= 0) {
+      itemStart = starredStart;
+      sStarredFormat = true;
+    } else {
+      // Some Prisma PDFs omit the asterisks but keep the table's opening and
+      // closing separator lines. In that layout those rules bound its rows.
+      const openingRule = sources.findIndex((s, i) => i > header && i < itemEnd && isSeparator(s));
+      if (openingRule >= 0) {
+        let closingRule = -1;
+        for (let i = itemEnd - 1; i > openingRule; i--) if (isSeparator(sources[i])) { closingRule = i; break; }
+        if (closingRule > openingRule) { itemStart = openingRule + 1; itemEnd = closingRule; }
+      }
+    }
   }
   if (itemStart < 0) {
     if (totalSourceIndex >= 0) draft.total = amountAtEnd(plain(sources[totalSourceIndex].text))?.cents ?? null;
@@ -141,10 +161,10 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
     if (chain === "s" && /^TASAERÄ(?:\s|$)/i.test(semantic)) {
       const a = amountAtEnd(t);
       if (!a) { issue("bundle", "Tarjouspaketin loppusumma puuttuu."); continue; }
-      sBundle = add(t.slice(1, a.index).trim(), a.cents, source); sBundle.suggestedCategory = null; sBundleDetails = false; continue;
+      sBundle = add(t.slice(t.startsWith("*") ? 1 : 0, a.index).trim(), a.cents, source); sBundle.suggestedCategory = null; sBundleDetails = false; continue;
     }
-    if (chain === "s" && sBundle && /^\*/.test(t) && !amountAtEnd(t) && !sBundleDetails) {
-      sBundle.name = t.replace(/^\*|\*$/g, "").trim(); sBundle.suggestedCategory = category(sBundle.name); sBundle.source.push(source); sBundleDetails = true; continue;
+    if (chain === "s" && sBundle && !sBundleDetails && !amountAtEnd(t) && !/^(?:NORM\.|KAMPANJA|PLUSSA|ALV|KORTTI)\b/i.test(semantic) && (sStarredFormat ? /^\*/.test(t) : /^[\p{L}]/u.test(semantic))) {
+      sBundle.name = sStarredFormat ? t.replace(/^\*|\*$/g, "").trim() : semantic; sBundle.suggestedCategory = category(sBundle.name); sBundle.source.push(source); sBundleDetails = true; continue;
     }
     const quantity = /^(\d+(?:[,.]\d+)?)\s*(KPL|KG|L)\s+([\d,.]+)\s*€\s*\/\s*(KPL|KG|L)(?:\s+([\d,.]+))?\s*\*?$/i.exec(t);
     if (quantity && last) {
@@ -154,7 +174,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
       if (sBundle === last && quantity[5]) { last.gross = Math.round(Number(quantity[5].replace(",", ".")) * 100); }
       continue;
     }
-    if ((chain === "s" && t.startsWith("*")) || chain === "k") {
+    if ((chain === "s" && (sStarredFormat ? t.startsWith("*") : !t.startsWith("*"))) || chain === "k") {
       const a = amountAtEnd(t);
       if (a) {
         const name = t.slice(0, a.index).replace(/^\*/, "").trim();
@@ -163,7 +183,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
         sBundle = null; sBundleDetails = false; add(name, a.cents, source); continue;
       }
     }
-    if (chain === "s" && t.startsWith("*") && !amountAtEnd(t) && /[\p{L}]/u.test(semantic) && !/[?]/.test(t)) { pendingName = source; continue; }
+    if (chain === "s" && sStarredFormat && t.startsWith("*") && !amountAtEnd(t) && /[\p{L}]/u.test(semantic) && !/[?]/.test(t)) { pendingName = source; continue; }
     issue("unknown-row", `Tuoteriviä ei tunnistettu (sivu ${source.page}, rivi ${source.line}). Tarkista PDF:n rakenne.`, true, source);
   }
   if (pendingName) issue("unknown-row", "Tuotteen nimi löytyi, mutta hinta puuttuu.", true, pendingName);
@@ -180,11 +200,11 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
       if (amount && amount.cents !== draft.total) issue("footer-total", "Ostosten ja ALV-yhteenvedon loppusummat eroavat.", true);
     }
     // A single debit payment can cross-check the purchase. Split tenders require their own adapter.
-    const payments = footer.filter(s => /^Debit\s*\/\s*Veloitus\b/i.test(plain(s.text)));
+    const payments = footer.filter(s => /^(?:(?:Debit|Credit)\s*\/\s*Veloitus|VISA\s+(?:Debit|Credit):)/i.test(plain(s.text)));
     const splitTender = footer.some(s => /käteinen|cash|lahjakort|gift.card|maksutavat/i.test(s.text));
     if (payments.length === 1 && !splitTender) {
-      const amount = amountAtEnd(plain(payments[0].text));
-      if (amount && amount.cents !== draft.total) issue("payment-total", "Ostosten ja korttiveloituksen summat eroavat.");
+      const amount = paymentAmount(payments[0].text);
+      if (amount !== null && amount !== draft.total) issue("payment-total", "Ostosten ja korttiveloituksen summat eroavat.");
     }
   }
   if (sBundle && !sBundleDetails) issue("bundle", "Tarjouspaketin tuote-erittely puuttuu.");

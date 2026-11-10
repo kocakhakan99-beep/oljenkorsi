@@ -11,13 +11,18 @@ import nov2 from "./fixtures/receipt-prisma-nov2.json";
 import nov9 from "./fixtures/receipt-prisma-nov9.json";
 import alepa from "./fixtures/receipt-alepa.json";
 import koivukyla from "./fixtures/receipt-smarket-koivukyla.json";
+import prismaPlain from "./fixtures/receipt-prisma-plain-7556.json";
+import prismaCredit from "./fixtures/receipt-prisma-credit-4767.json";
+import prismaPlain92 from "./fixtures/receipt-prisma-plain-9285.json";
 
 const cases = [
   { fixture: k, total: 3287, count: 15 }, { fixture: jan, total: 12146, count: 22 }, { fixture: mar, total: 7385, count: 27 },
   { fixture: korso, total: 2400, count: 9 }, { fixture: nov2, total: 2244, count: 9 },
   { fixture: nov9, total: 9285, count: 20 }, { fixture: alepa, total: 165, count: 2 }, { fixture: koivukyla, total: 1692, count: 6 },
+  { fixture: prismaPlain, total: 7556, count: 22 }, { fixture: prismaCredit, total: 4767, count: 15 },
+  { fixture: prismaPlain92, total: 9285, count: 20 },
 ];
-it.each(cases)("parses additional S-group families: $total cents and $count lines", ({ fixture, total, count }) => {
+it.each(cases)("parses receipt layouts: $total cents and $count lines", ({ fixture, total, count }) => {
   const d = parseReceipt(fixture.pages);
   expect(d.issues).toEqual([]); expect(d.total).toBe(total); expect(d.lines).toHaveLength(count);
   expect(d.lines.reduce((sum, l) => sum + l.net, 0)).toBe(total);
@@ -31,7 +36,7 @@ it("preserves quantities, normal-price discounts and conservative categorization
   expect(n.lines.find(l => l.name.includes("PL-SETTI"))?.suggestedCategory).toBeNull();
   expect(parseReceipt(koivukyla.pages).lines.find(l => l.name.includes("POKE"))?.suggestedCategory).toBeNull();
 });
-it("survives 512 layout, decoration, Unicode-space and page-break variations with identical products", () => {
+it("survives 704 layout, decoration, Unicode-space and page-break variations with identical products", () => {
   for (const c of cases) for (let variant = 0; variant < 64; variant++) {
     const original = parseReceipt(c.fixture.pages);
     let lines = c.fixture.pages.flatMap(p => p.lines);
@@ -53,12 +58,16 @@ it("rejects omitted products, changed prices and contradictory footer or payment
     const firstText = parseReceipt(c.fixture.pages).lines[0].source[0].text;
     const firstProduct = lines.findIndex(l => l.trimEnd() === firstText);
     const changed = lines.map((l, i) => i === firstProduct ? l.replace(/(\d+),(\d{2})(\s*\*?\s*)$/, (_, a, b, star) => `${Number(a)+1},${b}${star}`) : l);
+    const payment = lines.findIndex(l => /^(?:(?:Debit|Credit)\s*\/\s*Veloitus|VISA\s+(?:Debit|Credit):)/i.test(l.trim()));
+    const changedPayment = payment >= 0
+      ? lines.map((l, i) => i === payment ? l.replace(/(\d+),(\d{2})(\s*EUR)?$/i, (_, a, b, eur) => `${Number(a)},${String((Number(b)+1)%100).padStart(2,'0')}${eur || ''}`) : l)
+      : [...lines, `Debit/Veloitus ${((c.total + 1) / 100).toFixed(2).replace(".", ",")} EUR`];
     const variants = [
       lines.filter((_, i) => i !== firstProduct), changed,
       [...lines, `YHTEENSÄ 0,00 0,00 ${((c.total + 1) / 100).toFixed(2).replace(".", ",")}`],
-      [...lines, `Debit/Veloitus ${((c.total + 1) / 100).toFixed(2).replace(".", ",")} EUR`],
+      changedPayment,
     ];
-    for (const corrupt of variants) expect(parseReceipt([{ page: 1, lines: corrupt }]).issues.some(i => i.blocking)).toBe(true);
+    variants.forEach((corrupt, i) => expect(parseReceipt([{ page: 1, lines: corrupt }]).issues.some(issue => issue.blocking), `receipt ${c.total}, corruption ${i}`).toBe(true));
   }
 });
 it("recognizes safely wrapped S-group product names and prices, retaining both source rows", () => {
@@ -83,6 +92,19 @@ it("detects a separately encoded copy semantically and restores both parser vers
   expect(duplicateReceipt(restore(backup(s)), copy, 'b'.repeat(64))).toBe(true);
   s.receiptImports[0].draft.parserVersion = 'receipt-1'; for (const l of s.receiptImports[0].draft.lines) delete l.unitPrice;
   expect(restore(backup(s)).receiptImports[0].draft.parserVersion).toBe('receipt-1');
+});
+it("recognizes the unstarred Prisma PDF as the same purchase as its starred copy", () => {
+  expect(receiptKey(parseReceipt(prismaPlain92.pages))).toBe(receiptKey(parseReceipt(nov9.pages)));
+});
+it("blocks the unstarred Prisma layout when either product-table boundary is missing", () => {
+  const pages = structuredClone(prismaPlain.pages);
+  const lines = pages[0].lines;
+  const separators = lines.flatMap((line, index) => /^-{10,}$/.test(line.trim()) ? [index] : []);
+  expect(separators).toHaveLength(2);
+  lines.splice(separators[1], 1);
+  const draft = parseReceipt(pages);
+  expect(draft.lines).toEqual([]);
+  expect(draft.issues.some(issue => issue.code === "structure" && issue.message.includes("rakennerajoista"))).toBe(true);
 });
 
 it("does not interpret an ALV column's decimal cents as a thousands prefix", () => {

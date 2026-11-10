@@ -1,0 +1,52 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "lines": [
+        "PRISMA ESIMERKKI",
+        "K001 M000001/0001 17.10.2026 12:07",
+        "ASIAKASOMISTAJAN edut on huomioitu.",
+        "------------------------------------------",
+        "BANAANIJOGURTTI                      1,95",
+        "PIPSA PILLIMEHU 200ML                0,85",
+        "PEPSI MAX 2X1,5L                     3,65",
+        "PANTTI KMP 1L TAI YLI, K             0,80",
+        "2 KPL             0,40 €/KPL",
+        "NAUDAN MINUUTTISUIKALE               6,55",
+        "CHEDDAR-MOZZARELLA RAAST             2,99",
+        "PIPARKAKKUMAUSTE                     0,79",
+        "TORTILLA CORN&WHEAT SMALL            3,48",
+        "2 KPL       2,18 €/KPL",
+        "NORM.                       4,36",
+        "KAMPANJA                   -0,88",
+        "KANAFILEEPYÖRYKÄT                    3,15",
+        "TOMAATTIMURSKA                       1,54",
+        "2 KPL             0,77 €/KPL",
+        "TACOMAUSTE                           6,69",
+        "REHTI KEVYT KALKK.NAKKI              3,05",
+        "PORKKANAOHUKAINEN                    2,49",
+        "HOUSUVAIPPA 17+KG 29KPL             18,78",
+        "2 KPL             9,39 €/KPL",
+        "PIPPURIKASTIKE VIHREÄ                3,75",
+        "ITALIAN PATA 1-3V                    1,75",
+        "XTRA SMETANA 20% 300G                1,49",
+        "NO SUGAR SAROS 0,5L                  2,88",
+        "2 KPL             1,44 €/KPL",
+        "PANTTI 0,15 EUR TÖLKKI               0,30",
+        "2 KPL             0,15 €/KPL",
+        "PÄTZERINA SUKLAAPATUKKA 18G          2,36",
+        "4 KPL             0,59 €/KPL",
+        "SMOOTHIE OME/BAN/MANGO 6KK           4,58",
+        "2 KPL             2,29 €/KPL",
+        "SALSAKASTIKE 140ML                   1,69",
+        "------------------------------------------",
+        "YHTEENSÄ                            75,56",
+        "Debit/Veloitus                75,56 EUR",
+        "ALV         VEROTON     VERO   VEROLLINEN",
+        "5  25,50%      0,88     0,22         1,10",
+        "6  13,50%     65,62     8,84        74,46",
+        "YHTEENSÄ      66,50     9,06        75,56"
+      ]
+    }
+  ]
+}
