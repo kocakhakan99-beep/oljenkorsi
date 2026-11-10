@@ -40,7 +40,7 @@ FI-pääomatavoitteen yksivaiheinen havainnollistus: rahoitusvaje = max(0, vuosi
 
 FI-aika-arvio on ensimmäinen kuukausi (enintään käyttäjän valitsema 1–50 vuotta), jolloin pääoma saavuttaa saman FI-tavoitteen. Kuun lopun pääoma = max(0, round(alkupääoma × (1 + reaalinen vuosituotto/100)^(1/12)) + lisäsijoitus). Reaalituotto-oletuksen tulee sisältää sijoituskulut. Jos tavoite ei täyty jaksolla, arviota ei näytetä. Tasainen reaalituotto, muuttumaton kulutus ja muut tulot ovat oletuksia, eivät ennusteita.
 
-Tavoitteen säästökuukaudet = ceil(max(0, tavoite − nykyinen) / kuukausisäästö). Nollasäästöllä keskeneräiselle tavoitteelle ei arviota. Tavoitepäivä on tässä versiossa informatiivinen.
+Tavoitteen säästökuukaudet = ceil(max(0, tavoite − nykyinen) / kuukausisäästö). Nollasäästöllä keskeneräiselle tavoitteelle ei arviota. Tavoitepäivä ohjaa tavoitelomakkeen kaksisuuntaista laskentaa alla kuvatusti.
 Velan kuukausikorko = round(pääoma × vuosikorko/1200). Erä vähentää pääomaa koron jälkeen. Jos erä ei ylitä korkoa tai aika ylittää 1200 kuukautta, arviota ei näytetä. Velkasaldoa ei päivitetä automaattisesti.
 
 Seuraavan lainaerän erittely käyttää tallennettua nykyistä saldoa, vuosikorkoa ja kuukausierää: kuukauden korko = round(saldo × vuosikorko/1200), toteutuva erä rajataan enintään saldoon + korkoon, ja pääoman muutos = toteutuva erä − korko. Negatiivinen pääoman muutos näytetään saldon kasvuna, jos erä ei kata korkoa. Tämä on yhden kuukauden vakio-oletuksiin perustuva laskelma, ei lainanantajan maksusuunnitelma eikä toteutuneen erän seuranta.
@@ -68,3 +68,11 @@ Kategorian enimmäisraja = tulopohja × maxPercent, ylitys = max(0, kategorian v
 ## Budjetin näkyvien erotusten etumerkki
 
 Esitystapa ei muuta edellä määriteltyjä laskentasääntöjä. Välttämättömien ja valinnaisten erotus = ryhmäraja − varattu; säästöjen erotus = varattu − vähimmäistavoite. Kategorian ohjerajan erotus = enimmäisraja − varattu, oman budjetin jäljellä = budjetti − toteuma ja rahoituksen erotus = tulopohja − kokonaisvaraus. Positiivinen on vihreä ja sisältää plusmerkin, negatiivinen punainen ja sisältää miinusmerkin; nolla on neutraali. Vertailun nimi säilyy saavutettavassa selitteessä. Eurot käyttävät samaa suomalaista muotoilua ja summien piilotusta kuin muutkin rahaluvut.
+
+## Tavoitteen kaksisuuntainen suunnittelu
+
+Laskentapäivä on lomaketta käytettäessä tämän päivän päivämäärä. Ensimmäinen kuukausierä on kuukauden päästä saman kuun päivänä ja seuraavat kuukausittain; kuun lopun päivä rajataan tarvittaessa kuukauden viimeiseen päivään. Mukaan lasketaan vain erät, joiden päivä on tavoitepäivänä tai sitä ennen. Esimerkiksi 10.11.–10.2. sisältää kolme erää, mutta 10.11.–9.2. vain kaksi.
+
+Tavoitesummaa muokattaessa kuukausisäästö = ceil(max(0, tavoite − nykyinen säästö) / erien määrä), kokonaislukusentteinä. Kuukausisäästöä muokattaessa tavoite = nykyinen säästö + kuukausisäästö × erien määrä. Tavoitepäivän tai nykyisen säästön muutos laskee tuloksen viimeksi valitun syöttösuunnan mukaan. Saavutettu tavoite tarvitsee nolla euroa kuukaudessa. Keskeneräinen tavoite ilman tulevaa kuukausierää estää tallennuksen ja kertoo syyn. Summien laskentarajat tarkistetaan. Tuottoa, korkoa tai inflaatiota ei oleteta.
+
+Tulos tallennetaan nykyisiin target/monthly-kenttiin. Tallennettu suunnitelma ei muutu automaattisesti ajan kuluessa; lomakkeen avaaminen laskee kuukausisäästön uudelleen nykyhetkestä tavoitepäivään. Laskenta ei luo rahansiirtoja eikä lisää toteutunutta säästöä. Listan tavoitteen aika-arvio käyttää edelleen tallennettua kuukausisäästöä.
