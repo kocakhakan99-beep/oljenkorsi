@@ -88,3 +88,7 @@ Kun maksuerä on nolla, ei oleteta lyhennyksiä eikä anneta vuosikorkoarviota. 
 ## Omaisuuden arvonmuutosmallit
 
 Omaisuuden katselukortissa on nykyarvoon ankkuroitu, valittuun päivään ulottuva arviointimalli. Asunto käyttää erillistä rakennuksen teknistä kulumista ja markkinaoletusta; auto ja laite ikääntymistä loiventavaa geometriaa; maa ja muu omaisuus vain käyttäjän markkinaoletusta. Kaavat, lähtötiedot ja rajaukset ovat [arviointimallien kuvauksessa](ASSET_VALUATION_PLAN.md). Kirjattu tasearvo ja nettovarallisuus eivät muutu. Vanhasta depreciation-apufunktiosta poiketen käytetyn kohteen aiempaa ikää ei vähennetä uudelleen nykyisestä arvosta.
+
+## Ajankohtaan sidotut listat ja saldot
+
+Yhteinen rajaus ja tilannepäivän valinta on määritelty [kuukausisuodatuksen kuvauksessa](MONTH_SCOPE_PLAN.md). Omaisuuden ja velkojen rivit, yhteenveto ja varallisuusraportin valittu päivä käyttävät samaa johdettua arvoa. Omaisuuden peruslaskenta käyttää automaattioletuksia ilman käyttäjän prosenttisyöttöjä; auton ikä-/ajokäyrä on dokumentoitu [arviointimallissa](ASSET_VALUATION_PLAN.md). Velan eräkohtainen korko, lyhennys ja päiväkohtainen korkokertymä lasketaan loanEstimate-funktiolla. Aiemman kirjatun saldon päälle ei lasketa samoja lyhennyksiä uudelleen pysyvään dataan.

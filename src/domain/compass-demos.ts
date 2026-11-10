@@ -220,12 +220,12 @@ export function createCompassDemoCases(requestedMonth: string): CompassDemoCase[
     ];
     state.liabilities = [
       entry({ id: `${profile.id}-mortgage`, name: "Asuntolaina", category: "Asuntolaina", amount: profile.id === "steady" ? 7100000 : profile.id === "everyday" ? 12000000 : 16000000, rate: 3.4, payment: mortgagePayment, linkedAssetId: homeId, date: `${month}-01` }),
-      entry({ id: `${profile.id}-consumer-loan`, name: "Kulutusluotto", category: "Kulutusluotto", amount: values.debt, rate: values.rate, payment: values.payment, date: `${month}-01`, description: "Saldo on manuaalinen esimerkkitilannekuva. Maksuerää ei vähennetä saldosta automaattisesti." }),
+      entry({ id: `${profile.id}-consumer-loan`, name: "Kulutusluotto", category: "Kulutusluotto", amount: values.debt, rate: values.rate, payment: values.payment, date: `${month}-01`, description: "Kirjattu esimerkkisaldo säilyy. Rivin valitun päivän saldoarvio olettaa kuukausierät maksetuiksi." }),
     ];
     const investmentPrices: Record<CompassDemoId, [number, number]> = { strained: [9000, 8100], everyday: [24500, 22000], steady: [48200, 42500], shock: [17000, 15100] };
     const [investmentPrice, purchasePrice] = investmentPrices[profile.id];
     state.investments = [entry({ id: `${profile.id}-index-fund`, name: "Laajasti hajautettu indeksirahasto", category: "Rahastot", amount: investmentPrice, purchasePrice, quantity: values.investment / investmentPrice, date: `${month}-01`, description: "Kuvitteellinen manuaalinen omistus, ei arvostushistoria." })];
-    state.goals = [entry({ id: `${profile.id}-buffer-goal`, name: profile.id === "shock" ? "Ensimmäinen 1 000 euron turva" : "Perheen puskuritavoite", category: "Hätävara", amount: profile.id === "shock" ? values.liquid : Math.min(values.liquid, values.essential[5] * 3), target: profile.id === "shock" ? 100000 : Math.max(values.essential[5] * 3, values.liquid + 100000), monthly: saving || 5000, date: "2026-12-31" })];
+    state.goals = [entry({ createdAt: "2025-01-01T00:00:00.000Z", id: `${profile.id}-buffer-goal`, name: profile.id === "shock" ? "Ensimmäinen 1 000 euron turva" : "Perheen puskuritavoite", category: "Hätävara", amount: profile.id === "shock" ? values.liquid : Math.min(values.liquid, values.essential[5] * 3), target: profile.id === "shock" ? 100000 : Math.max(values.essential[5] * 3, values.liquid + 100000), monthly: saving || 5000, date: "2026-12-31" })];
     state.scenarios = [
       { id: `${profile.id}-scenario-base`, name: "Esimerkki · maltillinen tuotto-oletus", initial: values.investment, monthly: saving, rate: 3, fee: .2, inflation: 2, years: 15 },
       { id: `${profile.id}-scenario-stress`, name: "Esimerkki · nollatuotto ja inflaatio", initial: values.investment, monthly: saving, rate: 0, fee: .2, inflation: 3, years: 15 },

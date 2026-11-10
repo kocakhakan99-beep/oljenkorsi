@@ -8,19 +8,25 @@ function dueDate(start: string, months: number) {
   return base.toISOString().slice(0, 10);
 }
 /** An estimate from the recorded balance date, never a verified bank balance. */
-export function loanEstimate(balance: number, rate: number, payment: number, start: string, asOf: string, monthlyFee = 0, openingFee = 0) {
+export function loanEstimate(balance: number, rate: number, payment: number, start: string, asOf: string, monthlyFee = 0, openingFee = 0, balanceOnly = false) {
   if (!validDate(start) || !validDate(asOf) || asOf < start) throw Error("Valitse päivä aikaisintaan saldon päivämäärästä.");
   if (![balance, payment, monthlyFee, openingFee].every(v => Number.isSafeInteger(v) && v >= 0 && v <= MAX) || !Number.isFinite(rate) || rate < 0 || rate > 100) throw Error("Tarkista summat ja korko (0–100 %).");
-  if (payment === 0) return { balance: balance + Math.round(balance * rate / 100 * days(start, asOf) / 365), apr: null, months: null, paid: 0 };
+  if (payment === 0) { const projected = balance + Math.round(balance * rate / 100 * days(start, asOf) / 365); if (!Number.isSafeInteger(projected) || projected > MAX) throw Error("Arvio ylittää laskentarajan."); return { balance: projected, apr: null, months: null, paid: 0 }; }
   let remaining = balance, previous = start, projected = balance, paid = 0, months: number | null = null;
   const flows: { date: string; amount: number }[] = [];
   for (let n = 1; n <= 1200 && remaining > 0; n++) {
     const date = dueDate(start, n);
     const interest = Math.round(remaining * rate / 100 * days(previous, date) / 365);
-    if (asOf < date && asOf >= previous) projected = remaining + Math.round(remaining * rate / 100 * days(previous, asOf) / 365);
+    if (asOf < date && asOf >= previous) {
+      projected = remaining + Math.round(remaining * rate / 100 * days(previous, asOf) / 365);
+      if (balanceOnly) {
+        if (!Number.isSafeInteger(projected) || projected > MAX) throw Error("Arvio ylittää laskentarajan.");
+        return {balance:projected,apr:null,months:null,paid};
+      }
+    }
     const installment = Math.min(payment, remaining + interest);
     remaining = Math.max(0, remaining + interest - installment);
-    if (remaining > MAX) throw Error("Arvio ylittää laskentarajan.");
+    if (remaining > MAX) { if (date > asOf) break; throw Error("Arvio ylittää laskentarajan."); }
     flows.push({ date, amount: installment + monthlyFee });
     if (date <= asOf) { projected = remaining; paid += installment + monthlyFee; }
     if (!remaining) { months = n; break; }

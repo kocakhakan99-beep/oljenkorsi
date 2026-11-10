@@ -1,4 +1,5 @@
-import { assetValuation, defaultAssetModel, assetModelNames, type AssetModel } from "./domain/asset-valuation";
+import { selectedValuationDate, datedValue, datedState, visibleInMonth } from "./domain/dated-values";
+import { assetValuation, defaultAssetModel, assetModelNames, vehicleBrands, type AssetModel } from "./domain/asset-valuation";
 import { investmentCatalog } from "./domain/investment-catalog";
 import { loanEstimate } from "./domain/loan-estimate";
 import { goalPlan } from "./domain/goal-plan";
@@ -1905,17 +1906,16 @@ function App() {
     );
   const menuButton = useRef<HTMLButtonElement>(null);
   const reportDetailRef = useRef<HTMLElement>(null);
-  const month = s.settings.month,
-    m = useMemo(() => metrics(s, month), [s, month]);
+  const month = s.settings.month;
+  const valuationDate = selectedValuationDate(month);
+  const valuedState = useMemo(() => datedState(s,valuationDate),[s,valuationDate]);
+  const m = useMemo(() => metrics(valuedState,month),[valuedState,month]);
   const coverageField =
     page === "expenses" ? "expenseMonths" : "incomeMonths";
   const monthCoverageConfirmed = s.coverage[coverageField].includes(month);
   const canConfirmMonthCoverage = month < today().slice(0, 7);
   useEffect(() => {
-    if (reportPeriodMode === "month") {
-      setReportStart(month);
-      setReportEnd(month);
-    }
+    // Reports keep their own period when the global month changes.
   }, [month, reportPeriodMode]);
   const hasDashboardData = kinds.some((kind) => s[kind].length > 0);
   const [selectedYear, selectedMonthNumber] = month.split("-").map(Number);
@@ -1926,11 +1926,11 @@ function App() {
     settings({
       month: `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`,
     });
-    setSelectedReport(null);
+    if (page !== "reports") setSelectedReport(null);
   };
   const buffer = useMemo(
-    () => emergencyFund(s, month, bufferMonths),
-    [s, month, bufferMonths],
+    () => emergencyFund(valuedState, month, bufferMonths),
+    [valuedState, month, bufferMonths],
   );
   const incomeHistory = useMemo(
     () => confirmedIncomeAverage(s, month),
@@ -2419,7 +2419,7 @@ function App() {
     commit({ ...s, actionStates: next });
   }
   function refreshCompass() {
-    const freshTasks = planActions(s, month);
+    const freshTasks = planActions(valuedState, month);
     const activeIds = new Set(freshTasks.map((task) => task.id));
     const reopened = freshTasks.filter(
       (task) =>
@@ -2482,7 +2482,7 @@ function App() {
     ? s[page as Kind]
         .filter(
           (e) =>
-            (e.name + " " + e.category + " " + e.description + " " + e.tags)
+            visibleInMonth(e,page as Kind,month) && (e.name + " " + e.category + " " + e.description + " " + e.tags)
               .toLocaleLowerCase("fi")
               .includes(search.toLocaleLowerCase("fi")) &&
             (!categoryFilter || e.category === categoryFilter) &&
@@ -2493,7 +2493,7 @@ function App() {
         )
         .sort((a, b) =>
           sort === "amount"
-            ? b.amount - a.amount
+            ? (page === "assets" || page === "liabilities" ? datedValue(b,page,valuationDate).value - datedValue(a,page,valuationDate).value : b.amount - a.amount)
             : sort === "name"
               ? a.name.localeCompare(b.name, "fi")
               : b.date.localeCompare(a.date),
@@ -2537,7 +2537,7 @@ function App() {
       return;
     setReportStart(monthIndexKey(nextEnd - rangeWindow + 1));
     setReportEnd(monthIndexKey(nextEnd));
-    if (reportPeriodMode === "month") settings({ month: monthIndexKey(nextEnd) });
+
     setSelectedReport(null);
   };
   const setRangeEnd = (endIndex: number) => {
@@ -2554,7 +2554,7 @@ function App() {
     if (mode === "month") {
       setReportStart(reportEnd);
       setReportEnd(reportEnd);
-      settings({ month: reportEnd });
+
     }
     setSelectedReport(null);
   };
@@ -2575,7 +2575,7 @@ function App() {
             const year = Math.floor(index / 12);
             const monthIndex = index % 12;
             const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-            return { key, ...metrics(s, key) };
+            return { key, ...metrics(datedState(s,selectedValuationDate(key)), key) };
           })
         : [],
     [s, page, customRangeValid, customRangeLength, reportStartNumber],
@@ -2621,15 +2621,16 @@ function App() {
     ]),
     1,
   );
-  const currentAssets = s.assets.map((asset) => ({
+  const snapshotState = page === "reports" ? datedState(s,selectedValuationDate(reportEnd)) : valuedState;
+  const currentAssets = snapshotState.assets.map((asset) => ({
     ...asset,
     ownedValue: Math.round((asset.amount * asset.ownership) / 100),
   }));
-  const currentInvestments = s.investments.map((investment) => ({
+  const currentInvestments = snapshotState.investments.map((investment) => ({
     ...investment,
     marketValue: Math.round(investment.amount * investment.quantity),
   }));
-  const currentDebts = s.liabilities;
+  const currentDebts = snapshotState.liabilities;
   const debtBalance = sum(currentDebts.map((debt) => debt.amount));
   const assetBalance = sum(currentAssets.map((asset) => asset.ownedValue));
   const investmentBalance = sum(
@@ -3097,7 +3098,7 @@ function App() {
     : relevantBudgetCategories.length
       ? relevantBudgetCategories
       : expCats.slice(0, 4);
-  const compassTasks = planActions(s, month);
+  const compassTasks = planActions(valuedState, month);
   const visibleCompassTasks = visibleActions(s, month);
   const filteredCompassTasks =
     compassTrack === "all"
@@ -3253,7 +3254,7 @@ function App() {
                   compact
                   onChange={(value) => {
                     settings({ month: value });
-                    setSelectedReport(null);
+                    if (page !== "reports") setSelectedReport(null);
                   }}
                 />
                 <button
@@ -4054,7 +4055,7 @@ function App() {
                     aria-labelledby="wealth-heading"
                   >
                     <h2 id="wealth-heading">Varallisuus</h2>
-                    <StatusBadge>Manuaaliset nykyarvot</StatusBadge>
+                    <StatusBadge>Arviot ja kirjatut arvot</StatusBadge>
                     <div className="stats">
                       {stat(
                         "Nettovarallisuus",
@@ -4185,7 +4186,7 @@ function App() {
                         omasta tarkistuksesta, ei pankkivarmennuksesta.
                       </p>
                       {emergencyPlanner()}
-                      {s.goals.map((e) => (
+                      {s.goals.filter(e=>visibleInMonth(e,"goals",month)).map((e) => (
                         <Goal
                           key={e.id}
                           e={e}
@@ -4193,7 +4194,7 @@ function App() {
                           privateMode={s.settings.private}
                         />
                       ))}
-                      {!s.goals.length && (
+                      {!s.goals.some(e=>visibleInMonth(e,"goals",month)) && (
                         <button
                           onClick={() =>
                             setEdit({
@@ -4452,7 +4453,7 @@ function App() {
                     </button>
                   </section>
                 )}
-                <section className="panel entry-panel">
+                <section className="panel entry-panel"><p className="entry-period-context">{month} · {page === "incomes" || page === "expenses" ? "Kuukauden tapahtumat" : `Tilanne ${valuationDate}`}</p>
                   <div className="filters">
                     <label>
                       Hae
@@ -4512,8 +4513,8 @@ function App() {
                   </div>
                   {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Manuaaliset EUR-hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
                   {page === "investments" && <details className="panel investment-catalog"><summary>Valitse sijoituskohde · 20 esimerkkiä</summary><p>Valintapohjat, eivät suosituimmuuslista tai sijoitussuosituksia. Kurssilähdettä ei ole kytketty. Syötä varmennettu EUR-yksikköhinta ja arvostuspäivä; ulkomaisen kohteen valuuttamuunnos tehdään erikseen.</p><div className="investment-catalog-grid">{investmentCatalog.map(([name, symbol]) => <button type="button" key={symbol} onClick={() => setEdit({ kind: "investments", item: { ...newEntry("investments"), name, category: symbol.endsWith(".DE") ? "ETF" : "Osakkeet", description: `Tunnus: ${symbol}. Hinta ja valuuttamuunnos tarkistettava lähteestä.`, amount: 0, quantity: 1 } })}><strong>{name}</strong><small>{symbol} · Kurssi puuttuu</small></button>)}</div></details>}
-                  {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Manuaaliset nykyarvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on koko omaisuuserän arvio. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
-                  {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo automaattisesti menotapahtumaa eikä vähennä velan saldoa. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
+                  {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Arviot ja kirjatut arvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on valitun päivän laskennallinen arvio, kun malli on tallennettu; muulloin kirjattu arvo. Aiemmille kuukausille käytetään kuun viimeistä päivää, kuluvalle kuulle tätä päivää. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
+                  {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Arviot ja kirjatut saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo menotapahtumaa. Rivin saldoarvio olettaa kuukausierät maksetuiksi; alkuperäinen kirjattu saldo säilyy kortilla. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
                     <div className="table-wrap mobile-entry-table">
                       <table className={`entry-table${page === "liabilities" ? " debt-table" : ""}`} role="table">
@@ -4568,7 +4569,7 @@ function App() {
                                       : "Summa"
                                   }
                                 >
-                                  {euro(e.amount)}
+                                  {page === "assets" || page === "liabilities" ? (() => { const value=datedValue(e,page,valuationDate); return <span className="dated-row-value" title={`${value.note} · ${valuationDate} · kirjattu ${euro(e.amount)} (${e.date})`}><strong>{euro(value.value)}</strong><small>{value.estimated ? "Arvio" : "Kirjattu"}</small></span>; })() : euro(page === "incomes" || page === "expenses" ? occurrenceSum(e,month) : e.amount)}
                                   {page === "investments" && (
                                     <small>
                                       {new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(e.quantity)} kpl · arvo{" "}
@@ -4584,16 +4585,8 @@ function App() {
                                 >
                                   {page === "assets" ? `${percentText(e.ownership)} %` : page === "goals"
                                     ? euro(e.target)
-                                    : page === "liabilities" ? `${percentText(e.rate)} %` : page === "incomes" &&
-                                        e.adjustToPreviousBankDay &&
-                                        e.recurrence !== "once"
-                                      ? scheduledOccurrences(e, month)
-                                          .map((date) =>
-                                            date.split("-").reverse().join("."),
-                                          )
-                                          .join(", ") ||
-                                        `Alkaa ${e.date.split("-").reverse().join(".")}`
-                                      : e.date.split("-").reverse().join(".")}
+                                    : page === "liabilities" ? `${percentText(e.rate)} %` : (page === "incomes" || page === "expenses") ? (() => { const dates=scheduledOccurrences(e,month).map(date=>date.split("-").reverse().join(".")); return <span title={dates.join(", ")}>{dates.length>1 ? `${dates[0]} +${dates.length-1}` : dates[0]}</span>; })() : e.date.split("-").reverse().join(".")}
+
                                 </td>
                                 {page === "liabilities" && <td role="cell" data-label="Kuukausierä">{e.payment > 0 ? euro(e.payment) : <span className="muted" title="Takaisinmaksuerää ei ole asetettu">Ei maksuerää</span>}</td>}
                                 <td
@@ -4642,7 +4635,7 @@ function App() {
                       )}
                     </div>
                   ) : (
-                    <Empty text="Ei tietueita. Lisää uusi tai muuta hakuehtoja." />
+                    <Empty text="Valittuna ajankohtana ei ole tietueita. Vaihda kuukautta, lisää tieto tai tarkista suodattimet." />
                   )}
                 </section>
                 {(page === "incomes" || page === "expenses") && (
@@ -4664,7 +4657,7 @@ function App() {
                     scenarios: s.scenarios.filter((q) => q.id !== id),
                   })
                 }
-                liabilities={s.liabilities}
+                liabilities={valuedState.liabilities}
               />
             )}
             {page === "reports" && (
@@ -4705,9 +4698,7 @@ function App() {
                     </button>
                   ))}
                 </div>
-                {reportView !== "overview" &&
-                  reportView !== "wealth" &&
-                  reportView !== "debt" && (
+                {reportView !== "overview" && (
                   <ReportRangeControl
                     start={reportStart}
                     end={reportEnd}
@@ -4723,7 +4714,7 @@ function App() {
                       setReportStart(value);
                       if (reportPeriodMode === "month") {
                         setReportEnd(value);
-                        settings({ month: value });
+
                       }
                       setSelectedReport(null);
                     }}
@@ -4731,7 +4722,7 @@ function App() {
                       setReportEnd(value);
                       if (reportPeriodMode === "month") {
                         setReportStart(value);
-                        settings({ month: value });
+
                       }
                       setSelectedReport(null);
                     }}
@@ -4758,9 +4749,9 @@ function App() {
                 </div>
                 {(reportView === "wealth" || reportView === "debt") && (
                   <div className="report-snapshot-context">
-                    <span className="eyebrow">NYKYTILANNE</span>
-                    <StatusBadge>Manuaaliset saldot</StatusBadge><StatusBadge>Ei arvostushistoriaa</StatusBadge>
-                    <ContextDetails title="Miksi ei aikaväliä?"><p>Näkymä perustuu nykyisiin saldotietoihin. Aikaväliä ei voi valita, koska aiempia arvostuksia ei tallenneta.</p></ContextDetails>
+                    <span className="eyebrow">TILANNE {selectedValuationDate(reportEnd)}</span>
+                    <StatusBadge>Arviot ja kirjatut saldot</StatusBadge><StatusBadge>Ei arvostushistoriaa</StatusBadge>
+                    <ContextDetails title="Miten ajankohta vaikuttaa?"><p>Raportin loppukuukausi määrää tilannepäivän. Tallennetut mallit ja maksetuiksi oletetut velkaerät tuottavat arvion; ennen kirjattua arvostuspäivää tietoa ei ole. Arviot eivät ole todennettua arvostushistoriaa.</p></ContextDetails>
                   </div>
                 )}
                 {reportFormat === "table" && (
@@ -4797,7 +4788,7 @@ function App() {
                         setReportStart(value);
                         if (reportPeriodMode === "month") {
                           setReportEnd(value);
-                          settings({ month: value });
+
                         }
                         setSelectedReport(null);
                       }}
@@ -4805,7 +4796,7 @@ function App() {
                         setReportEnd(value);
                         if (reportPeriodMode === "month") {
                           setReportStart(value);
-                          settings({ month: value });
+
                         }
                         setSelectedReport(null);
                       }}
@@ -5849,9 +5840,9 @@ function App() {
                     aria-labelledby="report-tab-wealth"
                     tabIndex={0}
                   >
-                    <h2>Nykyinen varallisuuskuva</h2>
+                    <h2>Valitun päivän varallisuuskuva</h2>
                     <p className="muted">
-                      Tämä on nykytilan tilannekuva, ei historiaseuranta.
+                      Tämä on valitun päivän arvio ja kirjattujen arvojen tilannekuva, ei todennettu historiaseuranta.
                       Omaisuusarvot perustuvat itse syöttämiisi arvoihin ja
                       arvostuspäiviin.
                     </p>
@@ -6727,6 +6718,8 @@ function App() {
         return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
           <section className="entry-reader" aria-label="Tietueen tiedot">
             <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round(item.amount * item.quantity) : item.amount)}</strong></div>
+            {kind === "assets" && <AssetValuation key={item.id} item={item} atDate={valuationDate} euro={euro} onSave={model => commit({ ...s, assets: s.assets.map(asset => asset.id === item.id ? { ...asset, assetModel: model, updatedAt: new Date().toISOString() } : asset) })} />}
+            {(kind === "assets" || kind === "liabilities") && <p className="ux-status-note">{valuationDate} · {datedValue(item,kind,valuationDate).note} · {euro(datedValue(item,kind,valuationDate).value)}. Kirjattu lähtöarvo näkyy yllä.</p>}
             <dl className="entry-facts">
               <div><dt>{kind === "assets" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
               {cash && <><div><dt>Toistuvuus</dt><dd>{recNames[item.recurrence]}</dd></div><div><dt>Kuukauden tila</dt><dd>{monthEntryStatus(item, month)}</dd></div><div><dt>Sarja</dt><dd>{item.active ? "Aktiivinen" : "Keskeytetty"}</dd></div>{item.endDate && <div><dt>Päättyy</dt><dd>{item.endDate.split("-").reverse().join(".")}</dd></div>}{kind === "incomes" && <div><dt>Maksupäivän siirto</dt><dd>{item.adjustToPreviousBankDay ? "Edeltävä pankkipäivä" : "Ei siirtoa"}</dd></div>}{kind === "expenses" && <><div><dt>Menotyyppi</dt><dd>{expenseTypeName(expenseType(item))}</dd></div><div><dt>Välttämätön meno</dt><dd>{item.essential ? "Kyllä" : "Ei"}</dd></div></>}</>}
@@ -6738,8 +6731,8 @@ function App() {
             </dl>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
             {cash && <><p className="muted">{Object.keys(item.occurrenceStatuses).length} tallennettua tilakorjausta · {Object.keys(item.occurrenceAmounts).length} summakorjausta. Korjaukset koskevat yksittäisiä tapahtumia.</p><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
-            {kind === "assets" && <AssetValuation item={item} euro={euro} onSave={model => commit({ ...s, assets: s.assets.map(asset => asset.id === item.id ? { ...asset, assetModel: model, updatedAt: new Date().toISOString() } : asset) })} />}
-            {kind === "liabilities" && <DebtEstimate item={item} euro={euro} />}
+
+            {kind === "liabilities" && <DebtEstimate item={item} atDate={valuationDate} euro={euro} />}
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
@@ -7141,33 +7134,39 @@ function Empty({ text }: { text: string }) {
     </div>
   );
 }
-function AssetValuation({ item, euro, onSave }: { item: Entry; euro: (n: number) => string; onSave: (model: AssetModel | null) => boolean }) {
+function AssetValuation({ item, euro, onSave, atDate }: { atDate: string; item: Entry; euro: (n: number) => string; onSave: (model: AssetModel | null) => boolean }) {
  const [open, setOpen] = useState(false);
- const [model, setModel] = useState<AssetModel>(item.assetModel || defaultAssetModel(item.category));
- const [at, setAt] = useState(today() < item.date ? item.date : today());
+ const lockedModel = defaultAssetModel(item.category).model;
+ const [model, setModel] = useState<AssetModel>(() => ({...(item.assetModel || defaultAssetModel(item.category)), automatic: item.assetModel ? item.assetModel.automatic === true : true, model: lockedModel === "custom" ? item.assetModel?.model || lockedModel : lockedModel}));
+ const [at, setAt] = useState(atDate < item.date ? item.date : atDate);
+ useEffect(() => setAt(atDate < item.date ? item.date : atDate),[atDate,item.date]);
  const [notice, setNotice] = useState("");
  let result: ReturnType<typeof assetValuation> | null = null, error = "";
  try { result = assetValuation(item.amount, item.date, at, model); } catch (e) { error = e instanceof Error && e.message.startsWith("[") ? "Tarkista vuosiluku ja prosenttien rajat." : String(e).replace(/^Error: /, ""); }
- const numberField = (label: string, key: Exclude<keyof AssetModel, "model">, min: number, max: number) => !["year", "life", "annualMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); setNotice(""); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); setNotice(""); }} /></label>;
- return <details className="asset-valuation" onToggle={event => setOpen(event.currentTarget.open)}><summary>Arvonmuutoksen arvio {item.assetModel ? "· oletukset tallennettu" : "· ei vielä oletuksia"}</summary>{open && <>
- <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Laskelma ei muuta omaisuuden arvoa tai nettovarallisuutta. Aloitusluvut ovat muokattavia esimerkkejä, eivät tutkimukseen sovitettuja markkinaennusteita.</p>
- <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year }); setNotice(""); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
+ const numberField = (label: string, key: "year" | "life" | "annualMileage" | "initialMileage" | "marketRate" | "annualWear" | "residual" | "buildingShare" | "mileagePenalty" | "uncertainty", min: number, max: number) => !["year", "life", "annualMileage", "initialMileage"].includes(key) ? <PercentField label={label} value={Number(model[key] ?? 0)} min={min} max={max} onChange={value => { setModel(current => ({ ...current, [key]: value })); setNotice(""); }} /> : <label>{label}<input type="number" value={model[key] ?? ""} min={min} max={max} step={key === "year" ? 1 : "any"} onChange={event => { setModel(current => ({ ...current, [key]: event.target.value === "" && key === "year" ? null : Number(event.target.value) })); setNotice(""); }} /></label>;
+ return <details className="asset-valuation" onToggle={event => setOpen(event.currentTarget.open)}><summary>Arvon arviointi ja ajankohtainen arvo {item.assetModel ? "· oletukset tallennettu" : "· ei vielä oletuksia"}</summary>{open && <>
+ <p>Kirjattu lähtöarvo {euro(item.amount)} päivältä {item.date}. Tallennettu malli päivittää rivin ja yhteenvedon arviot valitun ajankohdan mukaan. Kirjattu lähtöarvo säilyy. Perustilassa sovellus valitsee kertoimet. Ne ovat yleisen kulumismallin oletuksia, eivät kauppahintadataan kalibroituja. Merkki ja käyttövoima tallentuvat tietoihin; niille ei keksitä hintakertoimia ilman vertailukauppoja.</p>
+ <div className="form-grid"><label>Arviointimalli<select aria-label="Arviointimalli" disabled={lockedModel !== "custom"} value={model.model} onChange={event => { const selected = event.target.value as AssetModel["model"]; setModel({ ...defaultAssetModel(selected === "home" ? "Asunto" : selected === "vehicle" ? "Auto" : selected === "equipment" ? "Vene" : selected === "land" ? "Metsä" : "Muu"), year: model.year, automatic:true }); setNotice(""); }}>{Object.entries(assetModelNames).map(([key,name]) => <option key={key} value={key}>{name}</option>)}</select></label>
  {!["land", "custom"].includes(model.model) && numberField(model.model === "home" ? "Rakennusvuosi / viimeisen kokonaisuudistuksen vertailuvuosi" : "Vuosimalli / valmistusvuosi", "year", 1000, 2100)}
  <DatePickerField name="asset-estimate-date" label="Arvion päivämäärä" value={at} minDate={item.date} onChange={setAt} />
- {numberField("Markkinan vuosimuutos (%)", "marketRate", -50, 50)}
+ {model.model === "vehicle" && <><label>Automerkki<select aria-label="Automerkki" value={model.brand || ""} onChange={e=>setModel({...model,brand:e.target.value})}><option value="">Muu / ei tiedossa</option>{vehicleBrands.map(brand=><option key={brand}>{brand}</option>)}</select></label><label>Käyttövoima<select aria-label="Käyttövoima" value={model.powertrain||"other"} onChange={e=>setModel({...model,powertrain:e.target.value as AssetModel["powertrain"]})}>{Object.entries({petrol:"Bensiini",diesel:"Diesel",hybrid:"Hybridi",plugin:"Lataushybridi",electric:"Sähkö",other:"Muu / ei tiedossa"}).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>{numberField("Kilometrit arvostuspäivänä", "initialMileage", 0, 3000000)}{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)","annualMileage",0,300000)}</>}
+ <label className="check"><input type="checkbox" checked={model.automatic !== false} onChange={e=>setModel({...model,automatic:e.target.checked})} /> Sovelluksen laskentaoletukset</label>
+ {!model.automatic && <details className="valuation-advanced"><summary>Mukautetut oletukset</summary> {numberField("Markkinan vuosimuutos (%)", "marketRate", -50, 50)}
  {model.model === "home" && <>{numberField("Rakennuksen osuus arvosta (%)", "buildingShare", 0, 100)}{numberField("Tekninen vertailukäyttöikä (vuotta)", "life", 1, 300)}</>}
  {["vehicle", "equipment"].includes(model.model) && numberField("Ikäkulumisen perusalenema (% vuodessa)", "annualWear", 0, 90)}
  {!["land", "custom"].includes(model.model) && numberField("Teknisen jäännösarvon osuus (%)", "residual", 1, 100)}
- {model.model === "vehicle" && <>{numberField("Arvostuspäivän jälkeinen ajo (km/vuosi)", "annualMileage", 0, 300000)}{numberField("Lisäalenema / 10 000 km (%)", "mileagePenalty", 0, 50)}</>}
- {numberField("Oletusväli arvion ympärillä (± %)", "uncertainty", 0, 90)}</div>
+ {model.model === "vehicle" && <>{numberField("Lisäalenema / 10 000 km (%)", "mileagePenalty", 0, 50)}</>}
+ {numberField("Oletusväli arvion ympärillä (± %)", "uncertainty", 0, 90)}</details>}
+ </div>
  {error ? <p role="alert">{error}</p> : result && <div className="stats"><MetricCard label="Laskennallinen arvio" value={euro(result.value)} /><MetricCard label="Oletusväli" value={`${euro(result.low)} – ${euro(result.high)}`} /><MetricCard label="Oman osuuden arvio" value={euro(Math.round(result.value * item.ownership / 100))} /></div>}
- <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
- <div className="actions"><button type="button" disabled={!!error} onClick={() => { if (onSave(model)) setNotice("Arviointioletukset tallennettu. Kirjattu arvo säilyi."); }}>Tallenna arviointioletukset</button>{item.assetModel && <button type="button" onClick={() => { if (onSave(null)) setNotice("Tallennetut arviointioletukset poistettu."); }}>Poista arviointioletukset</button>}</div><p role="status">{notice}</p>
+ <ContextDetails title="Kaava ja oletukset"><p>Arvio = kirjattu arvo × markkinakerroin × ikäkerroin × ajokerroin. Markkinakerroin = (1 + vuosimuutos / 100)^vuodet arvostuspäivästä.</p><p>Rakennuksen tekninen kerroin = jäännösosuus + (1 − jäännösosuus) × max(0, 1 − ikä / vertailukäyttöikä). Vain rakennuksen arvo-osuus kuluu. Autojen ja laitteiden kerroin = jäännösosuus + (1 − jäännösosuus) × (1 − perusalenema / 100)^ikä. Nykyhetken kerroin jaetaan arvostuspäivän kertoimella, jotta lähtöarvo pysyy oikeana.</p><p>Automaattisessa automallissa C(ikä, km) = 0,1 + 0,9 × 0,88^ikä × 0,98^(km / 10 000). Ikä- ja kilometrivaikutus suhteutetaan lähtöhetken C-arvoon. Merkillä tai käyttövoimalla ei ole keksittyä kerrointa. Mukautetussa mallissa auton valinnainen lisäkerroin = (1 − lisäalenema / 100)^(uudet kilometrit / 10 000). Oletusarvo on 0 %, jotta normaalia ajokulumista ei oleteta kahteen kertaan. Maa, metsä ja muu omaisuus käyttävät vain käyttäjän markkinaoletusta: puuston kasvua tai hakkuita ei päätellä.</p><p>Rakennusvuosi ei yksin määrää hintaa. Sijainti, kunto, remontit, taloyhtiön vastuut ja autossa malli, tekniikka sekä huoltohistoria sisältyvät käyttäjän lähtöarvioon. Vuosiluvusta tunnetaan vain vuosi, ja ikä arvioidaan vuoden alusta. Oletusväli ei ole tilastollinen luottamusväli tai todennäköisyys. Ei inflaatiokorjausta tai myyntikuluja. Tilit, sijoitukset ja velat eivät saa automaattista kulumismallia.</p></ContextDetails>
+ <div className="actions"><button type="button" disabled={!!error} onClick={() => { if (onSave(model)) setNotice("Arviointioletukset tallennettu. Rivin arvio päivittyy valitun ajankohdan mukaan."); }}>Tallenna arviointioletukset</button>{item.assetModel && <button type="button" onClick={() => { if (onSave(null)) setNotice("Tallennetut arviointioletukset poistettu."); }}>Poista arviointioletukset</button>}</div><p role="status">{notice}</p>
  </>}</details>;
 }
-function DebtEstimate({ item, euro }: { item: Entry; euro: (n: number) => string }) {
+function DebtEstimate({ item, euro, atDate }: { atDate: string; item: Entry; euro: (n: number) => string }) {
  const [expanded, setExpanded] = useState(false);
- const [asOf, setAsOf] = useState(today() < item.date ? item.date : today());
+ const [asOf, setAsOf] = useState(atDate < item.date ? item.date : atDate);
+ useEffect(() => setAsOf(atDate < item.date ? item.date : atDate),[atDate,item.date]);
  const [fee, setFee] = useState(0), [opening, setOpening] = useState(0);
  let result: ReturnType<typeof loanEstimate> | null = null, error = "";
  try { result = loanEstimate(item.amount, item.rate, item.payment, item.date, asOf, fee, opening); } catch (e) { error = String(e).replace(/^Error: /, ""); }
