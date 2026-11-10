@@ -3,7 +3,8 @@ import { getDocument, OPS } from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.mjs";
 import type { ReceiptTextPage } from "../domain/receipts/parser";
 
-export const PDF_LIMIT = 20 * 1024 * 1024;
+export { RECEIPT_PDF_LIMIT as PDF_LIMIT } from "../domain/receipts/files";
+import { RECEIPT_PDF_LIMIT as PDF_LIMIT } from "../domain/receipts/files";
 export async function receiptPDF(file: File, signal: AbortSignal, progress: (page: number, total: number) => void): Promise<{ pages: ReceiptTextPage[]; hash: string }> {
   if (file.size > PDF_LIMIT) throw Error("PDF saa olla enintään 20 Mt.");
   const bytes = new Uint8Array(await file.arrayBuffer());

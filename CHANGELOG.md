@@ -89,3 +89,7 @@ Lisättiin paikallinen PDF.js-tekstinpoiminta, deterministinen S/K-parseri, tuot
 ### Kuittiparserin v2: Prisma, S-market, Alepa ja K-kaupat
 
 Korjattiin tähtikoristellun loppusumman tunnistus yleisenä rakennesääntönä. Lisättiin sivu-/rivinvaihdot, läheinen päivä/kellonaika, Unicode-normalisointi, yksikköhinnan tarkistus ja ALV-/yksittäisen korttiveloituksen ristiintarkistukset. Epäselvä lähderivi näkyy käyttöliittymässä ja estää tallennuksen. Laajennetussa aineistossa yhdeksän alkuperäistä PDF:ää / kahdeksan ostosta, mukaan lukien semanttinen kaksoistuonti eri PDF-tiivisteellä. Vanhojen kuittiryhmien palautus säilyy; kategoriat tarkistetaan edelleen käyttäjällä.
+
+### Kuittiskannaus menoihin ja koko näkymän PDF-pudotus
+
+Kuittiskannerin pääpaikka siirrettiin menoihin avattavaksi työkaluksi. Menojen ja budjetin kuvakkeellinen pikapainike, Tuonti ja vienti -siirtymä sekä Menot-/Budjetti-/Asetukset-näkymän PDF-pudotus avaavat saman skannerin. Luonnos säilyy suljettaessa ja sivua vaihdettaessa. Pudotus tukee yhtä PDF:ää, suojaa aiempaa luonnosta ja avoimia editoreita sekä estää tiedoston avaamisen sovelluksen tilalle. PDF-valinta käyttää lyhyttä näppäimistöllä toimivaa painiketta.

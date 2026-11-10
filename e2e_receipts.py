@@ -43,7 +43,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' else None)
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
-        page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Tuonti ja vienti')
+        page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
         expected = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
         initial = state(page)
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
@@ -120,9 +120,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         # Receipt undo must expire after a later saved change, never erase that change.
         nav(page, 'Asetukset'); page.get_by_label('Väritila', exact=True).select_option('dark')
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_have_count(0)
-        nav(page, 'Tuonti ja vienti'); saved = state(page)
+        nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click(); saved = state(page)
         mark('Later saved change expires receipt undo safely')
-        page.reload(); nav(page, 'Tuonti ja vienti')
+        page.reload(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
         assert state(page)['receiptImports'] == saved['receiptImports']
         mark('All receipt groups and product details persist after reload')
         bad = Path(tmp) / 'bad.pdf'; bad.write_text('not a PDF')

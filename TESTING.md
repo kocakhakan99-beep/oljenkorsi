@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Kuittiskannauksen pääpaikka ja PDF-pudotus 10.11.2026
+
+- TypeScript, ESLint, 166 yksikkötestiä 17 tiedostossa ja tuotantobuild läpäisivät. Uusi tiedostovalinnan portti kattaa yhden PDF:n, kirjainkoon, puuttuvan/tyhjän/ylisuuren tiedoston ja usean tiedoston hylkäyksen. PDF:n sisältötarkistus säilyy lukijassa.
+- Menojen yksi skanneri on oletuksena suljettu; budjetin pikatoiminto ja vanhan tuontipaikan linkki avaavat saman työkalun. Käynnistyspainike toimii näppäimistöllä, ilmoittaa avautumistilan ja kohdistaa skanneriin; sulkeminen palauttaa kohdistuksen. PDF-valintapainike avaa selaimen oikean tiedostovalitsimen.
+- 14 erillistä pudotus-/navigointivarmennusta: Menot, Budjetti ja Asetukset, pudotus otsikkoon/sivupalkkiin/korttiin, sisäkkäiset dragenter/dragleave-tapahtumat, Escape, luonnoksen ja kategoriavalinnan säilytys, korvaamisen hyväksyntä/hylkäys, monen tiedoston ja muun tiedostotyypin esto, avoimen editorin suoja sekä muiden näkymien rajaus. Tallennettu talous ei muuttunut pelkästä pudotuksesta tai poiminnasta.
+- Kuittien 27 tuontivarmennusta ja 14 fiktiivisen PDF:n lukutarkistusta läpäisivät uudesta Menot-pääpaikasta. Sovelluksen 82 yleistä selainvarmennusta läpäisi: nykyiset kirjaukset, raportit, demot, JSON/CSV ja mobiilipolut säilyvät.
+- Skannerin mobiiliasettelu 320/390/768 px ja tumman tilan pudotuskorostus varmennettiin; Menojen 390 px näkymä tarkistettiin kuvakaappauksesta. Ei JavaScript-/konsolivirheitä tai ulkoisia sovelluspyyntöjä.
+- Testit käyttävät HTML5 DataTransfer -tiedostoja Chromiumissa localhostissa. Fyysisen käyttöjärjestelmän raahausta, kaikkia selaimia, file://-pysyvyyttä tai ruudunlukijan toimintaa ei tällä osoiteta. Tiliotteiden tunnistusta tai parseria ei lisätty.
+
+
 ## Fiktiivinen PDF-kuittikokoelma 10.11.2026
 
 - Luotiin 14 satunnaistettua, selvästi fiktiiviseksi merkittyä PDF:ää: kaksi kullekin tunnistettavalle kauppanimelle (Prisma, S-market, Alepa, Sale, K-Citymarket, K-Supermarket, K-Market). 29–37 riviä/kuitti, loppusummat 90,64–127,42 €. Laskenta tehdään kokonaislukusenteillä ja painotuotteissa Decimal-pyöristyksellä.

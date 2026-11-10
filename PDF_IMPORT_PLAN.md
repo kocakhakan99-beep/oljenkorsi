@@ -1,6 +1,6 @@
 # PDF-laskujen, sopimusten ja kuittien tuontisuunnitelma
 
-Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjainen PDF-kuittiskannaus on toteutettu**: poiminta, tarkistus, kategoriakirjaukset, täsmäytys, kaksoistuonnin esto ja kumoaminen. Katso [käyttö ja varmennettu kattavuus](RECEIPT_SCANNER.md). Alla on laajempi tavoitesuunnitelma; OCR, yleiset lasku-/sopimusparserit, kuluhyvitykset ja ennusteen jäännösmalli eivät vielä ole käytössä. Ensisijainen lähde on PDF. Kokonaisuus kuuluu nykyiseen Tuonti ja vienti -näkymään, johon meno-, velka- ja budjettinäkymät voivat avata saman tuonnin esivalitulla kohteella.
+Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjainen PDF-kuittiskannaus on toteutettu**: poiminta, tarkistus, kategoriakirjaukset, täsmäytys, kaksoistuonnin esto ja kumoaminen. Katso [käyttö ja varmennettu kattavuus](RECEIPT_SCANNER.md). Alla on laajempi tavoitesuunnitelma; OCR, yleiset lasku-/sopimusparserit, kuluhyvitykset ja ennusteen jäännösmalli eivät vielä ole käytössä. Ensisijainen lähde on PDF. Nykyinen kuittiskannaus kuuluu Menot-näkymään; budjetin pikatoiminto ja Menot-/Budjetti-/Asetukset-näkymän PDF-pudotus avaavat saman työkalun. Tulevien lasku-/tiliotetuontien pääpaikat täsmennetään niiden toteutussuunnittelussa.
 
 ## Tavoite ja kaksi käyttötapaa
 
@@ -195,8 +195,8 @@ Yhdeksän käyttäjän toimittamaa PDF-tiedostoa (K-Citymarket, Prisma, S-market
 
 ## Jonossa: koko näkymän drag and drop ja tilioteparseri
 
-Käyttäjätoive 10.11.2026. **Vain kirjattu toteutuslistalle; ei vielä suunniteltu tai toteutettu.**
+Käyttäjätoive 10.11.2026. **Kuittien PDF-pudotus on toteutettu Menot-, Budjetti- ja Asetukset-näkymissä; tilioteparseri ja Tulot-näkymän laajennus ovat edelleen jonossa.**
 
-Tietokoneella tiedoston voi jatkossa pudottaa mihin tahansa Tulot-, Menot- tai Budjetti-näkymässä. Sovellus tunnistaa, onko kyse kuitista vai tiliotteesta, siirtyy tarvittavaan näkymään ja käynnistää sopivan parserin/prosessin. Tavoitteena on hyödyllinen quick-start sekä helpompi tulojen ja menojen syöttö. Kirjausten nykyinen tarkistus- ja hyväksyntäperiaate säilyy lähtökohtana.
+Nykyinen yhden PDF-kuitin pudotus käynnistää Menojen skannerin mistä tahansa Menot-, Budjetti- tai Asetukset-näkymässä. Alkuperäisen jatkotoiveen Tulot-näkymää ei tässä muutettu. Tuleva laajennus tunnistaa, onko kyse kuitista vai tiliotteesta, siirtyy tarvittavaan näkymään ja käynnistää sopivan parserin/prosessin; nykyinen pudotus ei vielä erottele näitä dokumenttilajeja. Tavoitteena on hyödyllinen quick-start sekä helpompi tulojen ja menojen syöttö. Kirjausten nykyinen tarkistus- ja hyväksyntäperiaate säilyy lähtökohtana.
 
 Jatkotyöhön kuuluu myös tilioteparserin suunnittelu. Käyttäjä voi toimittaa tässä vaiheessa kahden pankin esimerkkitiliotteet; näitä ei ole vielä saatu, eikä pankkeja, tiedostomuotoja tai poimintasääntöjä ole määritelty. Tarkempi suunnittelu tehdään myöhemmin esimerkkiaineiston pohjalta.
