@@ -70,6 +70,8 @@
     "Kompassin demotalous ladattavissa koko sovellukseen: Hyvä eteneminen",
     "Kompassin demotalous ladattavissa koko sovellukseen: Äkillinen kriisi",
     "Kompassista ladataan sama valittu kriisitalous ja sen kuukausisummat",
+    "Kuuden listan katseluikkunat ovat vain lukua varten, rivit laajenevat itseensä ja katselusta pääsee muokkaukseen",
+    "Katseluikkunan poisto ja kumoaminen säilyvät turvallisina; pikahaku avaa saman katselun",
     "Kahden vuoden demo täyttää kaikki tietonäkymät ja kompassissa on 24 kuukausipylvästä",
     "Pitkä menorivin nimi ja kuvaketoiminnot eivät mene päällekkäin 320 tai 390 px leveydellä",
     "Ei JavaScript-virheitä, console-virheitä tai verkkopyyntöjä"

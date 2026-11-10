@@ -1849,6 +1849,7 @@ function App() {
     [notice, setNotice] = useState(loaded.error),
     [storageOk, setStorageOk] = useState(storage.healthCheck().ok),
     [edit, setEdit] = useState<{ kind: Kind; item: Entry } | null>(null),
+    [viewEntry, setViewEntry] = useState<{ kind: Kind; id: string } | null>(null),
     [quick, setQuick] = useState(false),
     [quickEntryKind, setQuickEntryKind] = useState<"incomes" | "expenses" | null>(null),
     [quickSeed, setQuickSeed] = useState<Entry | null>(null),
@@ -2339,8 +2340,10 @@ function App() {
       )
     ) {
       setUndo(s);
-      commit({ ...s, [kind]: s[kind].filter((e) => e.id !== id) });
-      setNotice("Tietue poistettu.");
+      if (commit({ ...s, [kind]: s[kind].filter((e) => e.id !== id) })) {
+        setNotice("Tietue poistettu.");
+        return true;
+      }
     }
   }
   function exportBackup() {
@@ -4563,7 +4566,7 @@ function App() {
                         <tbody role="rowgroup">
                           {rows.slice(0, limit).map((e) => (
                             <React.Fragment key={e.id}>
-                              <tr role="row">
+                              <tr role="row" className="entry-record" data-expanded={expandedRows.has(e.id)}>
                                 <td role="cell" data-label="Nimi">
                                   <div className="row-title">
                                     <button
@@ -4671,19 +4674,8 @@ function App() {
                                   )}
                                 </td>
                                 <td role="cell" data-label="Toiminnot">
-                                  <RowActions name={e.name} onEdit={() => setEdit({ kind: page as Kind, item: e })} onDelete={() => remove(page as Kind, e.id)} />
-                                </td>
-                              </tr>
-                              <tr
-                                role="row"
-                                className="expanded-row"
-                                hidden={!expandedRows.has(e.id)}
-                              >
-                                <td
-                                  role="cell"
-                                  id={`entry-details-${e.id}`}
-                                  colSpan={6}
-                                >
+                                  <RowActions name={e.name} onOpen={() => setViewEntry({ kind: page as Kind, id: e.id })} onEdit={() => setEdit({ kind: page as Kind, item: e })} onDelete={() => remove(page as Kind, e.id)} />
+                                  <div className="entry-inline-details" id={`entry-details-${e.id}`} hidden={!expandedRows.has(e.id)}>
                                   <div className="expanded-content">
                                     <span>
                                       Kuvaus: {e.description || "Ei kuvausta"}
@@ -4824,6 +4816,7 @@ function App() {
                                         )}
                                       </fieldset>
                                     )}
+                                  </div>
                                 </td>
                               </tr>
                             </React.Fragment>
@@ -6554,7 +6547,7 @@ function App() {
                                 aria-hidden="true"
                               />
                               <span>
-                                <strong>{record.name}</strong>
+                                <button type="button" className="report-record-open" aria-label={`Avaa ${record.name}`} onClick={() => setViewEntry({ kind: kind === "income" ? "incomes" : "expenses", id: record.id })}>{record.name}</button>
                                 <small className="mt-1 block text-xs text-slate-500">
                                   {selectedReport.type === "period"
                                     ? `${kind === "income" ? "Tulo" : "Meno"} · ${record.category} · ${count} ${count === 1 ? "esiintymä" : "esiintymää"} valitulla jaksolla`
@@ -6900,7 +6893,7 @@ function App() {
                 <ReceiptText size={20} aria-hidden="true" />
                 <div className="budget-event-info"><strong>{item.name}</strong><small>{date.split("-").reverse().join(".")} · {entryStatusName(status)}{item.recurrence !== "once" ? ` · ${recNames[item.recurrence]}` : ""}{expenseType(item) !== "consumption" ? ` · ${expenseTypeName(expenseType(item))}` : ""}</small></div>
                 <strong>{euro(amount)}</strong>
-                <RowActions name={item.name} editLabel={`Muokkaa menoa ${item.name}`} onEdit={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }} />
+                <RowActions name={item.name} onOpen={() => { setBudgetCategory(null); setViewEntry({ kind: "expenses", id: item.id }); }} onDelete={() => remove("expenses", item.id)} editLabel={`Muokkaa menoa ${item.name}`} onEdit={() => { setBudgetCategory(null); setEdit({ kind: "expenses", item }); }} />
               </li>)}
             </ul> : <p className="budget-category-empty">Tässä kategoriassa ei ole tapahtumia valitussa kuussa. Lisää ensimmäinen meno yllä olevista painikkeista.</p>}
             <details className="budget-actual-adjustment"><summary>Kokonaistoteuman korjaus (lisävalinta)</summary>
@@ -6911,6 +6904,31 @@ function App() {
             <button onClick={() => { setBudgetCategory(null); navigate("expenses"); setCategoryFilter(category); setSearch(""); }}>Näytä kaikki kategorian menot <ArrowRight size={16} aria-hidden="true" /></button>
           </Modal>
         );
+      })()}
+      {viewEntry && (() => {
+        const { kind, id } = viewEntry;
+        const item = s[kind].find(entry => entry.id === id);
+        if (!item) return null;
+        const cash = kind === "incomes" || kind === "expenses";
+        const linkedDebts = kind === "assets" ? s.liabilities.filter(debt => debt.linkedAssetId === id) : [];
+        return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
+          <section className="entry-reader" aria-label="Tietueen tiedot">
+            <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round(item.amount * item.quantity) : item.amount)}</strong></div>
+            <dl className="entry-facts">
+              <div><dt>{kind === "assets" ? "Arvostuspäivä" : "Päiväys"}</dt><dd>{item.date.split("-").reverse().join(".")}</dd></div>
+              {cash && <><div><dt>Toistuvuus</dt><dd>{recNames[item.recurrence]}</dd></div><div><dt>Kuukauden tila</dt><dd>{monthEntryStatus(item, month)}</dd></div><div><dt>Sarja</dt><dd>{item.active ? "Aktiivinen" : "Keskeytetty"}</dd></div>{item.endDate && <div><dt>Päättyy</dt><dd>{item.endDate.split("-").reverse().join(".")}</dd></div>}{kind === "incomes" && <div><dt>Maksupäivän siirto</dt><dd>{item.adjustToPreviousBankDay ? "Edeltävä pankkipäivä" : "Ei siirtoa"}</dd></div>}{kind === "expenses" && <><div><dt>Menotyyppi</dt><dd>{expenseTypeName(expenseType(item))}</dd></div><div><dt>Välttämätön meno</dt><dd>{item.essential ? "Kyllä" : "Ei"}</dd></div></>}</>}
+              {kind === "assets" && <><div><dt>Omistusosuus</dt><dd>{percentText(item.ownership)} %</dd></div><div><dt>Likvidiys</dt><dd>{item.liquid ? "Likvidi" : "Ei likvidi"}</dd></div><div><dt>Oman osuuden arvo</dt><dd>{euro(Math.round(item.amount * item.ownership / 100))}</dd></div><div><dt>Linkitetyt velat</dt><dd>{linkedDebts.map(debt => debt.name).join(", ") || "Ei linkkejä"}</dd></div></>}
+              {kind === "liabilities" && <><div><dt>Korko</dt><dd>{percentText(item.rate)} %</dd></div><div><dt>Kuukausierä</dt><dd>{euro(item.payment)}</dd></div><div><dt>Linkitetty omaisuus</dt><dd>{s.assets.find(asset => asset.id === item.linkedAssetId)?.name || "Ei linkkiä"}</dd></div></>}
+              {kind === "investments" && <><div><dt>Määrä</dt><dd>{new Intl.NumberFormat("fi-FI", { maximumFractionDigits: 6 }).format(item.quantity)} kpl</dd></div><div><dt>Yksikköhinta</dt><dd>{euro(item.amount)}</dd></div><div><dt>Hankinta-arvo</dt><dd>{euro(Math.round(item.purchasePrice * item.quantity))}</dd></div></>}
+              {kind === "goals" && <><div><dt>Tavoite</dt><dd>{euro(item.target)}</dd></div><div><dt>Kuukausisäästö</dt><dd>{euro(item.monthly)}</dd></div></>}
+              {userTags(item.tags) && <div><dt>Tunnisteet</dt><dd>{userTags(item.tags)}</dd></div>}
+            </dl>
+            {item.description && <p className="entry-reader-description">{item.description}</p>}
+            {cash && <><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
+            {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
+          </section>
+          <div className="entry-reader-actions"><RowActions name={item.name} onEdit={() => { setViewEntry(null); setEdit({ kind, item }); }} onDelete={() => { if (remove(kind, id)) setViewEntry(null); }} /><button onClick={() => setViewEntry(null)}>Takaisin</button></div>
+        </Modal>;
       })()}
       {edit && (
         <Modal
@@ -7024,7 +7042,7 @@ function App() {
                           onClick={() => {
                             setQuick(false);
                             navigate(kind);
-                            setEdit({ kind, item });
+                            setViewEntry({ kind, id: item.id });
                           }}
                         >
                           {names[kind]} · {item.name || item.category}

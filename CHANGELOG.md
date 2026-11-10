@@ -49,3 +49,7 @@ Kaikkien kuuden talouslistan nimi ja kuvakkeellinen kategoria erotettiin omiin s
 ### Tapahtumakuvakkeet 10.11.2026
 
 Tulojen ja menojen toistuvuus sekä kuukauden tapahtumatila esitetään yhtenäisillä kuvakkeilla. Kahdeksan toistuvuusrytmiä erotetaan pienillä rytmimerkinnöillä, kertatapahtuma omalla kalenterillaan. Tilasymbolit erottavat toteutuneen, suunnitellun, ohitetun, eri tiloja sisältävän ja tapahtumattoman kuukauden sekä keskeytetyn sarjan. Selite avautuu hiirellä, kosketuksella ja näppäimistöllä. Tapahtumakorjauksen perusteella määräytyvä tila nimetään selitteessä erikseen.
+
+### Rivilaajennus, katselu ja budjetin väljyys 10.11.2026
+
+Lisätiedot laajenevat saman talousrivin sisään kaikissa kuudessa listassa. Uusi silmäpainike avaa katseluikkunan ilman syöttökenttiä; muokkaus ja vahvistettava poisto löytyvät myös ikkunasta. Sama katselu palvelee budjettikategorian menoluetteloa, pikahakua ja raporttien tietueita. Budjetin kategoriarivien välejä ja mobiiliasettelua väljennettiin. Laskentaa tai tietomallia ei muutettu.

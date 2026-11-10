@@ -5349,3 +5349,53 @@ button.primary,
 [data-mode="dark"] .event-actual { color: #8de5b9; }
 [data-mode="dark"] .event-planned { color: #a5c9ff; }
 [data-mode="dark"] .event-mixed { color: #f4cf83; }
+
+/* Each record is one expandable row/card; details stay inside its action cell. */
+.entry-table { display: block; width: 100%; min-width: 740px; }
+.entry-table thead, .entry-table tbody { display: block; }
+.entry-table thead tr, .entry-table .entry-record { display: grid; grid-template-columns: minmax(120px, 1.6fr) minmax(105px, 1.3fr) minmax(85px, 1fr) minmax(90px, 1fr) minmax(105px, 1.3fr) 144px; align-items: center; }
+.entry-table th, .entry-table td { min-width: 0; overflow-wrap: anywhere; }
+.entry-table .entry-record > td[data-label="Toiminnot"] { display: contents; position: static; }
+.entry-table .entry-record > td[data-label="Toiminnot"] > .row-actions { grid-column: 6; grid-row: 1; }
+.entry-inline-details { grid-column: 1 / -1; padding: 16px; border-top: 1px solid var(--line); margin-top: 4px; min-width: 0; background: var(--soft); border-radius: 0 0 12px 12px; }
+.entry-inline-details[hidden] { display: none; }
+.entry-record[data-expanded="true"] { border-color: var(--accent); }
+.entry-inline-details .expanded-content { padding: 0; background: transparent; }
+.entry-inline-details .occurrence-statuses { min-width: 0; }
+.entry-reader-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: var(--soft); border-radius: 14px; }
+.entry-reader-summary strong { font-size: 24px; }
+.entry-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 24px 0; }
+.entry-facts > div { min-width: 0; }
+.entry-facts dt { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.entry-facts dd { margin: 0; overflow-wrap: anywhere; }
+.entry-reader-description { white-space: pre-wrap; }
+.entry-reader-events { list-style: none; padding: 0; display: grid; gap: 8px; }
+.entry-reader-events li { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px; background: var(--soft); border-radius: 10px; }
+.entry-reader-actions { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 20px; }
+.budget-table table { width: 100%; }
+.budget-table th, .budget-table td { padding: 16px 12px; vertical-align: middle; }
+.budget-table th[scope="row"] { min-width: 210px; }
+.budget-category-heading { gap: 12px; }
+.budget-row-recommendation { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.budget-table .budget-input { width: 100%; min-width: 100px; }
+.budget-table td[data-label="Toteutunut kulutus"] .status-badge { display: table; margin-top: 6px; }
+.budget-table .budget-usage { min-width: 100px; }
+@media (max-width: 600px) {
+  .mobile-entry-table .entry-table { min-width: 0; }
+  .mobile-entry-table .entry-table .entry-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td[data-label="Toiminnot"] { display: contents; position: static; padding: 0; border: 0; }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td[data-label="Toiminnot"] > .row-actions { position: absolute; top: 5px; right: 6px; width: auto; gap: 3px; }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td:first-child { padding-right: 148px; }
+  .mobile-entry-table .entry-inline-details { margin: 8px -8px -5px; padding: 14px 10px; width: auto; }
+  .mobile-entry-table .entry-inline-details .expanded-content { display: grid; gap: 8px; }
+  .budget-table tbody { gap: 14px; }
+  .budget-table tbody tr { padding: 14px; gap: 14px 16px; }
+  .budget-table th[scope="row"] { min-width: 0; padding: 0 0 12px; }
+  .budget-table td { padding: 0; }
+  .budget-table .budget-input { min-width: 0; }
+  .entry-reader-summary { flex-wrap: wrap; }
+  .entry-facts { gap: 16px; }
+}
+
+.report-record-open { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; min-height: 44px; overflow-wrap: anywhere; }
+.report-record-open:hover { color: var(--accent-ink); }

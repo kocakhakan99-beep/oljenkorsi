@@ -1,5 +1,15 @@
 # Testausraportti 10.11.2026
 
+## Rivilaajennukset ja katseluikkunat 10.11.2026
+
+- TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 570 kB; Viten kokohuomautus säilyy.
+- 72 Chromium-selainvarmennusta localhostissa. Kaikkien kuuden listan katseluikkuna avautuu, sisältää muokkaus-/poistopainikkeet eikä sisällä syöttökenttiä. Katselu ja sulkeminen eivät muuta tallennettua taloutta. Katselusta pääsee nykyiseen muokkauslomakkeeseen.
+- Mobiilin rivilaajennus, katseluikkuna ja väljempi budjettikortti tarkistettiin lisäksi kuvakaappauksista 390 px leveydessä.
+- Nuolen aria-controls viittaa saman rivin sisällä olevaan sisältöön. Rivien määrä ei kasva lisätietojen avaamisesta; Enter ja välilyönti toimivat edelleen. Tapahtumakohtaiset summa- ja tilakorjaukset läpäisivät.
+- Katseluikkunan poisto sulkee ikkunan onnistumisen jälkeen ja kumoaminen palauttaa koko aiemman talouden. Pikahaun tulos avaa yhteisen katseluikkunan.
+- Nykyiset 320–768 px ylivuototarkistukset, 44 px toimintopainikkeet ja pitkien nimien päällekkäisyystarkistus 320/390 px läpäisivät. Budjetin ja talouslistojen mobiilikortit säilyivät. Ei sovelluksen JavaScript-/konsolivirheitä tai verkkopyyntöjä. File-käyttöä, ruudunlukijaa tai käyttäjäkoetta ei varmennettu.
+
+
 ## Toistuvuus- ja tilakuvakkeet 10.11.2026
 
 - TypeScript, ESLint, 83 yksikkötestiä ja tuotantobuild läpäisivät. JavaScript noin 565 kB; Viten kokohuomautus säilyy.
