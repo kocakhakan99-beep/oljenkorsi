@@ -1,5 +1,16 @@
 # Testausraportti 10.11.2026
 
+## S-market, Alepa ja kuittiparserin v2 10.11.2026
+
+- TypeScript, ESLint, 149 yksikkötestiä 15 tiedostossa ja tuotantobuild läpäisivät. JavaScript noin 2 389 kB; Viten kokohuomautus säilyy.
+- Kahdeksan eri ostoksen alkuperäiset PDF:t täsmäsivät: aiemmat K/Prisma 32,87 €, 121,46 € ja 73,85 € sekä S-market Korso 24,00 € (9 riviä), Prisma 2.11. 22,44 € (9), Prisma 9.11. 92,85 € (20), Alepa 1,65 € (2) ja S-market Koivukylä 16,92 € (6). Yhdeksäs alkuperäinen tiedosto oli Korso-ostoksen eri SHA-256:n saanut kopio, joka estettiin semanttisena kaksoistuontina.
+- Kuittien 27 selainvarmennusta läpäisi: koko tarkistus-/kirjauspolku kaikilla kahdeksalla ostoksella, eri tiedoston kaksoistuonti, välitön kumoaminen, vanheneminen, uudelleenlataus ja virhepolut. Tuntematon rakennerivi näytettiin lähdetekstinä ja esti tallennuksen myös loppusumman täsmätessä. 320 px tumma virhenäkymä tarkistettiin kuvakaappauksesta. Ei JavaScript-/konsolivirheitä tai ulkoisia sovelluspyyntöjä.
+- Yksi systemaattinen yksikkötesti kattaa 512 varianttia (8 kuittia × 64 yhdistelmää): tähtikoristeet, Unicode-välilyönnit, tyhjät rivit, miinusmerkit, erillinen päivämäärä ja sivunvaihdot. Näissä säilyivät tuotteet, summat, alennukset ja semanttinen tunniste. Tämä ei ole 512 riippumattoman aidon kuitin onnistumisnäyttö.
+- Virhekokeet kattavat puuttuvat tuotteet ja kampanjarivit, muuttuneet hinnat, ristiriitaiset ALV-/korttisummat, virheellisen määrän/yksikköhinnan, kaksi kuittia samassa PDF:ssä sekä tuntemattomat rakennerivit. Erillinen koe estää ALV-sarakkeen desimaaliosan sekoittumisen seuraavan sarakkeen tuhaterottimeksi.
+- Vanhojen receipt-1-kuittiryhmien JSON-palautus säilyy, ja receipt-2-yksikköhinta tarkistetaan myös tallennuksessa/palautuksessa. Vaippa ei luokitu vaatteeksi housu-sanan perusteella; epäselvät tuotetiedot jäävät manuaalisiksi kategoriavalinnoiksi.
+- Sovelluksen 82 yleistä selainvarmennusta läpäisi. File://-pysyvyyttä, OCR:ää tai 99,9 % yleistä onnistumisosuutta ei tässä varmennettu. [Kattavuus ja mittarit](RECEIPT_SCANNER.md).
+
+
 ## Prisma- ja K-kaupan PDF-kuittiskannaus 10.11.2026
 
 - TypeScript, ESLint, 130 yksikkötestiä 14 tiedostossa ja tuotantobuild läpäisivät. PDF.js kasvattaa JavaScriptin noin 2 386 kB:iin ja itsenäisen HTML:n noin 2,69 Mt:iin; Viten kokohuomautus säilyy.

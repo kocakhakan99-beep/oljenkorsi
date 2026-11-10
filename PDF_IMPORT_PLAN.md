@@ -1,6 +1,6 @@
 # PDF-laskujen, sopimusten ja kuittien tuontisuunnitelma
 
-Päivitetty 10.11.2026. **Prisma- ja K-kaupan tekstipohjainen PDF-kuittiskannaus on toteutettu**: poiminta, tarkistus, kategoriakirjaukset, täsmäytys, kaksoistuonnin esto ja kumoaminen. Katso [käyttö ja varmennettu kattavuus](RECEIPT_SCANNER.md). Alla on laajempi tavoitesuunnitelma; OCR, yleiset lasku-/sopimusparserit, kuluhyvitykset ja ennusteen jäännösmalli eivät vielä ole käytössä. Ensisijainen lähde on PDF. Kokonaisuus kuuluu nykyiseen Tuonti ja vienti -näkymään, johon meno-, velka- ja budjettinäkymät voivat avata saman tuonnin esivalitulla kohteella.
+Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjainen PDF-kuittiskannaus on toteutettu**: poiminta, tarkistus, kategoriakirjaukset, täsmäytys, kaksoistuonnin esto ja kumoaminen. Katso [käyttö ja varmennettu kattavuus](RECEIPT_SCANNER.md). Alla on laajempi tavoitesuunnitelma; OCR, yleiset lasku-/sopimusparserit, kuluhyvitykset ja ennusteen jäännösmalli eivät vielä ole käytössä. Ensisijainen lähde on PDF. Kokonaisuus kuuluu nykyiseen Tuonti ja vienti -näkymään, johon meno-, velka- ja budjettinäkymät voivat avata saman tuonnin esivalitulla kohteella.
 
 ## Tavoite ja kaksi käyttötapaa
 
@@ -191,7 +191,7 @@ Suositus on tämä järjestys: ensin talouskirjausten oikeellisuus, sitten autom
 
 ## Vielä tarvittava aineisto
 
-Kolme käyttäjän toimittamaa todellista PDF-kuittia (K-Citymarket ja kaksi Prismaa) on nyt varmennettu. Muiden formaattien, kuvallisten kuittien sekä lasku-/sopimustyyppien toteutukseen tarvitaan vielä anonymisoituja esimerkkejä. Mukaan vähintään yksi kuvallinen PDF ja yksi alennuksia/pantteja sisältävä kuitti. Ilman näitä voi tehdä parserin rungon ja synteettiset testit, mutta ei rehellisesti luvata formaattikohtaista tunnistustarkkuutta.
+Yhdeksän käyttäjän toimittamaa PDF-tiedostoa (K-Citymarket, Prisma, S-market ja Alepa) on nyt varmennettu. Ne edustavat kahdeksaa eri ostosta; kaksi tiedostoa on samasta Korso-ostoksesta. Muiden formaattien, kuvallisten kuittien sekä lasku-/sopimustyyppien toteutukseen tarvitaan vielä anonymisoituja esimerkkejä. Mukaan vähintään yksi kuvallinen PDF ja yksi alennuksia/pantteja sisältävä kuitti. Ilman näitä voi tehdä parserin rungon ja synteettiset testit, mutta ei rehellisesti luvata formaattikohtaista tunnistustarkkuutta.
 
 ## Jonossa: koko näkymän drag and drop ja tilioteparseri
 

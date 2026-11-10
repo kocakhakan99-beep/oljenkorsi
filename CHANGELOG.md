@@ -85,3 +85,7 @@ Arvonmuutoslomake näkyy aina muokkausvälilehdellä. Välilehtipalkki erottuu a
 ### Prisma- ja K-kaupan PDF-kuittiskannaus
 
 Lisättiin paikallinen PDF.js-tekstinpoiminta, deterministinen S/K-parseri, tuote- ja ryhmäalennukset, tarjouspaketit, painotuotteet, pantit ja täsmällinen summatarkistus. Tuonti ja vienti sisältää tuotekohtaisen ja monivalinnan kategoriatarkistuksen sekä menokirjaukset ostopäivälle. Kuittiryhmät säilyvät JSONissa, kaksoistuonti estetään ja aiempaan kerta-/sarjamaksuun voi täsmäyttää. Kolme käyttäjän PDF-kuittia varmennettiin koko selainpolussa; alkuperäisiä tiedostoja ei lisätä repositorioon. OCR, kuluhyvitykset ja yleiset lasku-/sopimusparserit säilyvät jatkotöinä.
+
+### Kuittiparserin v2: Prisma, S-market, Alepa ja K-kaupat
+
+Korjattiin tähtikoristellun loppusumman tunnistus yleisenä rakennesääntönä. Lisättiin sivu-/rivinvaihdot, läheinen päivä/kellonaika, Unicode-normalisointi, yksikköhinnan tarkistus ja ALV-/yksittäisen korttiveloituksen ristiintarkistukset. Epäselvä lähderivi näkyy käyttöliittymässä ja estää tallennuksen. Laajennetussa aineistossa yhdeksän alkuperäistä PDF:ää / kahdeksan ostosta, mukaan lukien semanttinen kaksoistuonti eri PDF-tiivisteellä. Vanhojen kuittiryhmien palautus säilyy; kategoriat tarkistetaan edelleen käyttäjällä.

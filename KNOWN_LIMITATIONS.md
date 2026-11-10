@@ -49,4 +49,6 @@ Katso [ominaisuuskartoitus](FEATURE_RESEARCH.md) ja [toteutussuunnitelma](FIRE_P
 
 ## PDF-kuittien nykyinen rajaus 10.11.2026
 
-Prisma-/K-kaupan tekstikuitit ovat nyt käytössä testatuilla kolmella formaatilla, ks. [kuittiskannaus](RECEIPT_SCANNER.md). Kuvallisten kuittien OCR, salasanan syöttö, kuluhyvitykset ja yleiset lasku-/sopimusparserit puuttuvat. Koko kuukauden menoarviota ei automaattisesti vähennetä ostoksilla: mahdollinen päällekkäisyys tarkistetaan hyväksynnässä. Kuittituonnin kumoaminen on käytettävissä vain seuraavaan tallennettuun muutokseen asti. Kirjaston pääsäie kasvattaa tiedostoa ja tarvitsee myöhemmin suorituskykyvarmennuksen fyysisillä puhelimilla.
+Prisma-/S-market-/Alepa-/K-kaupan tekstikuitit on varmennettu yhdeksällä PDF:llä (kahdeksan eri ostosta), ks. [kuittiskannaus](RECEIPT_SCANNER.md). Kuvallisten kuittien OCR, salasanan syöttö, kuluhyvitykset ja yleiset lasku-/sopimusparserit puuttuvat. Koko kuukauden menoarviota ei automaattisesti vähennetä ostoksilla: mahdollinen päällekkäisyys tarkistetaan hyväksynnässä. Kuittituonnin kumoaminen on käytettävissä vain seuraavaan tallennettuun muutokseen asti. Kirjaston pääsäie kasvattaa tiedostoa ja tarvitsee myöhemmin suorituskykyvarmennuksen fyysisillä puhelimilla.
+
+Kuittien 99,9 % yleistä tunnistus- tai luokitteluosuvuutta ei ole osoitettu. Summatäsmäytys, yksikköhinta- ja footer-tarkistukset estävät tunnettuja ristiriitoja; ne eivät todista tuotetulkinnan tai kategorian oikeellisuutta. Katso [mittarit ja tarvittava havaintopohja](RECEIPT_SCANNER.md).

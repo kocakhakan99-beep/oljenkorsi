@@ -5514,3 +5514,7 @@ button.primary,
 .receipt-history > details { padding:.7rem; border-bottom:1px solid var(--line); }
 .receipt-history li { overflow-wrap:anywhere; }
 @media(max-width:600px) { .receipt-product { grid-template-columns:minmax(0,1fr) auto; padding:.65rem .25rem; } .receipt-product-category { grid-column:1/-1; } .receipt-controls { align-items:stretch; } .receipt-controls > label { width:100%; } .receipt-summary { grid-template-columns:1fr 1fr; } .receipt-actions > button { width:100%; } }
+.receipt-issue-source { display:block; font-size:.85rem; overflow-wrap:anywhere; white-space:pre-wrap; }
+
+.receipt-review > .alert { flex-wrap:wrap; }
+.receipt-issue-source { flex-basis:100%; }
