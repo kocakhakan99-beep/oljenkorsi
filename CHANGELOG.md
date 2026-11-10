@@ -73,3 +73,7 @@ Lisättiin omaisuuskortille avattavat asunto-, ajoneuvo-, laite-, maa- ja yleism
 ### Kuukausisuodatus ja ajankohtaiset riviarvot 10.11.2026
 
 Korjattiin tulo-/menolistojen puuttuva kuukausirajaus sekä tapahtumapäivien ja summien kohdistuminen valittuun kuukauteen. Omaisuuden mallit ja velan maksusuunnitelma päivittävät rivin arviota ajankohdan mukaan; lähdearvot säilyvät. Yhteenvedot käyttävät samoja arvioita. Raportoinnin aikaväli erotettiin yleisestä kuukaudesta. Omaisuusarvio nostettiin kortin yläosaan ja uusi perustila valitsee kertoimet. Auton tiedot ovat vuosimalli, lähtökilometrit, vuotuinen ajo, merkki ja käyttövoima; asunto käyttää rakennusvuotta. Malli sidotaan kategoriaan. Merkin/käyttövoiman hintavaikutuksia ei oleteta ilman kalibroitua aineistoa.
+
+### Omaisuuden arvonmuutos omalle muokkausvälilehdelle
+
+Arvonmuutosmallin lomake siirrettiin katselukortista omaisuuden muokkausikkunan Arvonmuutos-välilehdelle. Perustiedot ja malli käyttävät yhteistä tallennusta ja peruutusta. Välilehdet säilyttävät luonnoksen ja toimivat nuolinäppäimillä. Mallin käyttöönotto/poiskytkentä sekä esikatselu löytyvät samasta paikasta.
