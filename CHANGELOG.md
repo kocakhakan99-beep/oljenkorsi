@@ -77,3 +77,7 @@ Korjattiin tulo-/menolistojen puuttuva kuukausirajaus sekä tapahtumapäivien ja
 ### Omaisuuden arvonmuutos omalle muokkausvälilehdelle
 
 Arvonmuutosmallin lomake siirrettiin katselukortista omaisuuden muokkausikkunan Arvonmuutos-välilehdelle. Perustiedot ja malli käyttävät yhteistä tallennusta ja peruutusta. Välilehdet säilyttävät luonnoksen ja toimivat nuolinäppäimillä. Mallin käyttöönotto/poiskytkentä sekä esikatselu löytyvät samasta paikasta.
+
+### 2024–2026 lähdehistoria, demot ja porrastettu auto
+
+Arvonmuutoslomake näkyy aina muokkausvälilehdellä. Välilehtipalkki erottuu aktiivisella pinnalla ja kontrastilla. Autojen porrastettu v2 sisältää 20 merkin näkyvät arvio-oletukset sekä uuden auton alkuvaiheen, ja säilyttää vanhan v1:n. Kaikille 20 sijoituskohteelle lisättiin 720 päivättyä hintahavaintoa ja 730 EKP-valuuttahavaintoa; kurssikuvaaja ja havaintotaulukko näkyvät kortilla. Neljä demoa kattavat 36 kuukautta ja yhteensä 4 480 tulo-/menokirjausta, uudet arvomallit, velkatilanteet, tavoitteet ja salkut. Maksuttomien API:en käyttö- ja tietoturvasuunnitelma lisättiin, liveyhteyttä ei vielä kytketty.

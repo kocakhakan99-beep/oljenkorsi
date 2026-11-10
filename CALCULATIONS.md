@@ -92,3 +92,9 @@ Omaisuuden katselukortissa on nykyarvoon ankkuroitu, valittuun päivään ulottu
 ## Ajankohtaan sidotut listat ja saldot
 
 Yhteinen rajaus ja tilannepäivän valinta on määritelty [kuukausisuodatuksen kuvauksessa](MONTH_SCOPE_PLAN.md). Omaisuuden ja velkojen rivit, yhteenveto ja varallisuusraportin valittu päivä käyttävät samaa johdettua arvoa. Omaisuuden peruslaskenta käyttää automaattioletuksia ilman käyttäjän prosenttisyöttöjä; auton ikä-/ajokäyrä on dokumentoitu [arviointimallissa](ASSET_VALUATION_PLAN.md). Velan eräkohtainen korko, lyhennys ja päiväkohtainen korkokertymä lasketaan loanEstimate-funktiolla. Aiemman kirjatun saldon päälle ei lasketa samoja lyhennyksiä uudelleen pysyvään dataan.
+
+## Porrastettu auto ja sijoituksen lähdehistoria
+
+Porrastettu v2 säilyttää arvon ankkuroinnin arvostuspäivään. Uuden auton alkuvaihe on jyrkempi, myöhemmät vaiheet loivenevat, ja 20 merkin näkyvä skenaariopaino vaikuttaa käyrään. Täsmällinen kaava ja oletukset: [ASSET_VALUATION_PLAN.md](ASSET_VALUATION_PLAN.md). Vanha v1 ei saa merkkipainoa jälkikäteen ilman version vaihtoa.
+
+Symboliin kytketty sijoitus käyttää valitun päivän tai sitä aiemman snapshot-havainnon lähdehintaa. USD muunnetaan EUR:ksi saman päivän tai aiemman EKP-havainnon avulla. Position arvo = round(määrä × tarkka EUR-yksikköhinta sentteinä). Käyttöliittymän yksikköhinnan kahden desimaalin näyttö ei leikkaa laskennan tarkkuutta. Hintasarja ei yksin ole toteutunut sijoitustuotto; puuttuvat osingot, kulut, verot ja todelliset ostot on erotettava siitä.

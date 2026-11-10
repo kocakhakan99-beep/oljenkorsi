@@ -9,8 +9,8 @@ it('projects assets and debts without rewriting their recorded values',()=>{
  expect(datedValue(s.assets[0],'assets','2025-01-01').estimated).toBe(false);
 });
 it('does not apply a car model to a house and keeps deferred debt recorded',()=>{expect(datedValue(entry({category:'Asunto',assetModel:{...defaultAssetModel('Auto'),year:2020}}),'assets','2028-01-01').estimated).toBe(false);expect(datedValue(entry({amount:10000,payment:0}),'liabilities','2028-01-01').value).toBe(10000);expect(datedValue(entry({amount:100000,payment:0,rate:3.65,date:'2026-01-01'}),'liabilities','2026-01-11').value).toBe(100100)});
-it('uses mileage and makes brand metadata neutral without calibrated data',()=>{
- const p={...defaultAssetModel('Auto'),automatic:true,year:2020,initialMileage:100000,annualMileage:10000};
+it('uses mileage and preserves the old curve for legacy metadata',()=>{
+ const p={...defaultAssetModel('Auto'),automatic:true,vehicleCurve:'legacy-v1' as const,year:2020,initialMileage:100000,annualMileage:10000};
  const r=assetValuation(100000,'2026-01-01','2027-01-01',p);expect(assetValuation(100000,'2026-01-01','2027-01-01',{...p,annualMileage:30000}).value).toBeLessThan(r.value);expect(assetValuation(100000,'2026-01-01','2027-01-01',{...p,brand:'Toyota',powertrain:'electric'}).value).toBe(r.value);
 });
 

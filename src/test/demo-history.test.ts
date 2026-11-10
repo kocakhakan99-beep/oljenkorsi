@@ -4,11 +4,11 @@ import { occurrenceStatus, scheduledOccurrences, total, validDate } from "../dom
 import { backup, restore } from "../services/validation";
 import { kinds, today } from "../domain/model";
 
-describe("Demotalouksien kahden vuoden aineisto", () => {
-  it("kattaa kaikissa neljässä taloudessa kaikki vuoden 2025 ja 2026 kuukaudet", () => {
-    expect(demoMonths).toHaveLength(24);
-    expect(demoMonths[0]).toBe("2025-01");
-    expect(demoMonths[23]).toBe("2026-12");
+describe("Demotalouksien kolmen vuoden aineisto", () => {
+  it("kattaa kaikissa neljässä taloudessa kaikki vuosien 2024–2026 kuukaudet", () => {
+    expect(demoMonths).toHaveLength(36);
+    expect(demoMonths[0]).toBe("2024-01");
+    expect(demoMonths[35]).toBe("2026-12");
     for (const { state, timeline } of createCompassDemoCases("2026-11")) {
       expect(timeline.map(row => row.month)).toEqual(demoMonths);
       expect(Object.keys(state.budgets)).toEqual(demoMonths);
@@ -24,13 +24,13 @@ describe("Demotalouksien kahden vuoden aineisto", () => {
   it("antaa kaikkiin tietonäkymiin esimerkin ja säilyttää ne varmuuskopiossa", () => {
     for (const { state } of createCompassDemoCases("2026-11")) {
       for (const kind of kinds) expect(state[kind].length).toBeGreaterThan(0);
-      expect(state.scenarios).toHaveLength(2);
+      expect(state.scenarios).toHaveLength(3);
       expect(state.liabilities.some(item => item.linkedAssetId)).toBe(true);
       expect(restore(backup(state))).toEqual(state);
       for (const kind of kinds) for (const item of state[kind]) {
         expect(validDate(item.date)).toBe(true);
         expect(item.amount).toBeGreaterThanOrEqual(0);
-        expect(item.date >= "2025-01-01" && item.date <= "2026-12-31").toBe(true);
+        expect(item.date >= "2024-01-01" && (kind === "goals" || item.date <= "2026-12-31")).toBe(true);
       }
     }
   });
@@ -62,7 +62,14 @@ describe("Demotalouksien kahden vuoden aineisto", () => {
     }
   });
   it("pitää esimerkin valitun kuukauden aineiston sisällä myös vuosien ulkopuolelta avattaessa", () => {
-    expect(createCompassDemoCases("2024-12").every(item => item.state.settings.month === "2025-01")).toBe(true);
+    expect(createCompassDemoCases("2023-12").every(item => item.state.settings.month === "2024-01")).toBe(true);
     expect(createCompassDemoCases("2027-01").every(item => item.state.settings.month === "2026-12")).toBe(true);
   });
+  it("sisältää uudet arvomallit, porrastetut autot, 20 lähdehintakohdetta ja arkisia tapahtumia", () => {
+    const cases=createCompassDemoCases("2026-11");
+    const symbols=new Set(cases.flatMap(({state})=>state.investments.map(item=>item.marketSymbol)));
+    expect(symbols.size).toBe(20);
+    for(const {state} of cases){expect(state.expenses.length).toBeGreaterThan(950);expect(state.assets.filter(item=>item.assetModel).length).toBe(3);expect(state.assets.find(item=>item.category==="Auto")!.assetModel!.vehicleCurve).toBe("staged-v2");expect(state.liabilities.some(item=>item.category==="Opintolaina"&&item.payment===0)).toBe(true);expect(state.goals).toHaveLength(3);expect(state.expenses.some(item=>item.category==="Hygieniatarvikkeet")).toBe(true);expect(state.expenses.some(item=>Object.keys(item.occurrenceAmounts).length>0)).toBe(true);}
+  });
+
 });

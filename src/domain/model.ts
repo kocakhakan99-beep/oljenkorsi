@@ -67,6 +67,7 @@ export interface Entry {
   tags: string;
   quantity: number;
   purchasePrice: number;
+  marketSymbol?: string;
   ownership: number;
   assetModel?: AssetModel | null;
   liquid: boolean;
@@ -205,6 +206,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     tags: "",
     quantity: 1,
     purchasePrice: 0,
+    marketSymbol: "",
     ownership: 100,
     assetModel: null,
     liquid: false,

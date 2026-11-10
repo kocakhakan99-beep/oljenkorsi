@@ -135,3 +135,9 @@ Listan alussa näkyy sovellettava kuukausi tai tilannepäivä. Arviorivi merkit�
 ## Arvonmuutos muokkausikkunan välilehdellä
 
 Arvonmuutosmalli on omaisuuden muokkausikkunan oma välilehti Perustietojen rinnalla. Katselukortin nuolen takana ollutta arviointilomaketta ei enää ole. Yhteinen Tallenna tallentaa perustiedot ja mallin atomisesti; Peruuta tai ikkunan sulkeminen hylkää molemmat. Välilehtien vaihto ei hukkaa luonnosta. Mallin käyttöönotto/poiskytkentä tehdään samalla välilehdellä. Mallin esikatselu käyttää myös tallentamattomia perustietoja: nykyarvoa, arvostuspäivää, kategoriaa ja omistusosuutta. Näppäimistön vasen/oikea nuoli sekä Home/End vaihtavat välilehteä. Virheellinen mallin lähtötieto ohjaa Arvonmuutos-välilehdelle; puuttuva perustieto Perustietoihin.
+
+## Näkyvä arvonmuutos ja yhtenäisen välilehtipalkin pohja
+
+Omaisuuden Arvonmuutos-välilehti ja sen lomake näkyvät aina, myös mallin ollessa pois käytöstä. Käyttövalinta ohjaa tallennusta ja riviarvioita. Tablist käyttää editor-tabbar-tyyliä: erottuva tausta, sisäinen aktiivinen pinta, kontrastiteksti, varjo ja näppäimistökohdistus. Tyyli on myöhemmin käytettävissä muissakin muokkausikkunoissa.
+
+Auton merkkipaino näytetään lukuna ja kerrotaan arvio-oletukseksi. Porrastettu/aiempi arvokäyrä on nimetty valinta, ei käyttäjän laskettava prosenttilomake. Sijoituskortissa näkyvät päivätty hinta, EUR-muunnoksen lähdepäivä ja offline-historia; vanhentunutta tai keskeneräistä hintaa ei esitetä livekurssina.
