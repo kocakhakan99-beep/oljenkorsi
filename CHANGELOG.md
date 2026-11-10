@@ -53,3 +53,7 @@ Tulojen ja menojen toistuvuus sekä kuukauden tapahtumatila esitetään yhtenäi
 ### Rivilaajennus, katselu ja budjetin väljyys 10.11.2026
 
 Lisätiedot laajenevat saman talousrivin sisään kaikissa kuudessa listassa. Uusi silmäpainike avaa katseluikkunan ilman syöttökenttiä; muokkaus ja vahvistettava poisto löytyvät myös ikkunasta. Sama katselu palvelee budjettikategorian menoluetteloa, pikahakua ja raporttien tietueita. Budjetin kategoriarivien välejä ja mobiiliasettelua väljennettiin. Laskentaa tai tietomallia ei muutettu.
+
+### Yksi avauspolku ja kompakti budjetti 10.11.2026
+
+Talouslistojen nuolilaajennus korvattiin silmäpainikkeen katselulla. Tapahtumakohtaiset korjaukset ovat katseluikkunan erillisessä valinnassa. Solujen korkeudet ja kohdistus yhtenäistettiin. Budjettiriviltä poistettiin ryhmäluokitus, ohjerajapoikkeama ja automaattisen toteuman leima; ryhmä ja ohjeraja löytyvät kategoriakortista. Silmä- ja pieni menon lisäyspainike siirrettiin omaan toimintokohtaan. Huomioiden kategoriakortit näyttävät budjetoidun summan ja selkeästi nimetyn ohjerajapoikkeaman.

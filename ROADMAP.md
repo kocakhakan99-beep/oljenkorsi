@@ -57,3 +57,5 @@ Toteutettu 10.11.2026: kuuden talouslistan erilliset Nimi/Kategoria-sarakkeet, m
 Toteutettu 10.11.2026: tulojen ja menojen kahdeksan toistuvuuden sekä tapahtumatilojen yhteinen kuvakesarja. Kosketuksella ja näppäimistöllä avattavat selitteet, 44 px painallusalueet ja erilliset tumman tilan värit; laskenta ja tapahtumakorjaukset säilyvät.
 
 Toteutettu 10.11.2026: rivin sisäinen lisätietojen laajennus, yhteinen katselu/muokkaus/poisto kuudessa talouslistassa ja katselupolku budjetista, pikahausta sekä raportin tietueesta. Budjetin kategoriarivien väljyys ja mobiiliasettelu viimeistelty.
+
+Tarkennettu käyttäjäpalautteella 10.11.2026: talouslistoissa käytetään silmäpainikkeen katselua nuolilaajennuksen sijasta. Tapahtumakorjaukset säilyvät katseluikkunassa. Budjetin tiivis riviasettelu käyttää samaa avausperiaatetta ja huomiot näkyvät kategoriakohtaisina koontikortteina.

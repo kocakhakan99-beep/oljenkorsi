@@ -5399,3 +5399,42 @@ button.primary,
 
 .report-record-open { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-align: left; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; min-height: 44px; overflow-wrap: anywhere; }
 .report-record-open:hover { color: var(--accent-ink); }
+
+/* One compact record surface and one explicit reader action. */
+.entry-table thead tr, .entry-table .entry-record { align-items: stretch; }
+.entry-table .entry-record > td { display: flex; align-items: center; padding: 3px 8px; border-bottom: 1px solid var(--line); }
+.entry-table .entry-record > td[data-label="Toiminnot"] { display: flex; position: static; }
+.entry-table .row-title { padding: 0; }
+.entry-table .entry-event-summary { align-items: center; }
+.budget-category-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-height: 44px; }
+.budget-category-label > span:last-child { overflow-wrap: anywhere; }
+.budget-table th[scope="row"] { min-width: 150px; }
+.budget-table th, .budget-table td { padding: 6px 10px; vertical-align: middle; }
+.budget-table .budget-input { max-width: 160px; }
+.budget-row-actions { display: flex; align-items: center; gap: 4px; }
+.budget-row-actions button { display: inline-flex; align-items: center; justify-content: center; width: 44px; min-width: 44px; height: 44px; padding: 8px; }
+.budget-row-actions .expense-add-icon { width: 22px; height: 22px; }
+.budget-row-actions .expense-add-icon > svg:last-child { width: 11px; height: 11px; top: -1px; right: -2px; }
+.budget-category-policy { margin: 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.budget-category-policy .ux-explanation { flex-basis: 100%; }
+.budget-attention-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; margin-top: 12px; }
+.budget-attention-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px; background: var(--surface); text-align: left; min-width: 0; border: 1px solid var(--line); border-radius: 12px; }
+.budget-attention-category { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.budget-attention-amount { display: grid; gap: 2px; text-align: right; }
+.budget-attention-amount small { color: var(--muted); }
+.budget-attention-labels { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; grid-column: 1 / -1; }
+.budget-attention-labels .status-badge { margin: 0; }
+.entry-corrections { margin-top: 16px; }
+@media (max-width: 600px) {
+  .mobile-entry-table .entry-table tbody tr.entry-record > td { border: 0; align-items: flex-start; }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td:first-child { padding-right: 148px; }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td[data-label="Toiminnot"] { display: flex; position: absolute; top: 5px; right: 6px; padding: 0; }
+  .mobile-entry-table .entry-table tbody tr.entry-record > td[data-label="Toiminnot"] > .row-actions { position: static; }
+  .budget-table tbody tr { position: relative; padding: 6px 10px; gap: 8px 12px; }
+  .budget-table th[scope="row"] { padding: 0 96px 4px 0; min-width: 0; }
+  .budget-table td { padding: 0; }
+  .budget-table td[data-label="Toiminnot"] { position: absolute; top: 6px; right: 8px; border: 0; }
+  .budget-table td[data-label="Toiminnot"]::before { display: none; }
+  .budget-table .budget-input { max-width: 100%; }
+}
+.entry-table .entry-record > td[data-label="Toiminnot"] { padding-inline: 0; }
