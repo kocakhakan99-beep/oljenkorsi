@@ -1,13 +1,21 @@
 # Testausraportti 10.11.2026
 
+## Uudet Prisma-kuittitaitot ja fiktiivisten testikuittien poisto 10.11.2026
+
+- Neljä käyttäjän toimittamaa PDF:ää ajettiin sovelluksen selaimessa toimivan PDF.js-lukijan läpi. Kaikki neljä tunnistuivat ja niiden tuoterivimäärät täsmäsivät. Kaksi tiedostoa olivat saman kuitin identtiset kopiot; toinen uusi kuitti käytti aiemmin testatusta ostoksesta erilaista, tähdetöntä taittoa.
+- Parseri rajaa tähdettömän Prisma-tuotealueen avaavan ja sulkevan erotinviivan väliin. Se tunnistaa myös `Credit/Veloitus`- ja `VISA Debit: € summa` -maksurivit sekä tarkistaa maksun summan ostoksen loppusummaan. Rajaviivan puuttuessa riviä ei arvata tuotteeksi.
+- Kolmesta uudesta kuittirakenteesta lisättiin anonymisoidut tekstifixtuurit. Testit tarkistavat tuoterivien lukumäärän ja kokonaissumman, kampanja-alennuksen laskennan, Credit/VISA-maksusumman ristiriidan estoineen sekä tähdellisen ja tähdettömän saman ostoksen kaksoistuonnin.
+- 162 yksikkötestiä 16 tiedostossa, TypeScript, ESLint ja tuotantobuild läpäisivät. Selainregressiossa 10 eri kuituostosta kirjautui riveittäin oikein; kaksoistuonnit estettiin, tallennuksen hyväksyntä vaadittiin eikä sovellus tehnyt ulkoisia pyyntöjä.
+- Fiktiivinen PDF-kokoelma, sen generaattori ja fiktiivisillä PDF:illä tehty parseritestistö on poistettu. Selainpudotuksen regressio muodostaa väliaikaiset testitiedostot vain anonymisoiduista, oikeisiin kuitteihin perustuvista fixtuureista.
+
 ## Kuittien tuoterajauksen korjaus 10.11.2026
 
 - Esimerkkien rakenteista erotettiin kaksi sääntöä: S-ryhmän tuoterivit alkavat tähtimerkillä; K-Citymarketin tuoterivit alkavat ostotapahtuman otsikon jälkeen ja päättyvät loppusummaa edeltävään erotinviivaan. Jos K-pohjasta puuttuu erotinviiva, `YHTEENSÄ` rajaa alueen. Otsikon ja tuotealueen ulkopuoliset summat eivät ole tuoterivejä.
 - Korjattiin K-kuitin aiempi liian yleinen poiminta, joka käsitteli ostorajan sisällä minkä tahansa summalla päättyvän rivin tuotteena. Uudet regressiotestit tarkistavat myös K-pohjan ilman erotinviivaa.
-- Kaikki yhdeksän alkuperäistä PDF:ää ajettiin sovelluksessa: kahdeksan eri ostosta poimittiin oikeine rivimäärineen ja loppusummineen; Korso-kuitin eri tiedostoversio estettiin kaksoistuontina. Yhtään PDF:ää tai henkilö-/maksutietoa ei tallennettu repositorioon.
-- 153 yksikkötestiä 16 tiedostossa, TypeScript ja ESLint läpäisivät. Aiemmin tehty tuotantobuild läpäisi. Uudet regressiotestit varmistavat, ettei K-kuitin otsikon tai tuotealueen jälkeinen summa päädy ostoriviksi ja että loppusummarivi toimii erotinviivan puuttuessa.
+- Tuolloin toimitetut yhdeksän alkuperäistä PDF:ää sisälsivät kahdeksan eri ostosta. Korso-kuitin eri tiedostoversio estettiin kaksoistuontina. Myöhemmin repositorioon ladatut neljä PDF:ää ja niiden uudet rakenteet varmennettiin yllä olevassa ajantasaisessa ajossa.
+- Tuolloin 153 yksikkötestiä 16 tiedostossa, TypeScript ja ESLint läpäisivät. Uudet regressiotestit varmistivat, ettei K-kuitin otsikon tai tuotealueen jälkeinen summa päädy ostoriviksi ja että loppusummarivi toimii erotinviivan puuttuessa.
 - Fiktiivinen 14 PDF:n näytekokoelma, generaattori ja niiden parseritestit poistettiin käyttäjän pyynnöstä. Pudotustesti muodostaa väliaikaiset PDF:t oikeiden kuittien anonymisoiduista testifixtuureista. Alla olevat aiempien ajojen tulokset ovat historiaa; poistettuja näyte-PDF:iä ei enää toimiteta eikä käytetä kuittiformaattien kattavuusväitteenä.
-- Kaikki 14 PDF-pudotuksen ja skannerin Chromium-varmennusta läpäisivät, kun testin väliaikaiset PDF:t tuotettiin anonymisoiduista Alepa- ja Prisma-fixtuureista.
+- Tuolloisessa selainajossa 14 PDF-pudotuksen ja skannerin Chromium-varmennusta läpäisi väliaikaisilla Alepa- ja Prisma-fixtureistä tuotetuilla PDF:illä. Nämä kyseiset fiktiiviset esimerkkitiedostot ja niiden käyttämä vanha testiaineisto poistettiin myöhemmin.
 
 ## Kuittiskannauksen pääpaikka ja PDF-pudotus 10.11.2026
 

@@ -3,8 +3,14 @@ import { parseReceipt, allocateDiscount } from "../domain/receipts/parser";
 import k from "./fixtures/receipt-example.json";
 import jan from "./fixtures/receipt-jan.json";
 import mar from "./fixtures/receipt-mar.json";
+import prismaPlain from "./fixtures/receipt-prisma-plain-7556.json";
+import prismaCredit from "./fixtures/receipt-prisma-credit-4767.json";
+import prismaPlain92 from "./fixtures/receipt-prisma-plain-9285.json";
 
-it.each([[k, "k", "2026-04-05", 3287, 15], [jan, "s", "2026-01-02", 12146, 22], [mar, "s", "2026-03-16", 7385, 27]] as const)("reconciles a supplied receipt without payment/VAT duplication", (fixture, chain, date, total, count) => {
+it.each([
+  [k, "k", "2026-04-05", 3287, 15], [jan, "s", "2026-01-02", 12146, 22], [mar, "s", "2026-03-16", 7385, 27],
+  [prismaPlain, "s", "2026-10-17", 7556, 22], [prismaCredit, "s", "2026-04-12", 4767, 15], [prismaPlain92, "s", "2026-11-09", 9285, 20],
+] as const)("reconciles a supplied receipt without payment/VAT duplication", (fixture, chain, date, total, count) => {
   const draft = parseReceipt(fixture.pages);
   expect(draft.chain).toBe(chain); expect(draft.date).toBe(date); expect(draft.total).toBe(total);
   expect(draft.issues).toEqual([]);
@@ -17,6 +23,20 @@ it("does not subtract Prisma campaign savings twice or count bundle children twi
   expect(d.lines.find(l => l.name.includes("TALVINILKKURI"))).toMatchObject({ gross: 6995, discount: 2100, net: 4895 });
   expect(d.lines.find(l => l.name.includes("PROTEIINI"))).toMatchObject({ gross: 458, discount: 58, net: 400, quantity: 2, unit: "kpl" });
   expect(d.lines.filter(l => l.name.includes("PROTEIINI"))).toHaveLength(1);
+});
+it("parses Prisma's unstarred product table and checks Credit/Veloitus", () => {
+  const discounted = parseReceipt(prismaPlain.pages), credit = parseReceipt(prismaCredit.pages);
+  expect(discounted.issues).toEqual([]); expect(credit.issues).toEqual([]);
+  expect(discounted.lines.find(l => l.name.includes("TORTILLA"))).toMatchObject({ gross: 436, discount: 88, net: 348, quantity: 2, unit: "kpl", unitPrice: 218 });
+  expect(credit.lines.find(l => l.name.includes("PÄÄSIÄISMUNAT"))).toMatchObject({ gross: 795, discount: 397, net: 398 });
+  const badPayment = structuredClone(prismaCredit.pages);
+  const paymentIndex = badPayment[0].lines.findIndex(line => /^Credit\/Veloitus/.test(line));
+  badPayment[0].lines[paymentIndex] = badPayment[0].lines[paymentIndex].replace("47,67", "47,68");
+  expect(parseReceipt(badPayment).issues.some(i => i.code === "payment-total" && i.blocking)).toBe(true);
+  const badVisa = structuredClone(prismaPlain92.pages);
+  const visaIndex = badVisa[0].lines.findIndex(line => /^VISA Debit:/.test(line));
+  badVisa[0].lines[visaIndex] = badVisa[0].lines[visaIndex].replace("92,85", "92,86");
+  expect(parseReceipt(badVisa).issues.some(i => i.code === "payment-total" && i.blocking)).toBe(true);
 });
 it("allocates a K bundle discount and trailing minus exactly", () => {
   const d = parseReceipt(k.pages), soaps = d.lines.filter(l => l.name.includes("Palmolive"));

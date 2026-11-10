@@ -1,0 +1,42 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "lines": [
+        "PRISMA ESIMERKKI",
+        "K001 M000001/0001 12.4.2026 21:03",
+        "ASIAKASOMISTAJAN edut on huomioitu.",
+        "------------------------------------------",
+        "SURPRISE                             0,79",
+        "NORM.                       1,19",
+        "KAMPANJA                   -0,40",
+        "REFILL CAN SILVER                   10,90",
+        "COOP MUOVIKASSI HARMAA 40L           0,50",
+        "KEVYTMAITOJUOMA LAKTON               1,29",
+        "KEVYTMAITO                           2,82",
+        "3 KPL             0,94 €/KPL",
+        "HUONETUOKSU GRANATTIOMENA            4,49",
+        "TULPPAANI 9KPL                       3,95",
+        "NORM.                       5,99",
+        "KAMPANJA                   -2,04",
+        "KASVIS-KALKKUNARISOTTO 1-3V          1,45",
+        "SPAGHETTI BOLOGNESE 12KK             0,99",
+        "KASVISLASAGNE 12KK                   0,99",
+        "JUOMAPULLO 4,3 DL SQUISHMALLOWS      6,95",
+        "HAMMASTAHNA XYLITOL                  1,09",
+        "TÄYTEKEKSI KAAKAOKREEMILLÄ           1,58",
+        "PÄÄSIÄISMUNAT 315G                   3,98",
+        "NORM.                       7,95",
+        "KAMPANJA                   -3,97",
+        "MEHUJÄÄMUOTTI 8 PUIKKOA              5,90",
+        "------------------------------------------",
+        "YHTEENSÄ                            47,67",
+        "Credit/Veloitus               47,67 EUR",
+        "ALV         VEROTON     VERO   VEROLLINEN",
+        "5  25,50%     26,93     6,85        33,78",
+        "6  13,50%     12,24     1,65        13,89",
+        "YHTEENSÄ      39,17     8,50        47,67"
+      ]
+    }
+  ]
+}

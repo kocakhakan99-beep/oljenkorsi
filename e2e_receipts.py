@@ -1,4 +1,4 @@
-"""Local receipt regression. Accepts three legacy PDFs or the documented nine-document suite.
+"""Local receipt regression using anonymized fixtures derived from real receipt PDFs.
 Without files, generates anonymized PDFs from committed text fixtures (PyMuPDF).
 Never copies supplied PDFs into the repository or test artifacts.
 """
@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
     if not files:
         import fitz
         files = []
-        for key in ['example', 'jan', 'mar', 'smarket-korso', 'prisma-nov2', 'prisma-nov9', 'alepa', 'smarket-koivukyla']:
+        for key in ['example', 'jan', 'mar', 'smarket-korso', 'prisma-nov2', 'prisma-nov9', 'alepa', 'smarket-koivukyla', 'prisma-plain-7556', 'prisma-credit-4767', 'prisma-plain-9285']:
             lines = [line for p in json.loads((ROOT / f'src/test/fixtures/receipt-{key}.json').read_text())['pages'] for line in p['lines']]
             doc = fitz.open()
             for offset in range(0, len(lines), 60):
@@ -44,7 +44,8 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
         page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
-        expected = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
+        expected_originals = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
+        expected = expected_originals + [(7556, 22, '2026-10-17'), (4767, 15, '2026-04-12')] if not args.pdfs else expected_originals
         initial = state(page)
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
@@ -107,7 +108,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 expect(page.locator('.receipt-review')).to_have_count(0)
                 mark('Duplicate receipt blocked; undo restores exact state and allows re-import')
         saved = state(page)
-        if len(files) == 9:
+        if len(files) == 9 or (not args.pdfs and len(files) == 12):
             import hashlib
             assert hashlib.sha256(files[3].read_bytes()).digest() != hashlib.sha256(files[-1].read_bytes()).digest()
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(files[-1])
@@ -116,6 +117,12 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             assert state(page) == saved
             page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
             mark('A different PDF of the same purchase is blocked by semantic identity')
+        if not args.pdfs:
+            page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(files[10])
+            expect(page.get_by_text('Tämä kuitti on jo tuotu. Uutta kirjausta ei tehdä.', exact=True)).to_be_visible(timeout=30000)
+            assert state(page) == saved
+            page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
+            mark('Unstarred Prisma PDF is recognized as the same purchase as its starred copy')
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_be_visible()
         # Receipt undo must expire after a later saved change, never erase that change.
         nav(page, 'Asetukset'); page.get_by_label('Väritila', exact=True).select_option('dark')
