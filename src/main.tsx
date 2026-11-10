@@ -1,3 +1,4 @@
+import { MetricCard, StatusBadge, BudgetUsage, ContextDetails } from "./components/summary";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -2506,13 +2507,7 @@ function App() {
         )
     : [];
   function stat(label: string, value: string, note?: string) {
-    return (
-      <article className="stat">
-        <span>{label}</span>
-        <strong>{value}</strong>
-        {note && <small>{note}</small>}
-      </article>
-    );
+    return <MetricCard label={label} value={value} note={note} />;
   }
   const monthNumber = (value: string) => {
     const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
@@ -3950,7 +3945,7 @@ function App() {
                     </div>
                     <div>
                       <span>
-                        Arvio kuukauden kirjatuista tuloista ja menoista
+                        Kuukauden arvio
                       </span>
                       <strong>{euro(m.available)}</strong>
                       <small>
@@ -3974,7 +3969,6 @@ function App() {
                       />
                       <span className="dashboard-action-copy">
                         <strong>Lisää tulo</strong>
-                        <small>Palkka tai muu tulo</small>
                       </span>
                       <ArrowRight
                         className="dashboard-action-arrow"
@@ -3994,7 +3988,6 @@ function App() {
                       />
                       <span className="dashboard-action-copy">
                         <strong>Lisää meno</strong>
-                        <small>Kuukausittainen tai kertameno</small>
                       </span>
                       <ArrowRight
                         className="dashboard-action-arrow"
@@ -4010,7 +4003,6 @@ function App() {
                       <Wallet size={21} strokeWidth={1.8} aria-hidden="true" />
                       <span className="dashboard-action-copy">
                         <strong>Avaa budjetti</strong>
-                        <small>Suunnittele kuukauden kulut</small>
                       </span>
                       <ArrowRight
                         className="dashboard-action-arrow"
@@ -4030,7 +4022,6 @@ function App() {
                       />
                       <span className="dashboard-action-copy">
                         <strong>Avaa raportit</strong>
-                        <small>Tutki rahavirtaa ja kulurakennetta</small>
                       </span>
                       <ArrowRight
                         className="dashboard-action-arrow"
@@ -4058,28 +4049,19 @@ function App() {
                     <div className="stats">
                       {stat("Tulot tässä kuussa", euro(m.income))}
                       {stat("Menot tässä kuussa", euro(m.expense))}
-                      {stat(
-                        "Kulutusmenot",
-                        euro(m.consumption),
-                        "Menon tyypiksi merkityt siirrot sivuutetaan",
-                      )}
-                      {stat(
-                        "Tulot kulutuksen jälkeen",
-                        euro(m.surplus),
-                        "Ei ole sama kuin todennettu sijoitussumma",
-                      )}
-                      {stat(
-                        "Säästöaste",
-                        pct(m.savingRate),
-                        "Tulot kulutuksen jälkeen / tulot",
-                      )}
+                      {stat("Säästöaste", pct(m.savingRate), "Tulot kulutuksen jälkeen / tulot. Säästö- ja sijoitussiirrot eivät ole kulutusta; prosentti ei todenna sijoitettua rahavirtaa.")}
                     </div>
+                    <details className="metric-disclosure"><summary>Kulutuksen erittely</summary><div className="stats">
+                      {stat("Kulutusmenot", euro(m.consumption), "Menon tyypiksi merkityt säästö- ja sijoitussiirrot sivuutetaan.")}
+                      {stat("Tulot kulutuksen jälkeen", euro(m.surplus), "Ei ole sama kuin todennettu sijoitussumma.")}
+                    </div></details>
                   </section>
                   <section
                     className="metric-group metric-group-wealth"
                     aria-labelledby="wealth-heading"
                   >
                     <h2 id="wealth-heading">Varallisuus</h2>
+                    <StatusBadge>Manuaaliset nykyarvot</StatusBadge>
                     <div className="stats">
                       {stat(
                         "Nettovarallisuus",
@@ -4103,17 +4085,12 @@ function App() {
                     className="metric-group metric-group-plan"
                     aria-labelledby="plan-heading"
                   >
-                    <h2 id="plan-heading">Suunnitelma ja siirrot</h2>
+                    <details className="metric-disclosure"><summary><h2 id="plan-heading">Suunnitelma ja siirrot</h2></summary>
                     <div className="stats">
                       {stat("Säästösiirrot", euro(m.savingTransfers))}
                       {stat("Sijoitussiirrot", euro(m.investmentTransfers))}
-                      {stat(
-                        "Budjetista käytetty",
-                        m.budget
-                          ? pct((m.consumption / m.budget) * 100)
-                          : "Ei budjettia",
-                      )}
-                    </div>
+                      <MetricCard label="Budjetoiduista käytetty" value={m.budget ? pct((budgetedActual / m.budget) * 100) : "Ei budjettia"} note="Sama kategoriatoteuma kuin budjetissa, myös mahdolliset omat kokonaistoteuman korjaukset. Budjetoimaton kulutus näytetään erikseen budjetissa." />
+                    </div></details>
                   </section>
                   <div className="grid-two">
                     <section className="panel">
@@ -4328,9 +4305,7 @@ function App() {
                       Kopioi edellinen kuukausi
                     </button>
                   </div>
-                  <p className="muted">
-                    Aseta budjetti ja avaa kategoriasta sen kirjaukset. Toteuma kertyy menoista; mahdollinen oma kokonaistoteuman korjaus näkyy erikseen.
-                  </p>
+
                   <div className="table-wrap mobile-card-table budget-table">
                     <table role="table">
                       <thead role="rowgroup">
@@ -4403,7 +4378,7 @@ function App() {
                                   </span>
                                 </button>
                                 </div>
-                                {recommendation && <small className="budget-row-recommendation">{budgetGroupNames[recommendation.group]} · {recommendation.maxPercent === null ? "Ei kategoriarajaa" : `${percentText(recommendation.maxPercent)} % nettotuloista${recommendation.cap === null ? "" : ` · ${euro(recommendation.cap)}`}`}{recommendation.excess > 0 ? ` · ylitys ${euro(recommendation.excess)}` : ""}</small>}
+                                {recommendation && <div className="budget-row-recommendation"><StatusBadge>{budgetGroupNames[recommendation.group]}</StatusBadge>{recommendation.excess > 0 && <StatusBadge tone="warning">Ohjeraja +{euro(recommendation.excess)}</StatusBadge>}</div>}
                               </th>
                               <td role="cell" data-label="Suunniteltu">
                                 <MoneyInput
@@ -4418,7 +4393,7 @@ function App() {
                               </td>
                               <td role="cell" data-label="Toteutunut kulutus">
                                 <strong>{euro(a)}</strong>
-                                <small>{hasManual ? "Oma kokonaistoteuman korjaus" : "Kirjatuista menoista"}</small>
+                                <StatusBadge>{hasManual ? "Oma toteuma" : "Kirjauksista"}</StatusBadge>
                               </td>
                               <td
                                 role="cell"
@@ -4428,7 +4403,7 @@ function App() {
                                 {b > 0 ? euro(b - a) : "—"}
                               </td>
                               <td role="cell" data-label="Toteuma">
-                                {b ? pct((a / b) * 100) : "Ei budjettia"}
+                                <BudgetUsage actual={a} budget={b} label={`${c}, budjetin käyttö`} />
                               </td>
                             </tr>
                           );
@@ -4455,12 +4430,12 @@ function App() {
                       Budjetoimaton kulutus ei ole budjetin ylitys.
                     </p>
                   )}
-                  <p>
+                  <ContextDetails title="Miten budjetin toteuma lasketaan?"><p>
                     Budjetoitujen kategorioiden erotus on suunnitelma miinus
                     toteuma. Budjetoimaton kulutus näkyy erikseen, eikä sitä
                     lasketa budjettien ylitykseksi. Tässä versiossa budjettia ei
                     jaeta automaattisesti kaikkiin tuloihin.
-                  </p>
+                  </p></ContextDetails>
                 </section>
               </>
             )}
@@ -7025,13 +7000,15 @@ function App() {
       )}
       {budgetCategory !== null && (() => {
         const category = budgetCategory;
+        const recommendation = monthGuidance.categories.find(item => item.name === category);
         const events = s.expenses.filter((item) => item.category === category)
           .flatMap((item) => scheduledOccurrences(item, month).map((date) => ({
             item, date, amount: occurrenceAmount(item, date), status: occurrenceStatus(item, date),
           }))).sort((a, b) => a.date.localeCompare(b.date) || a.item.name.localeCompare(b.item.name, "fi"));
         return (
           <Modal title={`${category} · ${month}`} onClose={() => setBudgetCategory(null)}>
-            <p className="muted">Valitun kuukauden menot. Toistuvasta menosta näkyy tämän kuukauden tapahtuma; muokkaus koskee koko sarjaa. Budjetin käsin syötetty toteuma ei muuta näitä kirjauksia.</p>
+            <div className="category-context-status"><StatusBadge>Kuukauden kirjaukset</StatusBadge>{events.some(event => event.item.recurrence !== "once") && <StatusBadge>Muokkaus koskee sarjaa</StatusBadge>}{Object.hasOwn(s.budgetActuals[month] || {}, category) && <StatusBadge tone="warning">Budjetissa oma kokonaistoteuma</StatusBadge>}</div>
+            {recommendation && <ContextDetails title="Ryhmitys ja ohjeraja"><p>{budgetGroupNames[recommendation.group]} · {recommendation.maxPercent === null ? "Ei kategoriakohtaista enimmäisrajaa" : `${percentText(recommendation.maxPercent)} % nettotuloista${recommendation.cap === null ? " · tulopohja puuttuu" : ` · ${euro(recommendation.cap)}`}`}. Ohjearvoja voi muuttaa budjetin raamien asetuksista. Kategoriakortti näyttää kirjaukset; budjetin oma kokonaistoteuman korjaus on erillinen tieto.</p></ContextDetails>}
             <div className="stats budget-category-totals">
               {stat("Kirjatut toteutuneet menot", euro(sum(events.filter((event) => event.status === "actual").map((event) => event.amount))))}
               {stat("Tulevat / suunnitellut menot", euro(sum(events.filter((event) => event.status === "planned").map((event) => event.amount))))}

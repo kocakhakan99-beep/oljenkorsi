@@ -4,7 +4,7 @@ Päivitetty 9.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja eh
 
 ## Käynnissä ja seuraavaksi: yhtenäistäminen
 
-[Toimintojen pääpaikkojen](UNIFICATION_PLAN.md) ensimmäinen yhtenäistämiskierros on valmis. [UX-esittämisen 12 vaihtoehdon priorisointimallin](UX_PRESENTATION_MODEL.md) soveltaminen on käynnissä: valitaan ensimmäinen tarkoitukseen sopiva riittävä esitystapa ja pysähdytään siihen, ei kasata tasoja jokaiseen korttiin. Yhteiset ohjeotsikot avautuvat pyynnöstä, budjetin poikkeamat ovat lyhyitä lukurivejä ja kompassin toistavat perustelut avattavia. Muiden näkymien läpikäynti jatkuu. Nykyisiä ominaisuuksia ei lähtökohtaisesti poisteta.
+[Toimintojen pääpaikkojen](UNIFICATION_PLAN.md) ensimmäinen yhtenäistämiskierros on valmis. [UX-esittämisen 12 vaihtoehdon priorisointimallin](UX_PRESENTATION_MODEL.md) soveltaminen on käynnissä: valitaan ensimmäinen tarkoitukseen sopiva riittävä esitystapa ja pysähdytään siihen, ei kasata tasoja jokaiseen korttiin. Yhteiset ohjeotsikot avautuvat pyynnöstä, budjetin poikkeamat ovat lyhyitä lukurivejä ja kompassin toistavat perustelut avattavia. Yhteiset mittari- ja tilakomponentit on otettu käyttöön yhteenvedossa ja budjetissa; yhteenvedon erittelyt avautuvat tarvittaessa ja budjettiprosentti vastaa budjetin toteumaa. Seuraavaksi raporttien, varallisuuslistojen, kategoriakorttien ja asetusten läpikäynti. Nykyisiä ominaisuuksia ei lähtökohtaisesti poisteta.
 
 ## P0: toistettava ja turvallinen perusta
 
