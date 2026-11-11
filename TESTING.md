@@ -1,5 +1,10 @@
 # Testausraportti 11.11.2026
 
+## Avaimeton Worker 11.11.2026
+
+- 168 yksikkötestiä, TypeScript, ESLint ja tuotantobuild läpäisivät. Chromiumin simuloitu laskupolku varmisti, että Worker valitaan ilman avainkenttää tai vahvistusruutua ja pyyntö ei sisällä Authorization-otsaketta; OpenRouter vaatii edelleen avaimen.
+- Muokattuun Workeriin lähetettiin tästä ympäristöstä avaimeton CORS-esitarkistus sekä fiktiivisellä tekstillä tehty POST, jossa pyydettiin ilmaista Nemotronia. Molemmat palauttivat Cloudflaren HTTP 403 / 1010; tämä ei todista muiden verkkojen toimintaa tai virheen tarkkaa syytä. Onnistunutta todellista Worker-vastausta ei ole varmennettu.
+
 ## Worker oletuksena ja kertakäyttöinen avain 11.11.2026
 
 - 167 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät.
