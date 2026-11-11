@@ -81,7 +81,7 @@ JSON on koko talouden siirrettävä kopio. CSV on tietuelistojen siirtomuoto, ei
 
 Testattu: Google Chrome for Testing 149.0.7827.55, Linux, headless, Playwrightin offline-tila, file://, pysyvä profiili. Selainprosessi suljettiin ja käynnistettiin uudelleen; data säilyi. Edge, Firefox ja Windows-työpöydän kaksoisklikkaus eivät ole testattuja. Koneen fyysistä verkkoliitäntää ei katkaistu.
 
-Yksikkö- ja E2E-testien ajantasaiset tulokset ovat tiedostossa `TESTING.md` ja lokit hakemistossa `qa/`.
+Testien valinta muutoksen mukaan on kuvattu tiedostossa [CONTRIBUTING.md](CONTRIBUTING.md). Aiemmat testiajot löytyvät tiedostosta `TESTING.md` ja niiden lokit hakemistosta `qa/`.
 
 ## Rakenne
 
@@ -97,7 +97,7 @@ Tämä on toimiva ensimmäinen toimitus, ei koko 61-kohdan määrittelyn valmis 
 
 ## Ominaisuuskartoitus ja FIRE-jatkokehitys
 
-Tutkimuspohjainen [ominaisuuskartoitus](FEATURE_RESEARCH.md) erottaa toteutetut toiminnot, aiemmat suunnitelmat ja uudet puutteet. [Lähdemuistio](RESEARCH_SOURCES.md) kuvaa tutkimuksen soveltamisrajat; [FIRE-suunnitelma](FIRE_PLAN.md) määrittelee laskennan ja hyväksyntäesimerkit. [Käyttöliittymän benchmark-muistio](UI_BENCHMARK.md) vertaa julkisia käyttömalleja YNABista, Monarchista ja Copilotista sekä priorisoi jatkokehityksen. Prioriteetit ovat [roadmapissa](ROADMAP.md). FIRE-laskenta on suunnitelma, ei nykyversion ominaisuus.
+Tutkimuspohjainen [ominaisuuskartoitus](FEATURE_RESEARCH.md) erottaa toteutetut toiminnot, aiemmat suunnitelmat ja uudet puutteet. [Lähdemuistio](RESEARCH_SOURCES.md) kuvaa tutkimuksen soveltamisrajat; [FIRE-suunnitelma](FIRE_PLAN.md) määrittelee laskennan ja hyväksyntäesimerkit. [Käyttöliittymän benchmark-muistio](UI_BENCHMARK.md) vertaa julkisia käyttömalleja YNABista, Monarchista ja Copilotista sekä priorisoi jatkokehityksen. Prioriteetit ovat [roadmapissa](ROADMAP.md). Nykyinen FIRE-näkymä sisältää rajatun havainnollistavan laskelman; laajempi elinkaari- ja nostovaiheen mallinnus on suunnitelma.
 
 Kompassin nykyiset havaintoperheet, käyttörajat ja kynnysten tulkinta kuvataan [kompassin päätössäännöissä](COMPASS_ENGINE.md).
 
