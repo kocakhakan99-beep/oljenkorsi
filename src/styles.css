@@ -5532,3 +5532,41 @@ button.primary,
 .ai-card-heading { display: flex; align-items: center; gap: .65rem; }
 .ai-card-heading h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; margin: 0; }
 .ai-key-button { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-width: 44px; min-height: 44px; flex-shrink: 0; }
+
+/* An indeterminate illustration: progress text comes from the real operation. */
+.document-processing {
+  --machine-ink: #174343;
+  --machine-shell: #b5e3d2;
+  --machine-face: #f6fdf9;
+  --machine-slot: #28635c;
+  --machine-accent: #f4a85f;
+  display: flex; align-items: center; gap: 1.1rem;
+  padding: 1rem; margin: .75rem 0; border: 1px solid #8fbfb2;
+  border-radius: 1rem; background: #ecf8f2; color: #173c36;
+}
+.document-processing--invoice { --machine-shell: #c6d8fa; --machine-accent: #e1a15d; background: #eff4ff; border-color: #aabfe1; color: #18344c; }
+.document-processing-art { position: relative; flex: 0 0 220px; height: 100px; overflow: hidden; }
+.document-processing-track { position: absolute; left: 3px; right: 3px; top: 74px; height: 2px; background: currentColor; opacity: .15; }
+.document-processing-machine { position: absolute; width: 122px; height: 90px; left: 49px; top: 5px; z-index: 2; }
+.machine-shell { fill: var(--machine-shell); stroke: var(--machine-ink); stroke-width: 3; }
+.machine-face { fill: var(--machine-face); stroke: var(--machine-ink); stroke-width: 2; }
+.machine-slot { fill: var(--machine-slot); }
+.machine-light { fill: var(--machine-accent); animation: processing-light 1.4s ease-in-out infinite alternate; }
+.machine-feet { fill: none; stroke: var(--machine-ink); stroke-width: 5; stroke-linecap: round; }
+.document-processing-paper { position: absolute; top: 28px; width: 38px; height: 49px; fill: #fff; stroke: var(--machine-ink); stroke-width: 2.5; stroke-linejoin: round; }
+.document-processing-paper--in { left: 0; z-index: 1; animation: processing-in 3.2s ease-in-out infinite; }
+.document-processing-paper--out { right: 0; z-index: 1; animation: processing-out 3.2s ease-in-out infinite; }
+.document-processing-fold,.document-processing-lines { fill: none; stroke: var(--machine-ink); stroke-width: 2; stroke-linecap: round; }
+.document-processing-check { fill: none; stroke: #168452; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.document-processing-spark { position: absolute; color: #bb651c; font-size: 1rem; animation: processing-spark 3.2s ease-in-out infinite; }
+.document-processing-spark--one { left: 157px; top: 12px; }
+.document-processing-spark--two { left: 186px; top: 34px; animation-delay: .2s; font-size: .7rem; }
+.document-processing-copy { min-width: 0; display: grid; justify-items: start; gap: .35rem; }
+.document-processing-copy strong { font-size: 1.05rem; }
+.document-processing-copy p { margin: 0; overflow-wrap: anywhere; }
+@keyframes processing-in { 0% { transform: translateX(-38px) rotate(-9deg); opacity: 0; } 15% { opacity: 1; } 55%, 100% { transform: translateX(100px) rotate(0); opacity: 0; } }
+@keyframes processing-out { 0%, 45% { transform: translateX(-80px) rotate(0); opacity: 0; } 60% { opacity: 1; } 90%, 100% { transform: translateX(40px) rotate(8deg); opacity: 0; } }
+@keyframes processing-light { to { opacity: .35; } }
+@keyframes processing-spark { 0%, 50%, 100% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1); } }
+@media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; } }
+@media (prefers-reduced-motion: reduce) { .document-processing-paper--in, .document-processing-paper--out, .machine-light, .document-processing-spark { animation: none; } .document-processing-paper--in { left: 9px; } .document-processing-paper--out { right: 9px; } .document-processing-spark { opacity: 0; } }

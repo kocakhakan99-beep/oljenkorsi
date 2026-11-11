@@ -1,3 +1,4 @@
+import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
 import { useEffect, useState } from 'react';
@@ -64,6 +65,6 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
     </div>)}
 
     <button disabled={busy || !key.trim() || !documents.some(d => d.text.trim() && !d.suggestion)} onClick={() => void analyze()}>Analysoi laskut</button>
-    {busy && <p role="status">{progress}</p>}{error && <p role="alert">{error}</p>}
+    {busy && <DocumentProcessing kind="invoice" progress={progress} />}{error && <p role="alert">{error}</p>}
   </section>;
 }
