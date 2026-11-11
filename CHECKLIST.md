@@ -125,9 +125,9 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 **Tila: 🟡 PDF-kuittien ja laskujen pudotus sekä erätuonti toteutettu; tilioteparseri jonossa.**
 
 - ✅ PDF-tiedostojen drag and drop kaikissa näkymissä: kuitti/lasku-valinta, ohjaus Menojen vastaavaan skanneriin.
-- ✅ Skannerien pääpaikka Menot; budjetissa pikapainikkeet. Enintään 50 tiedostoa / 100 Mt erässä; kuitit tarkistusjonona, laskut enintään viiden laskun AI-pyynnöissä.
+- ✅ Skannerien pääpaikka Menot; budjetissa pikapainikkeet. Enintään 50 tiedostoa / 100 Mt erässä; kuitit yhteisessä tarkistusnäkymässä ja koko erän atominen tallennus, laskut enintään viiden laskun AI-pyynnöissä.
 - ✅ Pudotus toimii myös Tulot-näkymässä.
-- ✅ Valinnainen kuittien AI-kategorisointi: oletuksena pois; erillinen API-pyyntö lähettää vain nykyisen kuitin tuotenimet ja kategoriavaihtoehdot.
+- ✅ Valinnainen kuittien AI-kategorisointi: oletuksena pois; eräkohtainen API-toiminto lähettää vain yksilölliset tuotenimet ja kategoriavaihtoehdot. Samannimiset tuotteet luokitellaan kerran koko erässä.
 - ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.
 - ⬜ Tilioteparserin suunnittelu ja myöhempi toteutus. Käyttäjä voi toimittaa aluksi kahden pankin esimerkkitiliotteet; aineistoa ei ole vielä saatu eikä pankkiformaatteja määritelty.
 - ⬜ Quick-start-käyttöpolku: nopea käyttöönotto sekä menojen ja tulojen syötön helpottaminen tiedostoista.

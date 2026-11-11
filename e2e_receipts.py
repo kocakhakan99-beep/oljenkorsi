@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get('TALOUS_BROWSER', '/usr/bin/chromium'), headless=True, args=['--no-sandbox'])
         ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
-        page = ctx.new_page(); errors = []; network = []; consoles = []
+        page = ctx.new_page(); page.on('dialog', lambda dialog: dialog.accept()); errors = []; network = []; consoles = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' and not m.location.get('url','').endswith('/favicon.ico') else None)
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
@@ -98,7 +98,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 for select in page.locator('.receipt-product-category select').all():
                     if not select.input_value(): select.select_option('Muu meno')
                 page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
-                page.get_by_role('button', name='Kirjaa', exact=False).click()
+                page.locator('.receipt-review').get_by_role('button', name='Kirjaa', exact=False).click()
                 expect(page.locator('.receipt-review')).to_have_count(0)
                 assert 'receiptImports' not in state(page)
                 mark('Undo restores financial data; re-import still leaves no receipt archive')
@@ -147,7 +147,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(ambiguous)
         expect(page.locator('.receipt-issue-source')).to_contain_text('TUNTEMATON ???')
         page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
-        expect(page.get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
+        expect(page.locator('.receipt-review').get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
         page.set_viewport_size({'width':320, 'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
         page.locator('.receipt-issue-source').scroll_into_view_if_needed(); page.screenshot(path='/tmp/receipt-source-error.png')
