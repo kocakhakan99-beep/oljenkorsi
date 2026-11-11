@@ -66,7 +66,7 @@ export function parseReceipt(pages: ReceiptTextPage[]): ReceiptDraft {
   const receiptId = h ? `K${h[1]} M${h[2]}/${h[3]}` : "";
   const draft: ReceiptDraft = { parserVersion: "receipt-2", chain, merchant, receiptId, date: validDate(date) ? date : "", currency: "EUR", total: null, lines: [], issues: [] };
   const issue = (code: string, message: string, blocking = true, source?: ReceiptSource) => { if (draft.issues.length < 199) draft.issues.push({ code, message, blocking, ...(source ? { source } : {}) }); };
-  if (chain === "unknown" || header < 0) { issue("unsupported", "Kuitin kauppaa tai rakennetta ei tunnistettu. Testatut kaupat ovat Prisma, S-market, Alepa ja K-Citymarket."); return receiptDraftSchema.parse(draft); }
+  if (chain === "unknown" || header < 0) { issue("unsupported", "Kuitin kauppaa tai kassajärjestelmän tapahtumaotsikkoa ei tunnistettu. Testattu PDF-tuki kattaa Prisma-, S-market-, Alepa-, K-Citymarket- ja K-Market-kuitit; tallennus estetään."); return receiptDraftSchema.parse(draft); }
   if (!draft.date) issue("date", "Kuitin ostopäivä puuttuu tai on virheellinen.");
   // Find the purchase block from receipt structure before looking at any amounts.
   // K items follow the transaction header and stop at the dashed rule; S receipts

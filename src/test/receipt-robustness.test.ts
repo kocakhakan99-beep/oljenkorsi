@@ -14,6 +14,7 @@ import koivukyla from "./fixtures/receipt-smarket-koivukyla.json";
 import prismaPlain from "./fixtures/receipt-prisma-plain-7556.json";
 import prismaCredit from "./fixtures/receipt-prisma-credit-4767.json";
 import prismaPlain92 from "./fixtures/receipt-prisma-plain-9285.json";
+import kmarketBasic from "./fixtures/receipt-kmarket-basic.json";
 
 const cases = [
   { fixture: k, total: 3287, count: 15 }, { fixture: jan, total: 12146, count: 22 }, { fixture: mar, total: 7385, count: 27 },
@@ -95,6 +96,15 @@ it("detects a separately encoded copy semantically and restores both parser vers
 });
 it("recognizes the unstarred Prisma PDF as the same purchase as its starred copy", () => {
   expect(receiptKey(parseReceipt(prismaPlain92.pages))).toBe(receiptKey(parseReceipt(nov9.pages)));
+});
+it("parses an anonymized K-Market receipt with quantity evidence and VAT total", () => {
+  const d = parseReceipt(kmarketBasic.pages);
+  expect(d.chain).toBe("k");
+  expect(d.issues).toEqual([]);
+  expect(d.total).toBe(449);
+  expect(d.lines).toHaveLength(2);
+  expect(d.lines[1]).toMatchObject({ net: 121, quantity: 1, unitPrice: 121, unit: "kpl" });
+  expect(d.lines.reduce((sum, line) => sum + line.net, 0)).toBe(d.total);
 });
 it("blocks the unstarred Prisma layout when either product-table boundary is missing", () => {
   const pages = structuredClone(prismaPlain.pages);

@@ -115,7 +115,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Täsmäytys samansuuruiseen saman päivän kerta- tai toistuvaan maksuun; sarjasta korvataan vain yksi esiintymä.
 - 🟡 Kuittituonnin täsmäytys ja ryhmät käytössä; yleisen PDF-tuonnin kuluhyvitykset ja ennuste/maksu-erottelu puuttuvat.
 - 📋 Paikallinen OCR kuvallisille PDF:ille, luokittelumuisti ja usean PDF:n tuonti jatkovaiheina.
-- 🟡 13 oikeaa PDF-kuittia (10 eri ostosta) varmennettu, mukaan lukien Prisman tähdetön taitto ja kaksi maksutavan esitystapaa; kuvakuitteja ja lasku-/sopimusesimerkkejä tarvitaan jatkoon.
+- 🟡 13 aiempaa PDF-kuittia ja viimeisimmän erän 15 kuittia parsittiin; ABC-polttoainekuitti ja palautuskuitti rajattiin pois. Kaikki 21 raaka-PDF:ää on poistettu nykyisestä haarapuusta; anonymisoitu K-Market-regressio jää testiin.
 - ⬜ Tilit, alkusaldot, sisäiset siirrot ja pankkitapahtumiin täsmäytys.
 
 ### Uusi käyttäjätoive: tiedoston pudotus ja tiliotteet
@@ -159,7 +159,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 162 yksikkötestiä, Chromium-selainvarmennukset ja kaikkien 13 kuitti-PDF:n (10 eri ostosta) tarkistukset.
+- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 163 yksikkötestiä, Chromium-selainvarmennukset ja 15/17 uusimman kuittierän PDF-tarkistusta; yksi K-Market-fixture lisätty.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.
