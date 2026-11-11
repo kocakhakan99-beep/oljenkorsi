@@ -6,7 +6,9 @@ Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus.
 
 ## Valinnainen AI-laskuanalyysi
 
-`index-online.html` on erillinen verkkoversio. Avaa Menot → Analysoi lasku tai budjetin Analysoi lasku -pikatoiminto, valitse tekstimuotoinen PDF tai liitä laskuteksti, tarkista lähetettävä teksti ja syötä oma OpenRouter-avain. Lähetyspainike välittää näytetyn tekstin OpenRouterille ja tämän valitsemalle mallipalvelulle. `openrouter/free` käyttää ilmaismallien reititintä; saatavuus, kiintiöt ja palveluntarjoajien tietojenkäsittely vaihtelevat. Tarkista nimet, summat ja eräpäivät ennen kuin valitset kertamenon tai toistuvan laskun ja tallennat sen. Avain ja laskuteksti eivät tallennu talousdataan. Kuva-PDF:t tarvitsevat OCR:n, jota ei vielä ole. API-yhteyttä, mallien saatavuutta ja `file://`-osoitteen CORS-tukea ei ole varmennettu oikealla avaimella; jos selain estää pyynnön, kokeile HTTPS-palvelua. Paikallinen `index.html` ei salli verkkoyhteyksiä. Eri HTML-tiedostojen selaintallennus voi olla erillinen etenkin file://-käytössä: siirrä olemassa oleva talous tarvittaessa JSON-varmuuskopiolla ja tarkista palautuksen vaikutus ennen hyväksymistä.
+Tavallisessa `index.html`-sovelluksessa avaa **Menot → Analysoi lasku** tai budjetin vastaava pikatoiminto. Valitse tekstimuotoinen PDF tai liitä laskuteksti, tarkista lähetettävä teksti ja syötä OpenRouter-avain. Painike **Lähetä teksti analysoitavaksi** lähettää tekstin OpenRouterille ja sen valitsemalle mallipalvelulle. `openrouter/free` käyttää ilmaismallien reititintä; saatavuus, kiintiöt ja tietojenkäsittelyehdot voivat vaihdella. Tarkista AI:n ehdotus ennen menon tallentamista. Avain ja laskuteksti eivät tallennu talousdataan.
+
+Muut ominaisuudet toimivat edelleen ilman verkkoyhteyttä. Kuvapohjaiset PDF:t tarvitsevat OCR:n, jota ei vielä ole. Jos analyysi epäonnistuu, tarkista sovelluksen virheilmoitus, API-avain sekä OpenRouterin ilmaismallien kiintiö ja Privacy-asetukset. `index-online.html` säilyy yhteensopivuuskopiona, mutta sen erillinen avaaminen ei ole tarpeen. `file://`-käytössä eri HTML-tiedostojen selaintallennus voi olla erillinen; käytä aiempaa tiedostoa tai siirrä tiedot JSON-varmuuskopiolla.
 
 ## Käyttö ilman asennusta
 
@@ -93,7 +95,7 @@ Testien valinta muutoksen mukaan on kuvattu tiedostossa [CONTRIBUTING.md](CONTRI
 
 ## Tietosuoja ja turvallisuus
 
-Offline-versio ei käytä ajonaikaisia ulkoisia resursseja tai API-kutsuja; sen CSP estää verkkoyhteydet. Erillinen verkkoversio sallii käyttäjän käynnistämän OpenRouter-laskuanalyysin. Tietojen suojaus ei kata haittaohjelmia, laajennuksia tai laitteen muita käyttäjiä. Katso `PRIVACY.md` ja `SECURITY.md`.
+Sovellus sallii OpenRouter-yhteyden vain käyttäjän käynnistämään laskuanalyysiin. Muut ominaisuudet toimivat ilman verkkoyhteyttä. Tietojen suojaus ei kata haittaohjelmia, laajennuksia tai laitteen muita käyttäjiä. Katso `PRIVACY.md` ja `SECURITY.md`.
 
 ## Rajaus
 

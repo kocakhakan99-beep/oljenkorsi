@@ -21,7 +21,7 @@ const charsetTag = /<meta charset="UTF-8"\s*\/?>/i;
 if (!charsetTag.test(h)) throw new Error('Charset metadata missing from standalone HTML');
 h = h.replace(
   charsetTag,
-  '<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src \'none\'; font-src data:; object-src \'none\'; base-uri \'none\'; form-action \'none\'">',
+  '<meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data:; connect-src https://openrouter.ai; font-src data:; object-src \'none\'; base-uri \'none\'; form-action \'none\'">',
 );
 if (!h.includes('Content-Security-Policy')) throw new Error('CSP missing from standalone HTML');
 if (!h.includes('font-src data:') || !/data:font\/woff2;base64,/.test(h)) {
@@ -32,6 +32,6 @@ if (/<script\b[^>]*\bsrc=|<link\b[^>]*\bhref=/i.test(h)) {
 }
 h = h.replace(/^[ \t]+$/gm, '');
 fs.writeFileSync('index.html', h);
-const online = h.replace("connect-src 'none'", "connect-src https://openrouter.ai").replace('</head>', '<meta name="invoice-online" content="true"></head>');
-fs.writeFileSync('index-online.html', online);
+// Säilytä aiemman verkkotiedoston osoite yhteensopivuussyistä.
+fs.writeFileSync('index-online.html', h);
 fs.rmSync('dist', { recursive: true });
