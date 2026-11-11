@@ -438,6 +438,14 @@ describe("Toistuvuus ja päivät", () => {
     ]);
     expect(scheduledOccurrences(newYearPay, "2028-01")).toEqual([]);
   });
+  it("ottaa pankkipäiväsiirron käyttöön myös aiemmille toistuville palkoille ja etuuksille", () => {
+    const state = empty();
+    state.incomes = ["Palkka", "Etuudet", "Muu tulo"].map(category => entry({ name: category, category, amount: 10000, date: "2027-05-16", recurrence: "monthly", adjustToPreviousBankDay: false }));
+    const restored = restore(backup(state));
+    expect(scheduledOccurrences(restored.incomes[0], "2027-05")).toEqual(["2027-05-14"]);
+    expect(scheduledOccurrences(restored.incomes[1], "2027-05")).toEqual(["2027-05-14"]);
+    expect(scheduledOccurrences(restored.incomes[2], "2027-05")).toEqual(["2027-05-16"]);
+  });
   it("toistuvan tapahtuman yksittäinen tila ei muuta sarjan muita kuukausia", () => {
     const item = entry({
       date: "2026-11-10",
