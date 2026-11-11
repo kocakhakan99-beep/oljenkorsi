@@ -37,9 +37,11 @@ with sync_playwright() as p:
     print('PASS: index.html, OpenRouter mock, review, recurring expense, and data minimization')
     worker_page = browser.new_page()
     worker_requests = []
+    worker_headers = []
     def worker_handle(route):
         if route.request.method == 'POST':
             worker_requests.append(route.request.post_data_json)
+            worker_headers.append(route.request.headers)
         route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
     worker_page.route('https://api-worker.kocakhakan99.workers.dev/chat', worker_handle)
     worker_page.goto(url)
@@ -48,15 +50,14 @@ with sync_playwright() as p:
     worker_page.get_by_role('button', name='Analysoi lasku', exact=True).click()
     expect(worker_page.get_by_label('AI-palvelu')).to_have_value('worker')
     worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
-    worker_page.get_by_label('Worker Bearer-avain').fill('worker-test-key')
+    assert worker_page.get_by_label('Worker Bearer-avain').count() == 0
     submit = worker_page.get_by_role('button', name='Lähetä teksti analysoitavaksi')
-    expect(submit).to_be_disabled()
-    worker_page.get_by_label('Vahvistan, että Worker', exact=False).check()
+    expect(submit).to_be_enabled()
     submit.click()
     expect(worker_page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
-    expect(worker_page.get_by_label('Worker Bearer-avain')).to_have_value('')
-    expect(submit).to_be_disabled()
+    expect(submit).to_be_enabled()
     assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
-    assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
-    print('PASS: Worker free-model confirmation, mock request, and no key persistence')
+    assert 'authorization' not in worker_headers[0]
+    assert 'Fiktiivinen lasku' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
+    print('PASS: Worker uses an unauthenticated free-model mock request')
     browser.close()

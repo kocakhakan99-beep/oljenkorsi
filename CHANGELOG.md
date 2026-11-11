@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Avaimeton Cloudflare Worker 11.11.2026
+
+Worker-analyysi ei enää vaadi Bearer-avainta eikä ylimääräistä vahvistusruutua. Suora OpenRouter-yhteys vaatii edelleen käyttäjän antaman avaimen. Sovellus pyytää vain ilmaismallien tunnisteita.
+
 ### Worker oletuksena ja avain joka analyysiin 11.11.2026
 
 Laskuanalyysin oletuspalvelu on Cloudflare Worker, ja Bearer-avain syötetään jokaisen analyysin alussa. Avainta ei tallenneta; Worker-avain voi olla eri kuin Cloudflare-tilin API-token. Suora OpenRouter säilyy valittavana, ja Worker vaatii ilmaismallin palvelinpuolen vahvistuksen.
