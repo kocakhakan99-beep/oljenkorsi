@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { ScanLine } from "lucide-react";
-import { receiptFileError } from "../domain/receipts/files";
+import { importBatchError } from "../domain/receipts/files";
 
 /** Window capture reaches headings, cards, buttons and native file inputs alike. */
-export function ReceiptDropZone({ enabled, onFile, onError }: { enabled: boolean; onFile: (file: File) => void; onError: (message: string) => void }) {
+export function ReceiptDropZone({ enabled, onFiles, onError }: { enabled: boolean; onFiles: (files: File[], kind: "receipt" | "invoice") => void; onError: (message: string) => void }) {
   const [over, setOver] = useState(false);
-  const depth = useRef(0), current = useRef({ enabled, onFile, onError });
-  current.current = { enabled, onFile, onError };
+  const [pending, setPending] = useState<File[]>([]);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => { if (pending.length) dialog.current?.showModal(); }, [pending]);
+  const depth = useRef(0), current = useRef({ enabled, onFiles, onError });
+  current.current = { enabled, onFiles, onError };
   useEffect(() => { if (!enabled) { depth.current = 0; setOver(false); } }, [enabled]);
   useEffect(() => {
     const isFile = (e: DragEvent) => Array.from(e.dataTransfer?.types || []).includes("Files");
@@ -30,9 +33,9 @@ export function ReceiptDropZone({ enabled, onFile, onError }: { enabled: boolean
       if (!current.current.enabled) return;
       if (document.querySelector("dialog[open]")) { current.current.onError("Sulje avoin ikkuna ennen PDF-kuitin pudottamista."); return; }
       const files = Array.from(e.dataTransfer?.files || []);
-      const error = receiptFileError(files);
+      const error = importBatchError(files);
       if (error) { current.current.onError(error); return; }
-      current.current.onFile(files[0]);
+      setPending(files);
     };
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") reset(); };
     window.addEventListener("dragenter", enter, true); window.addEventListener("dragover", overFile, true);
@@ -44,5 +47,5 @@ export function ReceiptDropZone({ enabled, onFile, onError }: { enabled: boolean
       window.removeEventListener("dragend", reset); window.removeEventListener("blur", reset); window.removeEventListener("keydown", key);
     };
   }, []);
-  return over && enabled ? <div className="receipt-drop-overlay" role="status"><div><ScanLine size={38} aria-hidden="true" /><strong>Pudota PDF-kuitti</strong><span>Avataan kuittiskannaus menoissa</span></div></div> : null;
+  return <>{pending.length > 0 && <dialog ref={dialog} onCancel={() => setPending([])} aria-label="Valitse tuontitapa"><h2>{pending.length} PDF-tiedostoa</h2><p>Ovatko tiedostot kuitteja vai laskuja? Tuo erityyppiset tiedostot erikseen.</p>{(["receipt", "invoice"] as const).map(kind => <button key={kind} onClick={() => { dialog.current?.close(); onFiles(pending, kind); setPending([]); }}>{kind === "receipt" ? "Kuitti" : "Lasku"}</button>)}<button onClick={() => { dialog.current?.close(); setPending([]); }}>Peruuta</button></dialog>}{over && enabled ? <div className="receipt-drop-overlay" role="status"><div><ScanLine size={38} aria-hidden="true" /><strong>Pudota PDF-tiedostot</strong><span>Valitse seuraavaksi kuitti tai lasku</span></div></div> : null}</>;
 }

@@ -1,46 +1,70 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { receiptPDF } from '../services/receipt-pdf';
-import { analyzeInvoice, type InvoiceSuggestion, type InvoiceProvider } from '../services/invoice-ai';
+import { receiptFileError, importBatchError } from '../domain/receipts/files';
+import { analyzeInvoiceBatch, type InvoiceSuggestion, type InvoiceProvider } from '../services/invoice-ai';
 
-export function InvoiceScanner({ onUse }: { onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void }) {
+type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string };
+export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void; files?: File[] }) {
   const [key, setKey] = useState('');
   const [provider, setProvider] = useState<InvoiceProvider>('worker');
-  const [text, setText] = useState('');
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [suggestion, setSuggestion] = useState<InvoiceSuggestion | null>(null);
-  function useSuggestion(recurring: boolean) {
-    if (!suggestion) return;
-    onUse(suggestion, recurring); setKey(''); setText(''); setSuggestion(null);
+  const [progress, setProgress] = useState('');
+  async function readFiles(selected: File[]) {
+    if (busy) { setError("Odota nykyisen käsittelyn valmistumista ennen uutta tuontia."); return; }
+    if (documents.length && !window.confirm("Korvataanko nykyiset laskuluonnokset uusilla tiedostoilla?")) return;
+    const validation = importBatchError(selected);
+    if (validation) { setError(validation); return; }
+    setError(''); setBusy(true);
+    const next: Document[] = [];
+    for (const file of selected) {
+      setProgress(`Luetaan ${next.length + 1}/${selected.length}: ${file.name}`);
+      try {
+        const validation = receiptFileError([file]); if (validation) throw Error(validation);
+        const result = await receiptPDF(file, new AbortController().signal, () => {});
+        const text = result.pages.map(page => page.lines.join('\n')).join('\n\n');
+        if (text.length > 20000) throw Error('Laskuteksti on liian pitkä erätuontiin (enintään 20 000 merkkiä).');
+        next.push({ name: file.name, text });
+      } catch (reason) { next.push({ name: file.name, text: '', error: reason instanceof Error ? reason.message : 'PDF:n luku epäonnistui.' }); }
+    }
+    setDocuments(next); setBusy(false); setProgress('');
   }
-  async function readFile(file: File) {
-    setError(''); setSuggestion(null); setText(''); setBusy(true);
-    try {
-      const result = await receiptPDF(file, new AbortController().signal, () => {});
-      const extracted = result.pages.map(page => page.lines.join('\n')).join('\n\n');
-      if (extracted.length > 30000) throw Error('Laskun teksti on liian pitkä. Lyhennä se ennen analyysiä.');
-      setText(extracted);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'PDF:n lukeminen epäonnistui.'); }
-    finally { setBusy(false); }
-  }
+  useEffect(() => { if (files.length) void readFiles(files); }, [files]);
   async function analyze() {
-    const requestKey = key;
-    setKey(''); setError(''); setSuggestion(null); setBusy(true);
-    try { setSuggestion(await analyzeInvoice(requestKey, text, provider)); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Analyysi epäonnistui.'); }
-    finally { setBusy(false); }
+    const requestKey = key; setKey(''); setBusy(true); setError('');
+    const next = documents.map(d => ({ ...d }));
+    try {
+      // Bound both document count and prompt size. A large upload is split into
+      // small requests, while short invoices share a single request.
+      const pending = next.map((d, i) => ({ d, i })).filter(({ d }) => d.text.trim() && !d.suggestion);
+      for (let offset = 0; offset < pending.length;) {
+        const group: typeof pending = []; let length = 0;
+        while (offset < pending.length && group.length < 5 && length + pending[offset].d.text.length < 24000) {
+          const item = pending[offset++]; group.push(item); length += item.d.text.length;
+        }
+        setProgress(`Analysoidaan ${offset}/${pending.length} laskua…`);
+        const suggestions = await analyzeInvoiceBatch(requestKey, group.map(({ d }) => d.text), provider);
+        group.forEach(({ i }, index) => { next[i] = { ...next[i], suggestion: suggestions[index], error: undefined }; });
+        setDocuments([...next]);
+      }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Analyysi epäonnistui.'); }
+    finally { setBusy(false); setProgress(''); }
   }
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
     <h2>Laskun AI-analyysi</h2>
-    <p>Valitse tekstimuotoinen PDF tai liitä teksti. Tarkista ja poista tekstistä henkilötiedot ennen lähettämistä. {provider === "worker" ? "Koko alla näkyvä teksti lähetetään Cloudflare Workerille ja sen käyttämälle mallipalvelulle." : "Koko alla näkyvä teksti lähetetään OpenRouterille ja sen valitsemalle mallipalvelulle."} Tarkista palveluiden tietojen käsittelyehdot. Kuvapohjaiset PDF:t tarvitsevat OCR:n.</p>
-    <label>Valitse laskun PDF<input type="file" accept="application/pdf,.pdf" disabled={busy} onChange={event => { const file = event.target.files?.[0]; if (file) void readFile(file); event.target.value = ''; }} /></label>
-    <label>Lähetettävä laskuteksti<textarea rows={8} value={text} maxLength={30000} onChange={event => { setText(event.target.value); setSuggestion(null); }} placeholder="Liitä laskuteksti tai valitse PDF" /></label>
-    <label>AI-palvelu<select aria-label="AI-palvelu" value={provider} disabled={busy} onChange={event => { setProvider(event.target.value as InvoiceProvider); setKey(''); setSuggestion(null); setError(''); }}><option value="openrouter">OpenRouter</option><option value="worker">Cloudflare Worker</option></select></label>
-    {provider === "worker" && <p>Workerin API-avain on Workerin salaisuutena määritelty APP_API_KEY. OpenRouter-avain pysyy Workerissä.</p>}
-    <label>{provider === "worker" ? "Worker API-avain" : "OpenRouter API-avain"}<input type="password" autoComplete="off" value={key} onChange={event => setKey(event.target.value)} /></label>
-    <p>API-avain syötetään jokaista analyysiä varten eikä sitä tallenneta. OpenRouterin ilmaismallireititin valitsee mallin automaattisesti. Analyysi voi kestää puolitoista minuuttia. Saatavuus ja kiintiöt voivat vaihdella. AI voi erehtyä.</p>
-    <button type="button" disabled={busy || !text.trim() || !key.trim()} onClick={() => void analyze()}>{busy ? 'Käsitellään…' : 'Lähetä teksti analysoitavaksi'}</button>
-    {error && <p role="alert">{error}</p>}
-    {suggestion && <div role="status"><h3>Tarkista ehdotus</h3><p>{suggestion.name || 'Nimi puuttuu'} · {suggestion.amountCents === null ? 'Summa puuttuu' : new Intl.NumberFormat('fi-FI', {style:'currency',currency:'EUR'}).format(suggestion.amountCents / 100)} · {suggestion.date || 'Eräpäivä puuttuu'}</p><p>Valitse kirjaustapa ja tarkista kaikki kentät seuraavassa lomakkeessa. Toistuvan laskun oletus on kuukausittain; rytmiä voi muuttaa lisävalinnoissa. Varmista myös, ettei lasku ole jo kirjattu.</p><button type="button" onClick={() => useSuggestion(false)}>Jatka kertamenona</button> <button type="button" onClick={() => useSuggestion(true)}>Jatka toistuvana laskuna</button></div>}
+    <p>Valitse enintään 50 PDF-laskua (yhteensä 100 Mt) tai liitä teksti. Tarkista lähetettävät tekstit: ne lähetetään valitulle palvelulle ja OpenRouterin ilmaismallille vasta analysoitaessa. Kuvamuotoinen PDF tarvitsee OCR:n.</p>
+    <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
+    {!documents.length && <button onClick={() => setDocuments([{ name: 'Liitetty lasku', text: '' }])}>Liitä laskuteksti</button>}
+    {documents.map((document, index) => <div key={index}>
+      <details open={documents.length === 1}><summary>{document.name}{document.suggestion ? ' · Analysoitu' : ''}</summary><label>Lähetettävä laskuteksti<textarea disabled={busy} rows={5} maxLength={20000} value={document.text} onChange={e => setDocuments(old => old.map((d, i) => i === index ? { ...d, text: e.target.value, suggestion: undefined, error: undefined } : d))} /></label></details>
+      {document.error && <p role="alert">{document.error}</p>}
+      {document.suggestion && <div><p>{document.suggestion.name || 'Nimi puuttuu'} · {document.suggestion.amountCents === null ? 'Summa puuttuu' : new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(document.suggestion.amountCents / 100)} · {document.suggestion.date || 'Eräpäivä puuttuu'}</p><p>Tarkista tiedot menolomakkeessa ennen tallentamista.</p>{[false, true].map(recurring => <button key={String(recurring)} onClick={() => { onUse(document.suggestion!, recurring); setDocuments(old => old.filter((_, i) => i !== index)); }}>{recurring ? 'Jatka toistuvana laskuna' : 'Jatka kertamenona'}</button>)}</div>}
+    </div>)}
+    <label>AI-palvelu<select value={provider} disabled={busy} onChange={e => { setProvider(e.target.value as InvoiceProvider); setKey(''); }}><option value="worker">Cloudflare Worker</option><option value="openrouter">OpenRouter</option></select></label>
+    <label>{provider === 'worker' ? 'Worker API-avain' : 'OpenRouter API-avain'}<input type="password" autoComplete="off" value={key} onChange={e => setKey(e.target.value)} /></label>
+    <p>Avainta ei tallenneta. Enintään viisi laskua yhdessä pyynnössä; pitkät laskut pienemmissä erissä. AI voi erehtyä.</p>
+    <button disabled={busy || !key.trim() || !documents.some(d => d.text.trim() && !d.suggestion)} onClick={() => void analyze()}>Analysoi laskut</button>
+    {busy && <p role="status">{progress}</p>}{error && <p role="alert">{error}</p>}
   </section>;
 }

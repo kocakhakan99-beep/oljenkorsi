@@ -4,7 +4,9 @@
 
 **Menot → Skannaa kuitti → Valitse PDF → Tarkista → Kirjaa menoihin.**
 
-Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella yhden PDF-kuitin voi myös pudottaa mihin tahansa Menot-, Budjetti- tai Asetukset-näkymässä: sovellus siirtyy menoihin, avaa skannerin ja käynnistää poiminnan. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
+Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella 1–50 PDF-tiedostoa (enintään 100 Mt yhteensä) voi pudottaa missä tahansa näkymässä: valitse Kuitti tai Lasku, jolloin sovellus avaa oikean skannerin menoissa. Kuitit tarkistetaan jonosta yksitellen. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
+
+Valinnainen **AI-avusteinen kategorisointi** on oletuksena pois. Sen kytkeminen päälle ei vielä lähetä mitään: syötä Worker-avain ja paina **Ehdota kategoriat**. Vain tuotenimet ja sallitut kategoriat lähetetään Workerille ja OpenRouterin ilmaismallille. Tarkista ehdotukset; summien validointi säilyy paikallisena.
 
 1. Valitse Prisman, S-marketin, Alepan, K-Citymarketin tai K-Marketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
