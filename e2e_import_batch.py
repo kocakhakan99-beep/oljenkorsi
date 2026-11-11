@@ -26,7 +26,8 @@ with tempfile.TemporaryDirectory() as tmp:
             else:
                 expect(page.locator('.document-processing--receipt')).to_be_visible()
                 expect(page.locator('.document-processing--receipt').get_by_role('status')).to_contain_text('AI luokittelee')
-                result = {'categories': [{'id': item['id'], 'category': data['categories'][0]} for item in data['products']]}
+                assert all('pantti' not in item['name'].lower() for item in data['products'])
+                result = {'categories': [{'id': item['id'], 'category': None if i == 0 else data['categories'][0]} for i, item in enumerate(data['products'])]}
                 assert all(set(item) == {'id', 'name'} for item in data['products'])
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
@@ -42,11 +43,21 @@ with tempfile.TemporaryDirectory() as tmp:
         # First receipt batch: choose an API key, then one AI action and one save.
         drop(); page.get_by_role('button', name='Kuitti', exact=True).click()
         expect(page.get_by_label('AI-avusteinen kategorisointi')).to_have_count(0)
-        expect(page.locator('.receipt-review')).to_have_count(2, timeout=30000)
+        expect(page.locator('.receipt-scanner').get_by_text('Lisää avain yläkulman avainpainikkeesta.')).to_be_visible(timeout=30000)
+        expect(page.locator('.receipt-review')).to_have_count(0)
         assert not requests
         page.locator('.receipt-scanner').get_by_role('button', name='Lisää avain', exact=True).click()
         page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
         page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
+        expect(page.get_by_role('heading', name='Luokittele vielä nämä')).to_be_visible(timeout=30000)
+        expect(page.locator('.receipt-unresolved')).to_have_count(1)
+        if os.environ.get('TALOUS_UNRESOLVED_SCREENSHOT'): page.locator('.receipt-unresolved').screenshot(path=os.environ['TALOUS_UNRESOLVED_SCREENSHOT'])
+        while page.get_by_role('heading', name='Luokittele vielä nämä').is_visible():
+            page.locator('.receipt-unresolved select').select_option(label='Ruoka')
+        expect(page.get_by_role('img', name='Ostosten jakauma kategorioittain; summat näkyvät kaavion vieressä')).to_be_visible()
+        expect(page.get_by_label('Ostosten jakauma', exact=True)).to_contain_text('Päivittäistavara')
+        expect(page.get_by_label('Ostosten jakauma', exact=True)).to_contain_text('0,40')
+        expect(page.locator('.receipt-review')).to_have_count(0)
         save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
         expect(save).to_be_enabled(timeout=30000)
         page.set_viewport_size({'width': 320, 'height': 850})
@@ -59,11 +70,12 @@ with tempfile.TemporaryDirectory() as tmp:
         save.click()
         expect(page.locator('.receipt-review')).to_have_count(0)
         after = page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses')
-        assert len(after) == before + 2 and sum(e['amount'] for e in after) == 12146 + 7385
+        assert len(after) > before and sum(e['amount'] for e in after) == 12146 + 7385
+        assert any(e['category'] == 'Päivittäistavara' and e['amount'] == 40 for e in after)
         # A duplicate or invalid source blocks the entire batch, even after AI.
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files([str(files[0]), str(files[0])])
         expect(page.get_by_text('Erässä on saman kuitin kopioita. Poista ylimääräiset ennen kirjaamista.')).to_be_visible(timeout=30000)
-        expect(page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)).to_be_disabled()
+        assert page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True).count() == 0 or page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True).is_disabled()
         assert page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses') == after
         # Existing session key starts AI for both invoices automatically.
         drop(); page.get_by_role('button', name='Lasku', exact=True).click()

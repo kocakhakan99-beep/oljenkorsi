@@ -129,7 +129,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Pudotus toimii myös Tulot-näkymässä.
 - ✅ AI-palveluvalinta poistettu: kaikki analyysit oman Workerin kautta. Laskujen lisätiedot ja sovelluksen AI-käyttökohteet priorisoitu PDF-tuontisuunnitelmassa (jatko-ominaisuudet eivät vielä toteutettuja).
 - ✅ Skannerien avainpainike: yksi avaimen syöttö välilehden istunnossa, sama Worker-avain molemmille skannereille, vaihto ja poisto painikkeesta. Lyhyet käyttöohjeet skannerikorteissa.
-- ✅ Kuittien AI-kategorisointi kuuluu oletuspolkuun; eräkohtainen API-toiminto lähettää vain yksilölliset tuotenimet ja kategoriavaihtoehdot. Samannimiset tuotteet luokitellaan kerran koko erässä.
+- ✅ Kuittien AI-kategorisointi kuuluu oletuspolkuun; eräkohtainen API-toiminto lähettää vain yksilölliset tuotenimet ja kategoriavaihtoehdot. Samannimiset tuotteet luokitellaan kerran koko erässä. Pantti luokitellaan automaattisesti Päivittäistavaraan; epäselvät tuotteet kysytään yksitellen ja valmiista erästä näytetään piirakkajakauma.
 - ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.
 - ⬜ Tilioteparserin suunnittelu ja myöhempi toteutus. Käyttäjä voi toimittaa aluksi kahden pankin esimerkkitiliotteet; aineistoa ei ole vielä saatu eikä pankkiformaatteja määritelty.
 - ⬜ Quick-start-käyttöpolku: nopea käyttöönotto sekä menojen ja tulojen syötön helpottaminen tiedostoista.
