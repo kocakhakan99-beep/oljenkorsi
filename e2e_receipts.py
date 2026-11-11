@@ -41,7 +41,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' and not m.location.get('url','').endswith('/favicon.ico') else None)
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
-        page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
+        page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click()
         expected_originals = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
         expected = expected_originals + [(7556, 22, '2026-10-17'), (4767, 15, '2026-04-12'), (9285, 20, '2026-11-09')] if not args.pdfs else expected_originals
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
@@ -91,7 +91,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             assert all(name not in after_text for name in product_names)
             mark(f'PDF {i+1}: expenses saved in purchase month; receipt and product details discarded')
             if i == 0:
+                page.get_by_role('button', name='Sulje kuittiskannaus').click()
                 page.get_by_role('button', name='Kumoa', exact=True).click()
+                page.get_by_role('button', name='Lisää kuitti', exact=True).click()
                 assert state(page) == before
                 page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
                 expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
@@ -103,13 +105,14 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 assert 'receiptImports' not in state(page)
                 mark('Undo restores financial data; re-import still leaves no receipt archive')
         saved = state(page)
+        page.get_by_role('button', name='Sulje kuittiskannaus').click()
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_be_visible()
         # Receipt undo must expire after a later saved change, never erase that change.
         nav(page, 'Asetukset'); page.get_by_label('Väritila', exact=True).select_option('dark')
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_have_count(0)
-        nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click(); saved = state(page)
+        nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click(); saved = state(page)
         mark('Later saved change expires receipt undo safely')
-        page.reload(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
+        page.reload(); nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click()
         assert state(page) == saved and 'receiptImports' not in saved
         assert not any(e['description'].startswith('Kuittituonti ') for e in saved['expenses'])
         mark('Only ordinary expenses persist after reload; receipt and product details do not')

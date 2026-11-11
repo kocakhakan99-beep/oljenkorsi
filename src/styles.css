@@ -5570,3 +5570,8 @@ button.primary,
 @keyframes processing-spark { 0%, 50%, 100% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1); } }
 @media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; } }
 @media (prefers-reduced-motion: reduce) { .document-processing-paper--in, .document-processing-paper--out, .machine-light, .document-processing-spark { animation: none; } .document-processing-paper--in { left: 9px; } .document-processing-paper--out { right: 9px; } .document-processing-spark { opacity: 0; } }
+
+.scanner-dialog { width: min(960px, 94vw); }
+.scanner-dialog > .panel { margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
+.entry-head-actions button, .receipt-scan-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+.entry-head-actions button svg, .receipt-scan-button svg { flex-shrink: 0; }

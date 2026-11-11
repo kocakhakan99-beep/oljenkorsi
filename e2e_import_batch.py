@@ -42,6 +42,9 @@ with tempfile.TemporaryDirectory() as tmp:
         # Drop from dashboard: choose receipt, inspect queue, no network.
         drop(); page.get_by_role('button', name='Kuitti', exact=True).click()
         expect(page.locator('.receipt-review')).to_have_count(2, timeout=30000)
+        page.get_by_role('button', name='Sulje kuittiskannaus').click()
+        page.get_by_role('button', name='Lisää kuitti', exact=True).click()
+        expect(page.locator('.receipt-review')).to_have_count(2)
         assert not requests
         page.get_by_label('AI-avusteinen kategorisointi').check()
         assert not requests

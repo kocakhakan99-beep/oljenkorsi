@@ -2,9 +2,9 @@
 
 ## Käyttö
 
-**Menot → Skannaa kuitti → Valitse PDF → Tarkista → Kirjaa menoihin.**
+**Menot → Lisää kuitti → Valitse PDF → Tarkista → Kirjaa menoihin.**
 
-Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella 1–50 PDF-tiedostoa (enintään 100 Mt yhteensä) voi pudottaa missä tahansa näkymässä: valitse Kuitti tai Lasku, jolloin sovellus avaa oikean skannerin menoissa. Kaikki kuitit luetaan ja näytetään samassa tarkistusnäkymässä. Koko erän voi kirjata yhdellä kertaa; virhe estää koko erän tallennuksen. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
+Budjetin **Lisää kuitti** avaa saman skannerin menoissa. Tietokoneella 1–50 PDF-tiedostoa (enintään 100 Mt yhteensä) voi pudottaa missä tahansa näkymässä: valitse Kuitti tai Lasku, jolloin sovellus avaa oikean skannerin menoissa. Kaikki kuitit luetaan ja näytetään samassa tarkistusnäkymässä. Koko erän voi kirjata yhdellä kertaa; virhe estää koko erän tallennuksen. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
 Valinnainen **AI-avusteinen kategorisointi** on oletuksena pois. Sen kytkeminen päälle ei vielä lähetä mitään: lisää avain kortin oikean yläkulman avainpainikkeesta ja paina **Ehdota kategoriat koko erälle**. Koko erän yksilölliset tuotenimet ja sallitut kategoriat lähetetään Workerille ja OpenRouterin ilmaismallille. Tarkista ehdotukset; summien validointi säilyy paikallisena.
 

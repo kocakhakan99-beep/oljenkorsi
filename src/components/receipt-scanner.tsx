@@ -15,8 +15,8 @@ import { receiptPDF } from "../services/receipt-pdf";
 
 const euro = (n: number) => new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR" }).format(n / 100);
 export interface ReceiptScannerHandle { scanFile: (file: File) => boolean; scanFiles: (files: File[]) => void; focusPanel: () => void }
-export function ReceiptScanButton({ onClick, label = "Skannaa kuitti", expanded }: { onClick: () => void; label?: string; expanded?: boolean }) {
-  return <button type="button" onClick={onClick} aria-controls="receipt-workspace" aria-expanded={expanded} className="receipt-scan-button" title={label === "Skannaa kuitti" ? "PDF-kuitti · voit myös pudottaa tiedoston näkymään" : "Avaa kuittiskannaus Menot-näkymässä"}><ScanLine size={18} aria-hidden="true" />{label}</button>;
+export function ReceiptScanButton({ onClick, label = "Lisää kuitti", expanded }: { onClick: () => void; label?: string; expanded?: boolean }) {
+  return <button type="button" onClick={onClick} aria-haspopup="dialog" aria-expanded={expanded} className="receipt-scan-button" title={label === "Lisää kuitti" ? "PDF-kuitti · voit myös pudottaa tiedoston näkymään" : "Avaa kuittiskannaus Menot-näkymässä"}><ScanLine size={18} aria-hidden="true" />{label}</button>;
 }
 type BatchItem = { id: string; name: string; draft?: ReceiptDraft; error?: string };
 type ReviewHandle = { prepare: (state: State) => State; check: (checked: boolean) => void; apply: (categories: Record<string, string>) => void };
@@ -87,7 +87,7 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
     } catch (e) { setError(e instanceof Error ? e.message : "Erän kirjaus epäonnistui. Mitään ei tallennettu."); }
   }
   return <section className="panel receipt-scanner" aria-labelledby="receipt-scanner-title">
-    <div className="receipt-heading ai-card-heading"><ScanLine size={25} aria-hidden="true" /><h2 ref={heading} id="receipt-scanner-title" tabIndex={-1}>Kuittiskannaus</h2><APIKeyButton disabled={busy} /><button aria-label="Sulje kuittiskannaus" onClick={onClose}><X size={18} /></button></div>
+    <div className="receipt-heading ai-card-heading"><ScanLine size={25} aria-hidden="true" /><h2 ref={heading} id="receipt-scanner-title" tabIndex={-1}>Lisää kuitti</h2><APIKeyButton disabled={busy} /><button aria-label="Sulje kuittiskannaus" onClick={onClose}><X size={18} /></button></div>
     <p>Valitse tai pudota 1–50 PDF-kuittia (yhteensä 100 Mt, 20 Mt / tiedosto). Tarkista tuotteet ja kategoriat, ja kirjaa kuitit yhdessä menoihin.</p>
     <button disabled={busy} onClick={() => input.current?.click()}><FileText size={18} />Valitse PDF-kuitit</button>
     <input ref={input} hidden type="file" multiple accept="application/pdf,.pdf" aria-label="Skannaa PDF-kuitti" onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} />
