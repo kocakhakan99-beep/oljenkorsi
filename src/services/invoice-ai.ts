@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { validDate } from '../domain/calculations';
 
+class InvoiceError extends Error {}
+
 export type InvoiceSuggestion = { name: string; amountCents: number | null; date: string };
 const responseSchema = z.object({ choices: z.array(z.object({ message: z.object({ content: z.string().max(10000) }) })).min(1).max(10) });
 const suggestionSchema = z.object({ name: z.string().max(200).nullable(), amount_eur: z.number().finite().positive().max(100000000).nullable(), due_date: z.string().max(20).nullable() });
@@ -16,16 +18,24 @@ export async function analyzeInvoice(apiKey: string, documentText: string): Prom
         { role: 'user', content: documentText },
       ] }),
     });
-    if (!response.ok) throw Error(`OpenRouter ei hyväksynyt pyyntöä (HTTP ${response.status}). Tarkista avain, ilmaismallin saatavuus ja kiintiö.`);
+    if (!response.ok) {
+      const hint = response.status === 401 ? 'Tarkista, että API-avain on oikein ja aktiivinen.'
+        : response.status === 402 ? 'Tarkista OpenRouter-tilin saldo ja ilmaismallin ehdot.'
+        : response.status === 429 ? 'Ilmaismallien käyttöraja voi olla täynnä. Yritä myöhemmin uudelleen.'
+        : response.status === 404 || response.status === 403 ? 'Ilmaista mallia ei ehkä ole saatavilla tilin tietosuoja-asetuksilla. Tarkista OpenRouterin Privacy-asetukset ja mallien saatavuus.'
+        : 'Tarkista API-avain, ilmaismallien saatavuus ja palvelun tila.';
+      throw new InvoiceError(`OpenRouter ei hyväksynyt pyyntöä (HTTP ${response.status}). ${hint}`);
+    }
     const body = await response.text();
-    if (body.length > 100000) throw Error('Palvelun vastaus on liian suuri.');
+    if (body.length > 100000) throw new InvoiceError('Palvelun vastaus on liian suuri.');
     const envelope = responseSchema.parse(JSON.parse(body));
     const content = envelope.choices[0].message.content.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, '$1');
     const parsed = suggestionSchema.parse(JSON.parse(content));
     return { name: parsed.name?.trim() || '', amountCents: parsed.amount_eur === null ? null : Math.round(parsed.amount_eur * 100), date: parsed.due_date && validDate(parsed.due_date) ? parsed.due_date : '' };
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('OpenRouter ei')) throw error;
-    if (error instanceof Error && error.message === 'Palvelun vastaus on liian suuri.') throw error;
-    throw Error('Analyysi epäonnistui tai vastaus oli virheellinen. Tarkista yhteys, palvelun tuki ja lasku; voit syöttää menon myös käsin.');
+    if (error instanceof InvoiceError) throw error;
+    if (controller.signal.aborted) throw Error('OpenRouterin vastaus kesti liian kauan. Yritä uudelleen.');
+    if (error instanceof TypeError) throw Error('OpenRouteriin ei saatu yhteyttä. Tarkista internetyhteys ja selaimen verkkorajoitukset.');
+    throw Error('Analyysi epäonnistui: palvelun vastausta ei voitu tulkita. Yritä uudelleen tai syötä meno käsin.');
   } finally { clearTimeout(timer); }
 }

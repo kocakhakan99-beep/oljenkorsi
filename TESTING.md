@@ -1,5 +1,11 @@
 # Testausraportti 11.11.2026
 
+## OpenRouter tavallisessa index.html-tiedostossa 11.11.2026
+
+- 165 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät. `index.html` ja vanha `index-online.html` ovat sisällöltään samat.
+- `e2e_invoice.py` varmisti localhostilla tavallisen index.html-tiedoston budjettipikatoiminnon, käyttäjän käynnistämän simuloidun API-pyynnön, toistuvan menon tarkistuksen ja ettei avain tai laskuteksti päädy taloustietoihin.
+- Chromiumin oikea yhteys OpenRouteriin palautti tarkoituksella virheelliselle testavaimelle HTTP 401, joka näytettiin avainvirheenä. OpenRouterin CORS-esitarkistus `Origin: null` palautti HTTP 204 ja salli Authorization-otsakkeen. Oikeaa avainta tai laskudataa ei lähetetty; onnistunutta oikeaa mallivastausta, palvelun kiintiötä tai tietojenkäsittelyehtoja ei tällä varmennettu.
+
 ## OpenRouter-laskuanalyysi 11.11.2026
 
 - 164 yksikkötestiä, tyyppitarkistus, ESLint ja molempien HTML-versioiden build läpäisivät.

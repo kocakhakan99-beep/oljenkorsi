@@ -16,3 +16,11 @@ it('leaves invalid dates empty and rejects malformed responses without leaking s
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('secret test-key')));
   await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('Analyysi epäonnistui');
 });
+it('explains free-tier and key failures without exposing the provider response', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('sensitive provider text', { status: 429 })));
+  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('käyttöraja');
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('test-key', { status: 401 })));
+  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('API-avain');
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('test-key')));
+  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('OpenRouteriin ei saatu yhteyttä');
+});
