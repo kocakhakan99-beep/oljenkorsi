@@ -4,7 +4,7 @@ Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjaine
 
 ## Uusi ensisijainen suunnitelma: tekoälyavusteinen laskun kirjaus 11.11.2026
 
-**Tila: osittain toteutettu.** Tavallinen `index.html` sisältää Menot → Analysoi lasku -toiminnon: tekstipohjaisen PDF:n tai liitetyn tekstin esikatselu, ensisijaisesti OpenRouterin `nvidia/nemotron-3-ultra-550b-a55b:free`, tarvittaessa `openrouter/free`, valinnaisen käyttäjän Cloudflare Workerin, AI-ehdotuksen tarkistus ja kerta-/toistuvan menon lomake. OpenRouterin autentikointivirhepolku on testattu tekaistulla avaimella; onnistunutta vastausta oikealla avaimella ei ole varmennettu. Worker-palvelimen malliohjaus ja selain-CORS ovat varmentamatta. OCR, automaattinen asiakirjalajin tunnistus, laskun lähdeviitteet ja kaksoiskirjausehdotukset ovat edelleen suunnitelmia. Tämä osio tarkentaa alla olevaa vanhempaa suunnitelmaa ja menee ristiriitatilanteessa sen edelle. Erillistä kuittien tai laskujen tuontihistoriaa, dokumenttitunnisteita, lähdetekstejä tai PDF:iä ei tallenneta hyväksynnän jälkeen. Nykyinen kuittiskanneri toimii edelleen [oman ohjeensa](RECEIPT_SCANNER.md) mukaan; alla olevat vanhemmat ehdotukset ImportGroupista, pysyvästä kuittierittelystä ja automaattisesta kaksoistunnisteesta eivät kuvaa nykyistä toteutusta eivätkä ole tämän lasku-MVP:n edellytyksiä.
+**Tila: osittain toteutettu.** Menot → Analysoi lasku tukee tekstipohjaisia PDF-laskuja ja liitettyä tekstiä, usean laskun analyysiä sekä ehdotuksen tarkistusta kerta-/toistuvan menon lomakkeella. Kaikki AI-pyynnöt kulkevat Cloudflare Workerin kautta OpenRouterin `openrouter/free`-reitittimelle. Avain muistetaan välilehden istunnossa. Käyttäjä on vahvistanut onnistuneen laskuanalyysin; automaattiset testit käyttävät mockattua palvelua. OCR, automaattinen asiakirjalajin tunnistus ja laskun lähdeviitteet ovat edelleen suunnitelmia. PDF:tä, raakoja lähdetekstejä tai AI-vastauksia ei tallenneta hyväksynnän jälkeen. Alla oleva **Ajantasainen AI-jatkosuunnitelma** erottaa nykytilan jatkoehdotuksista ja korvaa vanhemmat palvelu- ja mallivalintoja koskevat ehdotukset.
 
 ### Käyttäjän polku
 
@@ -234,3 +234,40 @@ Käyttäjätoive 10.11.2026. **Kuittien PDF-pudotus on toteutettu Menot-, Budjet
 Nykyinen yhden PDF-kuitin pudotus käynnistää Menojen skannerin mistä tahansa Menot-, Budjetti- tai Asetukset-näkymässä. Alkuperäisen jatkotoiveen Tulot-näkymää ei tässä muutettu. Tuleva laajennus tunnistaa, onko kyse kuitista vai tiliotteesta, siirtyy tarvittavaan näkymään ja käynnistää sopivan parserin/prosessin; nykyinen pudotus ei vielä erottele näitä dokumenttilajeja. Tavoitteena on hyödyllinen quick-start sekä helpompi tulojen ja menojen syöttö. Kirjausten nykyinen tarkistus- ja hyväksyntäperiaate säilyy lähtökohtana.
 
 Jatkotyöhön kuuluu myös tilioteparserin suunnittelu. Käyttäjä voi toimittaa tässä vaiheessa kahden pankin esimerkkitiliotteet; näitä ei ole vielä saatu, eikä pankkeja, tiedostomuotoja tai poimintasääntöjä ole määritelty. Tarkempi suunnittelu tehdään myöhemmin esimerkkiaineiston pohjalta.
+
+## Ajantasainen AI-jatkosuunnitelma 11.11.2026
+
+Tämä osio korvaa aiemmat palveluvalintaa ja mallijärjestystä koskevat kohdat. **Toteutettu:** kaikki sovelluksen AI-pyynnöt kulkevat käyttäjän Cloudflare Workerin `/chat`-reitin kautta. Mallipyyntö on `openrouter/free`. Palvelu- tai mallivalintaa ei näytetä. Avainpainikkeesta syötetty avain muistetaan saman välilehden istunnossa ja toimii molemmissa skannereissa. Laskuilta poimitaan tällä hetkellä laskuttajan nimi, maksettava summa ja eräpäivä. Kuittien valinnainen AI luokittelee koko erän yksilölliset tuotenimet; rivien luku, summien täsmäytys ja tallennuksen tarkistukset säilyvät paikallisina. Koko kuittierän voi tarkistaa yhdessä ja tallentaa atomisesti. Workerin CORS-esitarkistus ja virhevastauksen otsakkeet on varmennettu verkosta, ja käyttäjä on raportoinut onnistuneen laskuanalyysin. Automaattiset regressiot käyttävät edelleen mockattua AI-vastausta, eivätkä osoita mallin todellista poimintatarkkuutta.
+
+### 1. Laskujen olennaiset lisätiedot — suunniteltu, ei vielä toteutettu
+
+| Ehdotus | Käyttäjän hyöty | Toteutustapa ja rajaus |
+| --- | --- | --- |
+| Kategoria ja lyhyt selite | Vähemmän täytettäviä kenttiä | Mallille vain käytössä olevat kategoriat; tuntematon jätetään käyttäjälle. Ehdotus siirtyy nykyiseen menolomakkeeseen. |
+| Laskutusjakson alku ja loppu | Vuosilaskun ja kuukausikulun erottaminen | Näytä laskun todellinen summa ja erillinen paikallisesti laskettu vertailuhinta. 240 €/vuosi on 20 €/kk vertailuhintana; kirjattava meno säilyy 240 eurossa. |
+| Laskun erittely: perusmaksu, käyttö, hyvitys ja muut kulut | Käyttäjä ymmärtää hinnan ja mahdolliset muutokset | Erottele rivit mutta kirjaa vain kerran maksettava loppusumma. ALV, aiempi saldo ja hyvitys eivät ole automaattisesti uusia menoja. |
+| Maksurytmi ja sopimuksen voimassaolo | Toistuvan menon täyttäminen nopeutuu | Ehdota vain dokumentissa nimenomaisesti näkyvää rytmiä ja päivämääriä. Yksi sähkölasku ei takaa tulevaa kuukausisummaa. Käyttäjä valitsee kertamenon tai sarjan. |
+| Lainan/osamaksun pääoma, saldo, korko ja kulut | Velan tietojen syöttö ja kulujen vertailu | Erottele nostettu summa, jäljellä oleva saldo, lyhennys, korko ja laskutusmaksut. Näytä puuttuvat tiedot, älä päättele todellista vuosikorkoa vajaista tiedoista. Velkalomake ja paikallinen laskenta käsittelevät hyväksytyt luvut. |
+| Sopimuksen määräaika, irtisanomisaika ja ilmoitettu hinnanmuutos | Kilpailutuksen ja uudelleenarvioinnin muistutus | Käytä vain dokumentista löytyviä ehtoja; ei arvausta nykyisistä markkinahinnoista tai oikeudellisesti sitovaa tulkintaa. |
+| Sähkön kulutus ja yksikköhinta | Oman sähkösopimuksen vertailu | Erota kWh, snt/kWh, siirto ja perusmaksu sekä ajanjakso; paikallinen kaava laskee vertailun. |
+
+**Suositeltu seuraava toteutus:** kategoria + selite, sitten laskutusjakso ja laskuerittely. Näille on heti käyttökohde nykyisessä menolomakkeessa. Velan/sopimusten tiedot toteutetaan omana kokonaisuutenaan nykyisiin velka- ja sopimuspolkuihin; niitä ei piiloteta tavallisen menon lisäkenttiin.
+
+Jokaisen uuden kentän mukana palautetaan lyhyt dokumentista lainattu lähdekatkelma tarkistusta varten. Lähde ei itsessään todista oikeellisuutta: sovellus varmistaa, että katkelma löytyy dokumentista, tarkistaa summat ja päivämäärät ja näyttää puuttuvat/ristiriitaiset tiedot. Katkelma ja alkuperäinen dokumentti pysyvät tuontiluonnoksessa eivätkä siirry talousvarmuuskopioon. Ennen poiminnan laajentamista kerätään anonymisoituja laskufixtuureja ja käsin varmistetut odotusarvot. Mitataan kenttäkohtainen oikeellisuus, puuttuvat arvot ja väärät varmat ehdotukset erikseen. 99,9 prosentin tavoitetta ei esitetä toteutuneena ilman mittausta.
+
+### 2. AI:n käyttö muualla sovelluksessa — priorisoitu suunnitelma
+
+| Järjestys | Käyttökohde | Mitä käyttäjä saa | Mikä säilyy sovelluksen laskentana |
+| --- | --- | --- | --- |
+| 1 | Talouskompassin "Mitä voisin tehdä?" | 2–3 konkreettista vaihtoehtoa yhteen havaintoon ja vaihtoehto "Ei mahdollista nyt" | Havainnon numerot, prioriteetti ja arvioitu vaikutus perustuvat nykyiseen moottoriin. Mallille lähetetään vain valitun havainnon tarpeelliset koostetut tiedot. |
+| 2 | Laskujen ja sopimusten ymmärrettävä yhteenveto | Mitä maksan, mistä summa muodostuu, mikä pitää tarkistaa | Summat, päivämäärät ja käyttäjän hyväksymät kirjaukset tarkistetaan nykyisessä tuontipolussa. |
+| 3 | Raportin selitys valitulta ajalta | Lyhyt selitys suurimmista muutoksista ja kysymykset käyttäjälle | Vertailut, prosentit ja suurimmat muutokset lasketaan ensin paikallisesti. Malli selittää vain annetut luvut eikä keksi syytä hinnanmuutokselle. |
+| 4 | Nopea kirjaus tavallisella lauseella | "Maksoin tänään sähkölaskun 52,40" avaa täytetyn menolomakkeen | Paikallinen parseri hoitaa selvät summat/päivät; AI auttaa tarvittaessa. Lomake vaatii hyväksynnän, epäselvä päivä tai summa kysytään. |
+| 5 | Sopimuksen kilpailutuksen valmistelu | Tarkistuslista ja nykyisen hinnan sekä ehtojen yhteenveto | Ei lupausta ajantasaisesta halvimmasta tarjouksesta ilman erillistä vertailutietolähdettä. |
+| 6 | Skenaarion selkokielinen kuvaus | "Mitä tämä muutos tarkoittaa arjessani?" | Säästö-, velka- ja FIRE-laskelmat syntyvät nykyisistä kaavoista; AI selittää oletukset ja vaikutukset. |
+
+**Ei ensisijaiseksi:** yleinen chat-ikkuna ilman selvää tehtävää, AI:n tekemät korko-/FIRE-laskelmat, osto-/myyntisuositukset, automaattinen budjettien muuttaminen tai koko talousdatan lähettäminen. Päällekkäisyyksien tunnistus, kategoriaoletusten muistaminen ja hinnanmuutosten numerovertailu tehdään ensin paikallisilla säännöillä; ne eivät yleensä tarvitse API-pyyntöä.
+
+### 3. Yhteinen käyttötapa
+
+AI-toiminto sijoitetaan nykyisen tehtävän yhteyteen, ei uudeksi rinnakkaiseksi toimintopaikaksi. Näkyvä lyhyt painike, esimerkiksi "Selitä muutos" tai "Ehdota vaihtoehtoja", käynnistää analyysin. Käyttäjä näkee, mitä tietoja lähetetään. Tavalliset kirjaukset, raportit ja laskenta toimivat ilman AI:ta. Ehdotukset eivät muuta tietoja ilman hyväksyntää, ja puuttuva avain, kiintiö tai verkkovirhe jättää käsin käytettävän polun toimintaan. Avaimet, lähdedokumentit tai väliaikaiset vastaukset eivät kuulu varmuuskopioihin. Käyttöliittymän ohjeet ovat lyhyitä ja tehtäväkeskeisiä; toteutusyksityiskohdat ovat dokumentaatiossa.
