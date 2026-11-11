@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { analyzeInvoice, invoiceModels } from '../services/invoice-ai';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 const ok = () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ name: 'Sähköyhtiö', amount_eur: 42.55, due_date: '2026-11-25' }) } }] }), { status: 200 });
 it('requests the free Nemotron model and validates an invoice suggestion', async () => {
   const fetcher = vi.fn().mockResolvedValue(ok());
@@ -17,6 +17,18 @@ it('falls back only to the free router if Nemotron is unavailable', async () => 
   vi.stubGlobal('fetch', fetcher);
   await analyzeInvoice('test-key', 'teksti');
   expect(fetcher.mock.calls.map(([, options]) => JSON.parse(options.body).model)).toEqual([...invoiceModels]);
+});
+it('tries the free fallback with a fresh timeout when the preferred model is slow', async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn().mockImplementationOnce((_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  })).mockResolvedValueOnce(ok());
+  vi.stubGlobal('fetch', fetcher);
+  const result = analyzeInvoice('test-key', 'teksti', 'worker');
+  await vi.advanceTimersByTimeAsync(45000);
+  expect(await result).toEqual({ name: 'Sähköyhtiö', amountCents: 4255, date: '2026-11-25' });
+  expect(fetcher.mock.calls.map(([, options]) => JSON.parse(options.body).model)).toEqual([...invoiceModels]);
+  expect(fetcher.mock.calls[1][1].signal.aborted).toBe(false);
 });
 it('sends only free model identifiers to the selected Worker', async () => {
   const fetcher = vi.fn().mockResolvedValue(ok());
