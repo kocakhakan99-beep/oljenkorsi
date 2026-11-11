@@ -41,14 +41,18 @@ with tempfile.TemporaryDirectory() as tmp:
             }''', payload)
         # First receipt batch: choose an API key, then one AI action and one save.
         drop(); page.get_by_role('button', name='Kuitti', exact=True).click()
+        expect(page.get_by_label('AI-avusteinen kategorisointi')).to_have_count(0)
         expect(page.locator('.receipt-review')).to_have_count(2, timeout=30000)
         assert not requests
         page.locator('.receipt-scanner').get_by_role('button', name='Lisää avain', exact=True).click()
         page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
         page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
-        page.get_by_role('button', name='Analysoi kuitit', exact=True).click()
         save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
         expect(save).to_be_enabled(timeout=30000)
+        page.set_viewport_size({'width': 320, 'height': 850})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+        if os.environ.get('TALOUS_REVIEW_SCREENSHOT'): page.locator('.document-review--receipt').screenshot(path=os.environ['TALOUS_REVIEW_SCREENSHOT'])
+        page.set_viewport_size({'width': 1280, 'height': 900})
         assert len(requests) == 1
         assert page.get_by_label('Tarkistin tuotteet', exact=False).count() == 0
         before = page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses.length')

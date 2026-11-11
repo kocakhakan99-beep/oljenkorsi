@@ -6,7 +6,7 @@
 
 Budjetin **Lisää kuitti** avaa saman skannerin menoissa. Tietokoneella 1–50 PDF-tiedostoa (enintään 100 Mt yhteensä) voi pudottaa missä tahansa näkymässä: valitse Kuitti tai Lasku, jolloin sovellus avaa oikean skannerin menoissa. Kaikki kuitit luetaan ja näytetään samassa tarkistusnäkymässä. Koko erän voi kirjata yhdellä kertaa; virhe estää koko erän tallennuksen. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
-AI-kategorisointi kuuluu kuittien lisäykseen. Lisää avain kortin avainpainikkeesta. Jos avain on jo käytössä, PDF:n luennan jälkeen koko erän yksilölliset tuotenimet ja sallitut kategoriat lähetetään automaattisesti Workerille ja OpenRouterin ilmaismallille. Muussa tapauksessa avaimen lisäämisen jälkeen paina **Analysoi kuitit**. Summa tarkistetaan paikallisesti. Tarkista yhteenveto ja paina **Kirjaa koko erä menoihin**; jokaisen kuitin erillistä vahvistusta ei tarvita.
+AI-kategorisointi kuuluu kuittien lisäykseen. Lisää avain kortin avainpainikkeesta. Jos avain on jo käytössä, PDF:n luennan jälkeen koko erän yksilölliset tuotenimet ja sallitut kategoriat lähetetään automaattisesti Workerille ja OpenRouterin ilmaismallille. Jos avain puuttuu, sen lisääminen käynnistää analyysin. Virhetilanteessa voi yrittää uudelleen. Summa tarkistetaan paikallisesti. Tarkista yhteenveto ja paina **Kirjaa koko erä menoihin**; jokaisen kuitin erillistä vahvistusta ei tarvita.
 
 1. Valitse Prisman, S-marketin, Alepan, K-Citymarketin tai K-Marketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat AI:n ehdotuksia, eivät varmoja tuotetietoja.

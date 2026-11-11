@@ -3,7 +3,7 @@ import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
 import { categorizeReceiptBatch } from "../services/invoice-ai";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { FileText, ScanLine, X, AlertTriangle } from "lucide-react";
+import { ScanLine, X, AlertTriangle, CircleCheck } from "lucide-react";
 import { ContextDetails } from "./summary";
 import type { State } from "../domain/model";
 import { validDate } from "../domain/calculations";
@@ -27,8 +27,9 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
   const [error, setError] = useState(""), [success, setSuccess] = useState("");
   const [aiComplete, setAiComplete] = useState(false);
   const aiKey = useSessionAPIKey();
+  const previousKey = useRef(aiKey);
   const [ready, setReady] = useState<Record<string, boolean>>({});
-  const operation = useRef<AbortController | null>(null), input = useRef<HTMLInputElement>(null), heading = useRef<HTMLHeadingElement>(null);
+  const operation = useRef<AbortController | null>(null), heading = useRef<HTMLHeadingElement>(null);
   const reviews = useRef(new Map<string, ReviewHandle>());
   useEffect(() => () => operation.current?.abort(), []);
   const available = receiptCategoryOptions(state);
@@ -85,6 +86,11 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
     } catch (e) { if (!current.signal.aborted) setError(e instanceof Error ? e.message : "AI-luokittelu epäonnistui. Voit jatkaa käsin."); }
     finally { if (operation.current === current) { setBusy(false); setProgress(""); } }
   }
+  useEffect(() => {
+    const wasSet = !!previousKey.current.trim();
+    previousKey.current = aiKey;
+    if (!wasSet && aiKey.trim() && !busy && !aiComplete && items.some(item => item.draft)) void categorize();
+  }, [aiKey]);
   function saveAll() {
     if (busy || !aiComplete || !items.length || duplicateReceipts) return;
     try {
@@ -99,16 +105,14 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
   }
   return <section className="panel receipt-scanner" aria-labelledby="receipt-scanner-title">
     <div className="receipt-heading ai-card-heading"><ScanLine size={25} aria-hidden="true" /><h2 ref={heading} id="receipt-scanner-title" tabIndex={-1}>Lisää kuitti</h2><APIKeyButton disabled={busy} /><button aria-label="Sulje kuittiskannaus" onClick={onClose}><X size={18} /></button></div>
-    <p>Valitse tai pudota kuitit. Tuotenimet lähetetään analysoitavaksi, kun avain on käytössä. Tarkista yhteenveto ja kirjaa koko erä kerralla.</p>
-    <button disabled={busy} onClick={() => input.current?.click()}><FileText size={18} />Valitse PDF-kuitit</button>
-    <input ref={input} hidden type="file" multiple accept="application/pdf,.pdf" aria-label="Skannaa PDF-kuitti" onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} />
-    <p>Tuotteiden nimet lähetetään analysoitavaksi. Tarkista yhteenveto ennen kirjaamista.</p>
-    {!!items.length && !aiComplete && <button disabled={busy || !aiKey.trim() || !items.some(item => item.draft)} onClick={() => void categorize()}>Analysoi kuitit</button>}
+    <p>Kuittien tuotenimet lähetetään AI-analyysiin.</p>
+    <label>Valitse kuitit<input type="file" multiple accept="application/pdf,.pdf" aria-label="Skannaa PDF-kuitti" disabled={busy} onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} /></label>
+    {error && !!items.length && !aiComplete && aiKey.trim() && <button disabled={busy || !items.some(item => item.draft)} onClick={() => void categorize()}>Yritä uudelleen</button>}
     {!!items.length && !aiKey.trim() && <p>Lisää avain yläkulman avainpainikkeesta.</p>}
     {busy ? <DocumentProcessing kind="receipt" progress={progress} action={<button type="button" onClick={cancel}>Peruuta käsittely</button>} /> : <DocumentProcessing kind="receipt" stage={items.length ? (aiComplete ? "review" : "attention") : "waiting"} progress={items.length ? (aiComplete ? "Tarkista yhteenveto." : "Lisää avain tai käynnistä analyysi uudelleen.") : "Valitse kuitit aloittaaksesi."} />}
     {error && <p role="alert">{error}</p>}{success && <p role="status">{success}</p>}
     {duplicateReceipts && <p role="alert">Erässä on saman kuitin kopioita. Poista ylimääräiset ennen kirjaamista.</p>}
-    {!!items.length && <div className="receipt-batch-toolbar"><p>{items.length} kuittia · {items.filter(i => ready[i.id]).length} valmiina · {euro(items.reduce((sum, item) => sum + (item.draft?.total || 0), 0))}</p><button className="primary" disabled={busy || !aiComplete || duplicateReceipts || !items.every(i => i.draft && ready[i.id])} onClick={saveAll}>Kirjaa koko erä menoihin</button><button disabled={busy} onClick={() => { if (window.confirm("Hylätäänkö koko kuittierä?")) { setItems([]); setReady({}); } }}>Hylkää koko erä</button></div>}
+    {!!items.length && <div className="document-review document-review--receipt"><div className="document-review-heading"><CircleCheck size={23} aria-hidden="true" /><div><strong>Kuittien yhteenveto</strong><p>{items.length} kuittia · {items.filter(i => ready[i.id]).length} valmiina</p></div><strong className="document-review-total">{euro(items.reduce((sum, item) => sum + (item.draft?.total || 0), 0))}</strong></div><div className="receipt-batch-toolbar"><button className="primary" disabled={busy || !aiComplete || duplicateReceipts || !items.every(i => i.draft && ready[i.id])} onClick={saveAll}>Kirjaa koko erä menoihin</button><button disabled={busy} onClick={() => { if (window.confirm("Hylätäänkö koko kuittierä?")) { setItems([]); setReady({}); } }}>Hylkää koko erä</button></div></div>}
     {items.map(item => <article key={item.id} className="panel">{item.error && <p role="alert">{item.name}: {item.error}</p>}<details><summary>{item.name} · {item.draft?.merchant || "Tarkistettava"} · {item.draft?.date || "päivä puuttuu"} · {item.draft?.total == null ? "summa puuttuu" : euro(item.draft.total)} · {ready[item.id] ? "valmis" : "tarkista"}</summary>{item.draft ? <ReceiptReview ref={handle => { if (handle) reviews.current.set(item.id, handle); else reviews.current.delete(item.id); }} state={state} draft={item.draft} initialSuggestions={item.suggestions} busy={busy} onRemove={() => setItems(old => old.filter(i => i.id !== item.id))} onReady={value => setReady(old => old[item.id] === value ? old : { ...old, [item.id]: value })} /> : <button disabled={busy} onClick={() => setItems(old => old.filter(i => i.id !== item.id))}>Poista erästä</button>}</details></article>)}
   </section>;
 });
