@@ -44,6 +44,11 @@ with tempfile.TemporaryDirectory() as tmp:
         drop(); page.get_by_role('button', name='Kuitti', exact=True).click()
         expect(page.get_by_label('AI-avusteinen kategorisointi')).to_have_count(0)
         expect(page.locator('.receipt-scanner').get_by_text('Lisää avain yläkulman avainpainikkeesta.')).to_be_visible(timeout=30000)
+        page.set_viewport_size({'width': 320, 'height': 850})
+        art = page.locator('.receipt-scanner .document-processing-art').bounding_box()
+        card = page.locator('.receipt-scanner .document-processing').bounding_box()
+        assert art and card and abs((art['x'] + art['width']/2) - (card['x'] + card['width']/2)) <= 1
+        page.set_viewport_size({'width': 1280, 'height': 900})
         expect(page.locator('.receipt-review')).to_have_count(0)
         assert not requests
         page.locator('.receipt-scanner').get_by_role('button', name='Lisää avain', exact=True).click()
