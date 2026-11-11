@@ -1,6 +1,6 @@
 # Maksuttomat rajapinnat ja turvallinen käyttöönotto
 
-Kartoitus 10.11.2026. Markkinadataa koskeva suunnitelma; sovellukseen ei ole kytketty automaattista ulkoista liikennettä. `index.html` sallii käyttäjän käynnistämän OpenRouter-laskuanalyysin; muut toiminnot eivät edellytä verkkoyhteyttä; katso [PDF-suunnitelma](PDF_IMPORT_PLAN.md).
+Kartoitus 10.11.2026. Markkinadataa koskeva suunnitelma; sovellukseen ei ole kytketty automaattista ulkoista liikennettä. `index.html` sallii käyttäjän käynnistämän laskuanalyysin OpenRouterin tai käyttäjän Cloudflare Workerin kautta; muut toiminnot eivät edellytä verkkoyhteyttä; katso [PDF-suunnitelma](PDF_IMPORT_PLAN.md).
 
 ## Jo toteutettu: päivätty offline-kurssiaineisto
 

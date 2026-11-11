@@ -107,7 +107,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Koko talouden JSON-varmuuskopio ja palautus esikatselulla/vahvistuksella.
 - ✅ Kuuden tietotyypin CSV-tuonti/vienti, sarakekartoitus, suomalaiset otsikot, virhe- ja duplikaattitarkistus sekä tuonnin kumoaminen.
 - 🟡 CSV ei ole täydellinen varmuuskopio: linkit, arvomallit ja koko tila siirretään JSON:lla. Kaikkia pankkiformaatteja ei tunnisteta.
-- 🟡 Laskuanalyysi avautuu Menoista tai budjetin pikatoiminnosta tavallisessa `index.html`-sovelluksessa ja käyttää käyttäjän pyynnöstä OpenRouterin ilmaismallireititintä teksti-PDF:lle tai liitetylle tekstille; käyttäjä tarkistaa ja tallentaa kerta- tai toistuvan menon. Todellinen API-yhteys, OCR, paikallinen kenttäpoiminta ja kaksoiskirjausehdotukset ovat vielä varmentamatta tai tekemättä: [suunnitelma](PDF_IMPORT_PLAN.md).
+- 🟡 Laskuanalyysi avautuu Menoista tai budjetin pikatoiminnosta tavallisessa `index.html`-sovelluksessa ja pyytää käyttäjän toiminnosta ensisijaisesti ilmaista Nemotron 3 Ultra -mallia ja tarvittaessa ilmaismallireititintä OpenRouterista tai valinnaisesta Workeristä, teksti-PDF:lle tai liitetylle tekstille; käyttäjä tarkistaa ja tallentaa kerta- tai toistuvan menon. Todellinen API-yhteys, OCR, paikallinen kenttäpoiminta ja kaksoiskirjausehdotukset ovat vielä varmentamatta tai tekemättä: [suunnitelma](PDF_IMPORT_PLAN.md).
 - ✅ Testattujen Prisma-/S-market-/Alepa-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
 - ✅ Parserin rakenne varmistetaan anonymisoiduilla, käyttäjän toimittamista oikeista kuiteista tehdyillä fixtuureilla. Ladattavat fiktiiviset kuitit poistettu; niitä ei käytetä kauppojen tosiasiallisen kuittirakenteen osoittamiseen.
 - ✅ Parserin v2: tähtikoristellut loppusummat, määrän/yksikköhinnan ja saatavilla olevien ALV-/korttisummien ristiintarkistus, lähderivin näyttö virheessä.
@@ -159,7 +159,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 ## 11. Tietosuoja, tekniikka ja laadunvarmistus
 
-- ✅ Yksi paikallinen HTML-tiedosto toimii pääosin ilman verkkoyhteyttä; käyttäjän käynnistämä laskuanalyysi käyttää OpenRouteria. Analytiikkaa ei ole.
+- ✅ Yksi paikallinen HTML-tiedosto toimii pääosin ilman verkkoyhteyttä; käyttäjän käynnistämä laskuanalyysi käyttää OpenRouteria tai käyttäjän Workeriä. Analytiikkaa ei ole.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
 - ✅ TypeScript, ESLint, tuotantobuild ja testit ovat käytössä. Testimäärät ja selainajot vaihtelevat: viimeisimmät kirjatut tulokset ja niiden päivämäärät löytyvät testausraportista.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.

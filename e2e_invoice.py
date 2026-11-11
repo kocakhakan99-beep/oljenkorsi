@@ -23,7 +23,7 @@ with sync_playwright() as p:
     expect(page.get_by_role('button', name='Lähetä teksti analysoitavaksi')).to_be_enabled()
     page.get_by_role('button', name='Lähetä teksti analysoitavaksi').click()
     expect(page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
-    assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
+    assert len(requests) == 1 and requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
     page.get_by_role('button', name='Jatka toistuvana laskuna').click()
     dialog = page.locator('dialog[open]')
     expect(dialog.locator('[name=name]')).to_have_value('Testilasku')
@@ -34,4 +34,26 @@ with sync_playwright() as p:
     state = page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     assert 'test-key' not in state and 'Fiktiivinen lasku 42,55' not in state
     print('PASS: index.html, OpenRouter mock, review, recurring expense, and data minimization')
+    worker_page = browser.new_page()
+    worker_requests = []
+    def worker_handle(route):
+        if route.request.method == 'POST':
+            worker_requests.append(route.request.post_data_json)
+        route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
+    worker_page.route('https://api-worker.kocakhakan99.workers.dev/chat', worker_handle)
+    worker_page.goto(url)
+    worker_page.get_by_role('button', name='Aloita tyhjästä').click()
+    worker_page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
+    worker_page.get_by_role('button', name='Analysoi lasku', exact=True).click()
+    worker_page.get_by_label('AI-palvelu').select_option('worker')
+    worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
+    worker_page.get_by_label('Worker Bearer-avain').fill('worker-test-key')
+    submit = worker_page.get_by_role('button', name='Lähetä teksti analysoitavaksi')
+    expect(submit).to_be_disabled()
+    worker_page.get_by_label('Vahvistan, että Worker', exact=False).check()
+    submit.click()
+    expect(worker_page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
+    assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
+    assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
+    print('PASS: Worker free-model confirmation, mock request, and no key persistence')
     browser.close()

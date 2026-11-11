@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Nemotron ja valinnainen Cloudflare Worker 11.11.2026
+
+Laskuanalyysi pyytää ensisijaisesti ilmaista Nemotron 3 Ultra -mallia ja saatavuus-/kiintiövirheessä automaattista ilmaismallireititintä. Palveluksi voi valita käyttäjän Cloudflare Workerin; asiakas pyytää vain ilmaismalleja, mutta palvelimen malliohjaus ja laskutus on käyttäjän varmistettava. Worker-yhteyden CORS ja mallin saatavuus ovat vielä varmentamatta.
+
 ### Laskuanalyysi tavallisessa sovelluksessa 11.11.2026
 
 OpenRouter-laskuanalyysi toimii tavallisesta index.html-tiedostosta. Yhteys sallitaan ainoastaan OpenRouteriin ja käynnistyy vain käyttäjän painikkeesta; muut ominaisuudet eivät edellytä verkkoa. API-virheiden ilmoitukset erottavat avaimen, ilmaismallien saatavuuden, kiintiön ja yhteyden ongelmia.

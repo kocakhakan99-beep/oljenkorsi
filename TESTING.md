@@ -1,5 +1,11 @@
 # Testausraportti 11.11.2026
 
+## Ilmaismallit ja Cloudflare Worker 11.11.2026
+
+- 167 yksikkötestiä, TypeScript, ESLint ja tuotantobuild läpäisivät. Selainkoe tarkisti simuloidulla vastauksella OpenRouterin ensisijaisen Nemotronin sekä Worker-vaihtoehdon vahvistuksen ja avaimen tallentumattomuuden.
+- OpenRouterin julkinen malliluettelo palautti `nvidia/nemotron-3-ultra-550b-a55b:free` -mallille prompt- ja completion-hinnaksi 0. Malli ei luettelon mukaan tue `response_format`-parametria, joten sitä ei lähetetä. Saatavuus ja hinnat voivat muuttua; onnistunutta mallivastausta oikealla avaimella ei ole testattu.
+- Workerille tehty nimetön CORS OPTIONS -koe tästä ympäristöstä palautti Cloudflaren HTTP 403 / 1010 ilman CORS-otsakkeita. Tämä ei osoita ongelman tarkkaa syytä eikä muiden ympäristöjen tilaa; Worker-pyyntöjä ei ole varmennettu oikealla avaimella. Worker-palvelimen on tuettava pyydettyjä OpenRouter-ilmaismallinimiä ja vastattava selaimen CORS-esitarkistukseen.
+
 ## OpenRouter tavallisessa index.html-tiedostossa 11.11.2026
 
 - 165 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät. `index.html` ja vanha `index-online.html` ovat sisällöltään samat.
