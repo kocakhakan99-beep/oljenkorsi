@@ -6,14 +6,14 @@
 
 Budjetin **Lisää kuitti** avaa saman skannerin menoissa. Tietokoneella 1–50 PDF-tiedostoa (enintään 100 Mt yhteensä) voi pudottaa missä tahansa näkymässä: valitse Kuitti tai Lasku, jolloin sovellus avaa oikean skannerin menoissa. Kaikki kuitit luetaan ja näytetään samassa tarkistusnäkymässä. Koko erän voi kirjata yhdellä kertaa; virhe estää koko erän tallennuksen. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
-Valinnainen **AI-avusteinen kategorisointi** on oletuksena pois. Sen kytkeminen päälle ei vielä lähetä mitään: lisää avain kortin oikean yläkulman avainpainikkeesta ja paina **Ehdota kategoriat koko erälle**. Koko erän yksilölliset tuotenimet ja sallitut kategoriat lähetetään Workerille ja OpenRouterin ilmaismallille. Tarkista ehdotukset; summien validointi säilyy paikallisena.
+AI-kategorisointi kuuluu kuittien lisäykseen. Lisää avain kortin avainpainikkeesta. Jos avain on jo käytössä, PDF:n luennan jälkeen koko erän yksilölliset tuotenimet ja sallitut kategoriat lähetetään automaattisesti Workerille ja OpenRouterin ilmaismallille. Muussa tapauksessa avaimen lisäämisen jälkeen paina **Analysoi kuitit**. Summa tarkistetaan paikallisesti. Tarkista yhteenveto ja paina **Kirjaa koko erä menoihin**; jokaisen kuitin erillistä vahvistusta ei tarvita.
 
 1. Valitse Prisman, S-marketin, Alepan, K-Citymarketin tai K-Marketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
-2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
+2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat AI:n ehdotuksia, eivät varmoja tuotetietoja.
 3. Vaihda tarvittaessa tuotteen kategoria. Tuntematon tuote jää valittavaksi. **Vain luokittelemattomat**, **Valitse näkyvät** ja kategoriavalinta luokittelevat monta tuotetta kerralla. Valitut valinnaiset oletuskategoriat, kuten Vaatteet, otetaan käyttöön hyväksynnässä.
 4. Jos samalle päivälle löytyy samansuuruinen meno, valitse sama maksu korvattavaksi tai vahvista eri ostos. Toistuvasta sarjasta korvataan vain kuitin päivälle osuva tapahtuma; muut esiintymät säilyvät.
 5. Käsin asetettu kategoriatoteuma edellyttää erillistä hyväksyntää paluulle kirjauksista laskettavaan toteumaan. Budjetin suunniteltua summaa ei muuteta.
-6. Vahvista tarkistus ja kirjaa. Kategoriakohtaiset menot syntyvät kuitin ostopäivälle, riippumatta ylävalikon kuukaudesta. Kuitin loppusumma ei synny lisäksi erilliseksi menoksi.
+6. Tarkista yhteenveto ja kirjaa koko erä yhdellä painikkeella. Kategoriakohtaiset menot syntyvät kuitin ostopäivälle, riippumatta ylävalikon kuukaudesta. Kuitin loppusumma ei synny lisäksi erilliseksi menoksi.
 7. Tuonnin voi kumota sivun yläosan **Kumoa**-painikkeella heti ennen muita muutoksia. Toiminto palauttaa aiemman koko tilan, kuten nykyinen CSV-tuonnin kumoaminen. Kuittituonnin kumoaminen poistuu seuraavan tallennetun muutoksen jälkeen, jotta myöhempiä muutoksia ei ylikirjoiteta.
 
 Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksittäinen kuitti. Saman kategorian sarjoista näytetään tarkistus; käyttäjän on poistettava päällekkäinen arvio ennen hyväksyntää. Automaattista ennusteen jäännöksen laskentaa ei vielä ole.

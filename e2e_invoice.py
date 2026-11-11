@@ -29,15 +29,12 @@ with sync_playwright() as p:
     assert not requests
     expect(page.get_by_role('button', name='Analysoi laskut')).to_be_enabled()
     page.get_by_role('button', name='Analysoi laskut').click()
-    expect(page.get_by_role('button', name='Jatka kertamenona')).to_be_visible()
+    expect(page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible()
     assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
-    page.get_by_role('button', name='Jatka toistuvana laskuna').click()
-    dialog = page.locator('dialog[open]')
-    expect(dialog.locator('[name=name]')).to_have_value('Testilasku')
-    expect(dialog.locator('[name=amount]')).to_have_value('42,55')
-    dialog.locator('.quick-entry-details summary').click()
-    expect(dialog.locator('[name=recurrence]')).to_have_value('monthly')
-    dialog.get_by_role('button', name='Tallenna meno', exact=True).click()
+    page.get_by_label('Toistuva lasku kuukausittain').check()
+    page.get_by_role('button', name='Kirjaa laskut menoihin').click()
+    stored = page.evaluate("JSON.parse(localStorage.getItem('taloussuunnittelu.v1')).data.expenses")
+    assert any(item['name'] == 'Testilasku' and item['amount'] == 4255 and item['recurrence'] == 'monthly' for item in stored)
     state = page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     assert 'test-key' not in state and 'Fiktiivinen lasku 42,55' not in state
     print('PASS: index.html, OpenRouter mock, review, recurring expense, and data minimization')
@@ -66,9 +63,9 @@ with sync_playwright() as p:
     worker_page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
     expect(submit).to_be_enabled()
     submit.click()
-    expect(worker_page.get_by_role('button', name='Jatka kertamenona')).to_be_visible()
+    expect(worker_page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible()
     expect(worker_page.get_by_role('button', name='Vaihda tai poista avain')).to_be_visible()
-    expect(submit).to_be_disabled()
+    expect(submit).to_have_count(0)
     assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'openrouter/free'
     assert worker_headers[0].get('authorization') == 'Bearer worker-test-key'
     assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
