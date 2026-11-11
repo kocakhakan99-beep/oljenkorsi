@@ -33,13 +33,16 @@ function parseSuggestion(content: string): InvoiceSuggestion {
   const amountCents = numeric !== null && Number.isFinite(numeric) && numeric > 0 && numeric <= 100000000 ? Math.round(numeric * 100) : null;
   return { name: name?.trim() || '', amountCents, date: date && validDate(date) ? date : '' };
 }
-async function requestAI(apiKey: string, documentText: string, provider: InvoiceProvider, instruction: string): Promise<string> {
+async function requestAI(apiKey: string, documentText: string, provider: InvoiceProvider, instruction: string, signal?: AbortSignal): Promise<string> {
   const token = apiKey.trim().replace(/^Bearer\s+/i, '').trim();
   if (!token || /^Bearer$/i.test(token)) throw Error('Anna valitun palvelun API-avain.');
   if (!documentText.trim() || documentText.length > 30000) throw Error('Anna enintään 30 000 merkkiä laskutekstiä.');
   const service = provider === 'worker' ? 'Cloudflare Worker' : 'OpenRouter';
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 90000);
+    const abort = () => controller.abort();
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) controller.abort();
     try {
       // A free router can select a model that returns no final answer. Retry
       // that case once with the same free route and the original time limit.
@@ -80,7 +83,7 @@ async function requestAI(apiKey: string, documentText: string, provider: Invoice
       if (error instanceof InvoiceError) throw error;
       if (error instanceof TypeError) throw Error(`${service}: yhteys epäonnistui. Tarkista internetyhteys ja palvelun CORS-asetukset.`);
       throw Error('Analyysi epäonnistui: palvelun vastausta ei voitu tulkita. Yritä uudelleen tai syötä meno käsin.');
-    } finally { clearTimeout(timer); }
+    } finally { clearTimeout(timer); signal?.removeEventListener("abort", abort); }
 }
 
 const invoiceInstruction = 'Extract invoice fields as JSON only: name (supplier string or null), amount_eur (total amount due in euros as number or null), due_date (YYYY-MM-DD string or null).';
@@ -105,11 +108,44 @@ export async function analyzeInvoiceBatch(key: string, texts: string[], provider
     return parseSuggestion(JSON.stringify(item));
   });
 }
-export async function categorizeReceipt(key: string, products: { id: string; name: string }[], categories: string[]): Promise<Record<string, string>> {
+export async function categorizeReceipt(key: string, products: { id: string; name: string }[], categories: string[], signal?: AbortSignal): Promise<Record<string, string>> {
   const content = await requestAI(key, JSON.stringify({ products, categories }), 'worker',
-    'Categorize receipt products using ONLY exact category names from categories. Return JSON object {"categories":[{"id":"product id","category":"exact category name or null"}]}. Do not change ids.');
+    'Categorize receipt products using ONLY exact category names from categories. Return JSON object {"categories":[{"id":"product id","category":"exact category name or null"}]}. Do not change ids. Prefer specific categories when justified by product names (food, cosmetics, hygiene, household). Use null when ambiguous.', signal);
   const result = z.object({ categories: z.array(z.object({ id: z.string(), category: z.string().nullable() })).max(2000) }).safeParse(parseAIObject(content));
   if (!result.success) throw new InvoiceError('AI:n kategoriaehdotuksia ei voitu tunnistaa. Voit jatkaa luokittelua käsin.');
   const value = result.data;
   return Object.fromEntries(value.categories.filter(item => products.some(p => p.id === item.id) && item.category && categories.includes(item.category)).map(item => [item.id, item.category!]));
+}
+
+/** Deduplicate identical product names across receipts and bound every AI prompt. */
+export async function categorizeReceiptBatch(
+  key: string,
+  receipts: { id: string; products: { id: string; name: string }[] }[],
+  categories: string[],
+  signal?: AbortSignal,
+  onProgress: (completed: number, total: number) => void = () => {},
+): Promise<Record<string, Record<string, string>>> {
+  const unique = new Map<string, { id: string; name: string }>();
+  const nameKey = (name: string) => name.trim().toLocaleUpperCase('fi-FI');
+  for (const receipt of receipts) for (const product of receipt.products) {
+    const normalized = nameKey(product.name);
+    if (!unique.has(normalized)) unique.set(normalized, { id: `product-${unique.size}`, name: product.name });
+  }
+  const groups: { id: string; name: string }[][] = [];
+  let group: { id: string; name: string }[] = [];
+  for (const product of unique.values()) {
+    if (group.length && (group.length >= 100 || JSON.stringify({ products: [...group, product], categories }).length > 24000)) { groups.push(group); group = []; }
+    group.push(product);
+  }
+  if (group.length) groups.push(group);
+  const suggestions: Record<string, string> = {};
+  for (const [index, products] of groups.entries()) {
+    signal?.throwIfAborted(); onProgress(index + 1, groups.length);
+    Object.assign(suggestions, await categorizeReceipt(key, products, categories, signal));
+  }
+  signal?.throwIfAborted();
+  return Object.fromEntries(receipts.map(receipt => [receipt.id, Object.fromEntries(receipt.products.flatMap(product => {
+    const category = suggestions[unique.get(nameKey(product.name))!.id];
+    return category ? [[product.id, category]] : [];
+  }))]));
 }

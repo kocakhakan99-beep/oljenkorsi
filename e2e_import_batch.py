@@ -39,19 +39,36 @@ with tempfile.TemporaryDirectory() as tmp:
             }''', payload)
         # Drop from dashboard: choose receipt, inspect queue, no network.
         drop(); page.get_by_role('button', name='Kuitti', exact=True).click()
-        expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
-        expect(page.get_by_text('Jonossa 1 kuittia.')).to_be_visible()
+        expect(page.locator('.receipt-review')).to_have_count(2, timeout=30000)
         assert not requests
         page.get_by_label('AI-avusteinen kategorisointi').check()
         assert not requests
         page.locator('.receipt-scanner').get_by_label('Worker API-avain').fill('test-key')
-        page.get_by_role('button', name='Ehdota kategoriat').click()
+        page.get_by_role('button', name='Ehdota kategoriat koko erälle').click()
         expect(page.locator('.receipt-scanner').get_by_label('Worker API-avain')).to_have_value('')
-        page.wait_for_function('document.querySelector(".receipt-scanner .receipt-busy") === null')
+        page.wait_for_function('!document.querySelector(".receipt-review fieldset") && Array.from(document.querySelectorAll(".receipt-scanner input[type=checkbox]")).every(i => !i.disabled)')
         assert len(requests) == 1
-        page.get_by_role('button', name='Hylkää luonnos').click()
-        page.get_by_role('button', name='Seuraava kuitti', exact=True).click()
-        expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
+        page.get_by_role('button', name='Vahvista kaikkien kuittien tarkistus').click()
+        save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
+        expect(save).to_be_enabled()
+        before = page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses.length')
+        save.click()
+        expect(page.locator('.receipt-review')).to_have_count(0)
+        after = page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses')
+        assert len(after) == before + 2
+        assert sum(e['amount'] for e in after) == 12146 + 7385
+        # A failed PDF blocks the entire receipt batch without partial writes.
+        invalid = Path(tmp) / 'invalid.pdf'; invalid.write_bytes(b'not a PDF')
+        page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files([str(files[0]), str(invalid)])
+        expect(page.get_by_role('button', name='Poista erästä')).to_have_count(2, timeout=30000)
+        page.get_by_role('button', name='Vahvista kaikkien kuittien tarkistus').click()
+        expect(page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)).to_be_disabled()
+        assert page.evaluate('JSON.parse(localStorage.getItem("taloussuunnittelu.v1")).data.expenses') == after
+        # Repeated source receipts must be removed before saving either copy.
+        page.once('dialog', lambda dialog: dialog.accept())
+        page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files([str(files[0]), str(files[0])])
+        expect(page.get_by_text('Erässä on saman kuitin kopioita. Poista ylimääräiset ennen kirjaamista.')).to_be_visible(timeout=30000)
+        expect(page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)).to_be_disabled()
         # Drop same two PDFs as invoices: one API call, two distinct cards.
         drop(); page.get_by_role('button', name='Lasku', exact=True).click()
         expect(page.locator('.invoice-scanner details')).to_have_count(2)
@@ -64,5 +81,5 @@ with tempfile.TemporaryDirectory() as tmp:
         expect(page.locator('dialog[open] [name=name]')).to_have_value('Testilasku')
         stored = page.evaluate('localStorage.getItem("taloussuunnittelu.v1")')
         assert 'test-key' not in stored
-        print('PASS: global drop choice, receipt queue, opt-in AI, two invoices in one request, review and no stored API key')
+        print('PASS: global drop choice, whole receipt batch, atomic save, opt-in AI, two invoices in one request, review and no stored API key')
         browser.close()

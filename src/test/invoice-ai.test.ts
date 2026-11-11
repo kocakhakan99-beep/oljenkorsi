@@ -101,3 +101,25 @@ it('only accepts receipt categories and product identifiers from the input', asy
   expect(sent.model).toBe('openrouter/free');
   expect(JSON.parse(sent.messages[1].content)).toEqual({ products: [{ id: 'a', name: 'MAITO' }, { id: 'b', name: 'UNKNOWN' }], categories: ['Ruoka'] });
 });
+
+it('categorizes a whole receipt batch with one request and reuses identical names safely', async () => {
+  const { categorizeReceiptBatch } = await import('../services/invoice-ai');
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ categories: [{ id: 'product-0', category: 'Ruoka' }, { id: 'product-1', category: 'Invented' }] }) } }] })));
+  vi.stubGlobal('fetch', fetcher);
+  const result = await categorizeReceiptBatch('key', [
+    { id: 'receipt1', products: [{ id: 'row1', name: 'MAITO' }, { id: 'row2', name: '???' }] },
+    { id: 'receipt2', products: [{ id: 'row1', name: 'MAITO' }] },
+  ], ['Ruoka']);
+  expect(result).toEqual({ receipt1: { row1: 'Ruoka' }, receipt2: { row1: 'Ruoka' } });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  const input = JSON.parse(JSON.parse(fetcher.mock.calls[0][1].body).messages[1].content);
+  expect(input.products).toHaveLength(2);
+  expect(input.products.every((p: Record<string, unknown>) => Object.keys(p).sort().join(',') === 'id,name')).toBe(true);
+});
+it('does not send receipt batch requests after cancellation', async () => {
+  const { categorizeReceiptBatch } = await import('../services/invoice-ai');
+  const controller = new AbortController(); controller.abort();
+  const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
+  await expect(categorizeReceiptBatch('key', [{ id: '1', products: [{ id: '1', name: 'MAITO' }] }], ['Ruoka'], controller.signal)).rejects.toThrow();
+  expect(fetcher).not.toHaveBeenCalled();
+});
