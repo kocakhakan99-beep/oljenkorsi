@@ -24,6 +24,8 @@ with tempfile.TemporaryDirectory() as tmp:
             if isinstance(data, list):
                 result = {'invoices': [{'id': item['id'], 'name': 'Testilasku', 'amount_eur': 10, 'due_date': '2026-11-25'} for item in data]}
             else:
+                expect(page.locator('.document-processing--receipt')).to_be_visible()
+                expect(page.locator('.document-processing--receipt').get_by_role('status')).to_contain_text('AI luokittelee')
                 result = {'categories': [{'id': item['id'], 'category': data['categories'][0]} for item in data['products']]}
                 assert all(set(item) == {'id', 'name'} for item in data['products'])
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))

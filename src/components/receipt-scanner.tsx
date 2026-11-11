@@ -1,3 +1,4 @@
+import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
 import { categorizeReceiptBatch } from "../services/invoice-ai";
@@ -92,7 +93,7 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
     <input ref={input} hidden type="file" multiple accept="application/pdf,.pdf" aria-label="Skannaa PDF-kuitti" onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} />
     <label><input type="checkbox" disabled={busy} checked={aiEnabled} onChange={e => { setAiEnabled(e.target.checked); }} />AI-avusteinen kategorisointi</label>
     {aiEnabled && <div><p>Pyydä kategoriaehdotukset kaikille kuiteille kerralla. Tuotteiden nimet lähetetään analysoitavaksi. Tarkista ehdotukset ennen kirjaamista.</p><button disabled={busy || !aiKey.trim() || !items.some(item => item.draft)} onClick={() => void categorize()}>Ehdota kategoriat koko erälle</button></div>}
-    {busy && <p role="status">{progress}<button onClick={cancel}>Peruuta käsittely</button></p>}
+    {busy && <DocumentProcessing kind="receipt" progress={progress} action={<button type="button" onClick={cancel}>Peruuta käsittely</button>} />}
     {error && <p role="alert">{error}</p>}{success && <p role="status">{success}</p>}
     {duplicateReceipts && <p role="alert">Erässä on saman kuitin kopioita. Poista ylimääräiset ennen kirjaamista.</p>}
     {!!items.length && <div className="receipt-batch-toolbar"><p>{items.length} kuittia · {items.filter(i => ready[i.id]).length} valmiina · {euro(items.reduce((sum, item) => sum + (item.draft?.total || 0), 0))}</p><button disabled={busy} onClick={() => { for (const review of reviews.current.values()) review.check(true); }}>Vahvista kaikkien kuittien tarkistus</button><button className="primary" disabled={busy || duplicateReceipts || !items.every(i => i.draft && ready[i.id])} onClick={saveAll}>Kirjaa koko erä menoihin</button><button disabled={busy} onClick={() => { if (window.confirm("Hylätäänkö koko kuittierä?")) { setItems([]); setReady({}); } }}>Hylkää koko erä</button></div>}
