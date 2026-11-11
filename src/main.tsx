@@ -112,6 +112,9 @@ import {
   Pencil,
   Link2,
   FileChartColumn,
+  FileText,
+  CirclePlus,
+  Repeat2,
   Goal as GoalIcon,
   House,
   Landmark,
@@ -483,6 +486,19 @@ function Modal({
       {children}
     </dialog>
   );
+}
+function ScannerDialog({ open, onClose, label, children }: { open: boolean; onClose: () => void; label: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    else if (!open && dialog.open) dialog.close();
+  }, [open]);
+  return <dialog ref={ref} aria-label={label} className="scanner-dialog" onCancel={event => {
+    if (event.target !== ref.current) return;
+    event.preventDefault(); onClose();
+  }}>{children}</dialog>;
 }
 function DemoCashflowSparkline({
   timeline,
@@ -2119,6 +2135,10 @@ function App() {
       0,
     );
   }
+  function closeInvoice() {
+    setInvoiceOpen(false);
+    setTimeout(() => document.querySelector<HTMLButtonElement>(".page-head .invoice-scan-button")?.focus(), 0);
+  }
   function closeReceipt() {
     setReceiptOpen(false);
     setTimeout(() => document.querySelector<HTMLButtonElement>(".page-head .receipt-scan-button")?.focus(), 0);
@@ -3318,22 +3338,18 @@ function App() {
                     className="primary"
                     onClick={() => beginQuickEntry(page)}
                   >
-                    {page === "expenses"
-                      ? "+ Lisää kertaluonteinen meno"
-                      : "+ Lisää tulo"}
+                    {page === "expenses" ? <><CirclePlus size={18} aria-hidden="true" />Lisää kertaluonteinen meno</> : "+ Lisää tulo"}
                   </button>
                   {page === "expenses" && <ReceiptScanButton expanded={receiptOpen} onClick={() => openReceipt()} />}
-                  {page === "expenses" && <button type="button" onClick={() => setInvoiceOpen(value => !value)} aria-expanded={invoiceOpen}>Analysoi lasku</button>}
+                  {page === "expenses" && <button type="button" className="receipt-scan-button invoice-scan-button" onClick={() => setInvoiceOpen(true)} aria-haspopup="dialog" aria-expanded={invoiceOpen}><FileText size={18} aria-hidden="true" />Lisää lasku</button>}
                   <button
                     onClick={() => beginQuickEntry(page, undefined, "monthly")}
                   >
-                    {page === "expenses"
-                      ? "+ Lisää toistuva lasku"
-                      : "+ Lisää toistuva tulo"}
+                    {page === "expenses" ? <><Repeat2 size={18} aria-hidden="true" />Lisää toistuva lasku</> : "+ Lisää toistuva tulo"}
                   </button>
                 </div>
               )}
-              {page === "budget" && <><ReceiptScanButton onClick={() => openReceipt()} /><button type="button" onClick={() => { setInvoiceOpen(true); navigate("expenses"); }}>Analysoi lasku</button></>}
+              {page === "budget" && <><ReceiptScanButton onClick={() => openReceipt()} /><button type="button" className="receipt-scan-button invoice-scan-button" onClick={() => { setInvoiceOpen(true); navigate("expenses"); }} aria-haspopup="dialog"><FileText size={18} aria-hidden="true" />Lisää lasku</button></>}
               {kinds.includes(page as Kind) &&
                 page !== "incomes" &&
                 page !== "expenses" && (
@@ -4262,21 +4278,21 @@ function App() {
                   </section>
                 </>
               ))}
-            <div hidden={page !== "expenses" || !invoiceOpen}><InvoiceScanner files={invoiceFiles} onUse={(suggestion, recurring) => {
+            <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner onClose={closeInvoice} files={invoiceFiles} onUse={(suggestion, recurring) => {
               setQuickSeed(entry({ name: suggestion.name, amount: suggestion.amountCents ?? 0, date: suggestion.date || "", category: cats("expenses").includes("Muu meno") ? "Muu meno" : cats("expenses")[0] || "Muu", recurrence: recurring ? "monthly" : "once" }));
-              setQuickEntryKind("expenses"); setQuick(true);
-            }} /></div>
+              setInvoiceOpen(false); setQuickEntryKind("expenses"); setQuick(true);
+            }} /></ScannerDialog>
             <ReceiptDropZone enabled={s.settings.onboarded} onFiles={(files, kind) => {
               navigate("expenses");
-              if (kind === "receipt") { setReceiptOpen(true); receiptScanner.current?.scanFiles(files); }
-              else { setInvoiceOpen(true); setInvoiceFiles(files); }
+              if (kind === "receipt") { setInvoiceOpen(false); setReceiptOpen(true); receiptScanner.current?.scanFiles(files); }
+              else { setReceiptOpen(false); setInvoiceOpen(true); setInvoiceFiles(files); }
             }} onError={setNotice} />
-            <div id="receipt-workspace" className="receipt-home" hidden={page !== "expenses" || !receiptOpen}>
+            <ScannerDialog open={receiptOpen} onClose={closeReceipt} label="Lisää kuitti">
               <ReceiptScanner key={s.createdAt} ref={receiptScanner} state={s} onClose={closeReceipt} onImport={(next) => {
                 if (!commit(next)) return false;
                 setUndo(s); receiptUndoActive.current = true; return true;
               }} />
-            </div>
+            </ScannerDialog>
             {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onSave={rule => settings({ budgetGuidance: rule })} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} />}
             {page === "budget" && (
               <>

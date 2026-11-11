@@ -1,13 +1,14 @@
 import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
+import { X } from "lucide-react";
 import { useEffect, useState } from 'react';
 import { receiptPDF } from '../services/receipt-pdf';
 import { receiptFileError, importBatchError } from '../domain/receipts/files';
 import { analyzeInvoiceBatch, type InvoiceSuggestion } from '../services/invoice-ai';
 
 type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string };
-export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void; files?: File[] }) {
+export function InvoiceScanner({ onUse, onClose, files = [] }: { onClose: () => void; onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void; files?: File[] }) {
   const key = useSessionAPIKey();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [busy, setBusy] = useState(false);
@@ -54,7 +55,7 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
     finally { setBusy(false); setProgress(''); }
   }
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
-    <div className="ai-card-heading"><h2>Laskun analyysi</h2><APIKeyButton disabled={busy} /></div>
+    <div className="ai-card-heading"><h2>Lisää lasku</h2><APIKeyButton disabled={busy} /><button type="button" aria-label="Sulje laskun lisäys" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
     <p>Lisää laskut ja pyydä ehdotukset. Tarkista tiedot ja valitse kertameno tai toistuva lasku. Tarvitset avaimen ja verkkoyhteyden.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
     {!documents.length && <button onClick={() => setDocuments([{ name: 'Liitetty lasku', text: '' }])}>Liitä laskuteksti</button>}

@@ -17,7 +17,7 @@ export function ReceiptDropZone({ enabled, onFiles, onError }: { enabled: boolea
     const enter = (e: DragEvent) => {
       if (!isFile(e)) return;
       e.preventDefault();
-      if (!current.current.enabled || document.querySelector("dialog[open]")) return;
+      if (!current.current.enabled || document.querySelector("dialog[open]:not(.scanner-dialog)")) return;
       depth.current++; setOver(true);
     };
     const overFile = (e: DragEvent) => {
@@ -31,7 +31,7 @@ export function ReceiptDropZone({ enabled, onFiles, onError }: { enabled: boolea
       // Prevent browser navigation and native input handling, including unsupported drops.
       e.preventDefault(); e.stopPropagation(); reset();
       if (!current.current.enabled) return;
-      if (document.querySelector("dialog[open]")) { current.current.onError("Sulje avoin ikkuna ennen PDF-kuitin pudottamista."); return; }
+      if (document.querySelector("dialog[open]:not(.scanner-dialog)")) { current.current.onError("Sulje avoin lomake ennen PDF-tiedostojen pudottamista."); return; }
       const files = Array.from(e.dataTransfer?.files || []);
       const error = importBatchError(files);
       if (error) { current.current.onError(error); return; }
