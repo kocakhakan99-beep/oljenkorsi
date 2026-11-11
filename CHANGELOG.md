@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Worker vaatii API-avaimen 11.11.2026
+
+Korjattiin Worker-analyysi käyttämään käyttäjän API-avainta Bearer-otsakkeessa. Avain syötetään jokaista analyysiä varten ja tyhjennetään kentästä; ilmaismallien automaattinen valinta säilyy.
+
 ### Avaimeton Cloudflare Worker 11.11.2026
 
 Worker-analyysi ei enää vaadi Bearer-avainta eikä ylimääräistä vahvistusruutua. Suora OpenRouter-yhteys vaatii edelleen käyttäjän antaman avaimen. Sovellus pyytää vain ilmaismallien tunnisteita.

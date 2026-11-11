@@ -21,11 +21,11 @@ it('falls back only to the free router if Nemotron is unavailable', async () => 
 it('sends only free model identifiers to the selected Worker', async () => {
   const fetcher = vi.fn().mockResolvedValue(ok());
   vi.stubGlobal('fetch', fetcher);
-  await analyzeInvoice('', 'teksti', 'worker');
+  await analyzeInvoice('Bearer worker-test-key', 'teksti', 'worker');
   const [url, options] = fetcher.mock.calls[0];
   expect(url).toBe('https://api-worker.kocakhakan99.workers.dev/chat');
   expect(JSON.parse(options.body).model).toBe(invoiceModels[0]);
-  expect(options.headers).not.toHaveProperty('Authorization');
+  expect(options.headers.Authorization).toBe('Bearer worker-test-key');
 });
 it('leaves invalid dates empty and rejects malformed responses without leaking secrets', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: '{"name":null,"amount_eur":null,"due_date":"2026-02-30"}' } }] }), { status: 200 })));
@@ -45,8 +45,9 @@ it('explains free-tier and key failures without exposing the provider response',
   await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('CORS-asetukset');
 });
 
-it('requires an API key for OpenRouter before sending any request', async () => {
+it('requires an API key for either provider before sending any request', async () => {
   const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
   await expect(analyzeInvoice('', 'teksti', 'openrouter')).rejects.toThrow('API-avain');
+  await expect(analyzeInvoice('', 'teksti', 'worker')).rejects.toThrow('API-avain');
   expect(fetcher).not.toHaveBeenCalled();
 });
