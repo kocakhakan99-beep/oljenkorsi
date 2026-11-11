@@ -18,6 +18,7 @@ with sync_playwright() as p:
     page.get_by_role('navigation').get_by_role('button', name='Budjetti', exact=True).click()
     page.get_by_role('button', name='Analysoi lasku', exact=True).click()
     page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku 42,55')
+    page.get_by_label('AI-palvelu').select_option('openrouter')
     page.get_by_label('OpenRouter API-avain').fill('test-key')
     assert not requests
     expect(page.get_by_role('button', name='Lähetä teksti analysoitavaksi')).to_be_enabled()
@@ -45,7 +46,7 @@ with sync_playwright() as p:
     worker_page.get_by_role('button', name='Aloita tyhjästä').click()
     worker_page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
     worker_page.get_by_role('button', name='Analysoi lasku', exact=True).click()
-    worker_page.get_by_label('AI-palvelu').select_option('worker')
+    expect(worker_page.get_by_label('AI-palvelu')).to_have_value('worker')
     worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
     worker_page.get_by_label('Worker Bearer-avain').fill('worker-test-key')
     submit = worker_page.get_by_role('button', name='Lähetä teksti analysoitavaksi')
@@ -53,6 +54,8 @@ with sync_playwright() as p:
     worker_page.get_by_label('Vahvistan, että Worker', exact=False).check()
     submit.click()
     expect(worker_page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
+    expect(worker_page.get_by_label('Worker Bearer-avain')).to_have_value('')
+    expect(submit).to_be_disabled()
     assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
     assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     print('PASS: Worker free-model confirmation, mock request, and no key persistence')

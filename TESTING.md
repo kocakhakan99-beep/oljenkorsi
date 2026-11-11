@@ -1,5 +1,11 @@
 # Testausraportti 11.11.2026
 
+## Worker oletuksena ja kertakäyttöinen avain 11.11.2026
+
+- 167 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät.
+- Chromiumin simuloidussa API-testissä Worker oli oletuksena, ilmaismallin vahvistus vaadittiin, avainkenttä tyhjeni analyysipyynnön jälkeen ja avain ei tallentunut taloustilaan. Myös suoran OpenRouterin vaihtoehtoinen polku läpäisi.
+- Oikeaa Worker-avainta ei käytetty. Aiempi Workerille tästä ympäristöstä tehty nimetön CORS OPTIONS palautti Cloudflaren 403/1010-vastauksen; palvelun oikea käyttö ja palvelinpuolen ilmaismalliasetukset vaativat edelleen varmistuksen.
+
 ## Ilmaismallit ja Cloudflare Worker 11.11.2026
 
 - 167 yksikkötestiä, TypeScript, ESLint ja tuotantobuild läpäisivät. Selainkoe tarkisti simuloidulla vastauksella OpenRouterin ensisijaisen Nemotronin sekä Worker-vaihtoehdon vahvistuksen ja avaimen tallentumattomuuden.

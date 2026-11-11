@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Worker oletuksena ja avain joka analyysiin 11.11.2026
+
+Laskuanalyysin oletuspalvelu on Cloudflare Worker, ja Bearer-avain syötetään jokaisen analyysin alussa. Avainta ei tallenneta; Worker-avain voi olla eri kuin Cloudflare-tilin API-token. Suora OpenRouter säilyy valittavana, ja Worker vaatii ilmaismallin palvelinpuolen vahvistuksen.
+
 ### Nemotron ja valinnainen Cloudflare Worker 11.11.2026
 
 Laskuanalyysi pyytää ensisijaisesti ilmaista Nemotron 3 Ultra -mallia ja saatavuus-/kiintiövirheessä automaattista ilmaismallireititintä. Palveluksi voi valita käyttäjän Cloudflare Workerin; asiakas pyytää vain ilmaismalleja, mutta palvelimen malliohjaus ja laskutus on käyttäjän varmistettava. Worker-yhteyden CORS ja mallin saatavuus ovat vielä varmentamatta.
