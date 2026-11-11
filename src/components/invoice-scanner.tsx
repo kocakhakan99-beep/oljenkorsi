@@ -1,3 +1,5 @@
+import { APIKeyButton } from "./api-key-button";
+import { useSessionAPIKey } from "../services/session-api-key";
 import { useEffect, useState } from 'react';
 import { receiptPDF } from '../services/receipt-pdf';
 import { receiptFileError, importBatchError } from '../domain/receipts/files';
@@ -5,8 +7,8 @@ import { analyzeInvoiceBatch, type InvoiceSuggestion, type InvoiceProvider } fro
 
 type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string };
 export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void; files?: File[] }) {
-  const [key, setKey] = useState('');
   const [provider, setProvider] = useState<InvoiceProvider>('worker');
+  const key = useSessionAPIKey(provider);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +34,7 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
   }
   useEffect(() => { if (files.length) void readFiles(files); }, [files]);
   async function analyze() {
-    const requestKey = key; setKey(''); setBusy(true); setError('');
+    const requestKey = key; setBusy(true); setError('');
     const next = documents.map(d => ({ ...d }));
     try {
       // Bound both document count and prompt size. A large upload is split into
@@ -52,8 +54,8 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
     finally { setBusy(false); setProgress(''); }
   }
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
-    <h2>Laskun AI-analyysi</h2>
-    <p>Valitse enintään 50 PDF-laskua (yhteensä 100 Mt) tai liitä teksti. Tarkista lähetettävät tekstit: ne lähetetään valitulle palvelulle ja OpenRouterin ilmaismallille vasta analysoitaessa. Kuvamuotoinen PDF tarvitsee OCR:n.</p>
+    <div className="ai-card-heading"><h2>Laskun analyysi</h2><APIKeyButton provider={provider} disabled={busy} /></div>
+    <p>Lisää laskut ja pyydä ehdotukset. Tarkista tiedot ja valitse kertameno tai toistuva lasku. Tarvitset avaimen ja verkkoyhteyden.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
     {!documents.length && <button onClick={() => setDocuments([{ name: 'Liitetty lasku', text: '' }])}>Liitä laskuteksti</button>}
     {documents.map((document, index) => <div key={index}>
@@ -61,9 +63,8 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
       {document.error && <p role="alert">{document.error}</p>}
       {document.suggestion && <div><p>{document.suggestion.name || 'Nimi puuttuu'} · {document.suggestion.amountCents === null ? 'Summa puuttuu' : new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(document.suggestion.amountCents / 100)} · {document.suggestion.date || 'Eräpäivä puuttuu'}</p><p>Tarkista tiedot menolomakkeessa ennen tallentamista.</p>{[false, true].map(recurring => <button key={String(recurring)} onClick={() => { onUse(document.suggestion!, recurring); setDocuments(old => old.filter((_, i) => i !== index)); }}>{recurring ? 'Jatka toistuvana laskuna' : 'Jatka kertamenona'}</button>)}</div>}
     </div>)}
-    <label>AI-palvelu<select value={provider} disabled={busy} onChange={e => { setProvider(e.target.value as InvoiceProvider); setKey(''); }}><option value="worker">Cloudflare Worker</option><option value="openrouter">OpenRouter</option></select></label>
-    <label>{provider === 'worker' ? 'Worker API-avain' : 'OpenRouter API-avain'}<input type="password" autoComplete="off" value={key} onChange={e => setKey(e.target.value)} /></label>
-    <p>Avainta ei tallenneta. Enintään viisi laskua yhdessä pyynnössä; pitkät laskut pienemmissä erissä. AI voi erehtyä.</p>
+    <label>AI-palvelu<select value={provider} disabled={busy} onChange={e => { setProvider(e.target.value as InvoiceProvider); }}><option value="worker">Cloudflare Worker</option><option value="openrouter">OpenRouter</option></select></label>
+
     <button disabled={busy || !key.trim() || !documents.some(d => d.text.trim() && !d.suggestion)} onClick={() => void analyze()}>Analysoi laskut</button>
     {busy && <p role="status">{progress}</p>}{error && <p role="alert">{error}</p>}
   </section>;

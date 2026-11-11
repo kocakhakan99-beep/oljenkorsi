@@ -1,3 +1,5 @@
+import { APIKeyButton } from "./api-key-button";
+import { useSessionAPIKey } from "../services/session-api-key";
 import { categorizeReceiptBatch } from "../services/invoice-ai";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { FileText, ScanLine, X, AlertTriangle } from "lucide-react";
@@ -22,7 +24,8 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
   const [items, setItems] = useState<BatchItem[]>([]);
   const [busy, setBusy] = useState(false), [progress, setProgress] = useState("");
   const [error, setError] = useState(""), [success, setSuccess] = useState("");
-  const [aiEnabled, setAiEnabled] = useState(false), [aiKey, setAiKey] = useState("");
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const aiKey = useSessionAPIKey("worker");
   const [ready, setReady] = useState<Record<string, boolean>>({});
   const operation = useRef<AbortController | null>(null), input = useRef<HTMLInputElement>(null), heading = useRef<HTMLHeadingElement>(null);
   const reviews = useRef(new Map<string, ReviewHandle>());
@@ -59,7 +62,7 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
   function cancel() { operation.current?.abort(); operation.current = null; setBusy(false); setProgress(""); }
   async function categorize() {
     if (!aiEnabled || !aiKey.trim() || !items.some(item => item.draft)) return;
-    const key = aiKey; setAiKey(""); setBusy(true); setError("");
+    const key = aiKey; setBusy(true); setError("");
     const current = new AbortController(); operation.current = current;
     try {
       const suggestions = await categorizeReceiptBatch(key, items.filter(item => item.draft).map(item => ({ id: item.id, products: item.draft!.lines.map(line => ({ id: line.id, name: line.name })) })), available.map(c => c.name), current.signal,
@@ -83,12 +86,12 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
     } catch (e) { setError(e instanceof Error ? e.message : "Erän kirjaus epäonnistui. Mitään ei tallennettu."); }
   }
   return <section className="panel receipt-scanner" aria-labelledby="receipt-scanner-title">
-    <div className="receipt-heading"><ScanLine size={25} aria-hidden="true" /><h2 ref={heading} id="receipt-scanner-title" tabIndex={-1}>Kuittiskannaus</h2><button aria-label="Sulje kuittiskannaus" onClick={onClose}><X size={18} /></button></div>
-    <p>Valitse tai pudota 1–50 PDF-kuittia (yhteensä 100 Mt, 20 Mt / tiedosto). Kaikki kuitit luetaan paikallisesti samaan tarkistusnäkymään. Alkuperäisiä tiedostoja ei tallenneta.</p>
+    <div className="receipt-heading ai-card-heading"><ScanLine size={25} aria-hidden="true" /><h2 ref={heading} id="receipt-scanner-title" tabIndex={-1}>Kuittiskannaus</h2><APIKeyButton provider="worker" disabled={busy} /><button aria-label="Sulje kuittiskannaus" onClick={onClose}><X size={18} /></button></div>
+    <p>Valitse tai pudota 1–50 PDF-kuittia (yhteensä 100 Mt, 20 Mt / tiedosto). Tarkista tuotteet ja kategoriat, ja kirjaa kuitit yhdessä menoihin.</p>
     <button disabled={busy} onClick={() => input.current?.click()}><FileText size={18} />Valitse PDF-kuitit</button>
     <input ref={input} hidden type="file" multiple accept="application/pdf,.pdf" aria-label="Skannaa PDF-kuitti" onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} />
-    <label><input type="checkbox" disabled={busy} checked={aiEnabled} onChange={e => { setAiEnabled(e.target.checked); setAiKey(""); }} />AI-avusteinen kategorisointi</label>
-    {aiEnabled && <div><p>Luokittele koko erä kerralla. Vain yksilölliset tuotenimet ja sallitut kategoriat lähetetään Workerille ja OpenRouterin ilmaismallille painikkeesta. Sama tuotenimi kysytään kerran ja ehdotus käytetään kaikissa kuiteissa. Hintoja, henkilötietoja tai PDF:ää ei lähetetä. AI voi erehtyä tai jättää tuotteen luokittelematta.</p><label>Worker API-avain<input type="password" autoComplete="off" value={aiKey} onChange={e => setAiKey(e.target.value)} /></label><button disabled={busy || !aiKey.trim() || !items.some(item => item.draft)} onClick={() => void categorize()}>Ehdota kategoriat koko erälle</button></div>}
+    <label><input type="checkbox" disabled={busy} checked={aiEnabled} onChange={e => { setAiEnabled(e.target.checked); }} />AI-avusteinen kategorisointi</label>
+    {aiEnabled && <div><p>Pyydä kategoriaehdotukset kaikille kuiteille kerralla. Tuotteiden nimet lähetetään analysoitavaksi. Tarkista ehdotukset ennen kirjaamista.</p><button disabled={busy || !aiKey.trim() || !items.some(item => item.draft)} onClick={() => void categorize()}>Ehdota kategoriat koko erälle</button></div>}
     {busy && <p role="status">{progress}<button onClick={cancel}>Peruuta käsittely</button></p>}
     {error && <p role="alert">{error}</p>}{success && <p role="status">{success}</p>}
     {duplicateReceipts && <p role="alert">Erässä on saman kuitin kopioita. Poista ylimääräiset ennen kirjaamista.</p>}
