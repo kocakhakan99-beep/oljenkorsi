@@ -32,4 +32,6 @@ if (/<script\b[^>]*\bsrc=|<link\b[^>]*\bhref=/i.test(h)) {
 }
 h = h.replace(/^[ \t]+$/gm, '');
 fs.writeFileSync('index.html', h);
+const online = h.replace("connect-src 'none'", "connect-src https://openrouter.ai").replace('</head>', '<meta name="invoice-online" content="true"></head>');
+fs.writeFileSync('index-online.html', online);
 fs.rmSync('dist', { recursive: true });

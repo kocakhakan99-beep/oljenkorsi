@@ -10,4 +10,4 @@ CSP estää connect-src:n ja ulkoiset resurssit. Normaaleissa testatuissa poluis
 
 LocalStorage on eristetty StorageProvideriin. file://-tallennuksen käyttäytyminen on selainkohtainen eikä standardin perusteella luvata pysyvyyttä kaikille selaimille. Testatussa Chrome for Testing -profiilissa data säilyi prosessin sulkemisen jälkeen. Tiedoston polun, selaimen tai profiilin vaihto voi muuttaa tallennusaluetta. JSON on ensisijainen siirrettävä varmistus.
 
-Tulevat verkkopalvelut on toteutettava erillisinä valinnaisina adaptereina. Niiden rajapinnat eivät ole vielä tämän version koodissa. Offline-jakelu säilytetään erillisenä eikä sitä saa tehdä riippuvaiseksi verkosta.
+Vapaaehtoinen OpenRouter-laskuanalyysi on toteutettu erilliseen `index-online.html`-versioon; sen verkko-oikeus on rajattu OpenRouteriin ja pyyntö vaatii käyttäjän toiminnon. Muita verkkopalveluita suunnitellaan erillisinä valinnaisina sovittimina. Offline-jakelu säilytetään erillisenä eikä sitä saa tehdä riippuvaiseksi verkosta.

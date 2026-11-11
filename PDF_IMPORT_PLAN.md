@@ -4,7 +4,7 @@ Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjaine
 
 ## Uusi ensisijainen suunnitelma: tekoälyavusteinen laskun kirjaus 11.11.2026
 
-**Tila: suunniteltu, ei toteutettu.** Tämä osio tarkentaa alla olevaa vanhempaa suunnitelmaa ja menee ristiriitatilanteessa sen edelle. Erillistä kuittien tai laskujen tuontihistoriaa, dokumenttitunnisteita, lähdetekstejä tai PDF:iä ei tallenneta hyväksynnän jälkeen. Nykyinen kuittiskanneri toimii edelleen [oman ohjeensa](RECEIPT_SCANNER.md) mukaan; alla olevat vanhemmat ehdotukset ImportGroupista, pysyvästä kuittierittelystä ja automaattisesta kaksoistunnisteesta eivät kuvaa nykyistä toteutusta eivätkä ole tämän lasku-MVP:n edellytyksiä.
+**Tila: osittain toteutettu.** Erillinen `index-online.html` sisältää Menot → Analysoi lasku -toiminnon: tekstipohjaisen PDF:n tai liitetyn tekstin esikatselu, OpenRouterin `openrouter/free`, AI-ehdotuksen tarkistus ja kerta-/toistuvan menon lomake. Oikeaa OpenRouter-yhteyttä ei ole varmennettu tässä ympäristössä. OCR, automaattinen asiakirjalajin tunnistus, laskun lähdeviitteet ja kaksoiskirjausehdotukset ovat edelleen suunnitelmia. Tämä osio tarkentaa alla olevaa vanhempaa suunnitelmaa ja menee ristiriitatilanteessa sen edelle. Erillistä kuittien tai laskujen tuontihistoriaa, dokumenttitunnisteita, lähdetekstejä tai PDF:iä ei tallenneta hyväksynnän jälkeen. Nykyinen kuittiskanneri toimii edelleen [oman ohjeensa](RECEIPT_SCANNER.md) mukaan; alla olevat vanhemmat ehdotukset ImportGroupista, pysyvästä kuittierittelystä ja automaattisesta kaksoistunnisteesta eivät kuvaa nykyistä toteutusta eivätkä ole tämän lasku-MVP:n edellytyksiä.
 
 ### Käyttäjän polku
 

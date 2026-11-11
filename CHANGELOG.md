@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Vapaaehtoinen OpenRouter-laskuanalyysi 11.11.2026
+
+Erillinen index-online.html tarjoaa teksti-PDF:n tai liitetyn laskutekstin tarkistuksen ja käyttäjän käynnistämän OpenRouter openrouter/free -analyysin. Ehdotus siirtyy käyttäjän tarkistamaan kerta- tai toistuvan menon lomakkeeseen; avainta ja laskutekstiä ei tallenneta talousdataan. Offline-version verkkokielto säilyy. OCR, suora API-varmennus ja kaksoiskirjausehdotukset ovat vielä tekemättä.
+
 ### Budjetoinnin ja kirjaamisen sujuvuus 11.11.2026
 
 Budjettisummissa sarkain siirtyy seuraavaan kategoriaan ja vaihto pitää kategoriat näkyvissä tallennuksen jälkeen. Toistuvien palkkojen ja etuuksien maksupäivä siirtyy automaattisesti edeltävälle pankkipäivälle. Menojen lisävalinnat järjestettiin selkeämmin.

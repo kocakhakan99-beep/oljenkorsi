@@ -1,6 +1,6 @@
 # Maksuttomat rajapinnat ja turvallinen käyttöönotto
 
-Kartoitus 10.11.2026. Käyttäjän pyytämä suunnitelma; sovellukseen ei ole kytketty automaattista ulkoista liikennettä. Nykyinen yhden HTML-tiedoston offline-versio säilyttää `connect-src 'none'` -suojauksen.
+Kartoitus 10.11.2026. Markkinadataa koskeva suunnitelma; sovellukseen ei ole kytketty automaattista ulkoista liikennettä. Offline-versio säilyttää `connect-src 'none'` -suojauksen. Erillinen verkkoversio tukee käyttäjän käynnistämää OpenRouter-laskuanalyysiä; katso [PDF-suunnitelma](PDF_IMPORT_PLAN.md).
 
 ## Jo toteutettu: päivätty offline-kurssiaineisto
 

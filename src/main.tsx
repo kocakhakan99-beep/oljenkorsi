@@ -1,3 +1,4 @@
+import { InvoiceScanner } from "./components/invoice-scanner";
 import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
 import { ReceiptDropZone } from "./components/receipt-drop-zone";
 import { marketQuote, marketSnapshot } from "./domain/market-history";
@@ -1842,6 +1843,7 @@ function CashEntryForm({
 }
 function App() {
   const receiptScanner = useRef<ReceiptScannerHandle>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [s, setS] = useState<State>(loaded.data),
     [page, setPage] = useState(location.hash.slice(1) || "dashboard"),
@@ -3320,6 +3322,7 @@ function App() {
                       : "+ Lisää tulo"}
                   </button>
                   {page === "expenses" && <ReceiptScanButton expanded={receiptOpen} onClick={() => openReceipt()} />}
+                  {page === "expenses" && <button type="button" onClick={() => setInvoiceOpen(value => !value)} aria-expanded={invoiceOpen}>Analysoi lasku</button>}
                   <button
                     onClick={() => beginQuickEntry(page, undefined, "monthly")}
                   >
@@ -3329,7 +3332,7 @@ function App() {
                   </button>
                 </div>
               )}
-              {page === "budget" && <ReceiptScanButton onClick={() => openReceipt()} />}
+              {page === "budget" && <><ReceiptScanButton onClick={() => openReceipt()} /><button type="button" onClick={() => { setInvoiceOpen(true); navigate("expenses"); }}>Analysoi lasku</button></>}
               {kinds.includes(page as Kind) &&
                 page !== "incomes" &&
                 page !== "expenses" && (
@@ -4258,6 +4261,10 @@ function App() {
                   </section>
                 </>
               ))}
+            {page === "expenses" && invoiceOpen && <InvoiceScanner onUse={(suggestion, recurring) => {
+              setQuickSeed(entry({ name: suggestion.name, amount: suggestion.amountCents ?? 0, date: suggestion.date || "", category: cats("expenses").includes("Muu meno") ? "Muu meno" : cats("expenses")[0] || "Muu", recurrence: recurring ? "monthly" : "once" }));
+              setQuickEntryKind("expenses"); setQuick(true); setInvoiceOpen(false);
+            }} />}
             <ReceiptDropZone enabled={s.settings.onboarded && ["expenses", "budget", "settings"].includes(page)} onFile={openReceipt} onError={setNotice} />
             <div id="receipt-workspace" className="receipt-home" hidden={page !== "expenses" || !receiptOpen}>
               <ReceiptScanner key={s.createdAt} ref={receiptScanner} state={s} onClose={closeReceipt} onImport={(next) => {
