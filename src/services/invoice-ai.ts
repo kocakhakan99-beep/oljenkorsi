@@ -15,11 +15,11 @@ export async function analyzeInvoice(apiKey: string, documentText: string, provi
   const token = apiKey.trim().replace(/^Bearer\s+/i, '').trim();
   if (!token || /^Bearer$/i.test(token)) throw Error('Anna valitun palvelun API-avain.');
   if (!documentText.trim() || documentText.length > 30000) throw Error('Anna enintään 30 000 merkkiä laskutekstiä.');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 45000);
   const service = provider === 'worker' ? 'Cloudflare Worker' : 'OpenRouter';
-  try {
-    for (const [index, model] of invoiceModels.entries()) {
+  for (const [index, model] of invoiceModels.entries()) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), index === 0 ? 45000 : 90000);
+    try {
       const response = await fetch(invoiceEndpoints[provider], {
         method: 'POST', credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, signal: controller.signal,
         body: JSON.stringify({ model, messages: [
@@ -44,12 +44,13 @@ export async function analyzeInvoice(apiKey: string, documentText: string, provi
       const content = envelope.choices[0].message.content.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, '$1');
       const parsed = suggestionSchema.parse(JSON.parse(content));
       return { name: parsed.name?.trim() || '', amountCents: parsed.amount_eur === null ? null : Math.round(parsed.amount_eur * 100), date: parsed.due_date && validDate(parsed.due_date) ? parsed.due_date : '' };
-    }
-    throw new InvoiceError('Ilmaista mallia ei ole nyt saatavilla. Yritä myöhemmin uudelleen.');
-  } catch (error) {
-    if (error instanceof InvoiceError) throw error;
-    if (controller.signal.aborted) throw Error(`${service} ei vastannut ajoissa. Yritä uudelleen.`);
-    if (error instanceof TypeError) throw Error(`${service}: yhteys epäonnistui. Tarkista internetyhteys ja palvelun CORS-asetukset.`);
-    throw Error('Analyysi epäonnistui: palvelun vastausta ei voitu tulkita. Yritä uudelleen tai syötä meno käsin.');
-  } finally { clearTimeout(timer); }
+    } catch (error) {
+      if (controller.signal.aborted && index === 0) continue;
+      if (controller.signal.aborted) throw Error(`${service}: ilmaismallit eivät vastanneet ajoissa. Yritä myöhemmin uudelleen tai syötä meno käsin.`);
+      if (error instanceof InvoiceError) throw error;
+      if (error instanceof TypeError) throw Error(`${service}: yhteys epäonnistui. Tarkista internetyhteys ja palvelun CORS-asetukset.`);
+      throw Error('Analyysi epäonnistui: palvelun vastausta ei voitu tulkita. Yritä uudelleen tai syötä meno käsin.');
+    } finally { clearTimeout(timer); }
+  }
+  throw new InvoiceError('Ilmaista mallia ei ole nyt saatavilla. Yritä myöhemmin uudelleen.');
 }
