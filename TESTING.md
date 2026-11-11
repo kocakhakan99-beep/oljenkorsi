@@ -1,5 +1,11 @@
 # Testausraportti 11.11.2026
 
+## OpenRouter-laskuanalyysi 11.11.2026
+
+- 164 yksikkötestiä, tyyppitarkistus, ESLint ja molempien HTML-versioiden build läpäisivät.
+- Chromiumissa testattiin teksti-PDF, muokattava esikatselu, simuloitu API-vastaus, kerta- ja toistuva meno sekä se, etteivät avain tai laskuteksti päädy taloustallennukseen. Todellista laskua tai API-avainta ei käytetty.
+- OpenRouterin julkinen malliluettelo vastasi HTTP 200 ja ilmoitti `openrouter/free`-reitittimen prompt- ja completion-hinnoiksi 0 sekä JSON-vastauksen tuen. Tämä ei todenna käyttäjän avaimen toimivuutta, varsinaisen analyysipäätepisteen CORS-tukea, mallin saatavuutta tai palveluntarjoajien tietojenkäsittelyehtoja. OCR ja aitojen laskujen tarkkuus ovat testaamatta.
+
 ## Tiedon minimointi ja Info-ikkunat 11.11.2026
 
 - 161 yksikkötestiä 16 tiedostossa, TypeScript-tarkistus, ESLint ja standalone-tuotantobuild läpäisivät. Buildissa säilyy Viten suuren JavaScript-chunkin huomautus.

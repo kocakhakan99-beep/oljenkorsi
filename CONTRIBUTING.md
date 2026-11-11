@@ -1,6 +1,6 @@
 # Kehittäminen
 
-Pidä offline/file:///single-file-vaatimukset ensisijaisina. Älä lisää etäfontteja, CDN:ää, telemetryä, API-kutsuja tai PWA-riippuvuutta. Uuden ominaisuuden tulee toimia tuotantotiedostossa ilman verkkoa.
+Pidä offline/file:///single-file-vaatimukset ensisijaisina: `index.html` ei saa riippua verkosta. Erillinen `index-online.html` sallii käyttäjän käynnistämän OpenRouter-laskuanalyysin; muut verkkoyhteydet tarvitsevat erillisen suunnitelman. Älä lisää etäfontteja, CDN:ää, telemetryä tai PWA-riippuvuutta.
 
 ## Tarkistukset muutoksen mukaan
 

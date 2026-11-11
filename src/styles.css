@@ -5523,3 +5523,8 @@ button.primary,
 .receipt-drop-overlay { position:fixed; inset:12px; z-index:10000; pointer-events:none; border:3px dashed var(--accent); border-radius:1.25rem; background:color-mix(in srgb, var(--soft) 88%, transparent); display:grid; place-items:center; padding:1rem; }
 .receipt-drop-overlay > div { display:grid; justify-items:center; text-align:center; gap:.7rem; padding:1.5rem; max-width:100%; border:1px solid var(--line); border-radius:1rem; background:var(--surface); color:var(--text); box-shadow:0 8px 36px #0002; }
 .receipt-drop-overlay strong { font-size:1.25rem; }
+.invoice-scanner { display: grid; gap: 12px; margin-bottom: 18px; }
+.invoice-scanner label { display: grid; gap: 6px; }
+.invoice-scanner textarea { width: 100%; min-height: 140px; }
+.invoice-scanner p { margin: 0; }
+.invoice-scanner button { justify-self: start; }

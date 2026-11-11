@@ -4,6 +4,10 @@ Ajantasainen selkokielinen kokonaiskuva: [checklist ja dokumentaatio aiheittain]
 
 Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus. Tarkoitus on auttaa käyttäjää hyötymään omasta taloudestaan, ei myydä hänen tietojaan.
 
+## Valinnainen AI-laskuanalyysi
+
+`index-online.html` on erillinen verkkoversio. Avaa Menot → Analysoi lasku tai budjetin Analysoi lasku -pikatoiminto, valitse tekstimuotoinen PDF tai liitä laskuteksti, tarkista lähetettävä teksti ja syötä oma OpenRouter-avain. Lähetyspainike välittää näytetyn tekstin OpenRouterille ja tämän valitsemalle mallipalvelulle. `openrouter/free` käyttää ilmaismallien reititintä; saatavuus, kiintiöt ja palveluntarjoajien tietojenkäsittely vaihtelevat. Tarkista nimet, summat ja eräpäivät ennen kuin valitset kertamenon tai toistuvan laskun ja tallennat sen. Avain ja laskuteksti eivät tallennu talousdataan. Kuva-PDF:t tarvitsevat OCR:n, jota ei vielä ole. API-yhteyttä, mallien saatavuutta ja `file://`-osoitteen CORS-tukea ei ole varmennettu oikealla avaimella; jos selain estää pyynnön, kokeile HTTPS-palvelua. Paikallinen `index.html` ei salli verkkoyhteyksiä. Eri HTML-tiedostojen selaintallennus voi olla erillinen etenkin file://-käytössä: siirrä olemassa oleva talous tarvittaessa JSON-varmuuskopiolla ja tarkista palautuksen vaikutus ennen hyväksymistä.
+
 ## Käyttö ilman asennusta
 
 1. Tallenna projektin juuren valmis `index.html` pysyvään paikkaan, esimerkiksi työpöydälle. Tiedoston voi nimetä uudelleen haluamakseen.
@@ -89,7 +93,7 @@ Testien valinta muutoksen mukaan on kuvattu tiedostossa [CONTRIBUTING.md](CONTRI
 
 ## Tietosuoja ja turvallisuus
 
-Ei ajonaikaisia ulkoisia resursseja, analytiikkaa tai API-kutsuja. CSP estää verkkoyhteydet. Tietojen suojaus ei kata haittaohjelmia, laajennuksia tai laitteen muita käyttäjiä. Katso `PRIVACY.md` ja `SECURITY.md`.
+Offline-versio ei käytä ajonaikaisia ulkoisia resursseja tai API-kutsuja; sen CSP estää verkkoyhteydet. Erillinen verkkoversio sallii käyttäjän käynnistämän OpenRouter-laskuanalyysin. Tietojen suojaus ei kata haittaohjelmia, laajennuksia tai laitteen muita käyttäjiä. Katso `PRIVACY.md` ja `SECURITY.md`.
 
 ## Rajaus
 
