@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /** The illustration is decorative; the live text reports actual work. */
-export function DocumentProcessing({ kind, progress, action }: { kind: 'receipt' | 'invoice'; progress: string; action?: ReactNode }) {
+export function DocumentProcessing({ kind, progress, action, stage = 'working' }: { kind: 'receipt' | 'invoice'; progress: string; action?: ReactNode; stage?: 'working' | 'waiting' | 'review' | 'attention' }) {
   const receipt = kind === 'receipt';
   return <div className={`document-processing document-processing--${kind}`}>
     <div className="document-processing-art" aria-hidden="true">
@@ -26,6 +26,6 @@ export function DocumentProcessing({ kind, progress, action }: { kind: 'receipt'
       <span className="document-processing-spark document-processing-spark--one">✦</span>
       <span className="document-processing-spark document-processing-spark--two">✦</span>
     </div>
-    <div className="document-processing-copy"><strong>{receipt ? 'Kuittikone työssä' : 'Laskukone työssä'}</strong><p role="status" aria-live="polite">{progress || (receipt ? 'Käsitellään kuitteja…' : 'Käsitellään laskuja…')}</p>{action}</div>
+    <div className="document-processing-copy"><strong>{receipt ? 'Kuittikone' : 'Laskukone'} {stage === 'working' ? 'työssä' : stage === 'review' ? 'valmiina tarkistukseen' : stage === 'attention' ? 'tarvitsee huomion' : 'odottaa tiedostoja'}</strong><p role="status" aria-live="polite">{progress || (receipt ? 'Käsitellään kuitteja…' : 'Käsitellään laskuja…')}</p>{action}</div>
   </div>;
 }

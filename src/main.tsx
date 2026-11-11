@@ -4278,9 +4278,16 @@ function App() {
                   </section>
                 </>
               ))}
-            <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner onClose={closeInvoice} files={invoiceFiles} onUse={(suggestion, recurring) => {
-              setQuickSeed(entry({ name: suggestion.name, amount: suggestion.amountCents ?? 0, date: suggestion.date || "", category: cats("expenses").includes("Muu meno") ? "Muu meno" : cats("expenses")[0] || "Muu", recurrence: recurring ? "monthly" : "once" }));
-              setInvoiceOpen(false); setQuickEntryKind("expenses"); setQuick(true);
+            <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner onClose={closeInvoice} files={invoiceFiles} categories={cats("expenses")} onBatch={(batch, allowDuplicates) => {
+              const seen = new Set<string>();
+              for (const { suggestion } of batch) {
+                const fingerprint = `${suggestion.name.trim().toLocaleLowerCase("fi-FI")}|${suggestion.amountCents}|${suggestion.date}`;
+                if (!allowDuplicates && (seen.has(fingerprint) || s.expenses.some(e => e.active && e.name.trim().toLocaleLowerCase("fi-FI") === suggestion.name.trim().toLocaleLowerCase("fi-FI") && e.amount === suggestion.amountCents && e.date === suggestion.date))) return "Sama lasku saattaa olla jo kirjattu tai esiintyä erässä kahdesti. Tarkista laskut ennen tallentamista.";
+                seen.add(fingerprint);
+              }
+              const expenses = batch.map(({ suggestion, recurring, category }) => entry({ name: suggestion.name, amount: suggestion.amountCents!, date: suggestion.date, category, recurrence: recurring ? "monthly" : "once" }));
+              if (!commit({ ...s, expenses: [...s.expenses, ...expenses] })) return "Laskujen tallentaminen epäonnistui.";
+              setUndo(s); receiptUndoActive.current = true; setNotice(`${expenses.length} laskua kirjattu. Voit kumota erän Kumoa-painikkeella.`); return "";
             }} /></ScannerDialog>
             <ReceiptDropZone enabled={s.settings.onboarded} onFiles={(files, kind) => {
               navigate("expenses");

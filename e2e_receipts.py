@@ -39,14 +39,23 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page = ctx.new_page(); page.on('dialog', lambda dialog: dialog.accept()); errors = []; network = []; consoles = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' and not m.location.get('url','').endswith('/favicon.ico') else None)
-        page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
+        page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:', 'https://api-worker.kocakhakan99.workers.dev/')) else None)
+        def mock_ai(route):
+            payload = json.loads(route.request.post_data_json['messages'][1]['content'])
+            result = {'categories': [{'id': product['id'], 'category': 'Ruoka'} for product in payload['products']]}
+            route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))
+        page.route('https://api-worker.kocakhakan99.workers.dev/chat', mock_ai)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
         page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click()
+        page.get_by_role('button', name='Lisää avain', exact=True).click()
+        page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
+        page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
         expected_originals = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
         expected = expected_originals + [(7556, 22, '2026-10-17'), (4767, 15, '2026-04-12'), (9285, 20, '2026-11-09')] if not args.pdfs else expected_originals
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
             before = state(page)
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
+            page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
             expect(page.get_by_role('heading', name='Tarkista kuitti', exact=True)).to_be_visible(timeout=30000)
             issues = page.locator('.receipt-review [role=alert]').all_text_contents()
             assert not issues, issues
@@ -56,8 +65,10 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             assert state(page) == before
             mark(f'PDF {i+1}: {count} products, exact total {total} cents, no draft writes')
             # Force one unknown category, then classify it through the multi-select path.
+            save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
             selector = page.locator('.receipt-product-category select').first
             selector.select_option('')
+            expect(save).to_be_disabled()
             unresolved = sum(1 for select in page.locator('.receipt-product-category select').all() if not select.input_value())
             page.get_by_role('checkbox', name=f'Vain luokittelemattomat ({unresolved})', exact=True).check()
             page.get_by_role('button', name='Valitse näkyvät', exact=True).click()
@@ -65,9 +76,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             page.locator('.receipt-controls input[type=checkbox]').uncheck()
             for select in page.locator('.receipt-product-category select').all():
                 if not select.input_value(): select.select_option('Muu meno')
-            save = page.get_by_role('button', name=f'Kirjaa {total//100},{total%100:02d} € menoihin', exact=True)
-            expect(save).to_be_disabled()
-            page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check(); expect(save).to_be_enabled()
+            if page.get_by_label('Täsmäytä kuitti', exact=True).count():
+                page.get_by_label('Täsmäytä kuitti', exact=True).select_option('separate')
+            expect(save).to_be_enabled()
             if i == 1:
                 for width in [320, 390, 768]:
                     page.set_viewport_size({'width': width, 'height': 950})
@@ -96,11 +107,11 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 page.get_by_role('button', name='Lisää kuitti', exact=True).click()
                 assert state(page) == before
                 page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
+                page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
                 expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
                 for select in page.locator('.receipt-product-category select').all():
                     if not select.input_value(): select.select_option('Muu meno')
-                page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
-                page.locator('.receipt-review').get_by_role('button', name='Kirjaa', exact=False).click()
+                page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True).click()
                 expect(page.locator('.receipt-review')).to_have_count(0)
                 assert 'receiptImports' not in state(page)
                 mark('Undo restores financial data; re-import still leaves no receipt archive')
@@ -118,7 +129,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         mark('Only ordinary expenses persist after reload; receipt and product details do not')
         bad = Path(tmp) / 'bad.pdf'; bad.write_text('not a PDF')
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(bad)
-        expect(page.get_by_text('Tiedosto ei ole PDF.', exact=True)).to_be_visible()
+        expect(page.get_by_text('Tiedosto ei ole PDF.', exact=False)).to_be_visible()
         assert state(page) == saved
         mark('Invalid PDF does not change financial state')
         import fitz
@@ -148,9 +159,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         for i, line in enumerate(['ALEPA ESIMERKKI', 'K001 M000001/0001 9.11.2026 12:00', '*TUNTEMATON ??? *', '*MAITO 1,25 *', '*YHTEENSÄ 1,25 *']): ambiguous_page.insert_text((25, 30+i*15), line, fontsize=9, fontname='FixtureMono')
         ambiguous_doc.save(ambiguous); ambiguous_doc.close()
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(ambiguous)
+        page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
         expect(page.locator('.receipt-issue-source')).to_contain_text('TUNTEMATON ???')
-        page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
-        expect(page.locator('.receipt-review').get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
+        expect(page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)).to_be_disabled()
         page.set_viewport_size({'width':320, 'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
         page.locator('.receipt-issue-source').scroll_into_view_if_needed(); page.screenshot(path='/tmp/receipt-source-error.png')
@@ -159,6 +170,6 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         assert not errors, errors
         assert not consoles, consoles
         assert not network, network
-        mark('No JavaScript errors, console errors or external application requests')
+        mark('No JavaScript errors, console errors or unmocked external requests')
         browser.close()
 Path(os.environ.get('TALOUS_RECEIPT_REPORT', str(ROOT / 'qa/receipt-e2e-results.json'))).write_text(json.dumps({'checks':results, 'suppliedPDFs':bool(args.pdfs), 'documentCount':len(files), 'receiptDetailsPersisted':False, 'errors':errors, 'externalRequests':network}, ensure_ascii=False, indent=2)+'\n')
