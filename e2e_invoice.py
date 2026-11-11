@@ -1,81 +1,49 @@
-"""Default build invoice flow; API is mocked and no real keys or documents are used."""
-import json, os
+"""PDF invoice UI: Worker authentication, automatic analysis and session key."""
+import json, os, tempfile
 from pathlib import Path
+import fitz
 from playwright.sync_api import sync_playwright, expect
 
-url = os.environ.get('TALOUS_URL', (Path(__file__).parent / 'index.html').as_uri())
-with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path=os.environ.get('TALOUS_BROWSER') or None, headless=True, args=['--no-sandbox'])
-    page = browser.new_page()
-    requests = []
-    def handle(route):
-        if route.request.method == 'POST':
-            requests.append(route.request.post_data_json)
-        route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
-    page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
-    page.goto(url)
-    page.get_by_role('button', name='Aloita tyhjästä').click()
-    page.get_by_role('navigation').get_by_role('button', name='Budjetti', exact=True).click()
-    page.get_by_role('button', name='Lisää lasku', exact=True).click()
-    page.get_by_role('button', name='Liitä laskuteksti').click()
-    page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku 42,55')
-    page.get_by_role('button', name='Sulje laskun lisäys').click()
-    page.get_by_role('button', name='Lisää lasku', exact=True).click()
-    expect(page.get_by_label('Lähetettävä laskuteksti')).to_have_value('Fiktiivinen lasku 42,55')
-    expect(page.get_by_label('AI-palvelu')).to_have_count(0)
-    page.get_by_role('button', name='Lisää avain', exact=True).click()
-    page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
-    page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
-    assert not requests
-    expect(page.get_by_role('button', name='Analysoi laskut')).to_be_enabled()
-    page.get_by_role('button', name='Analysoi laskut').click()
-    expect(page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible()
-    assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
-    page.get_by_label('Toistuva lasku kuukausittain').check()
-    page.get_by_role('button', name='Kirjaa laskut menoihin').click()
-    stored = page.evaluate("JSON.parse(localStorage.getItem('taloussuunnittelu.v1')).data.expenses")
-    assert any(item['name'] == 'Testilasku' and item['amount'] == 4255 and item['recurrence'] == 'monthly' for item in stored)
-    state = page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
-    assert 'test-key' not in state and 'Fiktiivinen lasku 42,55' not in state
-    print('PASS: index.html, OpenRouter mock, review, recurring expense, and data minimization')
-    worker_page = browser.new_page()
-    worker_requests = []
-    worker_headers = []
-    def worker_handle(route):
-        if route.request.method == 'POST':
-            worker_requests.append(route.request.post_data_json)
-            worker_headers.append(route.request.headers)
-        route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
-    worker_page.route('https://api-worker.kocakhakan99.workers.dev/chat', worker_handle)
-    worker_page.goto(url)
-    worker_page.get_by_role('button', name='Aloita tyhjästä').click()
-    worker_page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
-    for name in ['Lisää kertaluonteinen meno', 'Lisää kuitti', 'Lisää lasku', 'Lisää toistuva lasku']:
-        expect(worker_page.locator('.entry-head-actions').get_by_role('button', name=name, exact=True).locator('svg')).to_have_count(1)
-    worker_page.get_by_role('button', name='Lisää lasku', exact=True).click()
-    expect(worker_page.get_by_label('AI-palvelu')).to_have_count(0)
-    worker_page.get_by_role('button', name='Liitä laskuteksti').click()
-    worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
-    submit = worker_page.get_by_role('button', name='Analysoi laskut')
-    expect(submit).to_be_disabled()
-    worker_page.get_by_role('button', name='Lisää avain', exact=True).click()
-    worker_page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('worker-test-key')
-    worker_page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
-    expect(submit).to_be_enabled()
-    submit.click()
-    expect(worker_page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible()
-    expect(worker_page.get_by_role('button', name='Vaihda tai poista avain')).to_be_visible()
-    expect(submit).to_have_count(0)
-    assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'openrouter/free'
-    assert worker_headers[0].get('authorization') == 'Bearer worker-test-key'
-    assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
-    assert 'Fiktiivinen lasku' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
-    print('PASS: Worker requires a Bearer key and requests a free model')
-    worker_page.reload()
-    worker_page.get_by_role('button', name='Lisää lasku', exact=True).click()
-    expect(worker_page.get_by_role('button', name='Vaihda tai poista avain', exact=True)).to_be_visible()
-    worker_page.get_by_role('button', name='Vaihda tai poista avain', exact=True).click()
-    worker_page.get_by_role('button', name='Poista avain', exact=True).click()
-    expect(worker_page.get_by_role('button', name='Lisää avain', exact=True)).to_be_visible()
-    print('PASS: session key survives reload and can be removed')
-    browser.close()
+with tempfile.TemporaryDirectory() as tmp:
+    path = Path(tmp) / 'invoice.pdf'
+    pdf = fitz.open(); sheet = pdf.new_page()
+    sheet.insert_text((50, 70), 'Fiktiivinen lasku 42,55 eur erapaiva 25.11.2026')
+    pdf.save(path); pdf.close()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=os.environ.get('TALOUS_BROWSER') or None, headless=True, args=['--no-sandbox'])
+        page = browser.new_page(); requests = []; headers = []
+        def handle(route):
+            requests.append(route.request.post_data_json); headers.append(route.request.headers)
+            route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
+        page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
+        page.goto(os.environ.get('TALOUS_URL', (Path(__file__).parent / 'index.html').as_uri()))
+        page.get_by_role('button', name='Aloita tyhjästä').click()
+        page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
+        for name in ['Lisää kertaluonteinen meno', 'Lisää kuitti', 'Lisää lasku', 'Lisää toistuva lasku']:
+            expect(page.locator('.entry-head-actions').get_by_role('button', name=name, exact=True).locator('svg')).to_have_count(1)
+        page.get_by_role('button', name='Lisää lasku', exact=True).click()
+        expect(page.get_by_role('button', name='Liitä laskuteksti')).to_have_count(0)
+        expect(page.get_by_label('Lähetettävä laskuteksti')).to_have_count(0)
+        page.get_by_label('Valitse laskujen PDF:t').set_input_files(path)
+        expect(page.get_by_text('Lisää avain yläkulman avainpainikkeesta.')).to_be_visible(timeout=30000)
+        assert not requests
+        page.get_by_role('button', name='Lisää avain', exact=True).click()
+        dialog = page.get_by_role('dialog', name='Analyysin avain')
+        dialog.get_by_label('Avain', exact=True).fill('test-key')
+        dialog.get_by_role('button', name='Tallenna', exact=True).click()
+        expect(page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible(timeout=30000)
+        assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
+        assert headers[0].get('authorization') == 'Bearer test-key'
+        page.get_by_label('Toistuva lasku kuukausittain').check()
+        page.get_by_role('button', name='Kirjaa laskut menoihin').click()
+        stored = page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
+        assert 'test-key' not in stored and 'Fiktiivinen lasku' not in stored
+        assert any(item['name'] == 'Testilasku' and item['amount'] == 4255 and item['recurrence'] == 'monthly' for item in json.loads(stored)['data']['expenses'])
+        page.reload()
+        page.get_by_role('button', name='Lisää lasku', exact=True).click()
+        expect(page.get_by_role('button', name='Vaihda tai poista avain', exact=True)).to_be_visible()
+        page.get_by_role('button', name='Vaihda tai poista avain', exact=True).click()
+        page.get_by_role('button', name='Poista avain', exact=True).click()
+        expect(page.get_by_role('button', name='Lisää avain', exact=True)).to_be_visible()
+        print('PASS: PDF-only invoice UI, automatic Worker analysis, batch save and session key')
+        browser.close()

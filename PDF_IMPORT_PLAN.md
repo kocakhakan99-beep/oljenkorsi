@@ -4,7 +4,7 @@ Päivitetty 10.11.2026. **Prisman, S-marketin, Alepan ja K-kaupan tekstipohjaine
 
 ## Uusi ensisijainen suunnitelma: tekoälyavusteinen laskun kirjaus 11.11.2026
 
-**Tila: osittain toteutettu.** Menot → Lisää lasku tukee tekstipohjaisia PDF-laskuja ja liitettyä tekstiä, usean laskun AI-analyysiä, muokattavaa yhteenvetoa ja erän yhteistä kirjaamista kerta- tai toistuvina menoina. Kaikki AI-pyynnöt kulkevat Cloudflare Workerin kautta OpenRouterin `openrouter/free`-reitittimelle. Avain muistetaan välilehden istunnossa. Käyttäjä on vahvistanut onnistuneen laskuanalyysin; automaattiset testit käyttävät mockattua palvelua. OCR, automaattinen asiakirjalajin tunnistus ja laskun lähdeviitteet ovat edelleen suunnitelmia. PDF:tä, raakoja lähdetekstejä tai AI-vastauksia ei tallenneta hyväksynnän jälkeen. Alla oleva **Ajantasainen AI-jatkosuunnitelma** erottaa nykytilan jatkoehdotuksista ja korvaa vanhemmat palvelu- ja mallivalintoja koskevat ehdotukset.
+**Tila: osittain toteutettu.** Menot → Lisää lasku tukee tekstipohjaisia PDF-laskuja, usean laskun AI-analyysiä, muokattavaa yhteenvetoa ja erän yhteistä kirjaamista kerta- tai toistuvina menoina. Kaikki AI-pyynnöt kulkevat Cloudflare Workerin kautta OpenRouterin `openrouter/free`-reitittimelle. Avain muistetaan välilehden istunnossa. Käyttäjä on vahvistanut onnistuneen laskuanalyysin; automaattiset testit käyttävät mockattua palvelua. OCR, automaattinen asiakirjalajin tunnistus ja laskun lähdeviitteet ovat edelleen suunnitelmia. PDF:tä, raakoja lähdetekstejä tai AI-vastauksia ei tallenneta hyväksynnän jälkeen. Alla oleva **Ajantasainen AI-jatkosuunnitelma** erottaa nykytilan jatkoehdotuksista ja korvaa vanhemmat palvelu- ja mallivalintoja koskevat ehdotukset.
 
 ### Käyttäjän polku
 

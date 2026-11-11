@@ -1,8 +1,8 @@
 import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
-import { X } from "lucide-react";
-import { useEffect, useState } from 'react';
+import { CircleCheck, X } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
 import { validDate } from '../domain/calculations';
 import { receiptPDF } from '../services/receipt-pdf';
 import { receiptFileError, importBatchError } from '../domain/receipts/files';
@@ -17,6 +17,7 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
   const [success, setSuccess] = useState('');
   const [allowDuplicates, setAllowDuplicates] = useState(false);
   const [progress, setProgress] = useState('');
+  const previousKey = useRef(key);
   async function readFiles(selected: File[]) {
     if (busy) { setError("Odota nykyisen käsittelyn valmistumista ennen uutta tuontia."); return; }
     if (documents.length && !window.confirm("Korvataanko nykyiset laskuluonnokset uusilla tiedostoilla?")) return;
@@ -38,6 +39,11 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
     if (key.trim() && next.some(d => d.text.trim())) void analyze(next);
   }
   useEffect(() => { if (files.length) void readFiles(files); }, [files]);
+  useEffect(() => {
+    const wasSet = !!previousKey.current.trim();
+    previousKey.current = key;
+    if (!wasSet && key.trim() && !busy && documents.some(d => d.text.trim() && !d.suggestion)) void analyze();
+  }, [key]);
   async function analyze(source = documents) {
     const requestKey = key; setBusy(true); setError(''); setSuccess('');
     const next = source.map(d => ({ ...d }));
@@ -60,12 +66,11 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
   }
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
     <div className="ai-card-heading"><h2>Lisää lasku</h2><APIKeyButton disabled={busy} /><button type="button" aria-label="Sulje laskun lisäys" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
-    <p>Lisää laskut. Teksti lähetetään analysoitavaksi, kun avain on käytössä. Tarkista tiedot ja valitse kertameno tai toistuva lasku. Tarvitset avaimen ja verkkoyhteyden.</p>
+    <p>Valitut laskut lähetetään AI-analyysiin.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
-    {!documents.length && <button onClick={() => setDocuments([{ name: 'Liitetty lasku', text: '' }])}>Liitä laskuteksti</button>}
-    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (documents.every(d => d.suggestion) ? 'Tarkista laskujen tiedot.' : 'Tarkista teksti ja käynnistä analyysi.') : 'Valitse laskut aloittaaksesi.'} />}
+    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (documents.every(d => d.suggestion) ? 'Tarkista laskujen tiedot.' : 'Lisää avain tai yritä uudelleen.') : 'Valitse laskut aloittaaksesi.'} />}
     {documents.map((document, index) => <div key={index} onChangeCapture={() => setAllowDuplicates(false)}>
-      <details open={documents.length === 1}><summary>{document.name}{document.suggestion ? ' · Analysoitu' : ''}</summary><label>Lähetettävä laskuteksti<textarea disabled={busy} rows={5} maxLength={20000} value={document.text} onChange={e => setDocuments(old => old.map((d, i) => i === index ? { ...d, text: e.target.value, suggestion: undefined, error: undefined } : d))} /></label></details>
+      {!busy && <p>{document.name}{document.suggestion ? ' · Analysoitu' : ''}</p>}
       {document.error && <p role="alert">{document.error}</p>}
       {document.suggestion && <div className="invoice-review-fields">
         <label>Nimi<input value={document.suggestion.name} onChange={e => setDocuments(old => old.map((d, i) => i === index ? { ...d, suggestion: { ...d.suggestion!, name: e.target.value } } : d))} /></label>
@@ -74,13 +79,13 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
         <label>Kategoria<select value={document.category || (categories.includes('Muu meno') ? 'Muu meno' : categories[0] || '')} onChange={e => setDocuments(old => old.map((d, i) => i === index ? { ...d, category: e.target.value } : d))}>{categories.map(c => <option key={c}>{c}</option>)}</select></label>
         <label><input type="checkbox" checked={!!document.recurring} onChange={event => setDocuments(old => old.map((d, i) => i === index ? { ...d, recurring: event.target.checked } : d))} />Toistuva lasku kuukausittain</label>
       </div>}
-      <button type="button" disabled={busy} onClick={() => { setAllowDuplicates(false); setDocuments(old => old.filter((_, i) => i !== index)); }}>Poista erästä</button>
+      {!busy && (document.error || document.suggestion) && <button type="button" onClick={() => { setAllowDuplicates(false); setDocuments(old => old.filter((_, i) => i !== index)); }}>Poista erästä</button>}
 
     </div>)}
 
-    {documents.some(d => d.text.trim() && !d.suggestion) && <button disabled={busy || !key.trim()} onClick={() => void analyze()}>Analysoi laskut</button>}
+    {error && key && documents.some(d => d.text.trim() && !d.suggestion) && <button disabled={busy} onClick={() => void analyze()}>Yritä uudelleen</button>}
     {!key && <p>Lisää avain yläkulman avainpainikkeesta.</p>}
-    {documents.some(d => d.suggestion) && <div><h3>Laskujen yhteenveto</h3><p>{documents.filter(d => d.suggestion).length} laskua · {new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(documents.reduce((n, d) => n + (d.suggestion?.amountCents || 0), 0) / 100)}</p><button className="primary" disabled={busy || documents.some(d => !d.suggestion || !d.suggestion.name.trim() || !d.suggestion.amountCents || d.suggestion.amountCents > 10000000000 || !categories.length || !validDate(d.suggestion.date))} onClick={() => { const message = onBatch(documents.map(d => ({ suggestion: d.suggestion!, recurring: !!d.recurring, category: d.category || (categories.includes('Muu meno') ? 'Muu meno' : categories[0] || '') })), allowDuplicates); if (message) setError(message); else { setSuccess(`${documents.length} laskua kirjattu. Sulje ikkuna, jos haluat kumota erän.`); setDocuments([]); setError(''); setAllowDuplicates(false); } }}>Kirjaa laskut menoihin</button><p>Tarkista nimet, summat, eräpäivät ja toistuvuus ennen kirjaamista. Puuttuvat tiedot vaativat tarkistuksen.</p></div>}
+    {documents.some(d => d.suggestion) && <div className="document-review document-review--invoice"><div className="document-review-heading"><CircleCheck size={23} aria-hidden="true" /><div><h3>Laskujen yhteenveto</h3><p>{documents.filter(d => d.suggestion).length} laskua</p></div><strong className="document-review-total">{new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(documents.reduce((n, d) => n + (d.suggestion?.amountCents || 0), 0) / 100)}</strong></div><button className="primary" disabled={busy || documents.some(d => !d.suggestion || !d.suggestion.name.trim() || !d.suggestion.amountCents || d.suggestion.amountCents > 10000000000 || !categories.length || !validDate(d.suggestion.date))} onClick={() => { const message = onBatch(documents.map(d => ({ suggestion: d.suggestion!, recurring: !!d.recurring, category: d.category || (categories.includes('Muu meno') ? 'Muu meno' : categories[0] || '') })), allowDuplicates); if (message) setError(message); else { setSuccess(`${documents.length} laskua kirjattu. Sulje ikkuna, jos haluat kumota erän.`); setDocuments([]); setError(''); setAllowDuplicates(false); } }}>Kirjaa laskut menoihin</button><p>Tarkista nimet, summat, eräpäivät ja toistuvuus ennen kirjaamista. Puuttuvat tiedot vaativat tarkistuksen.</p></div>}
     {error && <p role="alert">{error}</p>}{error.startsWith("Sama lasku") && <label><input type="checkbox" checked={allowDuplicates} onChange={e => setAllowDuplicates(e.target.checked)} />Olen tarkistanut, että samanlaiset laskut ovat erillisiä.</label>}{success && <p role="status">{success}</p>}
   </section>;
 }

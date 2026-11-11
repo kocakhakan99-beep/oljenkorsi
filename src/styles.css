@@ -5575,3 +5575,22 @@ button.primary,
 .scanner-dialog > .panel { margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
 .entry-head-actions button, .receipt-scan-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
 .entry-head-actions button svg, .receipt-scan-button svg { flex-shrink: 0; }
+
+/* Confirmation card shares the illustrated machine's palette and contrast. */
+.document-review {
+  padding: 1.1rem; margin: .8rem 0; border: 1px solid #8fbfb2;
+  border-radius: 1rem; background: #ecf8f2; color: #173c36;
+  display: grid; gap: .75rem;
+}
+.document-review--invoice { background: #eff4ff; border-color: #aabfe1; color: #18344c; }
+.document-review-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+.document-review-heading > svg { color: #28635c; flex: 0 0 auto; }
+.document-review--invoice .document-review-heading > svg { color: #315b92; }
+.document-review-heading > div { flex: 1; min-width: 8rem; }
+.document-review-heading h3, .document-review-heading p { margin: 0; }
+.document-review-heading strong, .document-review-heading h3 { font-size: 1.05rem; }
+.document-review-heading p { font-size: .9rem; }
+.document-review-total { font-size: 1.3rem !important; white-space: nowrap; }
+.document-review .receipt-batch-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; }
+.document-review .receipt-batch-toolbar button { margin: 0; }
+.document-review > p { margin: 0; }
