@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Yksityisyyden ja yhteenvetonäkymän viimeistely 11.11.2026
+
+Kuittiluonnos häviää hyväksynnän jälkeen; tallennukseen jää vain tavalliset kategoriakohtaiset menot, ei erillistä kuittihistoriaa, PDF-tiivistettä, tuoterivejä tai niiden listaa menon kuvauksessa. Vanhoista tallennuksista arkisto ja tuoterivilistat puhdistetaan. Ohjeet avautuvat kortin Info-kuvakkeesta ponnahdusikkunaan, myös budjetin raamien laskenta, omaisuuden arvio ja kompassin havaintoperusteet. Sisäkkäisen Info-ikkunan Escape sulkee vain päällimmäisen ikkunan. Yhteenvedon kulutuksen erittely sekä säästö- ja sijoitussiirrot ovat näkyvissä oletuksena ja niiden tarkoitus on kerrottu lyhyesti.
+
 ## 0.1.0, 3.11.2026
 
 Ensimmäinen paikallinen käyttöversio. Single-file build, file://, localStorage ja virhetilat, JSON-backup/restore, CSV, talouskirjaukset, kategoriat, toistuvuudet, budjetti, yhteenveto, manuaaliset omaisuus/velka/sijoitusarvot, tavoitteet, rajatut skenaariot ja raportit, teemat ja yksityisyystila. 31 yksikkötestiä ja offline file:// E2E. Laaja V1-määrittely ei vielä kokonaan toteudu.

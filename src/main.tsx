@@ -463,11 +463,12 @@ function Modal({
       ref={ref}
       aria-labelledby={titleId}
       onCancel={(e) => {
+        if (e.target !== ref.current) return;
         e.preventDefault();
         if (dismissible) onClose();
       }}
       onKeyDown={(e) => {
-        if (e.key === "Escape" && dismissible) onClose();
+        if (e.key === "Escape" && dismissible && !(e.target instanceof HTMLDialogElement && e.target !== ref.current)) onClose();
       }}
     >
       <div className="dialog-head">
@@ -593,11 +594,8 @@ function HelpBox({
 }) {
   return (
     <aside className="help-box" aria-labelledby={`help-${id}-title`}>
-      <CircleHelp size={20} aria-hidden="true" />
-      <details className="help-box-copy">
-        <summary><strong id={`help-${id}-title`}>{title}</strong></summary>
-        <p>{children}</p>
-      </details>
+      <strong className="help-box-copy" id={`help-${id}-title`}>{title}</strong>
+      <ContextDetails title={title}>{children}</ContextDetails>
       <button
         type="button"
         className="help-box-dismiss"
@@ -1573,7 +1571,7 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
     <button onClick={onBudget}>Tarkista budjetissa <ArrowRight size={16} aria-hidden="true" /></button>
   </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
-    <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
+    <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div><ContextDetails title="Miten raamit lasketaan?"><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></ContextDetails>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
     <div className="budget-income-basis"><span>Nettotulot · {month}</span><strong>{euro(result.income)}</strong><small>Toteutunut {euro(result.actualIncome)} · sisältää myös tulevat kirjaukset</small></div>
     {!result.coverageConfirmed && <p className="ux-status-note">Tietojen kattavuutta ei vahvistettu</p>}
     {result.income <= 0 ? <p className="alert warning" role="status">Tulopohja puuttuu: lisää valitulle kuukaudelle nettotulot ennen prosenttivertailua. Nollatuloista ei lasketa suosituksia.</p> : <>
@@ -1590,7 +1588,6 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
-    <details className="ux-explanation"><summary>Miten raamit lasketaan?</summary><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></details>
     {detailed && <details className="budget-rule-settings"><summary>Muokkaa prosentteja, kategoriaryhmiä ja suosituksia</summary>
       <p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee. Sovita tavoitteet elämäntilanteeseen; älä leikkaa välttämätöntä hoitoa tai ota velkaa säästötavoitteen vuoksi.</p>
       <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
@@ -4065,10 +4062,12 @@ function App() {
                       {stat("Menot tässä kuussa", euro(m.expense))}
                       {stat("Säästöaste", pct(m.savingRate), "Tulot kulutuksen jälkeen / tulot. Säästö- ja sijoitussiirrot eivät ole kulutusta; prosentti ei todenna sijoitettua rahavirtaa.")}
                     </div>
-                    <details className="metric-disclosure"><summary>Kulutuksen erittely</summary><div className="stats">
+                    <div className="metric-disclosure">
+                    <h3>Kulutuksen erittely</h3>
+                    <p className="muted">Näet paljonko jäi kulutuksen jälkeen ja paljonko kirjattiin säästö- tai sijoitussiirtoina.</p><div className="stats">
                       {stat("Kulutusmenot", euro(m.consumption), "Menon tyypiksi merkityt säästö- ja sijoitussiirrot sivuutetaan.")}
                       {stat("Tulot kulutuksen jälkeen", euro(m.surplus), "Ei ole sama kuin todennettu sijoitussumma.")}
-                    </div></details>
+                    </div></div>
                   </section>
                   <section
                     className="metric-group metric-group-wealth"
@@ -4099,12 +4098,13 @@ function App() {
                     className="metric-group metric-group-plan"
                     aria-labelledby="plan-heading"
                   >
-                    <details className="metric-disclosure"><summary><h2 id="plan-heading">Suunnitelma ja siirrot</h2></summary>
+                    <h2 id="plan-heading">Säästö- ja sijoitussiirrot</h2>
+                    <p className="muted">Kirjatut siirrot ja budjetoitujen menojen käyttö valitussa kuussa.</p>
                     <div className="stats">
                       {stat("Säästösiirrot", euro(m.savingTransfers))}
                       {stat("Sijoitussiirrot", euro(m.investmentTransfers))}
                       <MetricCard label="Budjetoiduista käytetty" value={m.budget ? pct((budgetedActual / m.budget) * 100) : "Ei budjettia"} note="Sama kategoriatoteuma kuin budjetissa, myös mahdolliset omat kokonaistoteuman korjaukset. Budjetoimaton kulutus näytetään erikseen budjetissa." />
-                    </div></details>
+                    </div>
                   </section>
                   <div className="grid-two">
                     <section className="panel">
@@ -7135,11 +7135,7 @@ function CompassResearchDetails({
   privateMode?: boolean;
 }) {
   return (
-    <details className={`compass-research-details${compact ? " compact" : ""}`}>
-      <summary>
-        {compact ? "Tietopohja ja rajat" : "Mihin havainto perustuu?"}
-        {task.sourceIds?.length ? ` · ${task.sourceIds.join(", ")}` : ""}
-      </summary>
+    <ContextDetails className={`compass-research-details${compact ? " compact" : ""}`} title={`${compact ? "Tietopohja ja rajat" : "Mihin havainto perustuu?"}${task.sourceIds?.length ? ` · ${task.sourceIds.join(", ")}` : ""}`}>
       <p>{task.reason}</p>
       {task.impactNote && <p className="compass-impact-note">{privateMode && task.privateEvidence ? "Vaikutusarvion summat piilotettu" : task.impactNote}</p>}
       {task.sourceIds?.length ? (
@@ -7157,7 +7153,7 @@ function CompassResearchDetails({
           <strong>Tämän huomion rajaus:</strong> {task.boundary}
         </p>
       )}
-    </details>
+    </ContextDetails>
   );
 }
 function Empty({ text }: { text: string }) {

@@ -33,21 +33,19 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 page.insert_font(fontname='FixtureMono', fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
                 for i, line in enumerate(lines[offset:offset + 60]): page.insert_text((25, 30+i*12), line, fontsize=9, fontname='FixtureMono')
             path = Path(tmp) / f'{key}.pdf'; doc.save(path); doc.close(); files.append(path)
-        copy = fitz.open(files[3]); copy.set_metadata({'title':'Different PDF encoding of same purchase'})
-        copy_path = Path(tmp) / 'duplicate.pdf'; copy.save(copy_path); copy.close(); files.append(copy_path)
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get('TALOUS_BROWSER', '/usr/bin/chromium'), headless=True, args=['--no-sandbox'])
         ctx = browser.new_context(viewport={'width': 1280, 'height': 900})
         page = ctx.new_page(); errors = []; network = []; consoles = []
         page.on('pageerror', lambda e: errors.append(str(e)))
-        page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' else None)
+        page.on('console', lambda m: consoles.append(m.text) if m.type == 'error' and not m.location.get('url','').endswith('/favicon.ico') else None)
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:')) else None)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
         page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
         expected_originals = [(3287, 15, '2026-04-05'), (12146, 22, '2026-01-02'), (7385, 27, '2026-03-16'), (2400, 9, '2026-11-01'), (2244, 9, '2026-11-02'), (9285, 20, '2026-11-09'), (165, 2, '2026-11-09'), (1692, 6, '2026-11-07')]
-        expected = expected_originals + [(7556, 22, '2026-10-17'), (4767, 15, '2026-04-12')] if not args.pdfs else expected_originals
-        initial = state(page)
+        expected = expected_originals + [(7556, 22, '2026-10-17'), (4767, 15, '2026-04-12'), (9285, 20, '2026-11-09')] if not args.pdfs else expected_originals
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
+            before = state(page)
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
             expect(page.get_by_role('heading', name='Tarkista kuitti', exact=True)).to_be_visible(timeout=30000)
             issues = page.locator('.receipt-review [role=alert]').all_text_contents()
@@ -55,7 +53,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             assert page.locator('.receipt-product').count() == count
             summary = page.locator('.receipt-summary')
             expect(summary).to_contain_text(date.split('-')[2]+'.'+date.split('-')[1]+'.'+date.split('-')[0])
-            assert state(page) == initial if i == 0 else len(state(page)['receiptImports']) == i
+            assert state(page) == before
             mark(f'PDF {i+1}: {count} products, exact total {total} cents, no draft writes')
             # Force one unknown category, then classify it through the multi-select path.
             selector = page.locator('.receipt-product-category select').first
@@ -79,26 +77,22 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 page.screenshot(path=os.environ.get('TALOUS_RECEIPT_SCREENSHOT', str(Path(tmp) / 'receipt-mobile.png')))
                 mark('Receipt review fits 320/390/768 px; bulk classification and confirmation work')
                 page.set_viewport_size({'width':1280, 'height':900})
-            before = state(page); save.click()
+            before = state(page); product_names = page.locator('.receipt-product-select strong').all_text_contents(); save.click()
             expect(page.locator('.receipt-review')).to_have_count(0)
-            after = state(page); group = after['receiptImports'][-1]
-            entries = [e for e in after['expenses'] if e['id'] in group['entryIds']]
+            after = state(page)
+            assert 'receiptImports' not in after
+            existing_ids = {e['id'] for e in before['expenses']}
+            entries = [e for e in after['expenses'] if e['id'] not in existing_ids]
             assert sum(e['amount'] for e in entries) == total
             assert all(e['date'] == date for e in entries)
+            assert all(e['description'] == '' for e in entries)
             assert after['budgets'] == before['budgets']
-            # Original payment and loyalty data must not enter saved state.
-            assert not any(word in json.dumps(group).lower() for word in ['visa', 'jäsennumero', 'varmennus', 'contactless'])
-            mark(f'PDF {i+1}: grouped expenses saved in purchase month, no duplicate total/payment/VAT')
-            page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
-            expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
-            expect(page.get_by_text('Tämä kuitti on jo tuotu. Uutta kirjausta ei tehdä.', exact=True)).to_be_visible()
-            expect(page.get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
-            assert state(page) == after
-            page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
+            after_text = json.dumps(after, ensure_ascii=False)
+            assert all(name not in after_text for name in product_names)
+            mark(f'PDF {i+1}: expenses saved in purchase month; receipt and product details discarded')
             if i == 0:
                 page.get_by_role('button', name='Kumoa', exact=True).click()
                 assert state(page) == before
-                # Re-import after undo must be possible.
                 page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
                 expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
                 for select in page.locator('.receipt-product-category select').all():
@@ -106,23 +100,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
                 page.get_by_role('checkbox', name='Tarkistin tuotteet', exact=False).check()
                 page.get_by_role('button', name='Kirjaa', exact=False).click()
                 expect(page.locator('.receipt-review')).to_have_count(0)
-                mark('Duplicate receipt blocked; undo restores exact state and allows re-import')
+                assert 'receiptImports' not in state(page)
+                mark('Undo restores financial data; re-import still leaves no receipt archive')
         saved = state(page)
-        if len(files) == 9 or (not args.pdfs and len(files) == 12):
-            import hashlib
-            assert hashlib.sha256(files[3].read_bytes()).digest() != hashlib.sha256(files[-1].read_bytes()).digest()
-            page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(files[-1])
-            expect(page.get_by_text('Tämä kuitti on jo tuotu. Uutta kirjausta ei tehdä.', exact=True)).to_be_visible(timeout=30000)
-            expect(page.get_by_role('button', name='Kirjaa', exact=False)).to_be_disabled()
-            assert state(page) == saved
-            page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
-            mark('A different PDF of the same purchase is blocked by semantic identity')
-        if not args.pdfs:
-            page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(files[10])
-            expect(page.get_by_text('Tämä kuitti on jo tuotu. Uutta kirjausta ei tehdä.', exact=True)).to_be_visible(timeout=30000)
-            assert state(page) == saved
-            page.get_by_role('button', name='Hylkää luonnos', exact=True).click()
-            mark('Unstarred Prisma PDF is recognized as the same purchase as its starred copy')
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_be_visible()
         # Receipt undo must expire after a later saved change, never erase that change.
         nav(page, 'Asetukset'); page.get_by_label('Väritila', exact=True).select_option('dark')
@@ -130,8 +110,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click(); saved = state(page)
         mark('Later saved change expires receipt undo safely')
         page.reload(); nav(page, 'Menot'); page.get_by_role('button', name='Skannaa kuitti', exact=True).click()
-        assert state(page)['receiptImports'] == saved['receiptImports']
-        mark('All receipt groups and product details persist after reload')
+        assert state(page) == saved and 'receiptImports' not in saved
+        assert not any(e['description'].startswith('Kuittituonti ') for e in saved['expenses'])
+        mark('Only ordinary expenses persist after reload; receipt and product details do not')
         bad = Path(tmp) / 'bad.pdf'; bad.write_text('not a PDF')
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(bad)
         expect(page.get_by_text('Tiedosto ei ole PDF.', exact=True)).to_be_visible()
@@ -176,6 +157,5 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         assert not consoles, consoles
         assert not network, network
         mark('No JavaScript errors, console errors or external application requests')
-        unique_purchases = len(state(page)["receiptImports"])
         browser.close()
-Path(os.environ.get('TALOUS_RECEIPT_REPORT', str(ROOT / 'qa/receipt-e2e-results.json'))).write_text(json.dumps({'checks':results, 'suppliedPDFs':bool(args.pdfs), 'documentCount':len(files), 'uniquePurchases':unique_purchases, 'errors':errors, 'externalRequests':network}, ensure_ascii=False, indent=2)+'\n')
+Path(os.environ.get('TALOUS_RECEIPT_REPORT', str(ROOT / 'qa/receipt-e2e-results.json'))).write_text(json.dumps({'checks':results, 'suppliedPDFs':bool(args.pdfs), 'documentCount':len(files), 'receiptDetailsPersisted':False, 'errors':errors, 'externalRequests':network}, ensure_ascii=False, indent=2)+'\n')

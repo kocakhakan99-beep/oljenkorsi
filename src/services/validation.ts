@@ -1,5 +1,3 @@
-import { receiptImportSchema } from "../domain/receipts/schema";
-import { validateReceiptGroup } from "../domain/receipts/import";
 import { assetModelSchema } from "../domain/asset-valuation";
 import { z } from "zod";
 import {
@@ -79,7 +77,6 @@ const shellSchema = z.object({
     .optional(),
   actionStates: z.record(z.string(), z.unknown()).optional(),
   scenarios: z.array(z.unknown()).max(100),
-  receiptImports: z.array(receiptImportSchema).max(2000).optional(),
   investmentTransactions: z.array(z.unknown()).max(0),
   themes: z.array(z.unknown()).max(0),
 });
@@ -136,13 +133,6 @@ export function validate(raw: unknown): State {
       expenseMonths: [],
     },
   };
-  s.receiptImports = check.data.receiptImports || [];
-  const receiptIds = new Set<string>(), receiptKeys = new Set<string>(), receiptHashes = new Set<string>();
-  for (const group of s.receiptImports) {
-    validateReceiptGroup(group);
-    if (receiptIds.has(group.id) || receiptKeys.has(group.semanticKey) || receiptHashes.has(group.sourceHash)) throw Error("Sama kuittituonti esiintyy kahdesti.");
-    receiptIds.add(group.id); receiptKeys.add(group.semanticKey); receiptHashes.add(group.sourceHash);
-  }
   let ids = new Set<string>();
   for (let k of kinds) {
     if (!Array.isArray(x[k]) || x[k].length > 20000)
@@ -150,6 +140,7 @@ export function validate(raw: unknown): State {
     s[k] = x[k].map((e) => {
       const normalized = {
         ...e,
+        description: typeof e.description === "string" && /^Kuittituonti [0-9a-f-]{36}\. /i.test(e.description) ? "" : e.description,
         expenseType:
           e.expenseType ??
           legacyExpenseType(

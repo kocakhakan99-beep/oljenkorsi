@@ -1,19 +1,40 @@
-import type { ReactNode } from "react";
-import { CircleHelp, Eye, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { CircleHelp, Eye, Pencil, Trash2, X } from "lucide-react";
+
+export function InfoPopup({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    if (open && !element.open) element.showModal();
+    else if (!open && element.open) element.close();
+  }, [open]);
+  return <span className={`info-popup ${className}`.trim()}>
+    <button type="button" className="info-popup-trigger" aria-label={`Lisätieto: ${title}`} title={title} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <CircleHelp size={19} aria-hidden="true" />
+    </button>
+    <dialog ref={dialog} className="info-popup-dialog" aria-labelledby={titleId} onClose={() => setOpen(false)} onCancel={event => event.stopPropagation()} onKeyDown={event => { if (event.key === "Escape") event.stopPropagation(); }} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
+      <div className="info-popup-heading"><h2 id={titleId}>{title}</h2><button type="button" aria-label="Sulje ohje" title="Sulje" onClick={() => setOpen(false)}><X size={20} aria-hidden="true" /></button></div>
+      <div className="info-popup-content">{children}</div>
+    </dialog>
+  </span>;
+}
 
 /** A value stays primary; a method is available without repeating it underneath. */
 export function MetricCard({ label, value, note, children }: { label: string; value: string; note?: string; children?: ReactNode }) {
   return <div className="stat metric-card">
     <span>{label}</span><strong>{value}</strong>
     {children}
-    {note && <details className="metric-note"><summary aria-label={`Lisätieto: ${label}`} title={`Lisätieto: ${label}`}><CircleHelp size={18} aria-hidden="true" /></summary><p>{note}</p></details>}
+    {note && <InfoPopup className="metric-info" title={label}><p>{note}</p></InfoPopup>}
   </div>;
 }
 export function StatusBadge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "warning" | "positive" }) {
   return <span className={`status-badge tone-${tone}`}>{children}</span>;
 }
-export function ContextDetails({ title, children }: { title: string; children: ReactNode }) {
-  return <details className="ux-explanation"><summary>{title}</summary>{children}</details>;
+export function ContextDetails({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+  return <InfoPopup title={title} className={className}>{children}</InfoPopup>;
 }
 /** Raw percentage remains readable above 100%; the visual track stops at its end. */
 export function BudgetUsage({ actual, budget, label }: { actual: number; budget: number; label: string }) {
