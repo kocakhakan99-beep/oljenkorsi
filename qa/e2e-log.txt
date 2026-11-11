@@ -1,6 +1,10 @@
-PASS: Onboarding tyhjästä file:// offline
+PASS: Onboarding tyhjästä paikallisessa yhden tiedoston sovelluksessa localhost-testipalvelimella
+PASS: Ohjelaatikon voi piilottaa ja palauttaa asetuksista
+PASS: Summan pikasäätö toimii
+PASS: Yhteenvedon pikatoiminnot avaavat kirjauksen ja näkymän
 PASS: Tulo lisätty
 PASS: Toistuva meno lisätty
+PASS: Tapahtuman lisätiedot avautuvat näppäimistöllä ja aria-controls kohdistuu sisältöön
 PASS: Menon muokkaus
 PASS: Budjetin inline-muokkaus
 PASS: Omaisuus, velka, sijoitus ja tavoite lisätty
@@ -10,7 +14,15 @@ PASS: Teema ja tumma tila
 PASS: Summien piilotus
 PASS: Ctrl K ja Escape näppäimistöpolku
 PASS: Kolmen skenaarion tallennus
-PASS: Raportti ja taulukkovastine
+PASS: Raportin ajanjakso, aluekaavio ja zoomaus
+PASS: Oma aikaväli, jakson KPI-kooste ja nettokassavirran tietokortti
+PASS: Raporttivälilehtien nuoli-, Home- ja End-näppäimet
+PASS: Kuluraportin luokka avaa tapahtumakohtaisen tietokortin
+PASS: Piirakkasektori toimii näppäimistöllä
+PASS: Rahavirtapäivä avaa oikean tietokortin
+PASS: Kuukausipylväs avaa oikean tietokortin
+PASS: Tummassa teemassa raporttikortti käyttää vaaleaa pintaa ja luettavaa tekstiä
+PASS: Mobiilileveydet 320–768 px: sivu ja taulukkosäiliöt eivät ylitä näkymää
 PASS: Selainprosessi suljettu ja uudelleenavattu: data säilyi
 PASS: JSON backup ladattu ja sisältö tarkistettu
 PASS: CSV vienti

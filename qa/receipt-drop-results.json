@@ -1,0 +1,21 @@
+{
+  "passed": [
+    "One collapsed scanner in Expenses; keyboard and budget shortcut open the same workspace",
+    "Drop overlay tolerates nested elements and clears on leaving or Escape",
+    "PDF drop anywhere in Menot opens and parses in Expenses without financial writes",
+    "PDF drop anywhere in Budjetti opens and parses in Expenses without financial writes",
+    "PDF drop anywhere in Asetukset opens and parses in Expenses without financial writes",
+    "Draft and classifications survive closing/navigation; rejecting replacement keeps the original",
+    "Approved replacement parses the new PDF",
+    "Non-PDF and multi-file drops are rejected before navigation and do not erase the draft",
+    "An open editor is protected from file drops",
+    "Other views do not start receipt processing or navigate away on file drop",
+    "Former import location links to Expenses without a second scanner",
+    "Accessible PDF button opens the native file chooser and uses the same parser",
+    "Expense scanner and shortcuts fit 320–768 px and the drop overlay works in dark mode",
+    "No JavaScript errors, console errors or external application requests"
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "externalRequests": []
+}
