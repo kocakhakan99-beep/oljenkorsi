@@ -9,7 +9,7 @@ export const invoiceEndpoints: Record<InvoiceProvider, string> = {
   worker: 'https://api-worker.kocakhakan99.workers.dev/chat',
 };
 export const invoiceModel = 'openrouter/free';
-const responseSchema = z.object({ choices: z.array(z.object({ message: z.object({ content: z.string().max(10000).nullish() }) })).min(1).max(10) });
+const responseSchema = z.object({ choices: z.array(z.object({ finish_reason: z.string().nullish(), message: z.object({ content: z.string().max(10000).nullish(), refusal: z.string().nullish() }) })).min(1).max(10) });
 const suggestionSchema = z.object({ name: z.string().max(200).nullish(), amount_eur: z.union([z.number(), z.string().max(40)]).nullish(), due_date: z.string().max(20).nullish() }).refine(value => value.name !== undefined || value.amount_eur !== undefined || value.due_date !== undefined);
 
 function parseSuggestion(content: string): InvoiceSuggestion {
@@ -41,6 +41,9 @@ export async function analyzeInvoice(apiKey: string, documentText: string, provi
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 90000);
     try {
+      // A free router can select a model that returns no final answer. Retry
+      // that case once with the same free route and the original time limit.
+      for (let attempt = 0; attempt < 2; attempt++) {
       const response = await fetch(invoiceEndpoints[provider], {
         method: 'POST', credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, signal: controller.signal,
         body: JSON.stringify({ model: invoiceModel, messages: [
@@ -62,9 +65,16 @@ export async function analyzeInvoice(apiKey: string, documentText: string, provi
       let envelope: z.infer<typeof responseSchema>;
       try { envelope = responseSchema.parse(JSON.parse(body)); }
       catch { throw new InvoiceError('Palvelu palautti virheellisen vastauksen. Yritä uudelleen myöhemmin.'); }
-      const content = envelope.choices[0].message.content;
-      if (!content?.trim()) throw new InvoiceError('AI:n vastaus oli tyhjä. Yritä uudelleen tai syötä meno käsin.');
+      const { message, finish_reason: finishReason } = envelope.choices[0];
+      const content = message.content;
+      if (!content?.trim()) {
+        if (message.refusal || finishReason === 'content_filter') throw new InvoiceError('AI-palvelu kieltäytyi käsittelemästä laskua. Tarkista teksti tai syötä meno käsin.');
+        if (attempt === 0) continue;
+        throw new InvoiceError('Ilmaismallireititin palautti kahdesti tyhjän vastauksen. Yritä myöhemmin uudelleen tai syötä meno käsin.');
+      }
       return parseSuggestion(content);
+      }
+      throw new InvoiceError('AI ei palauttanut laskutietoja. Yritä myöhemmin uudelleen.');
     } catch (error) {
       if (controller.signal.aborted) throw Error(`${service}: ilmaismallit eivät vastanneet ajoissa. Yritä myöhemmin uudelleen tai syötä meno käsin.`);
       if (error instanceof InvoiceError) throw error;

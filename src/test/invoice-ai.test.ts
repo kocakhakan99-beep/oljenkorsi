@@ -19,9 +19,23 @@ it('reads a JSON object surrounded by prose and a decimal comma', async () => {
 });
 it('reports empty or unrecognized model output without revealing it', async () => {
   for (const content of [null, 'salainen teksti', '{}']) {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content } }] }))));
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content } }] })))));
     await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow(/tyhjä|ymmärrettävässä muodossa|tunnistettavia/);
   }
+});
+it('retries one empty free-router response and accepts the next answer', async () => {
+  const empty = new Response(JSON.stringify({ choices: [{ message: { content: null } }] }));
+  const fetcher = vi.fn().mockResolvedValueOnce(empty).mockResolvedValueOnce(ok());
+  vi.stubGlobal('fetch', fetcher);
+  expect(await analyzeInvoice('test-key', 'teksti', 'worker')).toEqual({ name: 'Sähköyhtiö', amountCents: 4255, date: '2026-11-25' });
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(fetcher.mock.calls.map(([, options]) => JSON.parse(options.body).model)).toEqual(['openrouter/free', 'openrouter/free']);
+});
+it('does not retry a model refusal or expose its text', async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ finish_reason: 'content_filter', message: { content: null, refusal: 'sensitive' } }] })));
+  vi.stubGlobal('fetch', fetcher);
+  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('kieltäytyi');
+  expect(fetcher).toHaveBeenCalledTimes(1);
 });
 it('sends only free model identifiers to the selected Worker', async () => {
   const fetcher = vi.fn().mockResolvedValue(ok());
