@@ -3,12 +3,11 @@ import { useSessionAPIKey } from "../services/session-api-key";
 import { useEffect, useState } from 'react';
 import { receiptPDF } from '../services/receipt-pdf';
 import { receiptFileError, importBatchError } from '../domain/receipts/files';
-import { analyzeInvoiceBatch, type InvoiceSuggestion, type InvoiceProvider } from '../services/invoice-ai';
+import { analyzeInvoiceBatch, type InvoiceSuggestion } from '../services/invoice-ai';
 
 type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string };
 export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: InvoiceSuggestion, recurring: boolean) => void; files?: File[] }) {
-  const [provider, setProvider] = useState<InvoiceProvider>('worker');
-  const key = useSessionAPIKey(provider);
+  const key = useSessionAPIKey();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +45,7 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
           const item = pending[offset++]; group.push(item); length += item.d.text.length;
         }
         setProgress(`Analysoidaan ${offset}/${pending.length} laskua…`);
-        const suggestions = await analyzeInvoiceBatch(requestKey, group.map(({ d }) => d.text), provider);
+        const suggestions = await analyzeInvoiceBatch(requestKey, group.map(({ d }) => d.text));
         group.forEach(({ i }, index) => { next[i] = { ...next[i], suggestion: suggestions[index], error: undefined }; });
         setDocuments([...next]);
       }
@@ -54,7 +53,7 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
     finally { setBusy(false); setProgress(''); }
   }
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
-    <div className="ai-card-heading"><h2>Laskun analyysi</h2><APIKeyButton provider={provider} disabled={busy} /></div>
+    <div className="ai-card-heading"><h2>Laskun analyysi</h2><APIKeyButton disabled={busy} /></div>
     <p>Lisää laskut ja pyydä ehdotukset. Tarkista tiedot ja valitse kertameno tai toistuva lasku. Tarvitset avaimen ja verkkoyhteyden.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
     {!documents.length && <button onClick={() => setDocuments([{ name: 'Liitetty lasku', text: '' }])}>Liitä laskuteksti</button>}
@@ -63,7 +62,6 @@ export function InvoiceScanner({ onUse, files = [] }: { onUse: (suggestion: Invo
       {document.error && <p role="alert">{document.error}</p>}
       {document.suggestion && <div><p>{document.suggestion.name || 'Nimi puuttuu'} · {document.suggestion.amountCents === null ? 'Summa puuttuu' : new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(document.suggestion.amountCents / 100)} · {document.suggestion.date || 'Eräpäivä puuttuu'}</p><p>Tarkista tiedot menolomakkeessa ennen tallentamista.</p>{[false, true].map(recurring => <button key={String(recurring)} onClick={() => { onUse(document.suggestion!, recurring); setDocuments(old => old.filter((_, i) => i !== index)); }}>{recurring ? 'Jatka toistuvana laskuna' : 'Jatka kertamenona'}</button>)}</div>}
     </div>)}
-    <label>AI-palvelu<select value={provider} disabled={busy} onChange={e => { setProvider(e.target.value as InvoiceProvider); }}><option value="worker">Cloudflare Worker</option><option value="openrouter">OpenRouter</option></select></label>
 
     <button disabled={busy || !key.trim() || !documents.some(d => d.text.trim() && !d.suggestion)} onClick={() => void analyze()}>Analysoi laskut</button>
     {busy && <p role="status">{progress}</p>}{error && <p role="alert">{error}</p>}

@@ -44,7 +44,7 @@ with tempfile.TemporaryDirectory() as tmp:
         page.get_by_label('AI-avusteinen kategorisointi').check()
         assert not requests
         page.locator('.receipt-scanner').get_by_role('button', name='Lisää avain', exact=True).click()
-        page.get_by_role('dialog', name='Analyysin avain').get_by_label('Worker-avain', exact=True).fill('test-key')
+        page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
         page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
         page.get_by_role('button', name='Ehdota kategoriat koko erälle').click()
         expect(page.locator('.receipt-scanner').get_by_role('button', name='Vaihda tai poista avain')).to_be_visible()

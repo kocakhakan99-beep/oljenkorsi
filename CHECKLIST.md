@@ -127,6 +127,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ PDF-tiedostojen drag and drop kaikissa näkymissä: kuitti/lasku-valinta, ohjaus Menojen vastaavaan skanneriin.
 - ✅ Skannerien pääpaikka Menot; budjetissa pikapainikkeet. Enintään 50 tiedostoa / 100 Mt erässä; kuitit yhteisessä tarkistusnäkymässä ja koko erän atominen tallennus, laskut enintään viiden laskun AI-pyynnöissä.
 - ✅ Pudotus toimii myös Tulot-näkymässä.
+- ✅ AI-palveluvalinta poistettu: kaikki analyysit oman Workerin kautta. Laskujen lisätiedot ja sovelluksen AI-käyttökohteet priorisoitu PDF-tuontisuunnitelmassa (jatko-ominaisuudet eivät vielä toteutettuja).
 - ✅ Skannerien avainpainike: yksi avaimen syöttö välilehden istunnossa, sama Worker-avain molemmille skannereille, vaihto ja poisto painikkeesta. Lyhyet käyttöohjeet skannerikorteissa.
 - ✅ Valinnainen kuittien AI-kategorisointi: oletuksena pois; eräkohtainen API-toiminto lähettää vain yksilölliset tuotenimet ja kategoriavaihtoehdot. Samannimiset tuotteet luokitellaan kerran koko erässä.
 - ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.

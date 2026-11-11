@@ -8,7 +8,7 @@ it('requests the free router directly and validates an invoice suggestion', asyn
   vi.stubGlobal('fetch', fetcher);
   expect(await analyzeInvoice('test-key', 'Maksettava 42,55')).toEqual({ name: 'Sähköyhtiö', amountCents: 4255, date: '2026-11-25' });
   const [url, options] = fetcher.mock.calls[0];
-  expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');
+  expect(url).toBe('https://api-worker.kocakhakan99.workers.dev/chat');
   expect(JSON.parse(options.body).model).toBe('openrouter/free');
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
@@ -27,7 +27,7 @@ it('retries one empty free-router response and accepts the next answer', async (
   const empty = new Response(JSON.stringify({ choices: [{ message: { content: null } }] }));
   const fetcher = vi.fn().mockResolvedValueOnce(empty).mockResolvedValueOnce(ok());
   vi.stubGlobal('fetch', fetcher);
-  expect(await analyzeInvoice('test-key', 'teksti', 'worker')).toEqual({ name: 'Sähköyhtiö', amountCents: 4255, date: '2026-11-25' });
+  expect(await analyzeInvoice('test-key', 'teksti')).toEqual({ name: 'Sähköyhtiö', amountCents: 4255, date: '2026-11-25' });
   expect(fetcher).toHaveBeenCalledTimes(2);
   expect(fetcher.mock.calls.map(([, options]) => JSON.parse(options.body).model)).toEqual(['openrouter/free', 'openrouter/free']);
 });
@@ -40,7 +40,7 @@ it('does not retry a model refusal or expose its text', async () => {
 it('sends only free model identifiers to the selected Worker', async () => {
   const fetcher = vi.fn().mockResolvedValue(ok());
   vi.stubGlobal('fetch', fetcher);
-  await analyzeInvoice('Bearer worker-test-key', 'teksti', 'worker');
+  await analyzeInvoice('Bearer worker-test-key', 'teksti');
   const [url, options] = fetcher.mock.calls[0];
   expect(url).toBe('https://api-worker.kocakhakan99.workers.dev/chat');
   expect(JSON.parse(options.body).model).toBe(invoiceModel);
@@ -58,24 +58,23 @@ it('explains free-tier and key failures without exposing the provider response',
   await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('käyttöraja');
   const denied = vi.fn().mockResolvedValue(new Response('test-key', { status: 401 }));
   vi.stubGlobal('fetch', denied);
-  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('API-avain');
+  await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('avain');
   expect(denied).toHaveBeenCalledTimes(1);
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('test-key')));
   await expect(analyzeInvoice('test-key', 'teksti')).rejects.toThrow('CORS-asetukset');
 });
 
-it('requires an API key for either provider before sending any request', async () => {
+it('requires an API key before sending any Worker request', async () => {
   const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);
-  await expect(analyzeInvoice('', 'teksti', 'openrouter')).rejects.toThrow('API-avain');
-  await expect(analyzeInvoice('', 'teksti', 'worker')).rejects.toThrow('API-avain');
+  await expect(analyzeInvoice('', 'teksti')).rejects.toThrow('avain');
   expect(fetcher).not.toHaveBeenCalled();
 });
 
 it('explains that a Worker 401 may come from either Worker or OpenRouter credentials', async () => {
   const fetcher = vi.fn().mockResolvedValue(new Response('{\"error\":\"Unauthorized\"}', { status: 401 }));
   vi.stubGlobal('fetch', fetcher);
-  await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('APP_API_KEY');
-  await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('OpenRouter-avain');
+  await expect(analyzeInvoice('worker-test-key', 'teksti')).rejects.toThrow('APP_API_KEY');
+  await expect(analyzeInvoice('worker-test-key', 'teksti')).rejects.toThrow('OpenRouter-avain');
 });
 
 it('maps batched invoice suggestions by id even when the model reorders them', async () => {
@@ -85,7 +84,7 @@ it('maps batched invoice suggestions by id even when the model reorders them', a
     { id: 0, name: 'A', amount_eur: 10, due_date: null },
   ] }) } }] })));
   vi.stubGlobal('fetch', fetcher);
-  const result = await analyzeInvoiceBatch('key', ['first', 'second'], 'worker');
+  const result = await analyzeInvoiceBatch('key', ['first', 'second']);
   expect(result.map(i => i.name)).toEqual(['A', 'B']);
   expect(result.map(i => i.amountCents)).toEqual([1000, 2000]);
   expect(fetcher).toHaveBeenCalledTimes(1);
