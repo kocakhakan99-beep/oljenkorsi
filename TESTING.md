@@ -1,5 +1,10 @@
 # Testausraportti 11.11.2026
 
+## Worker-rajapinnan tarkistus 11.11.2026
+
+- 169 yksikkötestiä, TypeScript, ESLint ja tuotantobuild läpäisivät. Simuloitu selaintesti varmisti Worker-avaimen Bearer-otsakkeen ja ilmaismallin tunnisteen; 401-virhe voi viitata sekä Workerin APP_API_KEY-arvoon että palvelinpuolen OpenRouter-avaimeen.
+- Tämän ympäristön Workeriin tekemä avaimeton OPTIONS-esitarkistus palautti tavallisella selaimen User-Agent-tunnisteella HTTP 401 `Unauthorized` ilman Access-Control-Allow-Origin-otsaketta sekä `Origin: null`- että `Origin: https://example.com` -pyynnölle. Chromen paikallisessa testissä sovellus näytti tästä yhteys-/CORS-virheen. Tämä poikkeaa ilmoitetusta OPTIONS-käytöksestä, eikä virheen tarkkaa sijaintia Workerissä tai sen edessä ole vahvistettu. Oikeaa avainta tai henkilötietoja ei käytetty.
+
 ## Worker API-avaimella 11.11.2026
 
 - 168 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät. Chromiumin simuloitu API-koe varmisti, että Worker vaatii API-avaimen, lähettää sen Bearer-otsakkeessa ja tyhjentää avainkentän. OpenRouterin polku läpäisi myös.

@@ -30,9 +30,10 @@ export async function analyzeInvoice(apiKey: string, documentText: string, provi
       // Only retry with another free route when the preferred model is unavailable or rate-limited.
       if (index === 0 && [404, 429, 503].includes(response.status)) { await response.body?.cancel(); continue; }
       if (!response.ok) {
-        const hint = response.status === 401 ? 'Tarkista, että valitun palvelun API-avain on oikein ja aktiivinen.'
+        const hint = response.status === 401 ? (provider === 'worker' ? 'Tarkista Workerissä määritelty APP_API_KEY sekä Workerissä oleva OpenRouter-avain; kumpi tahansa voi aiheuttaa 401-virheen.' : 'Tarkista, että OpenRouterin API-avain on oikein ja aktiivinen.')
           : response.status === 402 ? 'Palvelu edellyttää saldoa; pyyntö keskeytettiin.'
           : response.status === 429 ? 'Ilmaismallien käyttöraja voi olla täynnä. Yritä myöhemmin uudelleen.'
+          : response.status === 403 && provider === 'worker' ? 'Cloudflare tai OpenRouter esti pyynnön. Tarkista Workerin suojaus- ja OpenRouterin tietosuoja-asetukset.'
           : response.status === 404 || response.status === 403 ? 'Ilmaista mallia ei ehkä ole saatavilla. Tarkista palvelun asetukset ja mallien saatavuus.'
           : 'Tarkista avain, ilmaismallien saatavuus ja palvelun tila.';
         throw new InvoiceError(`${service} ei hyväksynyt pyyntöä (HTTP ${response.status}). ${hint}`);
