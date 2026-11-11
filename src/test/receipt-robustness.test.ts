@@ -1,8 +1,5 @@
 import { it, expect } from "vitest";
 import { parseReceipt } from "../domain/receipts/parser";
-import { empty } from "../domain/model";
-import { prepareReceiptImport, duplicateReceipt, receiptKey } from "../domain/receipts/import";
-import { backup, restore } from "../services/validation";
 import k from "./fixtures/receipt-example.json";
 import jan from "./fixtures/receipt-jan.json";
 import mar from "./fixtures/receipt-mar.json";
@@ -15,6 +12,11 @@ import prismaPlain from "./fixtures/receipt-prisma-plain-7556.json";
 import prismaCredit from "./fixtures/receipt-prisma-credit-4767.json";
 import prismaPlain92 from "./fixtures/receipt-prisma-plain-9285.json";
 import kmarketBasic from "./fixtures/receipt-kmarket-basic.json";
+
+const receiptSignature = (draft: ReturnType<typeof parseReceipt>) => JSON.stringify([
+  draft.chain, draft.merchant, draft.receiptId, draft.date, draft.total,
+  draft.lines.map(line => [line.name.replace(/\s+/g, " "), line.net, line.gross, line.discount]),
+]);
 
 const cases = [
   { fixture: k, total: 3287, count: 15 }, { fixture: jan, total: 12146, count: 22 }, { fixture: mar, total: 7385, count: 27 },
@@ -49,7 +51,7 @@ it("survives 704 layout, decoration, Unicode-space and page-break variations wit
     const pages = variant & 32 ? [{ page: 1, lines: lines.slice(0, Math.ceil(lines.length / 2)) }, { page: 2, lines: lines.slice(Math.ceil(lines.length / 2)) }] : [{ page: 1, lines }];
     const d = parseReceipt(pages);
     expect(d.issues, `variant ${variant}, total ${c.total}`).toEqual([]);
-    expect(d.total).toBe(c.total); expect(receiptKey(d)).toBe(receiptKey(original));
+    expect(d.total).toBe(c.total); expect(receiptSignature(d)).toBe(receiptSignature(original));
     expect(d.lines.map(l => [l.name.replace(/\s+/g, " "), l.net, l.gross, l.discount])).toEqual(original.lines.map(l => [l.name.replace(/\s+/g, " "), l.net, l.gross, l.discount]));
   }
 });
@@ -86,16 +88,13 @@ it("shows unknown source rows and never drops a second receipt in the same PDF",
   expect(parseReceipt([{ page: 1, lines }]).issues.some(i => i.source?.text.includes('MYSTEERIRIVI'))).toBe(true);
   expect(parseReceipt([{ page: 1, lines: [...alepa.pages[0].lines, ...korso.pages[0].lines] }]).issues.some(i => i.code === 'multiple-receipts')).toBe(true);
 });
-it("detects a separately encoded copy semantically and restores both parser versions", () => {
-  const d = parseReceipt(korso.pages), cats = Object.fromEntries(d.lines.map(l => [l.id, l.suggestedCategory || 'Muu meno']));
-  const s = prepareReceiptImport(empty(), d, 'a'.repeat(64), cats, { checked: true });
+it("parses a separately encoded copy with the same expense data", () => {
+  const d = parseReceipt(korso.pages);
   const copy = parseReceipt(korso.pages.map(p => ({ ...p, lines: p.lines.map(l => l.replace(/ /g, '\u00a0')) })));
-  expect(duplicateReceipt(restore(backup(s)), copy, 'b'.repeat(64))).toBe(true);
-  s.receiptImports[0].draft.parserVersion = 'receipt-1'; for (const l of s.receiptImports[0].draft.lines) delete l.unitPrice;
-  expect(restore(backup(s)).receiptImports[0].draft.parserVersion).toBe('receipt-1');
+  expect(receiptSignature(copy)).toBe(receiptSignature(d));
 });
 it("recognizes the unstarred Prisma PDF as the same purchase as its starred copy", () => {
-  expect(receiptKey(parseReceipt(prismaPlain92.pages))).toBe(receiptKey(parseReceipt(nov9.pages)));
+  expect(receiptSignature(parseReceipt(prismaPlain92.pages))).toBe(receiptSignature(parseReceipt(nov9.pages)));
 });
 it("parses an anonymized K-Market receipt with quantity evidence and VAT total", () => {
   const d = parseReceipt(kmarketBasic.pages);
@@ -126,13 +125,6 @@ it("accepts a separately extracted header date and time without treating the tim
   const d = parseReceipt([{ page: 1, lines: ['ALEPA ESIMERKKI', 'K001 M000001/0001', '9.11.2026', '20.11', '*MAITO 1,00 *', '*YHTEENSÄ 1,00 *'] }]);
   expect(d.issues).toEqual([]); expect(d.date).toBe('2026-11-09'); expect(d.lines).toHaveLength(1);
 });
-it("revalidates saved unit-price evidence on backup restore", () => {
-  const d = parseReceipt(korso.pages), cats = Object.fromEntries(d.lines.map(l => [l.id, l.suggestedCategory || 'Muu meno']));
-  const s = prepareReceiptImport(empty(), d, 'a'.repeat(64), cats, { checked: true });
-  s.receiptImports[0].draft.lines.find(l => l.unitPrice != null)!.unitPrice!++;
-  expect(() => backup(s)).toThrow('yksikköhinta');
-});
-
 it("blocks a missing campaign row even when paid item totals still match", () => {
   const pages = structuredClone(jan.pages); let removed = false;
   pages[0].lines = pages[0].lines.filter(l => { if (!removed && l.includes('KAMPANJA')) { removed = true; return false; } return true; });

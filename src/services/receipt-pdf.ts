@@ -5,12 +5,11 @@ import type { ReceiptTextPage } from "../domain/receipts/parser";
 
 export { RECEIPT_PDF_LIMIT as PDF_LIMIT } from "../domain/receipts/files";
 import { RECEIPT_PDF_LIMIT as PDF_LIMIT } from "../domain/receipts/files";
-export async function receiptPDF(file: File, signal: AbortSignal, progress: (page: number, total: number) => void): Promise<{ pages: ReceiptTextPage[]; hash: string }> {
+export async function receiptPDF(file: File, signal: AbortSignal, progress: (page: number, total: number) => void): Promise<{ pages: ReceiptTextPage[] }> {
   if (file.size > PDF_LIMIT) throw Error("PDF saa olla enintään 20 Mt.");
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!new TextDecoder().decode(bytes.slice(0, 1024)).includes("%PDF-")) throw Error("Tiedosto ei ole PDF.");
   if (signal.aborted) throw Error("Käsittely peruutettu.");
-  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(n => n.toString(16).padStart(2, "0")).join("");
   const task = getDocument({ data: bytes, useSystemFonts: false, disableFontFace: true, useWasm: false, isImageDecoderSupported: false, stopAtErrors: true });
   const abort = () => { void task.destroy().catch(() => {}); };
   signal.addEventListener("abort", abort, { once: true });
@@ -44,7 +43,7 @@ export async function receiptPDF(file: File, signal: AbortSignal, progress: (pag
       pages.push({ page: i, lines }); progress(i, pdf.numPages); page.cleanup();
     }
     if (!pages.some(p => p.lines.length)) throw Error("PDF:stä ei löytynyt tekstiä. Kuvallinen kuitti tarvitsee OCR-tunnistuksen.");
-    return { pages, hash };
+    return { pages };
   } catch (error) {
     if (signal.aborted) throw Error("Käsittely peruutettu.");
     if (timedOut) throw Error("PDF:n käsittelyn aikaraja ylittyi. Kokeile pienempää kuittitiedostoa.");

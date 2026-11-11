@@ -111,11 +111,13 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Testattujen Prisma-/S-market-/Alepa-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
 - ✅ Parserin rakenne varmistetaan anonymisoiduilla, käyttäjän toimittamista oikeista kuiteista tehdyillä fixtuureilla. Ladattavat fiktiiviset kuitit poistettu; niitä ei käytetä kauppojen tosiasiallisen kuittirakenteen osoittamiseen.
 - ✅ Parserin v2: tähtikoristellut loppusummat, määrän/yksikköhinnan ja saatavilla olevien ALV-/korttisummien ristiintarkistus, lähderivin näyttö virheessä.
-- ✅ Kuittiryhmät, tiedosto-/sisältötunnisteella tehtävä kaksoistuonnin esto, JSON-erittely ja välitön kumoaminen.
+- ✅ Kuittiluonnos käsitellään selaimessa; tallennukseen jäävät vain tavalliset kategoriakohtaiset menot. Vanhoista varmuuskopioista poistetaan kuittihistoria ja tuoterivilistat.
 - ✅ Täsmäytys samansuuruiseen saman päivän kerta- tai toistuvaan maksuun; sarjasta korvataan vain yksi esiintymä.
-- 🟡 Kuittituonnin täsmäytys ja ryhmät käytössä; yleisen PDF-tuonnin kuluhyvitykset ja ennuste/maksu-erottelu puuttuvat.
+- 🟡 Kuittihistoriaa ja pysyvää kaksoistunnistusta ei säilytetä; käyttäjä varmistaa uusintatuonnin. Yleisen PDF-tuonnin kuluhyvitykset ja ennuste/maksu-erottelu puuttuvat.
 - 📋 Paikallinen OCR kuvallisille PDF:ille, luokittelumuisti ja usean PDF:n tuonti jatkovaiheina.
 - 🟡 13 aiempaa PDF-kuittia ja viimeisimmän erän 15 kuittia parsittiin; ABC-polttoainekuitti ja palautuskuitti rajattiin pois. Kaikki 21 raaka-PDF:ää on poistettu nykyisestä haarapuusta; anonymisoitu K-Market-regressio jää testiin.
+- ✅ Ohjeet avautuvat kortin Info-kuvakkeesta ponnahdusikkunaan; budjetin raamit, omaisuus ja kompassin tietopohja ovat samassa mallissa.
+- ✅ Yhteenvedon kulutus- sekä säästö- ja sijoitussiirtotiedot näkyvät heti, eivät avaudu nuolen takaa.
 - ⬜ Tilit, alkusaldot, sisäiset siirrot ja pankkitapahtumiin täsmäytys.
 
 ### Uusi käyttäjätoive: tiedoston pudotus ja tiliotteet
@@ -159,7 +161,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 163 yksikkötestiä, Chromium-selainvarmennukset ja 15/17 uusimman kuittierän PDF-tarkistusta; yksi K-Market-fixture lisätty.
+- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 161 yksikkötestiä, 82 yleistä ja 32 kuittiskannerin Chromium-selainvarmennusta sekä 15/17 uusimman kuittierän PDF-tarkistusta; yksi K-Market-fixture lisätty.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.

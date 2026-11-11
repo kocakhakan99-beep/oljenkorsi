@@ -22,10 +22,3 @@ export const receiptDraftSchema = z.object({
 export type ReceiptLine = z.infer<typeof receiptLineSchema>;
 export type ReceiptDraft = z.infer<typeof receiptDraftSchema>;
 export type ReceiptSource = z.infer<typeof receiptSourceSchema>;
-export const receiptImportSchema = z.object({
-  id: z.string().min(1).max(100), sourceHash: z.string().regex(/^[a-f0-9]{64}$/),
-  semanticKey: z.string().min(1).max(400), importedAt: z.string().datetime(),
-  draft: receiptDraftSchema, categories: z.record(z.string(), z.string().min(1).max(100)),
-  entryIds: z.array(z.string().max(100)).min(1).max(500),
-});
-export type ReceiptImport = z.infer<typeof receiptImportSchema>;

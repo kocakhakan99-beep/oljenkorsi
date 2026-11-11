@@ -97,8 +97,10 @@ AssetModel.vehicleCurve erottaa legacy-v1- ja staged-v2-mallit. Puuttuva versio 
 
 Demojen tiedot ja 36 kuukauden sisältö on kuvattu [DEMO_DATA_PLAN.md](DEMO_DATA_PLAN.md). Hintahavaintojen lähteet ja valuuttaoikaisu on kuvattu [MARKET_DATA_SOURCES.md](MARKET_DATA_SOURCES.md). Talouden JSON ei kopioi koko 720 pisteen hintakirjastoa, vaan nykyinen sovellus sisältää sen; päivitys on aina nimenomainen kehitystoiminto.
 
-## Kuittiryhmät 10.11.2026
+## Kuittien käsittely
 
-`receiptImports` täydentää skeemaa 1 valinnaisena palautuskenttänä; puuttuva lista alustetaan tyhjäksi. Ryhmään tallentuvat lähdetiiviste, semanttinen tunniste, tarkistettu kuittiluonnos, kategoriat ja luotujen menojen ID:t. Ryhmä ei itsessään ole rahavirta. Ryhmän euromäärät ja rakenne validoidaan myös palautuksessa. Alkuperäistä PDF:ää tai maksukortti-/jäsenyystietoja ei säilytetä. Tuodut menot ovat kertamenoja, täsmäytetty aiempi kertameno poistetaan tai sarjan yksittäinen esiintymä ohitetaan. JSON säilyttää erittelyn; CSV ei. Kuluhyvityksiä tai ennusteiden jäännösmallia ei vielä lisätty. [Tarkemmat rajat](RECEIPT_SCANNER.md).
+Kuittiparseri käsittelee tiedoston ja tarkistusluonnoksen vain selaimen muistissa. Hyväksynnän jälkeen taloustilaan jäävät tavalliset kategoriakohtaiset menot: nimi, kategoria, summa ja päivä. Tuoterivejä, PDF-tiivistettä, kuittitunnistetta, lähderivejä, erillistä kuittihistoriaa tai tuotteita sisältävää menon kuvausta ei tallenneta eikä siirretä JSON-varmuuskopioon tai CSV:ään.
 
-Kuittiparseri v2 säilyttää `receipt-1`-luonnokset ja lisää `receipt-2`-version, valinnaisen `unitPrice`-senttikentän sekä valinnaisen lähdeviitteen havaintoon. Yksikköhinnan ja määrän yhteys netto-/normaalihintaan tarkistetaan palautuksessa. Tämä ei todista kuitin aitoutta. Lähde-PDF:tä, maksukorttitietoja tai koko footer-tekstiä ei tallenneta.
+Vanhoista tallennuksista poistetaan avattaessa aiempi `receiptImports`-arkisto ja kuittituonnin automaattinen tuoterivilista menon kuvauksesta. Vanha varmuuskopio voidaan palauttaa, mutta ylimääräiset kuitin tiedot suodatetaan pois. Koska kuittihistoriaa ei säilytetä, samaa kuittia ei voi tunnistaa automaattisesti myöhemmän käynnistyksen jälkeen; skanneri pyytää tarkistamaan, ettei ostosta ole jo kirjattu, ja tarjoaa täsmäytyksen samansuuruiselle samana päivänä olevalle menolle.
+
+Kuittiparseri v2:n määrä-, yksikköhinta- ja lähderivitiedot ovat vain tarkistusluonnoksessa. Parserin täsmäytykset eivät todista kuitin aitoutta. Tuodut menot ovat kertamenoja, aiempi kertameno voidaan korvata tai toistuvan sarjan yksittäinen esiintymä ohittaa. Kuluhyvityksiä tai ennusteiden jäännösmallia ei vielä lisätty. [Tarkemmat rajat](RECEIPT_SCANNER.md).

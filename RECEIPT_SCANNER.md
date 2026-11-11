@@ -1,4 +1,4 @@
-# Kuittiskannaus — toteutettu 10.11.2026
+# Kuittiskannaus — päivitetty 11.11.2026
 
 ## Käyttö
 
@@ -42,7 +42,7 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 - Kuitin otsikon tai tuotealueen jälkeisiä summia ei käsitellä tuotteina. Jos K-kuitin tuotealueen alkua ei voi tunnistaa rakennerajasta, skannaus pysähtyy eikä arvaa.
 - PDF-sivujen tekstikohdat järjestetään sijainnin mukaan riveiksi. Valuuttamerkin ja yksikön väliset PDF-tekstikatkot sallitaan.
 
-Yhteensä 13 aiemmin testattua käyttäjän PDF-tiedostoa sisälsi 10 eri ostosta. Kolme tiedostoa olivat jo testattujen ostosten kopioita. Semanttinen tunniste estää saman ostoksen toisen tuonnin tiedoston SHA-256:sta riippumatta.
+Yhteensä aiemmin testatut käyttäjän PDF-tiedostot sisälsivät useita samoja ostoksia. Kuittihistoriaa tai pysyvää tunnistetta ei tallenneta, joten samaa monikategorista ostosta ei tunnisteta automaattisesti sovelluksen uudelleenkäynnistyksen jälkeen.
 
 ## Uusimman kuittierän tarkistus 11.11.2026
 
@@ -52,22 +52,20 @@ Yhteensä 13 aiemmin testattua käyttäjän PDF-tiedostoa sisälsi 10 eri ostost
 
 Tuki tarkoittaa näitä testattuja kuittirakenteita. Muun K- tai S-kaupan formaatin toimivuutta ei luvata ilman esimerkkitestiä. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
 
-## Paikallinen tietomalli ja kaksoistuonti
+## Tallennettavat tiedot
 
-`State.receiptImports` on yhteensopiva lisäkenttä skeemaan 1. Puuttuva lista alustetaan tyhjäksi vanhoissa varmuuskopioissa. Ryhmään tallennetaan PDF:n SHA-256, kauppa, kuittitunniste, ostopäivä, tarkistussumma, tuoterivit/lähderivit, hyväksytyt kategoriat ja luotujen menojen tunnisteet. Skeema, rivien erittely ja loppusumma validoidaan myös JSON-palautuksessa.
+PDF ja tarkistusluonnos ovat vain selaimen muistissa. Hyväksynnän jälkeen sovellus tallentaa tavalliset kategoriakohtaiset kertamenot: kaupan ja kategorian nimen, summan, päivämäärän ja kategorian. Se ei tallenna tuoterivejä, lähdetekstiä, PDF-tiivistettä, kuittitunnistetta, tuontiryhmää eikä tuotenimiä menon kuvaukseen. Kun hyväksytty kirjaus tallentuu, kuittiluonnos ja sen luokittelut tyhjennetään selaimen muistista. Sulkeminen säilyttää keskeneräisen luonnoksen vain aktiivisen selainistunnon ajaksi, jotta tarkistusta voi jatkaa; luonnos katoaa hylkäyksessä tai sivun latauksessa.
 
-Ryhmä ei itsessään vaikuta kassavirtaan. Menot ovat tavallisia kertamenoja; kuittihistoria on alkuperäinen lähdekuva, jota myöhempi menon muokkaus ei muuta. Menon poistaminen ei poista kuitin tuontitunnistetta: sama kuitti ei tällöin vahingossa tule uudelleen.
+JSON ja CSV sisältävät vain nämä menokirjaukset muiden taloustietojen yhteydessä. Vanhat JSON-varmuuskopiot hyväksytään, mutta aiemmat `receiptImports`-arkistot ja sovelluksen luomat kuittituonnin tuoterivilistat poistetaan palautuksessa. Selaimessa jo oleva vanha arkisto puhdistetaan seuraavalla käynnistyskerralla; jos selaimen tallennus ei ole kirjoitettavissa, puhdistettu tieto jää muistiin ja yritetään tallentaa seuraavassa onnistuvassa muutoksessa.
 
-Kaksoistuonti tarkistetaan sekä tiedostotiivisteellä että kauppa + kuittitunniste + päivä + loppusumma -avaimella. Sama kuitti uudelleen tallennettuna PDF:nä havaitaan näin myös tiedostotiivisteen muuttuessa. Tarkistus tehdään uudelleen hyväksynnässä ajantasaisesta tilasta.
-
-JSON siirtää ryhmän ja erittelyn. CSV siirtää tavalliset menot, ei kuittiryhmiä eikä lähde-erittelyä. Käytä tätä tai uudempaa sovellusversiota uusien varmuuskopioiden palauttamiseen; vanha sovellus ei tunne kuittiryhmiä.
+Pysyvä kaksoistunnistus poistettiin samalla, kun kuittihistoriaa ei enää säilytetä. Skanneri pyytää vahvistamaan, ettei ostosta ole jo kirjattu. Samansuuruisen saman päivän menon voi täsmäyttää; aiemmin tuodun monikategorisen kuitin uusintatuontia ei tunnisteta automaattisesti sovelluksen uudelleenkäynnistyksen jälkeen.
 
 ## Turvallisuus ja rajat
 
 - PDF.js 6.5.438 on pakattu samaan HTML-tiedostoon Apache-2.0-lisenssillä. Kirjaston käsittelijä ladataan staattisesti pääsäikeeseen; ulkoista workeria, CDN:ää tai dynaamista moduulihakua ei tarvita. CSP:n verkkokielto säilyy.
 - Ainoastaan tekstisisältö ja sen koordinaatit luetaan. PDF:n JavaScriptiä, lomakkeita, linkkejä ja liitteitä ei suoriteta tai avata. Dokumentin tekstiä ei käsitellä sovellukselle annettuina ohjeina.
-- Alkuperäistä PDF:ää tai maksukortti-/jäsenyystietoja ei tallenneta. Tuoterivit, kauppa ja ostopäivä voivat silti olla henkilökohtaisia: tallennettu kuittierittely on muun paikallisen datan tavoin salaamaton.
-- Rajat: 20 MiB, 50 sivua, 200 000 tekstimerkkiä, 2 000 tuoteriviä ja 2 000 tallennettua kuittiryhmää; nykyinen koko tilan 10 Mt raja ja selaimen kiintiö voivat tulla vastaan aiemmin.
+- Alkuperäistä PDF:ää, maksukortti-/jäsenyystietoja, lähderivejä tai tuoterivejä ei tallenneta. Tavallisiin menoihin jää kaupan ja kategorian nimi, summa, päivä ja kategoria.
+- Rajat: 20 MiB, 50 sivua, 200 000 tekstimerkkiä ja 2 000 väliaikaista tuoteriviä; nykyinen koko taloustilan 10 Mt raja ja selaimen kiintiö voivat tulla vastaan aiemmin.
 - Peruuta keskeyttää käsittelyn; lataustehtävällä on 30 sekunnin aikaraja. Tyhjä sivu ohitetaan, mutta tekstittömällä sivulla havaittu kuva ohjataan OCR-tarpeeksi. Eteneminen näkyy sivumääränä.
 - Kuvallisten kuittien/kamerakuvien OCR, salatun PDF:n salasanakysely, kuluhyvitysten kirjaus, monen tiedoston tuonti, tuotekohtainen oppimismuisti ja yleiset lasku-/sopimusparserit ovat jatkotyötä. Tunnistettu palautus estetään; sitä ei muuteta tuloksi tai positiiviseksi menoksi.
 - Pääsäie ja kirjaston lisäys kasvattavat HTML:ää ja voivat vaikuttaa hitaaseen puhelimeen. Aikaraja ei keskeytä synkronista käsittelyä reaaliaikaisesti; erillinen offline-worker ja fyysisten laitteiden muistimittaus ovat jatkoparannuksia.
@@ -75,9 +73,9 @@ JSON siirtää ryhmän ja erittelyn. CSV siirtää tavalliset menot, ei kuittiry
 ## Testaus
 
 - `src/test/receipt-parser.test.ts` ja `receipt-robustness.test.ts`: käyttäjän toimittamista oikeista kuiteista anonymisoidut tekstifixtuurit, myös Prisman tähdetön taitto, Credit-maksu ja valuuttamerkin jälkeinen Visa-summa; rakenne-, alennus-, paketti-, painotuote-, virhe- ja sivunvaihtovariaatiot.
-- `src/test/receipt-import.test.ts`: kategoriakirjaukset, JSON-yhteensopivuus, kaksoistuonti, täsmäytys kerta-/toistuvaan maksuun, manuaalinen toteuma ja muuttumattoman lähdetilan varmistus.
+- `src/test/receipt-import.test.ts`: kategoriakirjaukset, tallennettavan datan minimointi, vanhojen varmuuskopioiden ja selaintallennuksen puhdistus, saman päivän täsmäytys kerta-/toistuvaan maksuun, manuaalinen toteuma ja lähdetilan muuttumattomuus.
 - `python e2e_receipts.py`: kehittäjän regressio luo fixtuureistä PDF:t PyMuPDF:llä ja ajaa selaimessa koko polun. Vaatii Python Playwrightin, Chromiumin, PyMuPDF:n ja paikallisen testipalvelimen. `TALOUS_URL` ja `TALOUS_BROWSER` ovat valinnaisia.
-- `python e2e_receipts.py` generoi 11 test-PDF:ää 11 anonymisoidusta fixtuurista, joista kaksi edustaa samaa ostosta, ja testaa 10 eri ostosta koko kirjauspolussa. Kolme tai yhdeksän paikallista PDF:ää voi edelleen antaa aiemman regressiosarjan järjestyksessä. Neljä uusinta alkuperäistä PDF:ää ajettiin lisäksi erikseen selaimen PDF.js-lukijassa, tallentamatta niiden luonnoksia. Testifixtuurit eivät sisällä maksukortti- tai jäsenyystietoja.
+- `python e2e_receipts.py` generoi anonymisoiduista fixtuureista väliaikaiset test-PDF:t ja ajaa skannauksen, hyväksynnän, tietojen tallennuksen sekä virhetilat selaimessa. Se varmistaa, ettei tallennukseen päädy kuittihistoriaa tai tuoterivejä. Aiempi kaksoistuonnin ja erillisen kuittiryhmän pysyvyystesti poistettiin tuotteen tietojen minimoinnin myötä.
 
 Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md).
 
@@ -92,7 +90,7 @@ Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPOR
 - Useamman tapahtumaotsikon sisältävä PDF estetään yhden kuitin tuonnissa, jotta toista ostosta ei ohiteta huomaamatta.
 - Tunnistamaton erittelyrivi näytetään lähdetekstinä sivu-/riviviitteellä. Rakennevirhe estää tallennuksen, vaikka tunnistettujen tuotteiden summa täsmäisi.
 - Vaipat luokitellaan ennen housuihin perustuvaa vaatesääntöä. Ruoka-/hygienia-/vaate-ehdotuksia täydennettiin, mutta esimerkiksi epäselvä setti, puhdistuspyyhe tai keräilytuote jää käsin valittavaksi.
-- Uusien luonnosten versio on `receipt-2`. Vanhat `receipt-1`-kuittiryhmät säilyvät palautettavina; uusi valinnainen `unitPrice` ei riko vanhoja lähde-erittelyjä.
+- Väliaikaisen parseriluonnoksen versio on `receipt-2`. Määrä ja yksikköhinta täsmäytetään ennen hyväksyntää; luonnosta ei tallenneta talouden JSONiin.
 
 ## Mitä 99,9 % luotettavuus tarkoittaisi?
 
@@ -103,7 +101,7 @@ Seurattavat asiat erotetaan:
 1. **Poiminnan kattavuus:** kuinka monesta tuetun formaatin kuitista saadaan kaikki rivit ja pääkentät oikein ilman rakennekorjausta.
 2. **Virheellisesti hyväksytyt tulokset:** kuinka moni väärä tuote-/summaerittely pääsee tarkistusportista läpi. Tavoite on estää tunnetut ristiriidat, ei väittää kaikkien mahdollisten virheiden havaitsemista.
 3. **Kategoriat:** nimisääntöjen osuvuus ja käsin valittavien tuotteiden määrä mitataan erikseen. Käyttäjän vahvistusta ei lasketa automaattisen luokituksen onnistumiseksi.
-4. **Koko työnkulku:** hyväksyntä, saman maksun täsmäytys, kaksoistuonti, kumoaminen ja varmuuskopion palautus.
+4. **Koko työnkulku:** hyväksyntä, saman päivän/summan menon käyttäjän vahvistama täsmäytys, kumoaminen ja varmuuskopion palautus. Kuittihistoriaan perustuvaa kaksoistunnistusta ei tehdä.
 
 99,9 %:n tavoitteen tilastollinen arviointi vaatisi suuren edustavan, riippumattoman testijoukon. Esimerkiksi noin 2 995 nollavirheistä riippumatonta tapausta antaisi yhden puolen 95 % binomisen luottamusrajan virheosuudelle alle 0,1 %:n (1 − 0,05^(1/n)). Tämä koskisi vain määriteltyä virhettä ja aineiston edustamaa jakaumaa, ei kaikkia tulevia kuitteja. Havaittu virhe, valikoituminen tai uusi formaatti muuttaa tulkintaa.
 

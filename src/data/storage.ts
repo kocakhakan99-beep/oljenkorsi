@@ -17,7 +17,25 @@ export class LocalStorageProvider implements StorageProvider {
   get() {
     let t = localStorage.getItem(this.key);
     this.expected = t;
-    return t ? restore(t) : empty();
+    if (!t) return empty();
+    const state = restore(t);
+    const raw = JSON.parse(t) as { data?: { receiptImports?: unknown; expenses?: { description?: unknown }[] } };
+    const hasImportedReceiptHistory = !!raw.data && (
+      Object.hasOwn(raw.data, 'receiptImports') ||
+      raw.data.expenses?.some(e => typeof e.description === 'string' && /^Kuittituonti [0-9a-f-]{36}\. /i.test(e.description))
+    );
+    if (hasImportedReceiptHistory) {
+      try {
+        const cleaned = backup(state);
+        if (localStorage.getItem(this.key) === t) {
+          localStorage.setItem(this.key, cleaned);
+          if (localStorage.getItem(this.key) === cleaned) this.expected = cleaned;
+        }
+      } catch {
+        // Keep the validated, cleaned data in memory; the next successful save retries cleanup.
+      }
+    }
+    return state;
   }
   getAll() {
     return this.get();

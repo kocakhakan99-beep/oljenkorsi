@@ -1,4 +1,13 @@
-# Testausraportti 10.11.2026
+# Testausraportti 11.11.2026
+
+## Tiedon minimointi ja Info-ikkunat 11.11.2026
+
+- 161 yksikkötestiä 16 tiedostossa, TypeScript-tarkistus, ESLint ja standalone-tuotantobuild läpäisivät. Buildissa säilyy Viten suuren JavaScript-chunkin huomautus.
+- Kuittituonnin hyväksyntä tallentaa vain tavalliset menot. Vanhat kuitin tuontiarkistot ja sovelluksen luomat tuoterivilistat poistuvat selaintallennuksesta ja JSON-palautuksesta.
+- Budjetin raamien, omaisuuden arvion, kompassin havaintoperusteiden ja muiden selitteiden Info-ikkunat avautuvat näppäimistöllä. Sisäkkäisen ikkunan Escape ei sulje taustalla olevaa tietokorttia.
+- Yhteenvedon kulutuksen erittely ja säästö-/sijoitussiirrot ovat oletuksena näkyvissä. Käyttötarkoitus on ilmaistu osioiden lyhyissä kuvauksissa.
+- Kaikki 82 Chromium-selainvarmennusta läpäisivät localhost-ajossa. Lisäksi kaikki 32 kuittiskannerin selainvarmennusta läpäisivät 11 anonymisoidulla PDF-fixturella. Kirjaamisen jälkeen vain menokirjaukset jäivät tallennukseen; uudelleenlatauksen jälkeen ei ollut kuittihistoriaa tai tuoterivejä. Sovelluksen JavaScript-virheitä tai ulkoisia verkkopyyntöjä ei ollut. Chromium pyysi lisäksi omaa `/favicon.ico`-tiedostoaan, jota sovellus ei käytä; testiraportti suodattaa vain selaimen tämän 404-viestin.
+
 
 ## Kuittierän tarkistus ja lähdetiedostojen poisto 11.11.2026
 
