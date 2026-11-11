@@ -51,3 +51,10 @@ it('requires an API key for either provider before sending any request', async (
   await expect(analyzeInvoice('', 'teksti', 'worker')).rejects.toThrow('API-avain');
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+it('explains that a Worker 401 may come from either Worker or OpenRouter credentials', async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response('{\"error\":\"Unauthorized\"}', { status: 401 }));
+  vi.stubGlobal('fetch', fetcher);
+  await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('APP_API_KEY');
+  await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('OpenRouter-avain');
+});

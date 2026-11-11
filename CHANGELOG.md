@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Worker-avainten selvennys 11.11.2026
+
+Laskuanalyysi nimeää Workerin asiakasavaimen APP_API_KEY:ksi ja selventää, että Workeristä tuleva HTTP 401 voi johtua myös palvelinpuolen OpenRouter-avaimesta. Vain ilmaisten mallien tunnisteita lähetetään.
+
 ### Worker vaatii API-avaimen 11.11.2026
 
 Korjattiin Worker-analyysi käyttämään käyttäjän API-avainta Bearer-otsakkeessa. Avain syötetään jokaista analyysiä varten ja tyhjennetään kentästä; ilmaismallien automaattinen valinta säilyy.
