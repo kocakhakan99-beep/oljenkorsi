@@ -1662,7 +1662,7 @@ function CashEntryForm({
         recurrence,
         status: editing && item.status === "skipped" ? "skipped" : date <= today() ? "actual" : "planned",
         adjustToPreviousBankDay:
-          kind === "incomes" && fields.has("adjustToPreviousBankDay"),
+          kind === "incomes" && ["Palkka", "Palkat", "Etuudet"].includes(String(fields.get("category") || "").trim()),
         occurrenceStatuses: editing ? item.occurrenceStatuses : {},
         occurrenceAmounts: editing ? item.occurrenceAmounts : {},
         active: fields.has("active"),
@@ -1788,19 +1788,6 @@ function CashEntryForm({
         <div className="quick-entry-options">
           <label>Toistuvuus<select name="recurrence" defaultValue={item.recurrence}>{Object.entries(recNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <DatePickerField label="Lopetuspäivä (valinnainen)" name="endDate" value={endDate} minDate={entryDate} onChange={setEndDate} />
-          <label className="check"><input type="checkbox" name="active" defaultChecked={item.active} />Aktiivinen</label>
-          <label>Tunnisteet (valinnainen)<input name="tags" defaultValue={userTags(item.tags)} maxLength={500} /></label>
-          {kind === "incomes" && (
-            <label className="check">
-              <input
-                type="checkbox"
-                name="adjustToPreviousBankDay"
-                defaultChecked={item.adjustToPreviousBankDay}
-              />
-              Aikaista viikonlopulle tai pyhälle osuva maksupäivä edeltävään
-              pankkipäivään
-            </label>
-          )}
           {kind === "expenses" && (
             <>
               <label>
@@ -1825,6 +1812,8 @@ function CashEntryForm({
               </label>
             </>
           )}
+          <label>Tunnisteet (valinnainen)<input name="tags" defaultValue={userTags(item.tags)} maxLength={500} /></label>
+          <label className="check quick-entry-active"><input type="checkbox" name="active" defaultChecked={item.active} />Aktiivinen</label>
           <label className="quick-entry-note">
             Lisätieto
             <textarea
@@ -4375,6 +4364,12 @@ function App() {
                                   onBlur={(e) =>
                                     budgetChange(c, e.target.value)
                                   }
+                                  onKeyDown={(event) => {
+                                    if (event.key !== "Tab") return;
+                                    const inputs = Array.from(event.currentTarget.closest("table")?.querySelectorAll<HTMLInputElement>("input.budget-input") || []);
+                                    const next = inputs[inputs.indexOf(event.currentTarget) + (event.shiftKey ? -1 : 1)];
+                                    if (next) { event.preventDefault(); setShowAllBudgetCategories(true); next.focus(); }
+                                  }}
                                 />
                               </td>
                               <td role="cell" data-label="Toteutunut kulutus">
@@ -6583,7 +6578,7 @@ function App() {
                 <p>
                   Toistuvuus lasketaan aloituspäivästä. Kuukauden 31. päivän
                   tapahtuma siirtyy lyhyessä kuukaudessa sen viimeiselle
-                  päivälle. Menneet maksupäivät lasketaan toteutuneiksi ja tulevat suunnitelluiksi; sovellus ei varmista maksua pankista. Yksittäisen tapahtuman summan ja tilan voi korjata Tulot- tai Menot-rivin lisätiedoissa. Maksupäivän yksittäistä siirtämistä ei vielä tueta. Toistuvan tulon viikonlopulle tai pankkipyhälle osuvan päivän voi aikaistaa edeltävälle pankkipäivälle.
+                  päivälle. Menneet maksupäivät lasketaan toteutuneiksi ja tulevat suunnitelluiksi; sovellus ei varmista maksua pankista. Yksittäisen tapahtuman summan ja tilan voi korjata Tulot- tai Menot-rivin lisätiedoissa. Maksupäivän yksittäistä siirtämistä ei vielä tueta. Toistuvan palkan ja etuuden viikonlopulle tai pankkipyhälle osuva päivä aikaistetaan automaattisesti edeltävälle pankkipäivälle.
                 </p>
                 <h3>Yksityisyys ja turvallisuus</h3>
                 <p>

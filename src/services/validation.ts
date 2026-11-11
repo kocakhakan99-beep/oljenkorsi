@@ -154,9 +154,11 @@ export function validate(raw: unknown): State {
             : e.tags,
         linkedAssetId: e.linkedAssetId ?? "",
         adjustToPreviousBankDay:
-          typeof e.adjustToPreviousBankDay === "boolean"
-            ? e.adjustToPreviousBankDay
-            : k === "incomes",
+          k === "incomes" && e.recurrence !== "once" && ["Palkka", "Palkat", "Etuudet"].includes(String(e.category).trim())
+            ? true
+            : typeof e.adjustToPreviousBankDay === "boolean"
+              ? e.adjustToPreviousBankDay
+              : k === "incomes",
         occurrenceStatuses: e.occurrenceStatuses ?? {},
         occurrenceAmounts: e.occurrenceAmounts ?? {},
       } as Entry;

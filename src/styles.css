@@ -4955,6 +4955,7 @@ button.primary,
   gap: 5px;
   font-size: 12px;
 }
+.quick-entry-active { align-self: end; min-height: 44px; }
 .quick-entry-note {
   grid-column: 1 / -1;
 }

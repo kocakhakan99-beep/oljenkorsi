@@ -1,5 +1,9 @@
 # Muutosloki
 
+### Budjetoinnin ja kirjaamisen sujuvuus 11.11.2026
+
+Budjettisummissa sarkain siirtyy seuraavaan kategoriaan ja vaihto pitää kategoriat näkyvissä tallennuksen jälkeen. Toistuvien palkkojen ja etuuksien maksupäivä siirtyy automaattisesti edeltävälle pankkipäivälle. Menojen lisävalinnat järjestettiin selkeämmin.
+
 ### Yksityisyyden ja yhteenvetonäkymän viimeistely 11.11.2026
 
 Kuittiluonnos häviää hyväksynnän jälkeen; tallennukseen jää vain tavalliset kategoriakohtaiset menot, ei erillistä kuittihistoriaa, PDF-tiivistettä, tuoterivejä tai niiden listaa menon kuvauksessa. Vanhoista tallennuksista arkisto ja tuoterivilistat puhdistetaan. Ohjeet avautuvat kortin Info-kuvakkeesta ponnahdusikkunaan, myös budjetin raamien laskenta, omaisuuden arvio ja kompassin havaintoperusteet. Sisäkkäisen Info-ikkunan Escape sulkee vain päällimmäisen ikkunan. Yhteenvedon kulutuksen erittely sekä säästö- ja sijoitussiirrot ovat näkyvissä oletuksena ja niiden tarkoitus on kerrottu lyhyesti.

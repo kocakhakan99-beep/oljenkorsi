@@ -269,6 +269,7 @@ export function demo(): State {
       category: "Palkka",
       date: `${s.settings.month}-01`,
       recurrence: "monthly",
+      adjustToPreviousBankDay: true,
     }),
     entry({
       name: "Aikuinen 2 · nettopalkka",
@@ -276,6 +277,7 @@ export function demo(): State {
       category: "Palkka",
       date: `${s.settings.month}-01`,
       recurrence: "monthly",
+      adjustToPreviousBankDay: true,
     }),
     entry({
       name: "Lapsilisä · yksi lapsi",
@@ -283,6 +285,7 @@ export function demo(): State {
       category: "Etuudet",
       date: `${s.settings.month}-01`,
       recurrence: "monthly",
+      adjustToPreviousBankDay: true,
     }),
   ];
   s.expenses = [
