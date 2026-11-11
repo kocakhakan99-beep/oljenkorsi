@@ -107,7 +107,7 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Koko talouden JSON-varmuuskopio ja palautus esikatselulla/vahvistuksella.
 - ✅ Kuuden tietotyypin CSV-tuonti/vienti, sarakekartoitus, suomalaiset otsikot, virhe- ja duplikaattitarkistus sekä tuonnin kumoaminen.
 - 🟡 CSV ei ole täydellinen varmuuskopio: linkit, arvomallit ja koko tila siirretään JSON:lla. Kaikkia pankkiformaatteja ei tunnisteta.
-- 📋 PDF-laskujen ja sopimusten tunnistus: summat, eräpäivät, kuukausierät, korot ja tarkistettava luonnos.
+- 📋 Lasku-PDF → paikallinen kenttäpoiminta → käyttäjän tarkistama kerta- tai toistuva meno. Kuvapohjainen OCR ja valinnaiset ulkoiset OCR-/LLM-palvelut ovat vaiheistettuja jatkotöitä: [suunnitelma](PDF_IMPORT_PLAN.md).
 - ✅ Testattujen Prisma-/S-market-/Alepa-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
 - ✅ Parserin rakenne varmistetaan anonymisoiduilla, käyttäjän toimittamista oikeista kuiteista tehdyillä fixtuureilla. Ladattavat fiktiiviset kuitit poistettu; niitä ei käytetä kauppojen tosiasiallisen kuittirakenteen osoittamiseen.
 - ✅ Parserin v2: tähtikoristellut loppusummat, määrän/yksikköhinnan ja saatavilla olevien ALV-/korttisummien ristiintarkistus, lähderivin näyttö virheessä.
