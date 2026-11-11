@@ -1,6 +1,6 @@
 # Oljenkorren selkokielinen tilannekatsaus
 
-Päivitetty 10.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tiivistetty kehityslista. Päällekkäiset ehdotukset on yhdistetty aiheiksi. Vanhoissa suunnitelmissa ja muutoslokissa on myös jo korvattuja toteutustapoja; alla käytetään uusinta dokumentoitua tilaa. Valmis tarkoittaa kuvattua toteutusta, ei koko aihealueen lopullista valmistumista.
+Päivitetty 11.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tiivistetty kehityslista. Päällekkäiset ehdotukset on yhdistetty aiheiksi. Vanhoissa suunnitelmissa ja muutoslokissa on myös jo korvattuja toteutustapoja; alla käytetään uusinta dokumentoitua tilaa. Valmis tarkoittaa kuvattua toteutusta, ei koko aihealueen lopullista valmistumista.
 
 **✅ Valmis** · **🟡 Osittain valmis / viimeisteltävä** · **📋 Suunnitelma valmis, toteutus puuttuu** · **⬜ Jonossa / vaatii tarkemman suunnitelman**
 
@@ -122,11 +122,12 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 
 ### Uusi käyttäjätoive: tiedoston pudotus ja tiliotteet
 
-**Tila: 🟡 PDF-kuittien pudotus toteutettu nykyisen rajauksen mukaan; tilioteparseri ja Tulot-näkymän pudotus jonossa.**
+**Tila: 🟡 PDF-kuittien ja laskujen pudotus sekä erätuonti toteutettu; tilioteparseri jonossa.**
 
-- ✅ PDF-kuittien drag and drop missä tahansa Menot-, Budjetti- ja Asetukset-näkymässä; avaa Menojen yhteisen kuittiskannerin ja käynnistää lukemisen.
-- ✅ Skannerin pääpaikka Menot; sama pikapainike budjetissa, luonnoksen säilytys ja yhden PDF:n tarkistus ennen navigointia.
-- ⬜ Tulot-näkymän pudotus alkuperäisen jatkotoiveen mukaan.
+- ✅ PDF-tiedostojen drag and drop kaikissa näkymissä: kuitti/lasku-valinta, ohjaus Menojen vastaavaan skanneriin.
+- ✅ Skannerien pääpaikka Menot; budjetissa pikapainikkeet. Enintään 50 tiedostoa / 100 Mt erässä; kuitit tarkistusjonona, laskut enintään viiden laskun AI-pyynnöissä.
+- ✅ Pudotus toimii myös Tulot-näkymässä.
+- ✅ Valinnainen kuittien AI-kategorisointi: oletuksena pois; erillinen API-pyyntö lähettää vain nykyisen kuitin tuotenimet ja kategoriavaihtoehdot.
 - ⬜ Pudotetun tiedoston tunnistus kuitiksi tai tiliotteeksi, siirtyminen sopivaan näkymään ja oikean parserin/prosessin käynnistäminen.
 - ⬜ Tilioteparserin suunnittelu ja myöhempi toteutus. Käyttäjä voi toimittaa aluksi kahden pankin esimerkkitiliotteet; aineistoa ei ole vielä saatu eikä pankkiformaatteja määritelty.
 - ⬜ Quick-start-käyttöpolku: nopea käyttöönotto sekä menojen ja tulojen syötön helpottaminen tiedostoista.

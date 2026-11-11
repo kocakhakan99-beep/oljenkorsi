@@ -1,6 +1,6 @@
 # Kehittäminen
 
-Pidä file:///single-file-käyttö ja normaalien ominaisuuksien offline-toiminta ensisijaisina. `index.html` sallii käyttäjän käynnistämän laskuanalyysin OpenRouterin tai käyttäjän Cloudflare Workerin kautta; muut verkkoyhteydet tarvitsevat erillisen suunnitelman. Asiakas pyytää ainoastaan ilmaismallien tunnisteita. Älä lisää etäfontteja, CDN:ää, telemetryä tai PWA-riippuvuutta.
+Pidä file:///single-file-käyttö ja normaalien ominaisuuksien offline-toiminta ensisijaisina. `index.html` sallii käyttäjän käynnistämän laskuanalyysin ja valinnaisen kuittien AI-kategorisoinnin OpenRouterin tai käyttäjän Cloudflare Workerin kautta; muut verkkoyhteydet tarvitsevat erillisen suunnitelman. Asiakas pyytää ainoastaan ilmaismallien tunnisteita. Älä lisää etäfontteja, CDN:ää, telemetryä tai PWA-riippuvuutta.
 
 ## Tarkistukset muutoksen mukaan
 

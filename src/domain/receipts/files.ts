@@ -7,3 +7,10 @@ export function receiptFileError(files: readonly { name: string; size: number }[
   if (files[0].size > RECEIPT_PDF_LIMIT) return "PDF saa olla enintään 20 Mt.";
   return "";
 }
+
+/** Bound queued browser memory as well as each individual PDF. */
+export function importBatchError(files: readonly { name: string; size: number }[]): string {
+  if (!files.length || files.length > 50) return 'Valitse 1–50 PDF-tiedostoa.';
+  if (files.reduce((sum, file) => sum + file.size, 0) > 100 * 1024 * 1024) return 'Tiedostojen yhteiskoko saa olla enintään 100 Mt.';
+  return files.map(file => receiptFileError([file])).find(Boolean) || '';
+}

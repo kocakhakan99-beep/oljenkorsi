@@ -1844,6 +1844,7 @@ function CashEntryForm({
 function App() {
   const receiptScanner = useRef<ReceiptScannerHandle>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [s, setS] = useState<State>(loaded.data),
     [page, setPage] = useState(location.hash.slice(1) || "dashboard"),
@@ -4261,11 +4262,15 @@ function App() {
                   </section>
                 </>
               ))}
-            {page === "expenses" && invoiceOpen && <InvoiceScanner onUse={(suggestion, recurring) => {
+            <div hidden={page !== "expenses" || !invoiceOpen}><InvoiceScanner files={invoiceFiles} onUse={(suggestion, recurring) => {
               setQuickSeed(entry({ name: suggestion.name, amount: suggestion.amountCents ?? 0, date: suggestion.date || "", category: cats("expenses").includes("Muu meno") ? "Muu meno" : cats("expenses")[0] || "Muu", recurrence: recurring ? "monthly" : "once" }));
-              setQuickEntryKind("expenses"); setQuick(true); setInvoiceOpen(false);
-            }} />}
-            <ReceiptDropZone enabled={s.settings.onboarded && ["expenses", "budget", "settings"].includes(page)} onFile={openReceipt} onError={setNotice} />
+              setQuickEntryKind("expenses"); setQuick(true);
+            }} /></div>
+            <ReceiptDropZone enabled={s.settings.onboarded} onFiles={(files, kind) => {
+              navigate("expenses");
+              if (kind === "receipt") { setReceiptOpen(true); receiptScanner.current?.scanFiles(files); }
+              else { setInvoiceOpen(true); setInvoiceFiles(files); }
+            }} onError={setNotice} />
             <div id="receipt-workspace" className="receipt-home" hidden={page !== "expenses" || !receiptOpen}>
               <ReceiptScanner key={s.createdAt} ref={receiptScanner} state={s} onClose={closeReceipt} onImport={(next) => {
                 if (!commit(next)) return false;

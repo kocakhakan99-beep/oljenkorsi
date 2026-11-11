@@ -77,3 +77,27 @@ it('explains that a Worker 401 may come from either Worker or OpenRouter credent
   await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('APP_API_KEY');
   await expect(analyzeInvoice('worker-test-key', 'teksti', 'worker')).rejects.toThrow('OpenRouter-avain');
 });
+
+it('maps batched invoice suggestions by id even when the model reorders them', async () => {
+  const { analyzeInvoiceBatch } = await import('../services/invoice-ai');
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ invoices: [
+    { id: 1, name: 'B', amount_eur: 20, due_date: null },
+    { id: 0, name: 'A', amount_eur: 10, due_date: null },
+  ] }) } }] })));
+  vi.stubGlobal('fetch', fetcher);
+  const result = await analyzeInvoiceBatch('key', ['first', 'second'], 'worker');
+  expect(result.map(i => i.name)).toEqual(['A', 'B']);
+  expect(result.map(i => i.amountCents)).toEqual([1000, 2000]);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+it('only accepts receipt categories and product identifiers from the input', async () => {
+  const { categorizeReceipt } = await import('../services/invoice-ai');
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ categories: [
+    { id: 'a', category: 'Ruoka' }, { id: 'b', category: 'Invented' }, { id: 'unknown', category: 'Ruoka' },
+  ] }) } }] })));
+  vi.stubGlobal('fetch', fetcher);
+  expect(await categorizeReceipt('key', [{ id: 'a', name: 'MAITO' }, { id: 'b', name: 'UNKNOWN' }], ['Ruoka'])).toEqual({ a: 'Ruoka' });
+  const sent = JSON.parse(fetcher.mock.calls[0][1].body);
+  expect(sent.model).toBe('openrouter/free');
+  expect(JSON.parse(sent.messages[1].content)).toEqual({ products: [{ id: 'a', name: 'MAITO' }, { id: 'b', name: 'UNKNOWN' }], categories: ['Ruoka'] });
+});

@@ -17,14 +17,15 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Aloita tyhjästä').click()
     page.get_by_role('navigation').get_by_role('button', name='Budjetti', exact=True).click()
     page.get_by_role('button', name='Analysoi lasku', exact=True).click()
+    page.get_by_role('button', name='Liitä laskuteksti').click()
     page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku 42,55')
     page.get_by_label('AI-palvelu').select_option('openrouter')
     page.get_by_label('OpenRouter API-avain').fill('test-key')
     assert not requests
-    expect(page.get_by_role('button', name='Lähetä teksti analysoitavaksi')).to_be_enabled()
-    page.get_by_role('button', name='Lähetä teksti analysoitavaksi').click()
-    expect(page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
-    assert len(requests) == 1 and requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
+    expect(page.get_by_role('button', name='Analysoi laskut')).to_be_enabled()
+    page.get_by_role('button', name='Analysoi laskut').click()
+    expect(page.get_by_role('button', name='Jatka kertamenona')).to_be_visible()
+    assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
     page.get_by_role('button', name='Jatka toistuvana laskuna').click()
     dialog = page.locator('dialog[open]')
     expect(dialog.locator('[name=name]')).to_have_value('Testilasku')
@@ -49,16 +50,17 @@ with sync_playwright() as p:
     worker_page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
     worker_page.get_by_role('button', name='Analysoi lasku', exact=True).click()
     expect(worker_page.get_by_label('AI-palvelu')).to_have_value('worker')
+    worker_page.get_by_role('button', name='Liitä laskuteksti').click()
     worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
-    submit = worker_page.get_by_role('button', name='Lähetä teksti analysoitavaksi')
+    submit = worker_page.get_by_role('button', name='Analysoi laskut')
     expect(submit).to_be_disabled()
     worker_page.get_by_label('Worker API-avain').fill('worker-test-key')
     expect(submit).to_be_enabled()
     submit.click()
-    expect(worker_page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
+    expect(worker_page.get_by_role('button', name='Jatka kertamenona')).to_be_visible()
     expect(worker_page.get_by_label('Worker API-avain')).to_have_value('')
     expect(submit).to_be_disabled()
-    assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
+    assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'openrouter/free'
     assert worker_headers[0].get('authorization') == 'Bearer worker-test-key'
     assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     assert 'Fiktiivinen lasku' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")

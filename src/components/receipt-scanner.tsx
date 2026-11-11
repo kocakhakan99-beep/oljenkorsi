@@ -1,3 +1,4 @@
+import { categorizeReceipt } from "../services/invoice-ai";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { FileText, ScanLine, Check, X, AlertTriangle } from "lucide-react";
 import { ContextDetails } from "./summary";
@@ -6,15 +7,17 @@ import { validDate } from "../domain/calculations";
 import { parseReceipt } from "../domain/receipts/parser";
 import type { ReceiptDraft } from "../domain/receipts/schema";
 import { prepareReceiptImport, receiptCategoryTotals, receiptMatches, receiptCategoryOptions } from "../domain/receipts/import";
-import { receiptFileError } from "../domain/receipts/files";
+import { receiptFileError, importBatchError } from "../domain/receipts/files";
 import { receiptPDF } from "../services/receipt-pdf";
 
 const euro = (n: number) => new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR" }).format(n / 100);
-export interface ReceiptScannerHandle { scanFile: (file: File) => boolean; focusPanel: () => void }
+export interface ReceiptScannerHandle { scanFile: (file: File) => boolean; scanFiles: (files: File[]) => void; focusPanel: () => void }
 export function ReceiptScanButton({ onClick, label = "Skannaa kuitti", expanded }: { onClick: () => void; label?: string; expanded?: boolean }) {
   return <button type="button" onClick={onClick} aria-controls="receipt-workspace" aria-expanded={expanded} className="receipt-scan-button" title={label === "Skannaa kuitti" ? "PDF-kuitti · voit myös pudottaa tiedoston näkymään" : "Avaa kuittiskannaus Menot-näkymässä"}><ScanLine size={18} aria-hidden="true" />{label}</button>;
 }
 export const ReceiptScanner = forwardRef<ReceiptScannerHandle, { state: State; onImport: (next: State) => boolean; onClose: () => void }>(function ReceiptScanner({ state, onImport, onClose }, ref) {
+  const [queue, setQueue] = useState<File[]>([]);
+  const [aiEnabled, setAiEnabled] = useState(false), [aiKey, setAiKey] = useState("");
   const [draft, setDraft] = useState<ReceiptDraft | null>(null);
   const [categories, setCategories] = useState<Record<string, string>>({}), [selected, setSelected] = useState<string[]>([]);
   const [onlyReview, setOnlyReview] = useState(false), [busy, setBusy] = useState(false), [progress, setProgress] = useState("");
@@ -47,12 +50,32 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, { state: State; o
     const validation = receiptFileError([file]);
     if (validation) { setError(validation); return false; }
     if ((draft || busy) && !window.confirm("Korvataanko nykyinen kuittiluonnos uudella PDF:llä? Tallentamattomat luokittelut menetetään.")) return false;
-    void scan(file); return true;
+    setQueue([]); void scan(file); return true;
   }
-  useImperativeHandle(ref, () => ({ scanFile: requestFile, focusPanel: () => {
+  useImperativeHandle(ref, () => ({ scanFile: requestFile, scanFiles: requestFiles, focusPanel: () => {
     const target = focus.current || title.current;
     if (target?.getClientRects().length) { target.focus(); target.scrollIntoView({ block: "start" }); }
   } }));
+  function requestFiles(files: File[]) {
+    const error = importBatchError(files); if (error) { setError(error); return; }
+    if ((draft || busy || queue.length) && !window.confirm("Korvataanko nykyinen tuontijono?")) return;
+    setQueue(files.slice(1)); void scan(files[0]);
+  }
+  function nextReceipt() {
+    if (!queue.length) return;
+    const [file, ...rest] = queue; setQueue(rest); void scan(file);
+  }
+  async function categorize() {
+    if (!aiEnabled || !draft || !aiKey.trim()) return;
+    const key = aiKey; setAiKey(""); setBusy(true); setError("");
+    const current = new AbortController(); controller.current = current;
+    try {
+      const result = await categorizeReceipt(key, draft.lines.map(l => ({ id: l.id, name: l.name })), available.map(c => c.name));
+      if (controller.current !== current || current.signal.aborted) return;
+      setCategories(old => ({ ...old, ...result })); setChecked(false);
+    } catch (e) { setError(e instanceof Error ? e.message : "AI-luokittelu epäonnistui. Voit luokitella tuotteet käsin."); }
+    finally { if (controller.current === current) setBusy(false); }
+  }
   function cancel() { controller.current?.abort(); controller.current = null; setBusy(false); setDraft(null); setProgress(""); setError(""); }
   function save() {
     if (!draft || blocked) return;
@@ -67,9 +90,13 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, { state: State; o
   return <section className="panel receipt-scanner" aria-labelledby="receipt-scanner-title">
     <div className="receipt-heading"><ScanLine aria-hidden="true" size={25} /><div><h2 id="receipt-scanner-title" ref={title} tabIndex={-1}>Kuittiskannaus</h2><p className="muted">Prisma, S-market, Alepa ja K-kaupat · PDF-kuitit · käsittely omassa selaimessa</p></div><button type="button" className="receipt-close" aria-label="Sulje kuittiskannaus" title="Sulje kuittiskannaus · luonnos säilyy" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
     <ol className="receipt-steps" aria-label="Kuittiskannauksen vaiheet"><li aria-current={!draft ? "step" : undefined}>1 Valitse PDF</li><li aria-current={draft ? "step" : undefined}>2 Tarkista</li><li>3 Kirjaa menot</li></ol>
-    <button type="button" className="receipt-scan-button" disabled={busy} onClick={() => fileInput.current?.click()}><FileText size={18} aria-hidden="true" />Valitse PDF</button>
-    <input ref={fileInput} hidden aria-label="Skannaa PDF-kuitti" type="file" accept="application/pdf,.pdf" disabled={busy} onChange={e => { const f = e.target.files?.[0]; if (f) requestFile(f); e.target.value = ""; }} />
+    <button type="button" className="receipt-scan-button" disabled={busy} onClick={() => fileInput.current?.click()}><FileText size={18} aria-hidden="true" />Valitse PDF-kuitit</button>
+    <input ref={fileInput} hidden aria-label="Skannaa PDF-kuitti" type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={e => { const files = Array.from(e.target.files || []); if (files.length) requestFiles(files); e.target.value = ""; }} />
     <p className="ux-status-note">Enintään 20 Mt / 50 sivua. Tekstimuotoiset PDF-kuitit; kuvallinen skannaus tarvitsee myöhemmin OCR:n. Alkuperäistä PDF:ää ei tallenneta.</p>
+    <p>Enintään 50 PDF:ää / 100 Mt kerralla. Kuitit tarkistetaan ja kirjataan yksitellen.</p>
+    <label><input type="checkbox" checked={aiEnabled} disabled={busy} onChange={e => { setAiEnabled(e.target.checked); setAiKey(""); }} />AI-avusteinen kategorisointi</label>
+    {aiEnabled && <div><p>Vain tuotteiden nimet ja sallitut kategoriat lähetetään Cloudflare Workerille ja OpenRouterin ilmaismallille, kun painat Ehdota kategoriat. Summia tai alkuperäistä PDF:ää ei lähetetä. Tarkista ehdotukset.</p><label>Worker API-avain<input type="password" autoComplete="off" value={aiKey} onChange={e => setAiKey(e.target.value)} /></label><button disabled={busy || !draft || !aiKey.trim()} onClick={() => void categorize()}>Ehdota kategoriat</button></div>}
+    {queue.length > 0 && <p role="status">Jonossa {queue.length} kuittia. {!draft && !busy && <button onClick={nextReceipt}>Seuraava kuitti</button>}<button disabled={busy} onClick={() => setQueue([])}>Tyhjennä jono</button></p>}
     {busy && <div className="receipt-busy" role="status"><span>{progress}</span><button onClick={cancel}><X size={16} aria-hidden="true" /> Peruuta käsittely</button></div>}
     {error && <p className="alert" role="alert">{error}</p>}
     {success && <p className="alert" role="status"><Check size={18} aria-hidden="true" />{success} Tuonnin voi kumota sivun yläosan Kumoa-painikkeella ennen muita muutoksia.</p>}
@@ -90,7 +117,7 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, { state: State; o
       {!!actuals.length && <label className="receipt-check receipt-warning"><input type="checkbox" checked={clearActuals} onChange={e => { setClearActuals(e.target.checked); setChecked(false); }} />Kategorioissa {actuals.join(", ")} on käsin asetettu toteuma. Poista näiden kategorioiden tämän kuun korjaus ja laske toteuma kaikista kirjauksista.</label>}
       {!!recurring.length && <ContextDetails title={`Tarkista saman kategorian toistuvat menot · ${recurring.length}`} className="receipt-warning-info"><p>Koko kuukauden menoarvio voi sisältää jo tämän ostoksen. Kuittituonti ei vähennä arviota automaattisesti. Korjaa päällekkäinen arvio ennen hyväksyntää. Samaksi maksuksi valittu tapahtuma korvataan, muut sarjan tapahtumat säilyvät.</p><ul>{recurring.slice(0, 10).map(e => <li key={e.id}>{e.name} · {e.category}</li>)}</ul></ContextDetails>}
       <label className="receipt-check"><input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} />Tarkistin tuotteet, kategoriat ja ettei ostosta ole jo kirjattu. {match && match !== "separate" ? "Valittu aiempi maksu korvataan tällä erittelyllä." : "Kirjaukset lisätään uusina menoina; kuittihistoriaa ei tallenneta."}</label>
-      <div className="receipt-actions"><button className="primary" disabled={blocked} onClick={save}>Kirjaa {draft.total === null ? "kuitti" : euro(draft.total)} menoihin</button><button onClick={cancel}>Hylkää luonnos</button></div>
+      <div className="receipt-actions"><button className="primary" disabled={blocked || busy} onClick={save}>Kirjaa {draft.total === null ? "kuitti" : euro(draft.total)} menoihin</button><button disabled={busy} onClick={cancel}>Hylkää luonnos</button></div>
       <p className="ux-status-note">Kirjataan {draft.date ? draft.date.slice(0, 7) : "kuitin"} kuukauteen. Budjetti säilyy; toteuma päivittyy kirjauksista. Maksu- ja asiakasomistajatietoja ei poimita.</p>
     </div>}
   </section>;
