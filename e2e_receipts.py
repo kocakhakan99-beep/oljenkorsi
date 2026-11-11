@@ -42,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         page.on('request', lambda r: network.append(r.url) if not r.url.startswith(('http://127.0.0.1:', 'http://localhost:', 'data:', 'blob:', 'file:', 'https://api-worker.kocakhakan99.workers.dev/')) else None)
         def mock_ai(route):
             payload = json.loads(route.request.post_data_json['messages'][1]['content'])
-            result = {'categories': [{'id': product['id'], 'category': 'Ruoka'} for product in payload['products']]}
+            result = {} if isinstance(payload, list) else {'categories': [{'id': product['id'], 'category': 'Ruoka'} for product in payload['products']]}
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', mock_ai)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))

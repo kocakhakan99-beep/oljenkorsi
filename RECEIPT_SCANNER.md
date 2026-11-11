@@ -52,7 +52,7 @@ Yhteensä aiemmin testatut käyttäjän PDF-tiedostot sisälsivät useita samoja
 - Lisättiin yksi synteettisin tunnistein, päivämäärin, summineen ja tuotenimineen anonymisoitu K-Market-regressiofixture. Se tarkistaa tapahtumaotsikon, tuoterivien rajauksen, määrän ja yksikköhinnan sekä loppusumman/ALV-yhteenvedon täsmäytyksen.
 - Kaikki haaran 21 seurattua PDF-lähdetiedostoa poistettiin nykyisestä tiedostopuusta. Aiemmat Git-commitit sisältävät alkuperäiset uploadit edelleen; poistokomitti ei siivoa Git-historiaa.
 
-Tuki tarkoittaa näitä testattuja kuittirakenteita. Muun K- tai S-kaupan formaatin toimivuutta ei luvata ilman esimerkkitestiä. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
+Tuki tarkoittaa näitä testattuja kuittirakenteita. Näiden ulkopuolisille ja osalle epäselvistä tekstirakenteista on lisäksi rajattu AI-varareitti; se ei takaa tuntemattoman formaatin toimivuutta. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
 
 ## Tallennettavat tiedot
 
@@ -146,3 +146,12 @@ Ilmaisia ehdokkaita (viralliset tiedot tarkistettu 11.11.2026, saatavuus ja ehdo
 - [Tesseract OCR](https://tesseract-ocr.github.io/tessdoc/): avoimen lähdekoodin paikallisen toteutuksen ehdokas, ei itsessään pilvi-API. Selaintoteutuksen koko, suomen kielen aineisto, nopeus ja mobiilimuistin käyttö on mitattava ennen valintaa.
 
 **99,9 % on tavoite, ei nykyinen ominaisuus eikä yhden API:n lupaus.** Jos määritellyssä riippumattomassa ja edustavassa testissä ei havaita yhtään virhettä, noin 2 995 kuittia tarvitaan, jotta yksisuuntainen 95 %:n binominen luottamusraja alittaa 0,1 %:n virheosuuden. Se koskee vain mitattua virhemääritelmää ja testiaineiston jakaumaa. Tärkein käytännön tavoite on, että epäselvä kuitti pysähtyy tarkistukseen; myös väärän kategorian voi saada täsmäävistä summista.
+
+
+## Tekstipohjaisten kuittien AI-varareitti
+
+Jos paikallinen parseri ei tunnista kauppaa, otsikkoa tai tuotealuetta tai löytää epäselvän rivin, sovellus voi pyytää Workeria jäsentämään kuitin tekstin. Varareitti koskee vain tekstimuotoisia PDF:iä. Yleisimmät maksu- ja asiakasnumerorivit rajataan pyynnöstä, mutta kuittiteksti voi silti sisältää henkilökohtaisia tietoja. Tekstiä ei tallenneta varmuuskopioon. Kaikki AI-pyynnöt käyttävät samaa Worker-avainta ja `openrouter/free`-reititintä.
+
+AI ehdottaa kaupan, päivän, loppusumman ja tuoterivien lähdetunnisteita. Sovellus tarkistaa, että kentät löytyvät lähetetyiltä lähderiveiltä, hinnat vastaavat rivejä, tunnisteet ovat yksilöllisiä ja tuoterivit täsmäävät sentilleen loppusummaan. Tuntemattomat väliin jäävät hintarivit, ristiriitaiset loppusummat, useat loppusummarivit sekä epäselvät alennukset ja palautukset pysäyttävät tuonnin. Kuitin käyttäjä tarkistaa poikkeustapauksessa ehdotetut rivit erikseen ennen kirjausta; tarkistus ei yksin todista, että jokainen mahdollinen rivi löytyi. Tavallisten testattujen kuittirakenteiden toimintaa ei korvata AI-jäsentelyllä.
+
+Varareitti on tarkoituksella rajattu, eikä se käsittele kaikkia muotoiluja tai korjaa kuvan muodossa olevia rivejä. Sen todellista onnistumisprosenttia ei ole mitattu: yksikkö- ja selaintestit käyttävät rajattuja keinotekoisia testivastauksia. OCR on toistaiseksi sivussa käyttäjän toiveen mukaisesti; aiempi OCR-suunnitelma säilyy myöhempää tarvetta varten.
