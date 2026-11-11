@@ -1,0 +1,46 @@
+[
+  {
+    "id": "strained",
+    "months": 36,
+    "incomes": 126,
+    "expenses": 999,
+    "assets": 4,
+    "liabilities": 3,
+    "investments": 15,
+    "goals": 3,
+    "scenarios": 3
+  },
+  {
+    "id": "everyday",
+    "months": 36,
+    "incomes": 126,
+    "expenses": 998,
+    "assets": 4,
+    "liabilities": 3,
+    "investments": 18,
+    "goals": 3,
+    "scenarios": 3
+  },
+  {
+    "id": "steady",
+    "months": 36,
+    "incomes": 126,
+    "expenses": 1001,
+    "assets": 4,
+    "liabilities": 3,
+    "investments": 20,
+    "goals": 3,
+    "scenarios": 3
+  },
+  {
+    "id": "shock",
+    "months": 36,
+    "incomes": 118,
+    "expenses": 986,
+    "assets": 4,
+    "liabilities": 3,
+    "investments": 13,
+    "goals": 3,
+    "scenarios": 3
+  }
+]

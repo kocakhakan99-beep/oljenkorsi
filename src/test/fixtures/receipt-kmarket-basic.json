@@ -1,0 +1,18 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "lines": [
+        "*K-Market ESIMERKKI*",
+        "K001 M000001/0001 2.2.2026 12:00",
+        "TUOTE 1 3,28",
+        "TUOTE 2 1,21",
+        "1 KPL 1,21 € /KPL",
+        "------------------------------------------",
+        "YHTEENSÄ 4,49",
+        "ALV VEROTON VERO VEROLLINEN",
+        "YHTEENSÄ 4,49"
+      ]
+    }
+  ]
+}

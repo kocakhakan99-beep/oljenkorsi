@@ -1,0 +1,32 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "lines": [
+        "                 S-MARKET ESIMERKKI",
+        "",
+        "",
+        "",
+        "",
+        "K001 M000001/0001      1.11.2026        21:37",
+        "",
+        "",
+        "ASIAKASOMISTAJAN edut on huomioitu.",
+        "------------------------------------------",
+        "*PAPERIKASSI     VALKOINEN                    0,25 *",
+        "*PÄÄRYNÄJUOMA 10-PACK                         4,29 *",
+        "*JUUSTOKERROSBURGERI                          4,38 *",
+        "    2 KPL                2,19 €/KPL",
+        "*KULT KREIK.PEPPERONI                         2,55 *",
+        "*SMOOTHIE BAN-MANGO 1V                        2,30 *",
+        "    2 KPL                1,15 €/KPL",
+        "*RANCH KIVIUUNIPIZZA                          3,55 *",
+        "*KEBAB VALKOSIPULIPERUNOILLA 390G             4,99 *",
+        "*NO SUGAR RASPBERRY 0,5L                      1,54 *",
+        "*PANTTI 0,15 EUR TÖLKKI                       0,15 *",
+        "------------------------------------------",
+        "*YHTEENSÄ                                    24,00 *"
+      ]
+    }
+  ]
+}
