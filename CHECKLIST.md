@@ -161,7 +161,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 - ✅ Yksi paikallinen HTML-tiedosto, selaintallennus ja käyttö ilman tiliä; ei sovelluksen ajonaikaisia verkkokutsuja tai analytiikkaa.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
-- ✅ TypeScript, ESLint, tuotantobuild sekä viimeisimmässä ajossa 161 yksikkötestiä, 82 yleistä ja 32 kuittiskannerin Chromium-selainvarmennusta sekä 15/17 uusimman kuittierän PDF-tarkistusta; yksi K-Market-fixture lisätty.
+- ✅ TypeScript, ESLint, tuotantobuild ja testit ovat käytössä. Testimäärät ja selainajot vaihtelevat: viimeisimmät kirjatut tulokset ja niiden päivämäärät löytyvät testausraportista.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
 - 🟡 Monen välilehden ristiriitoja havaitaan, mutta atomista lukitusta tai yhdistelyä ei ole.
 - ⬜ Windows/Edge/Firefox, todellinen offline-käyttö, tallennuskiintiöt ja palautuspolut laajemmin.
