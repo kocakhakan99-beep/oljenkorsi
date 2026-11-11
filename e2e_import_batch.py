@@ -43,9 +43,11 @@ with tempfile.TemporaryDirectory() as tmp:
         assert not requests
         page.get_by_label('AI-avusteinen kategorisointi').check()
         assert not requests
-        page.locator('.receipt-scanner').get_by_label('Worker API-avain').fill('test-key')
+        page.locator('.receipt-scanner').get_by_role('button', name='Lisää avain', exact=True).click()
+        page.get_by_role('dialog', name='Analyysin avain').get_by_label('Worker-avain', exact=True).fill('test-key')
+        page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()
         page.get_by_role('button', name='Ehdota kategoriat koko erälle').click()
-        expect(page.locator('.receipt-scanner').get_by_label('Worker API-avain')).to_have_value('')
+        expect(page.locator('.receipt-scanner').get_by_role('button', name='Vaihda tai poista avain')).to_be_visible()
         page.wait_for_function('!document.querySelector(".receipt-review fieldset") && Array.from(document.querySelectorAll(".receipt-scanner input[type=checkbox]")).every(i => !i.disabled)')
         assert len(requests) == 1
         page.get_by_role('button', name='Vahvista kaikkien kuittien tarkistus').click()
@@ -73,7 +75,7 @@ with tempfile.TemporaryDirectory() as tmp:
         drop(); page.get_by_role('button', name='Lasku', exact=True).click()
         expect(page.locator('.invoice-scanner details')).to_have_count(2)
         page.wait_for_function('!document.querySelector(".invoice-scanner input[type=file]").disabled')
-        page.locator('.invoice-scanner').get_by_label('Worker API-avain').fill('test-key')
+        expect(page.locator('.invoice-scanner').get_by_role('button', name='Vaihda tai poista avain')).to_be_visible()
         page.get_by_role('button', name='Analysoi laskut', exact=True).click()
         expect(page.get_by_role('button', name='Jatka kertamenona')).to_have_count(2, timeout=30000)
         assert len(requests) == 2

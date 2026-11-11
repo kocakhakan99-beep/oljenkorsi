@@ -5528,3 +5528,7 @@ button.primary,
 .invoice-scanner textarea { width: 100%; min-height: 140px; }
 .invoice-scanner p { margin: 0; }
 .invoice-scanner button { justify-self: start; }
+
+.ai-card-heading { display: flex; align-items: center; gap: .65rem; }
+.ai-card-heading h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; margin: 0; }
+.ai-key-button { display: inline-flex; align-items: center; justify-content: center; gap: .25rem; min-width: 44px; min-height: 44px; flex-shrink: 0; }
