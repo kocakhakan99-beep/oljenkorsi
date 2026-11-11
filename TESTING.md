@@ -1,5 +1,12 @@
 # Testausraportti 10.11.2026
 
+## Kuittierän tarkistus ja lähdetiedostojen poisto 11.11.2026
+
+- 17 uutta PDF-kuittia käytiin läpi selaimen PDF.js-parserilla. 15 tavallista ostokuittia parseutui tarkistuksetta; ABC:n polttoainekuitti ja palautuskuitti jätettiin pois käyttäjän pyynnöstä.
+- Uusi K-Market-fixture anonymisoi myös päivämäärän ja summat synteettisiksi. K-marketin tuoterivit, määrätieto ja täsmäytys saavat nyt yhden suoran regressiotestin.
+- Kaikki 21 repositorion seurattua PDF:ää poistettiin nykyisestä haarapuusta. Alkuperäiset uploadit säilyvät aiemmissa commit-historian kohdissa.
+- 163 yksikkötestiä 16 tiedostossa, TypeScript-tarkistus, ESLint ja tuotantobuild läpäisivät. Build säilytti Viten suuren JavaScript-chunkin huomautuksen.
+
 ## Uudet Prisma-kuittitaitot ja fiktiivisten testikuittien poisto 10.11.2026
 
 - Neljä käyttäjän toimittamaa PDF:ää ajettiin sovelluksen selaimessa toimivan PDF.js-lukijan läpi. Kaikki neljä tunnistuivat ja niiden tuoterivimäärät täsmäsivät. Kaksi tiedostoa olivat saman kuitin identtiset kopiot; toinen uusi kuitti käytti aiemmin testatusta ostoksesta erilaista, tähdetöntä taittoa.

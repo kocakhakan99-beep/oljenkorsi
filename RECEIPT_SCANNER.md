@@ -6,7 +6,7 @@
 
 Budjetin **Skannaa kuitti** avaa saman skannerin menoissa. Tietokoneella yhden PDF-kuitin voi myös pudottaa mihin tahansa Menot-, Budjetti- tai Asetukset-näkymässä: sovellus siirtyy menoihin, avaa skannerin ja käynnistää poiminnan. Tuonti ja vienti sisältää siirtymäpainikkeen samaan pääpaikkaan, ei toista skanneria.
 
-1. Valitse Prisman, S-marketin, Alepan tai K-Citymarketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
+1. Valitse Prisman, S-marketin, Alepan, K-Citymarketin tai K-Marketin tekstimuotoinen PDF-kuitti. PDF luetaan selaimessa ilman verkkoyhteyttä tai tiedoston lähettämistä.
 2. Tarkista kauppa, ostopäivä, loppusumma ja tuoterivit. Summan on täsmättävä sentilleen. Luokittelut ovat paikallisia nimisääntöihin perustuvia ehdotuksia, eivät varmoja tuotetietoja.
 3. Vaihda tarvittaessa tuotteen kategoria. Tuntematon tuote jää valittavaksi. **Vain luokittelemattomat**, **Valitse näkyvät** ja kategoriavalinta luokittelevat monta tuotetta kerralla. Valitut valinnaiset oletuskategoriat, kuten Vaatteet, otetaan käyttöön hyväksynnässä.
 4. Jos samalle päivälle löytyy samansuuruinen meno, valitse sama maksu korvattavaksi tai vahvista eri ostos. Toistuvasta sarjasta korvataan vain kuitin päivälle osuva tapahtuma; muut esiintymät säilyvät.
@@ -42,7 +42,13 @@ Koko kuukauden toistuva menoarvio ei ole automaattisesti sama maksu kuin yksitt�
 - Kuitin otsikon tai tuotealueen jälkeisiä summia ei käsitellä tuotteina. Jos K-kuitin tuotealueen alkua ei voi tunnistaa rakennerajasta, skannaus pysähtyy eikä arvaa.
 - PDF-sivujen tekstikohdat järjestetään sijainnin mukaan riveiksi. Valuuttamerkin ja yksikön väliset PDF-tekstikatkot sallitaan.
 
-Yhteensä 13 käyttäjän toimittamaa PDF-tiedostoa sisältää 10 eri ostosta. Kolme tiedostoa ovat jo testattujen ostosten kopioita: Korso-ostoksen eri PDF, saman 17.10. ostoksen kaksi identtistä PDF:ää sekä 9.11. ostoksen tähdellinen ja tähdetön PDF-taitto. Semanttinen tunniste estää saman ostoksen toisen tuonnin tiedoston SHA-256:sta riippumatta.
+Yhteensä 13 aiemmin testattua käyttäjän PDF-tiedostoa sisälsi 10 eri ostosta. Kolme tiedostoa olivat jo testattujen ostosten kopioita. Semanttinen tunniste estää saman ostoksen toisen tuonnin tiedoston SHA-256:sta riippumatta.
+
+## Uusimman kuittierän tarkistus 11.11.2026
+
+- Repositorioon lisätty 17 PDF:ää luettiin sovelluksen PDF.js-lukijalla. 15 kulukuittia parsittiin ilman tarkistusta vaativia virheitä. ABC:n polttoainekuitti ja yksi palautuskuitti rajattiin tämän parserin ulkopuolelle käyttäjän pyynnöstä.
+- Lisättiin yksi synteettisin tunnistein, päivämäärin, summineen ja tuotenimineen anonymisoitu K-Market-regressiofixture. Se tarkistaa tapahtumaotsikon, tuoterivien rajauksen, määrän ja yksikköhinnan sekä loppusumman/ALV-yhteenvedon täsmäytyksen.
+- Kaikki haaran 21 seurattua PDF-lähdetiedostoa poistettiin nykyisestä tiedostopuusta. Aiemmat Git-commitit sisältävät alkuperäiset uploadit edelleen; poistokomitti ei siivoa Git-historiaa.
 
 Tuki tarkoittaa näitä testattuja kuittirakenteita. Muun K- tai S-kaupan formaatin toimivuutta ei luvata ilman esimerkkitestiä. Tunnistamaton raharivi tai täsmäytysero estää tallennuksen.
 
@@ -90,7 +96,7 @@ Laajempi tavoite ja vielä toteuttamattomat osat: [PDF_IMPORT_PLAN.md](PDF_IMPOR
 
 ## Mitä 99,9 % luotettavuus tarkoittaisi?
 
-Täydellistä tunnistusta ei luvata tuntemattomille kuittiversioille tai OCR-kuville. Nykyiset 13 PDF:ää edustavat kymmentä ostosta, ja 704 synteettistä rakenne-/sivunvaihtovariaatiota eivät korvaa laajaa tosielämän aineistoa. Kaikki summat voivat täsmätä myös väärällä tuotekategorialla tai toisensa kumoavilla poimintavirheillä.
+Täydellistä tunnistusta ei luvata tuntemattomille kuittiversioille tai OCR-kuville. Aiemmat 13 PDF:ää edustavat kymmentä ostosta; uusimmasta 17 PDF:n erästä 15 parsittiin ja ABC-polttoainekuitti sekä palautuskuitti rajattiin pois. Nämä eivätkä 704 synteettistä rakenne-/sivunvaihtovariaatiota korvaa laajaa riippumatonta aineistoa. Kaikki summat voivat täsmätä myös väärällä tuotekategorialla tai toisensa kumoavilla poimintavirheillä.
 
 Seurattavat asiat erotetaan:
 
