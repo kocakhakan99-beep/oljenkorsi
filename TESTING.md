@@ -1,5 +1,10 @@
 # Testausraportti 11.11.2026
 
+## Worker API-avaimella 11.11.2026
+
+- 168 yksikkötestiä, tyyppitarkistus, ESLint ja tuotantobuild läpäisivät. Chromiumin simuloitu API-koe varmisti, että Worker vaatii API-avaimen, lähettää sen Bearer-otsakkeessa ja tyhjentää avainkentän. OpenRouterin polku läpäisi myös.
+- Oikeaa API-avainta ei käytetty. Worker palautti aiemmin tästä ympäristöstä tehdylle avaimettomalle CORS-esitarkistukselle HTTP 403 / 1010; oikeaa Worker-yhteyttä ei ole todettu toimivaksi.
+
 ## Avaimeton Worker 11.11.2026
 
 - 168 yksikkötestiä, TypeScript, ESLint ja tuotantobuild läpäisivät. Chromiumin simuloitu laskupolku varmisti, että Worker valitaan ilman avainkenttää tai vahvistusruutua ja pyyntö ei sisällä Authorization-otsaketta; OpenRouter vaatii edelleen avaimen.

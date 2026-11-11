@@ -50,14 +50,17 @@ with sync_playwright() as p:
     worker_page.get_by_role('button', name='Analysoi lasku', exact=True).click()
     expect(worker_page.get_by_label('AI-palvelu')).to_have_value('worker')
     worker_page.get_by_label('Lähetettävä laskuteksti').fill('Fiktiivinen lasku')
-    assert worker_page.get_by_label('Worker Bearer-avain').count() == 0
     submit = worker_page.get_by_role('button', name='Lähetä teksti analysoitavaksi')
+    expect(submit).to_be_disabled()
+    worker_page.get_by_label('Worker API-avain').fill('worker-test-key')
     expect(submit).to_be_enabled()
     submit.click()
     expect(worker_page.get_by_role('heading', name='Tarkista ehdotus')).to_be_visible()
-    expect(submit).to_be_enabled()
+    expect(worker_page.get_by_label('Worker API-avain')).to_have_value('')
+    expect(submit).to_be_disabled()
     assert len(worker_requests) == 1 and worker_requests[0]['model'] == 'nvidia/nemotron-3-ultra-550b-a55b:free'
-    assert 'authorization' not in worker_headers[0]
+    assert worker_headers[0].get('authorization') == 'Bearer worker-test-key'
+    assert 'worker-test-key' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     assert 'Fiktiivinen lasku' not in worker_page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
-    print('PASS: Worker uses an unauthenticated free-model mock request')
+    print('PASS: Worker requires a Bearer key and requests a free model')
     browser.close()
