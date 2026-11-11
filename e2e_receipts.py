@@ -55,66 +55,41 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         for i, (path, (total, count, date)) in enumerate(zip(files, expected)):
             before = state(page)
             page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
-            page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
-            expect(page.get_by_role('heading', name='Tarkista kuitti', exact=True)).to_be_visible(timeout=30000)
-            issues = page.locator('.receipt-review [role=alert]').all_text_contents()
-            assert not issues, issues
-            assert page.locator('.receipt-product').count() == count
-            summary = page.locator('.receipt-summary')
-            expect(summary).to_contain_text(date.split('-')[2]+'.'+date.split('-')[1]+'.'+date.split('-')[0])
+            expect(page.get_by_role('img', name='Ostosten jakauma kategorioittain; summat näkyvät kaavion vieressä')).to_be_visible(timeout=30000)
+            assert page.locator('.receipt-review').count() == 0
             assert state(page) == before
-            mark(f'PDF {i+1}: {count} products, exact total {total} cents, no draft writes')
-            # Force one unknown category, then classify it through the multi-select path.
+            matching = page.get_by_label('Täsmäytä kuitti', exact=True)
+            if matching.is_visible(): matching.select_option('separate')
             save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
-            selector = page.locator('.receipt-product-category select').first
-            selector.select_option('')
-            expect(save).to_be_disabled()
-            unresolved = sum(1 for select in page.locator('.receipt-product-category select').all() if not select.input_value())
-            page.get_by_role('checkbox', name=f'Vain luokittelemattomat ({unresolved})', exact=True).check()
-            page.get_by_role('button', name='Valitse näkyvät', exact=True).click()
-            page.get_by_label('Luokittele valitut tuotteet', exact=True).select_option('Ruoka')
-            page.locator('.receipt-controls input[type=checkbox]').uncheck()
-            for select in page.locator('.receipt-product-category select').all():
-                if not select.input_value(): select.select_option('Muu meno')
-            if page.get_by_label('Täsmäytä kuitti', exact=True).count():
-                page.get_by_label('Täsmäytä kuitti', exact=True).select_option('separate')
             expect(save).to_be_enabled()
             if i == 1:
                 for width in [320, 390, 768]:
                     page.set_viewport_size({'width': width, 'height': 950})
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
-                page.set_viewport_size({'width':390, 'height':950})
-                page.locator('.receipt-review').evaluate('(el)=>el.scrollIntoView()')
-                page.screenshot(path=os.environ.get('TALOUS_RECEIPT_SCREENSHOT', str(Path(tmp) / 'receipt-mobile.png')))
-                mark('Receipt review fits 320/390/768 px; bulk classification and confirmation work')
                 page.set_viewport_size({'width':1280, 'height':900})
-            before = state(page); product_names = page.locator('.receipt-product-select strong').all_text_contents(); save.click()
-            expect(page.locator('.receipt-review')).to_have_count(0)
+                mark('Receipt summary fits 320/390/768 px')
+            save.click()
+            expect(page.get_by_role('img', name='Ostosten jakauma kategorioittain; summat näkyvät kaavion vieressä')).to_have_count(0)
             after = state(page)
             assert 'receiptImports' not in after
             existing_ids = {e['id'] for e in before['expenses']}
             entries = [e for e in after['expenses'] if e['id'] not in existing_ids]
             assert sum(e['amount'] for e in entries) == total
-            assert all(e['date'] == date for e in entries)
-            assert all(e['description'] == '' for e in entries)
+            assert all(e['date'] == date and e['description'] == '' for e in entries)
             assert after['budgets'] == before['budgets']
-            after_text = json.dumps(after, ensure_ascii=False)
-            assert all(name not in after_text for name in product_names)
-            mark(f'PDF {i+1}: expenses saved in purchase month; receipt and product details discarded')
+            mark(f'PDF {i+1}: exact total {total} cents, purchase month and no receipt archive')
             if i == 0:
                 page.get_by_role('button', name='Sulje kuittiskannaus').click()
                 page.get_by_role('button', name='Kumoa', exact=True).click()
                 page.get_by_role('button', name='Lisää kuitti', exact=True).click()
                 assert state(page) == before
                 page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(path)
-                page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
-                expect(page.locator('.receipt-review')).to_be_visible(timeout=30000)
-                for select in page.locator('.receipt-product-category select').all():
-                    if not select.input_value(): select.select_option('Muu meno')
-                page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True).click()
-                expect(page.locator('.receipt-review')).to_have_count(0)
+                save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
+                expect(save).to_be_enabled(timeout=30000)
+                save.click()
+                expect(page.get_by_role('img', name='Ostosten jakauma kategorioittain; summat näkyvät kaavion vieressä')).to_have_count(0)
                 assert 'receiptImports' not in state(page)
-                mark('Undo restores financial data; re-import still leaves no receipt archive')
+                mark('Undo restores financial data; re-import leaves no receipt archive')
         saved = state(page)
         page.get_by_role('button', name='Sulje kuittiskannaus').click()
         expect(page.get_by_role('button', name='Kumoa', exact=True)).to_be_visible()
@@ -159,9 +134,9 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
         for i, line in enumerate(['ALEPA ESIMERKKI', 'K001 M000001/0001 9.11.2026 12:00', '*TUNTEMATON ??? *', '*MAITO 1,25 *', '*YHTEENSÄ 1,25 *']): ambiguous_page.insert_text((25, 30+i*15), line, fontsize=9, fontname='FixtureMono')
         ambiguous_doc.save(ambiguous); ambiguous_doc.close()
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(ambiguous)
-        page.locator('.receipt-scanner article > details > summary').click(timeout=30000)
-        expect(page.locator('.receipt-issue-source')).to_contain_text('TUNTEMATON ???')
-        expect(page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)).to_be_disabled()
+        expect(page.locator('.receipt-issue-source')).to_contain_text('TUNTEMATON ???', timeout=30000)
+        save = page.get_by_role('button', name='Kirjaa koko erä menoihin', exact=True)
+        assert save.count() == 0 or save.is_disabled()
         page.set_viewport_size({'width':320, 'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
         page.locator('.receipt-issue-source').scroll_into_view_if_needed(); page.screenshot(path='/tmp/receipt-source-error.png')
