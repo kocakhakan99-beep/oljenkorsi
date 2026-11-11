@@ -5568,7 +5568,7 @@ button.primary,
 @keyframes processing-out { 0%, 45% { transform: translateX(-80px) rotate(0); opacity: 0; } 60% { opacity: 1; } 90%, 100% { transform: translateX(40px) rotate(8deg); opacity: 0; } }
 @keyframes processing-light { to { opacity: .35; } }
 @keyframes processing-spark { 0%, 50%, 100% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1); } }
-@media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; } }
+@media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; margin-inline: auto; } }
 @media (prefers-reduced-motion: reduce) { .document-processing-paper--in, .document-processing-paper--out, .machine-light, .document-processing-spark { animation: none; } .document-processing-paper--in { left: 9px; } .document-processing-paper--out { right: 9px; } .document-processing-spark { opacity: 0; } }
 
 .scanner-dialog { width: min(960px, 94vw); }
