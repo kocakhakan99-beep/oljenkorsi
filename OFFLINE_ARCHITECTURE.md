@@ -1,5 +1,7 @@
 # Offline-arkkitehtuuri
 
+> **Kehitysversion muutos:** Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa. Vie tiedot ennen poistumista. Aiempi selaintallennus säilyy ja on vietävissä asetuksista. Alla olevat offline- ja pysyvää localStorage-tallennusta koskevat kuvaukset ovat aiemman version dokumentaatiota. Supabase-kirjautumisen ja perhetilin ensimmäinen versio on kehitteillä. Talous tallennetaan ja ladataan perhetilillä toistaiseksi käyttäjän toiminnolla; automaattista synkronointia ei ole. Google on otettu käyttöön, Apple-asetukset ja oikeilla käyttäjillä tehtävät päästä päähän -testit ovat kesken.
+
 V1:n virallinen jakelutavoite on yksi itsenäinen HTML, jonka käyttäjä avaa paikallisesti file://-protokollalla. Tässä toimituksessa se on toteutettu. Kehityspalvelin ei ole loppukäyttäjän vaatimus.
 
 `src/index.html` on Viten kehitysmalli. Vite tuottaa ensin JS:n ja CSS:n väliaikaiseen `dist/`-hakemistoon. `standalone.mjs` lukee ne, upottaa HTML:ään, sijoittaa skriptin root-elementin jälkeen ja kirjoittaa valmiin projektin juuren `index.html`-tiedoston. Sen jälkeen väliaikainen `dist/` poistetaan. Valmis `index.html` toimii ilman palvelinta. Skriptin upotuksessa käytetään replacement-callbackia, jotta JavaScriptin dollarimerkit eivät muutu string-replacement-metamerkeiksi.

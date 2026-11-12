@@ -1,3 +1,4 @@
+import { Account } from "./components/account";
 import { InvoiceScanner } from "./components/invoice-scanner";
 import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
 import { ReceiptDropZone } from "./components/receipt-drop-zone";
@@ -2046,6 +2047,7 @@ function App() {
     };
   }
   const receiptUndoActive = useRef(false);
+  const hasTemporaryChanges = useRef(false);
   function commit(next: State) {
     try {
       if (next.coverage === s.coverage)
@@ -2054,6 +2056,7 @@ function App() {
       if (receiptUndoActive.current) { receiptUndoActive.current = false; setUndo(null); }
       try {
         storage.update(valid);
+        hasTemporaryChanges.current = true;
         setStorageOk(true);
       } catch (e) {
         setStorageOk(false);
@@ -2236,7 +2239,7 @@ function App() {
   }, [selectedReport]);
   useEffect(() => {
     let f = (e: BeforeUnloadEvent) => {
-      if (!storageOk) {
+      if (!storageOk || hasTemporaryChanges.current) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -3406,6 +3409,7 @@ function App() {
                 </button>
               )}
             </div>
+            <div className="alert warning" role="status">Tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan. Vie tiedot ennen poistumista.</div>
             {(!storageOk || loaded.error) && (
               <div className="alert warning">
                 {loaded.error ||
@@ -6557,14 +6561,15 @@ function App() {
                   <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
+                <Account exportBackup={exportBackup} state={s} onLoad={commit} />
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
-                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{storageOk ? "Tallennus käytettävissä" : "Tallennus ei käytettävissä"}</StatusBadge>
+                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
                   {!storageOk && <p role="alert">Vie varmuuskopio ennen kuin suljet tämän välilehden.</p>}
                   <p className="ux-status-note">Varmuuskopio ei ole automaattinen.</p>
                   <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
-                  <ContextDetails title="Miten tiedot säilyvät?"><p>Selaimen asetukset, yksityinen selaus, tiedoston siirtäminen tai selaindatan poisto voivat hävittää tallennuksen. JSON-varmuuskopio on siirrettävä kopio tiedoistasi.</p></ContextDetails>
-                  <ContextDetails title="Tallennuksen lisätyökalut"><p>Alkuperäinen selaintallennus auttaa vian selvittämisessä. Tavalliseen talouden siirtoon käytä JSON-varmuuskopiota.</p>
+                  <ContextDetails title="Miten tiedot säilyvät?"><p>Tiedot katoavat sivun uudelleenlatauksessa ja sulkemisessa. Vie tiedot ennen poistumista. JSON-varmuuskopio sisältää koko talouden; CSV-vienti ei sisällä kaikkia tietoja.</p></ContextDetails>
+                  <ContextDetails title="Tallennuksen lisätyökalut"><p>Aiemman version selaintallennuksen voi viedä tästä ja palauttaa JSON-tiedostona. Sitä ei poisteta automaattisesti.</p>
                     <button
                       onClick={() => {
                         try {
@@ -6586,7 +6591,7 @@ function App() {
                   <details className="danger-zone"><summary>Poista tietoja</summary>
                     <h3>Kaikkien tietojen poisto</h3>
                     <p>
-                      Poisto tyhjentää tämän selaimen talouden. Vie
+                      Poisto tyhjentää tämän välilehden muistissa olevan talouden. Vie
                       JSON-varmuuskopio ennen poistamista, jos haluat säilyttää
                       tiedot.
                     </p>
@@ -6691,7 +6696,7 @@ function App() {
             )}
           </main>
           <footer>
-            Yksityinen, paikallinen ja ilmainen · 0.1.0 · Muista varmuuskopioida
+            Tiedot ovat väliaikaisesti muistissa · Vie tiedot ennen poistumista
           </footer>
         </div>
       </div>
@@ -6702,11 +6707,10 @@ function App() {
           dismissible={false}
         >
           <p>
-            Kaikki tiedot käsitellään paikallisesti. Talousdataasi ei lähetetä
-            sovelluksesta mihinkään.
+            Voit käyttää sovellusta kirjautumatta. Tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan.
           </p>
           <p>
-            Selaintallennus ei korvaa varmuuskopiota. Pidä JSON-kopio tallessa.
+            Vie tiedot CSV- tai JSON-tiedostona ennen poistumista. JSON sisältää koko talouden.
           </p>
           {loaded.error && (
             <>
@@ -7133,8 +7137,7 @@ function App() {
           onClose={() => setDeleteOpen(false)}
         >
           <p>
-            Poistaa tämän sovelluksen selaintallennuksen. Ladatut varmuuskopiot
-            eivät poistu. Ota ensin varmuuskopio.
+            Tyhjentää tämän välilehden muistissa olevan talouden. Aiemman version selaintallennus ja ladatut tiedostot eivät poistu.
           </p>
           <button onClick={exportBackup}>Vie varmuuskopio</button>
           <label>
@@ -7154,7 +7157,7 @@ function App() {
                 setS(empty());
                 setUndo(null);
                 setDeleteOpen(false);
-                setNotice("Paikallinen data poistettu ja poisto tarkistettu.");
+                setNotice("Muistissa oleva talous tyhjennetty.");
               } catch (e) {
                 setNotice(String(e));
               }

@@ -1,5 +1,5 @@
 import { it, expect, vi, afterEach } from 'vitest';
-import { LocalStorageProvider } from '../data/storage';
+import { LocalStorageProvider, MemoryStorageProvider } from '../data/storage';
 import { demo, empty } from '../domain/model';
 function memory() {
   let map = new Map<string, string>();
@@ -11,6 +11,18 @@ function memory() {
   return map;
 }
 afterEach(() => vi.unstubAllGlobals());
+it('vieraan tiedot pysyvät vain muistissa ja vanhaa tallennusta ei muuteta', () => {
+  const map = memory();
+  map.set('taloussuunnittelu.v1', 'vanha tallennus');
+  const guest = new MemoryStorageProvider();
+  const state = demo();
+  guest.update(state);
+  expect(guest.get()).toEqual(state);
+  expect(map.get(guest.key)).toBe('vanha tallennus');
+  expect(new MemoryStorageProvider().get().incomes).toEqual([]);
+  guest.clear();
+  expect(map.get(guest.key)).toBe('vanha tallennus');
+});
 it('tallennus ja uudelleenluku', () => {
   memory();
   let a = new LocalStorageProvider();
