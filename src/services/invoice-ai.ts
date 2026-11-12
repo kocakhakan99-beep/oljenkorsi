@@ -145,3 +145,10 @@ export async function categorizeReceiptBatch(
     return category ? [[product.id, category]] : [];
   }))]));
 }
+
+/** Fallback for text PDFs only; each field must cite an original line. */
+export async function suggestReceiptStructure(key: string, lines: { id: string; text: string }[], signal?: AbortSignal): Promise<unknown> {
+  const text = JSON.stringify(lines);
+  const content = await requestAI(key, text, 'Extract one purchase receipt as JSON only: {"merchant":"store name", "merchant_source":"line id", "date":"YYYY-MM-DD", "date_source":"line id", "total_cents":123, "total_source":"line id", "products":[{"name":"exact product name from source", "net_cents":123, "source":"line id"}]}. Cite an original line id for every value. Include only purchased product rows with a price at end of the same line. Exclude payment methods, tax summaries and totals. Amounts are integer cents. Do not guess; if uncertain return {}.', signal);
+  return parseAIObject(content);
+}

@@ -32,6 +32,10 @@ with tempfile.TemporaryDirectory() as tmp:
         dialog.get_by_label('Avain', exact=True).fill('test-key')
         dialog.get_by_role('button', name='Tallenna', exact=True).click()
         expect(page.get_by_role('heading', name='Laskujen yhteenveto')).to_be_visible(timeout=30000)
+        page.set_viewport_size({'width': 320, 'height': 850})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+        if os.environ.get('TALOUS_INVOICE_SCREENSHOT'): page.locator('.invoice-review-card').screenshot(path=os.environ['TALOUS_INVOICE_SCREENSHOT'])
+        page.set_viewport_size({'width': 1280, 'height': 900})
         assert len(requests) == 1 and requests[0]['model'] == 'openrouter/free'
         assert headers[0].get('authorization') == 'Bearer test-key'
         page.get_by_label('Toistuva lasku kuukausittain').check()

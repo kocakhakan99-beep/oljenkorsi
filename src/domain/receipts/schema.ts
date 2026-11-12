@@ -13,7 +13,7 @@ export const receiptLineSchema = z.object({
   source: z.array(receiptSourceSchema).min(1).max(30),
 });
 export const receiptDraftSchema = z.object({
-  parserVersion: z.enum(["receipt-1", "receipt-2"]), chain: z.enum(["s", "k", "unknown"]),
+  parserVersion: z.enum(["receipt-1", "receipt-2", "receipt-ai-1"]), chain: z.enum(["s", "k", "generic", "unknown"]),
   merchant: z.string().max(200), date: z.string().refine(v => !v || validDate(v)),
   receiptId: z.string().max(100), currency: z.literal("EUR"), total: cents.nullable(),
   lines: z.array(receiptLineSchema).max(2000),

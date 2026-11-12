@@ -1,7 +1,7 @@
 import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
-import { CircleCheck, X } from "lucide-react";
+import { CircleCheck, FileText, X } from "lucide-react";
 import { useEffect, useRef, useState } from 'react';
 import { validDate } from '../domain/calculations';
 import { receiptPDF } from '../services/receipt-pdf';
@@ -64,13 +64,15 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Analyysi epäonnistui.'); }
     finally { setBusy(false); setProgress(''); }
   }
+  const incomplete = documents.filter(d => d.suggestion && (!d.suggestion.name.trim() || !d.suggestion.amountCents || !validDate(d.suggestion.date))).length;
   return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
     <div className="ai-card-heading"><h2>Lisää lasku</h2><APIKeyButton disabled={busy} /><button type="button" aria-label="Sulje laskun lisäys" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
     <p>Valitut laskut lähetetään AI-analyysiin.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
-    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (documents.every(d => d.suggestion) ? 'Tarkista laskujen tiedot.' : 'Lisää avain tai yritä uudelleen.') : 'Valitse laskut aloittaaksesi.'} />}
-    {documents.map((document, index) => <div key={index} onChangeCapture={() => setAllowDuplicates(false)}>
-      {!busy && <p>{document.name}{document.suggestion ? ' · Analysoitu' : ''}</p>}
+    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) && !incomplete ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (incomplete ? 'Täydennä vielä puuttuvat tiedot.' : documents.every(d => d.suggestion) ? 'Tarkista yhteenveto.' : 'Lisää avain tai yritä uudelleen.') : 'Valitse laskut aloittaaksesi.'} />}
+    {!!incomplete && <div className="receipt-unresolved-heading invoice-review-attention"><span aria-hidden="true">✦</span><div><h3>Täydennä vielä nämä</h3><p>{incomplete} laskua vaatii tarkistuksen</p></div></div>}
+    {documents.map((document, index) => <div className="invoice-review-card" key={index} onChangeCapture={() => setAllowDuplicates(false)}>
+      {!busy && <div className="invoice-review-card-heading"><FileText size={20} aria-hidden="true" /><strong>{document.suggestion?.name || document.name}</strong>{document.suggestion?.amountCents != null && <strong>{new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(document.suggestion.amountCents / 100)}</strong>}</div>}
       {document.error && <p role="alert">{document.error}</p>}
       {document.suggestion && <div className="invoice-review-fields">
         <label>Nimi<input value={document.suggestion.name} onChange={e => setDocuments(old => old.map((d, i) => i === index ? { ...d, suggestion: { ...d.suggestion!, name: e.target.value } } : d))} /></label>
