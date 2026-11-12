@@ -1,5 +1,9 @@
 # Muutosloki
 
+### UX:n toimintojen pääpaikat ja tiivistys 11.11.2026
+
+Budjettiraamien muokkaus keskitettiin asetuksiin ja menetelmän pitkät taustatiedot siirrettiin avattavaksi; tärkeä elämäntilanteen ja välttämättömän hoidon huomio säilyy näkyvissä. Sijoituskohteen valinta yhdistettiin lisäys-/muokkauslomakkeeseen, jossa valinta esitäyttää saatavilla olevan päivätyn hinnan. Viiva- ja aluekaaviot erotettiin selvästi. Muiden lisäosioiden auditoinnissa säilytettiin harvoin käytetyt syöttökentät, laskentaoletukset, tekniset tuontiasetukset sekä poistojen suoja.
+
 ### Worker-avainten selvennys 11.11.2026
 
 Laskuanalyysi nimeää Workerin asiakasavaimen APP_API_KEY:ksi ja selventää, että Workeristä tuleva HTTP 401 voi johtua myös palvelinpuolen OpenRouter-avaimesta. Vain ilmaisten mallien tunnisteita lähetetään.

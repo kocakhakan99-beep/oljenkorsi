@@ -769,12 +769,37 @@ main {
   margin: 0;
 }
 .entry-panel .filters {
-  background: var(--plan-bg);
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 16px;
+  gap: 12px;
+  padding: 12px;
   margin-bottom: 20px;
 }
+.entry-panel .filters label { flex: 1 1 170px; min-width: 0; }
+.entry-panel .filters label:first-child { flex: 2 1 280px; }
+.entry-panel .filters .mobile-sort-control { display: none; }
+.entry-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.entry-sort-button:hover,
+.entry-sort-button:focus-visible { background: var(--soft); }
+.entry-sort-button span { color: var(--accent); font-size: 15px; }
 .grid-two {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2407,17 +2432,11 @@ dialog::backdrop {
 }
 .line-chart .income-area {
   fill: url(#incomeArea);
-  opacity: 0.26;
+  opacity: 1;
 }
 .line-chart .expense-area {
   fill: url(#expenseArea);
-  opacity: 0.22;
-}
-.line-chart.area-chart .income-area {
-  opacity: 0.92;
-}
-.line-chart.area-chart .expense-area {
-  opacity: 0.82;
+  opacity: 1;
 }
 .line-chart .income-line,
 .line-chart .expense-line {
@@ -2433,6 +2452,9 @@ dialog::backdrop {
 .expense-line {
   stroke: var(--report-expense);
 }
+.line-chart.area-chart .income-line,
+.line-chart.area-chart .expense-line { stroke-width: 1.8; }
+.line-chart.area-chart .expense-line { stroke-dasharray: 1.6 1; }
 .chart-point {
   cursor: pointer;
   outline: none;
@@ -3126,6 +3148,13 @@ footer {
   }
 }
 @media (max-width: 600px) {
+  .entry-panel .filters { align-items: stretch; gap: 9px; }
+  .entry-panel .filters label,
+  .entry-panel .filters label:first-child { flex: 1 1 calc(50% - 9px); }
+  .entry-panel .filters label:first-child { flex-basis: 100%; }
+  .entry-panel .filters .mobile-sort-control { display: block; }
+  .entry-panel .filters select,
+  .entry-panel .filters input { width: 100%; }
   .mobile-card-table,
   .mobile-entry-table {
     overflow: visible;
@@ -5209,6 +5238,7 @@ button.primary,
 .budget-rule-alerts p { overflow-wrap: anywhere; }
 .budget-rule-category-link { display: inline-flex; gap: 6px; align-items: center; padding: 3px 6px; color: var(--text); }
 .budget-rule-settings { margin-top: 16px; }
+.budget-category-rule-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 0 20px; }
 .budget-policy-editor { border-top: 1px solid var(--line); padding: 10px 0; }
 .budget-policy-editor label { margin: 10px 0; }
 @media (max-width: 760px) { .budget-rule-grid { grid-template-columns: 1fr; } }
@@ -5449,10 +5479,8 @@ button.primary,
 .correction-indicator { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 8px; background: var(--soft); color: var(--text); }
 .debt-estimate { margin: 20px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
 .debt-estimate > summary { min-height: 44px; cursor: pointer; align-content: center; }
-.scenario-shortcuts, .investment-catalog-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
-.scenario-shortcuts button, .investment-catalog-grid button { text-align: left; min-height: 56px; padding: 12px; color: var(--text); }
-.investment-catalog-grid button { display: grid; gap: 4px; }
-.investment-catalog-grid small { color: var(--muted); }
+.scenario-shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+.scenario-shortcuts button { text-align: left; min-height: 56px; padding: 12px; color: var(--text); }
 [id^="scenario-"] { scroll-margin-top: 100px; }
 .asset-valuation { margin: 20px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; }
 .asset-valuation .form-grid { margin: 16px 0; }
@@ -5568,7 +5596,7 @@ button.primary,
 @keyframes processing-out { 0%, 45% { transform: translateX(-80px) rotate(0); opacity: 0; } 60% { opacity: 1; } 90%, 100% { transform: translateX(40px) rotate(8deg); opacity: 0; } }
 @keyframes processing-light { to { opacity: .35; } }
 @keyframes processing-spark { 0%, 50%, 100% { opacity: 0; transform: scale(.4); } 70% { opacity: 1; transform: scale(1); } }
-@media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; } }
+@media (max-width: 540px) { .document-processing { flex-wrap: wrap; gap: .35rem; } .document-processing-art { flex-basis: 100%; max-width: 220px; margin-inline: auto; } }
 @media (prefers-reduced-motion: reduce) { .document-processing-paper--in, .document-processing-paper--out, .machine-light, .document-processing-spark { animation: none; } .document-processing-paper--in { left: 9px; } .document-processing-paper--out { right: 9px; } .document-processing-spark { opacity: 0; } }
 
 .scanner-dialog { width: min(960px, 94vw); }
@@ -5594,3 +5622,36 @@ button.primary,
 .document-review .receipt-batch-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; }
 .document-review .receipt-batch-toolbar button { margin: 0; }
 .document-review > p { margin: 0; }
+
+.receipt-unresolved {
+  display: grid; justify-items: start; gap: .55rem; padding: 1.15rem;
+  margin: .8rem 0; border: 1px solid #e5b279; border-radius: 1rem;
+  background: #fff6e8; color: #50361d;
+}
+.receipt-unresolved-heading { display: flex; align-items: center; gap: .65rem; }
+.receipt-unresolved-heading > span { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: .8rem; background: #f5d4a4; color: #71420e; font-size: 1.25rem; animation: receipt-sort-spark 2s ease-in-out infinite; }
+.receipt-unresolved h3, .receipt-unresolved p { margin: 0; }
+.receipt-unresolved-name { font-size: 1.18rem; font-weight: 700; overflow-wrap: anywhere; }
+.receipt-unresolved label { width: min(100%, 24rem); }
+.receipt-unresolved select { width: 100%; }
+.receipt-pie-layout { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; }
+.receipt-pie { width: 145px; height: 145px; flex: 0 0 145px; border-radius: 50%; border: 4px solid white; box-shadow: 0 1px 6px #143b3226; }
+.receipt-pie-layout ul { list-style: none; padding: 0; margin: 0; flex: 1 1 190px; display: grid; gap: .45rem; }
+.receipt-pie-layout li { display: grid; grid-template-columns: .8rem minmax(0, 1fr) auto auto; gap: .45rem; align-items: baseline; }
+.receipt-pie-layout li span:nth-child(2) { overflow-wrap: anywhere; }
+.receipt-pie-dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; }
+.receipt-pie-layout small { color: inherit; opacity: .8; }
+.receipt-exception { border: 1px solid var(--line); border-radius: .8rem; margin: .65rem 0; padding: .8rem; }
+@keyframes receipt-sort-spark { 0%, 100% { transform: rotate(-8deg) scale(.9); } 50% { transform: rotate(10deg) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .receipt-unresolved-heading > span { animation: none; } }
+.invoice-review-card { border: 1px solid #aabfe1; border-radius: 1rem; padding: 1rem; background: #f8faff; color: #18344c; display: grid; gap: .75rem; }
+.invoice-review-card-heading { display: flex; align-items: center; gap: .65rem; }
+.invoice-review-card-heading svg { color: #315b92; flex-shrink: 0; }
+.invoice-review-card-heading strong:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.invoice-review-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.invoice-review-fields label { min-width: 0; }
+.invoice-review-fields input, .invoice-review-fields select { max-width: 100%; min-width: 0; }
+.invoice-review-fields label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: .5rem; grid-column: 1 / -1; }
+.invoice-review-attention { padding: .8rem; border-radius: .8rem; background: #fff6e8; color: #50361d; }
+.invoice-review-attention h3, .invoice-review-attention p { margin: 0; }
+@media (max-width: 420px) { .invoice-review-fields { grid-template-columns: minmax(0, 1fr); } }
