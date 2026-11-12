@@ -1,6 +1,6 @@
 # Oljenkorren selkokielinen tilannekatsaus
 
-Päivitetty 11.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tiivistetty kehityslista. Päällekkäiset ehdotukset on yhdistetty aiheiksi. Vanhoissa suunnitelmissa ja muutoslokissa on myös jo korvattuja toteutustapoja; alla käytetään uusinta dokumentoitua tilaa. Valmis tarkoittaa kuvattua toteutusta, ei koko aihealueen lopullista valmistumista.
+Päivitetty 12.11.2026. Tämä on roadmapin ja aihekohtaisten suunnitelmien yhteinen, selkokielinen tilannekatsaus. Päällekkäiset ehdotukset on yhdistetty. Jos vanhemmassa suunnitelmassa on ristiriita, tässä käytetään uusinta toteutusta ja UX-päätöstä. Valmis tarkoittaa kuvattua toteutusta, ei koko aihealueen lopullista valmistumista.
 
 **✅ Valmis** · **🟡 Osittain valmis / viimeisteltävä** · **📋 Suunnitelma valmis, toteutus puuttuu** · **⬜ Jonossa / vaatii tarkemman suunnitelman**
 
@@ -25,7 +25,7 @@ Päivitetty 11.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tii
 - ✅ Toteuma kirjauksista; erillinen manuaalinen kategoriakorjaus lisävalintana.
 - ✅ Menon lisääminen suoraan budjettikategoriaan ja kategorian tapahtumien katselu.
 - ✅ Budjetoidut, varatut ja toteutuneet rahat sekä budjetoimattomat menot erotetaan.
-- ✅ Muokattava 50/30/20-jako ja kategoriakohtaiset ohjerajat; sama laskenta budjetissa ja kompassissa.
+- ✅ Muokattava 50/30/20-jako ja kategoriakohtaiset ohjerajat; laskenta on yhteinen budjetissa ja kompassissa, muokkaus keskitetty Asetuksiin.
 - ✅ Tiiviit erotusluvut, käyttöastepalkit ja kategoriakohtaiset huomiokortit.
 - ⬜ Budjettipohjat, nollapohjainen rahojen jako ja ylijäämän siirto seuraavaan kuukauteen.
 - ⬜ Vuosilaskujen säästövaraukset ilman saman menon laskemista kahdesti.
@@ -34,7 +34,7 @@ Päivitetty 11.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tii
 ## 3. Raportit ja ajankohdan valinta
 
 - ✅ Seitsemän aihetta: tulot/menot, kulurakenne, maksujen ajoitus, budjetti/toteuma, varallisuus, velka/oma pääoma ja säästöaste/FIRE.
-- ✅ Aiheeseen sopiva kaavio tai taulukko; pylväs-, viiva-, alue- ja piirakkaesityksiä.
+- ✅ Aiheeseen sopiva kaavio tai taulukko; pylväs-, viiva-, alue- ja piirakkaesityksiä. Tulojen ja menojen viiva- ja aluekaaviot erottuvat visuaalisesti.
 - ✅ Kaavion havaintojen avaaminen tietokortiksi, siitä kirjauksen katseluun/muokkaukseen.
 - ✅ Kaavioiden vieritys, suurennus ja taulukkojen haku/lajittelu.
 - ✅ Kuukausi- tai alku–loppu-valinta, enintään 120 kuukautta; raportin aika on erillinen muusta sovelluksesta.
@@ -62,7 +62,7 @@ Päivitetty 11.11.2026. Tämä on koko dokumentaation yhteinen lukureitti ja tii
 
 ## 5. Sijoitukset ja markkinadata
 
-- ✅ Manuaaliset EUR-hinnat, määrät ja hankinta-arvot sekä 20 valittavaa sijoituskohdetta.
+- ✅ Manuaaliset EUR-hinnat, määrät ja hankinta-arvot sekä 20 valittavaa sijoituskohdetta; valinta on sijoituksen lisäys-/muokkauslomakkeella ja täyttää saatavilla olevan hinnan.
 - ✅ Kaikille 20 kohteelle lähteistetty historia 2024–2026: 720 hintahavaintoa ja 730 EKP-valuuttahavaintoa.
 - ✅ Kuukauden mukainen lähdehinta, historiakuvaaja ja havaintotaulukko; tulevia kursseja ei keksitä.
 - ✅ USD-hintojen muunto euroiksi päivätyllä valuuttakurssilla.
@@ -107,10 +107,10 @@ FI-aika ja nostoprosentti ovat ehdollisia laskelmia, eivät lupauksia turvallise
 - ✅ Koko talouden JSON-varmuuskopio ja palautus esikatselulla/vahvistuksella.
 - ✅ Kuuden tietotyypin CSV-tuonti/vienti, sarakekartoitus, suomalaiset otsikot, virhe- ja duplikaattitarkistus sekä tuonnin kumoaminen.
 - 🟡 CSV ei ole täydellinen varmuuskopio: linkit, arvomallit ja koko tila siirretään JSON:lla. Kaikkia pankkiformaatteja ei tunnisteta.
-- 🟡 Laskuanalyysi avautuu Menoista tai budjetin pikatoiminnosta tavallisessa `index.html`-sovelluksessa ja pyytää käyttäjän toiminnosta ensisijaisesti ilmaista Nemotron 3 Ultra -mallia ja tarvittaessa ilmaismallireititintä oletuksena Workeristä tai vaihtoehtoisesti OpenRouterista, teksti-PDF:lle tai liitetylle tekstille; molemmat vaativat oman API-avaimensa; käyttäjä tarkistaa ja tallentaa kerta- tai toistuvan menon. Todellinen API-yhteys, OCR, paikallinen kenttäpoiminta ja kaksoiskirjausehdotukset ovat vielä varmentamatta tai tekemättä: [suunnitelma](PDF_IMPORT_PLAN.md).
+- 🟡 Laskujen analyysi ja kuittien AI-luokittelu käyttävät aina omaa Cloudflare Workeriä ja ilmaismallireititintä. Käyttäjä syöttää avaimen kerran välilehden istuntoa varten. Teksti-PDF:stä ehdotetaan menoa, jonka tiedot käyttäjä tarkistaa. Käyttäjä on raportoinut onnistuneen analyysin, mutta mallin kattavuutta ei ole mitattu; OCR, lisäkentät ja asiakirjalajin automaattitunnistus ovat jonossa: [suunnitelma](PDF_IMPORT_PLAN.md).
 - ✅ Testattujen Prisma-/S-market-/Alepa-/K-kaupan PDF-kuittien tuoterivit, alennukset, nopea kategorialuokittelu ja kirjaus budjettitoteumaan.
 - ✅ Parserin rakenne varmistetaan anonymisoiduilla, käyttäjän toimittamista oikeista kuiteista tehdyillä fixtuureilla. Ladattavat fiktiiviset kuitit poistettu; niitä ei käytetä kauppojen tosiasiallisen kuittirakenteen osoittamiseen.
-- ✅ Tekstikuittien rajattu AI-varareitti: lähderivit ja summat tarkistetaan; poikkeuskuitti vaatii käyttäjän rivitarkistuksen. Todellista onnistumisprosenttia ei ole mitattu.
+- ✅ Kuittien AI-avusteinen tuotekategorisointi on oletuspolussa; rivien luku ja summien täsmäytys tarkistetaan paikallisesti. Epäselvät tuotteet hyväksyy käyttäjä yksi kerrallaan. Todellista onnistumisprosenttia ei ole mitattu.
 - 📋 Toistaiseksi sivussa: kuvallisten ja sekamuotoisten kuittien OCR-suunnitelma, tarkistuspolku ja 99,9 %:n mittaustapa dokumentoitu; OCR ei vielä ole käytössä.
 - ✅ Parserin v2: tähtikoristellut loppusummat, määrän/yksikköhinnan ja saatavilla olevien ALV-/korttisummien ristiintarkistus, lähderivin näyttö virheessä.
 - ✅ Kuittiluonnos käsitellään selaimessa; tallennukseen jäävät vain tavalliset kategoriakohtaiset menot. Vanhoista varmuuskopioista poistetaan kuittihistoria ja tuoterivilistat.
@@ -145,6 +145,9 @@ Kuitin/tiliotteen erottelu ja tilioteparseri ovat edelleen vain työjonossa. Tie
 - ✅ Teemat, tumma/vaalea/järjestelmätila, korostusväri, yhtenäiset paikalliset kuvakkeet ja summien piilotus.
 - ✅ Piilotettavat ohjeet, avattavat lisätiedot ja pienille näytöille mukautuvat näkymät.
 - ✅ Yhteinen 12 vaihtoehdon UX-priorisointimalli: yksinkertaisin riittävä esitys ensin; ei kaikkia tasoja joka korttiin.
+- ✅ Listojen haku ja kategoriavalinta ovat taulukon kanssa samalla kortilla; tila näkyy tuloissa ja menoissa. Lajittelu toimii sarakeotsikoista ja puhelimella erillisestä valikosta.
+- ✅ Budjettiraamien muokkaus on keskitetty Asetuksiin; budjetti tarjoaa linkin. Pitkät perustelut avautuvat pyydettäessä.
+- ✅ Sijoituskohteiden erillinen rinnakkaisluettelo poistettu; valinta ja perustietojen esitäyttö ovat samassa lisäys-/muokkauslomakkeessa.
 - ✅ Näppäimistöpolkuja, näkyvä kohdistus, dialogin fokuspalautus, kaavioiden taulukkovastineet ja vähennetty liike.
 - 🟡 UX-mallin ensimmäiset laajat kierrokset tehty; ymmärrettävyys ja loppuhionta vaativat käyttäjätestin.
 - ⬜ Manuaalinen ruudunlukija-, fyysinen kosketuslaite-, 200/400 % zoomaus- ja kattava kontrastitarkistus.
@@ -164,7 +167,7 @@ Vertailukohtia ovat YNAB, Monarch ja Copilot: selkeä työnkulku, harvojen menoj
 
 ## 11. Tietosuoja, tekniikka ja laadunvarmistus
 
-- ✅ Yksi paikallinen HTML-tiedosto toimii pääosin ilman verkkoyhteyttä; käyttäjän käynnistämä laskuanalyysi käyttää OpenRouteria tai käyttäjän Workeriä. Analytiikkaa ei ole.
+- ✅ Yksi paikallinen HTML-tiedosto toimii pääosin ilman verkkoyhteyttä; vain käyttäjän käynnistämät lasku-/kuittianalyysit käyttävät verkkoa, aina käyttäjän Cloudflare Workerin kautta. Analytiikkaa ei ole.
 - ✅ Syötteiden validointi, tiedostokokorajat, CSV-kaavasuoja, varmuuskopion eheystarkistus ja tallennusvirheilmoitukset.
 - ✅ TypeScript, ESLint, tuotantobuild ja testit ovat käytössä. Testimäärät ja selainajot vaihtelevat: viimeisimmät kirjatut tulokset ja niiden päivämäärät löytyvät testausraportista.
 - 🟡 Selainten/file://-tallennuksen varmennus: aiempi Chrome-koe on dokumentoitu, viimeisin laaja ajo käytti localhostia. Kaikkien ympäristöjen pysyvyyttä ei ole vahvistettu.
