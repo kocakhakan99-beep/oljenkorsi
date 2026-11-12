@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory() as tmp:
             route.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*'}, content_type='application/json', body=json.dumps({'choices': [{'message': {'content': json.dumps({'name': 'Testilasku', 'amount_eur': 42.55, 'due_date': '2026-11-25'})}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
         page.goto(os.environ.get('TALOUS_URL', (Path(__file__).parent / 'index.html').as_uri()))
-        page.get_by_role('button', name='Aloita tyhjästä').click()
+        page.get_by_role('button', name='Jatka vieraana').click()
         page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
         for name in ['Lisää kertaluonteinen meno', 'Lisää kuitti', 'Lisää lasku', 'Lisää toistuva lasku']:
             expect(page.locator('.entry-head-actions').get_by_role('button', name=name, exact=True).locator('svg')).to_have_count(1)

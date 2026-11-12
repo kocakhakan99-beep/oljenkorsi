@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory() as tmp:
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin':'*'}, body=json.dumps({'choices':[{'message':{'content':json.dumps(result)}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
-        page.get_by_role('button', name='Aloita tyhjästä').click()
+        page.get_by_role('button', name='Jatka vieraana').click()
         page.get_by_role('navigation').get_by_role('button', name='Menot', exact=True).click()
         page.get_by_role('button', name='Lisää kuitti', exact=True).click()
         page.get_by_label('Skannaa PDF-kuitti', exact=True).set_input_files(file)

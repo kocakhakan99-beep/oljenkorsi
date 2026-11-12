@@ -16,7 +16,7 @@ Kuitti ja lasku avautuvat omiin ikkunoihinsa, ja keskeneräiset luonnokset säil
 
 1. Tallenna projektin juuren valmis `index.html` pysyvään paikkaan, esimerkiksi työpöydälle. Tiedoston voi nimetä uudelleen haluamakseen.
 2. Avaa se kaksoisklikkaamalla selaimessa. Osoite on `file://`.
-3. Aloita tyhjästä, kokeile selvästi merkittyä fiktiivistä esimerkkitaloutta tai palauta JSON.
+3. Kirjaudu Googlella, jatka vieraana, kokeile fiktiivistä esimerkkitaloutta tai palauta JSON.
 4. Vie varmuuskopio tärkeiden muutosten jälkeen ja ennen tiedoston siirtämistä.
 
 Neljä kompassiesimerkkiä voi ladata käyttöönotossa, kompassissa tai Asetuksista. Valitun talouden lataaminen korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi. Esimerkeissä on kahden aikuisen palkat, lapsilisä, vuosien 2024–2026 kaikki 36 kuukautta vaihtelevine tuloineen, menoineen ja budjetteineen sekä omaisuutta, linkitettyjä velkoja, sijoituksia, tavoitteita ja tallennettuja skenaarioita. Ne ovat fiktiivisiä käyttöliittymän testidatoja, eivät ennusteita.
