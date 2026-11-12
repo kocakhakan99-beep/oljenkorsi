@@ -1,4 +1,6 @@
-import { Account } from "./components/account";
+import { Account, GoogleButton } from "./components/account";
+import { ProfileMenu } from "./components/profile-menu";
+import { useAuth } from "./services/use-auth";
 import { InvoiceScanner } from "./components/invoice-scanner";
 import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
 import { ReceiptDropZone } from "./components/receipt-drop-zone";
@@ -1877,6 +1879,7 @@ function CashEntryForm({
   );
 }
 function App() {
+  const auth = useAuth();
   const receiptScanner = useRef<ReceiptScannerHandle>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
@@ -2091,6 +2094,9 @@ function App() {
   function settings(v: Partial<State["settings"]>) {
     commit({ ...s, settings: { ...s.settings, ...v } });
   }
+  useEffect(() => {
+    if (!auth.loading && auth.user && !s.settings.onboarded) settings({ onboarded: true });
+  }, [auth.loading, auth.user, s.settings.onboarded]);
   function setMonthCoverage(kind: "incomes" | "expenses", confirmed: boolean) {
     const field = kind === "incomes" ? "incomeMonths" : "expenseMonths";
     const months = new Set(s.coverage[field]);
@@ -3292,8 +3298,8 @@ function App() {
             ))}
           </nav>
           <div className="aside-bottom">
-            <span className="dot" /> Täysin paikallinen
-            <small>Ei tiliä. Ei seurantaa.</small>
+            <span className="dot" /> {auth.user ? "Kirjautunut" : "Vierastila"}
+            <small>Hallitse tiliäsi yläpalkista.</small>
             <button onClick={() => setQuick(true)}>
               Pikatoiminnot <kbd>Ctrl K</kbd>
             </button>
@@ -3363,6 +3369,7 @@ function App() {
                   <EyeOff size={19} aria-hidden="true" />
                 )}
               </button>
+              <ProfileMenu auth={auth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings")} />
             </div>
           </header>
           <main id="main" tabIndex={-1}>
@@ -6561,7 +6568,7 @@ function App() {
                   <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
-                <Account exportBackup={exportBackup} state={s} onLoad={commit} />
+                <Account exportBackup={exportBackup} state={s} onLoad={commit} auth={auth} hasChanges={hasTemporaryChanges.current} />
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
                   <StatusBadge tone={storageOk ? "positive" : "warning"}>{storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
@@ -6700,18 +6707,20 @@ function App() {
           </footer>
         </div>
       </div>
-      {!s.settings.onboarded && (
+      {!auth.loading && !auth.user && !s.settings.onboarded && (
         <Modal
-          title="Talous haltuun ilman käyttäjätiliä"
+          title="Tervetuloa Oljenkorteen"
           onClose={() => {}}
           dismissible={false}
         >
-          <p>
-            Voit käyttää sovellusta kirjautumatta. Tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan.
-          </p>
-          <p>
-            Vie tiedot CSV- tai JSON-tiedostona ennen poistumista. JSON sisältää koko talouden.
-          </p>
+          <p>Kirjaudu sisään käyttääksesi perhetiliä tai tutustu sovellukseen vieraana.</p>
+          <div className="welcome-signin">
+            <GoogleButton disabled={auth.pending || !auth.providers?.google} onClick={() => void auth.signIn("google", false)} />
+            {auth.providers?.apple && <button type="button" onClick={() => void auth.signIn("apple", false)} disabled={auth.pending}>Jatka Applella</button>}
+            {auth.error && <p role="alert">{auth.error}</p>}
+            {auth.providers && !auth.providers.google && <p>Google-kirjautuminen ei ole tällä hetkellä käytettävissä.</p>}
+          </div>
+          <p className="welcome-note">Vieraana tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan. Voit viedä tiedot CSV- tai JSON-tiedostona.</p>
           {loaded.error && (
             <>
               <p className="negative">{loaded.error}</p>
@@ -6742,7 +6751,7 @@ function App() {
                   settings({ onboarded: true });
               }}
             >
-              Aloita tyhjästä
+              Jatka vieraana
             </button>
             <button
               onClick={() => {
