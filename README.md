@@ -1,5 +1,7 @@
 # Taloussuunnittelu 0.1.0
 
+> **Kehitysversion muutos:** Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa. Vie tiedot ennen poistumista. Aiempi selaintallennus säilyy ja on vietävissä asetuksista. Alla olevat offline- ja pysyvää localStorage-tallennusta koskevat kuvaukset ovat aiemman version dokumentaatiota. Supabase-kirjautumisen ja perhetilin ensimmäinen versio on kehitteillä. Talous tallennetaan ja ladataan perhetilillä toistaiseksi käyttäjän toiminnolla; automaattista synkronointia ei ole. Google on otettu käyttöön, Apple-asetukset ja oikeilla käyttäjillä tehtävät päästä päähän -testit ovat kesken.
+
 Ajantasainen selkokielinen kokonaiskuva: [checklist ja dokumentaatio aiheittain](CHECKLIST.md).
 
 Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus. Tarkoitus on auttaa käyttäjää hyötymään omasta taloudestaan, ei myydä hänen tietojaan.

@@ -87,4 +87,18 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 }
-export const storage = new LocalStorageProvider();
+/** Talous on kirjautumattomana vain tämän sivun muistissa. */
+export class MemoryStorageProvider implements StorageProvider {
+  readonly key = 'taloussuunnittelu.v1'; // Aiemman version tietojen vapaaehtoinen vienti.
+  private text: string | null = null;
+  get() { return this.text ? restore(this.text) : empty(); }
+  getAll() { return this.get(); }
+  create(s: State) { this.update(s); }
+  update(s: State) { this.text = backup(validate(s)); }
+  delete() { this.clear(); }
+  clear() { this.text = null; }
+  export() { return backup(this.get()); }
+  import(text: string) { const state = restore(text); this.update(state); return state; }
+  healthCheck() { return { ok: true, message: 'Tiedot ovat vain muistissa' }; }
+}
+export const storage = new MemoryStorageProvider();
