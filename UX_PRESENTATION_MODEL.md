@@ -145,3 +145,13 @@ Auton merkkipaino näytetään lukuna ja kerrotaan arvio-oletukseksi. Porrastett
 ## Kuittiskannaus: yksi pääpaikka menoissa
 
 Menojen ja budjetin pikatoiminto on yksi tuttu kuvake ja lyhyt nimi: Skannaa kuitti. Koko työkalu näkyy vain avattuna Menot-näkymässä. Tuonti ja vienti ohjaa samaan paikkaan. Tiedoston raahaus tuo esiin hetkellisen pudotuskorostuksen, ei pysyvää ohjekorttia tai toista lomaketta. Menojen, budjetin ja asetusten PDF-pudotus käyttää samaa poimintaa, tarkistusta ja tallennusta. Piilotettu luonnos säilyy; sulkeminen palauttaa kohdistuksen ja uuden tiedoston tuonti suojaa aiempaa luonnosta vahvistuksella.
+
+## Suodattimet, asetukset ja päällekkäisten toimintojen auditointi 11.11.2026
+
+Listojen haku ja kategoriavalinta ovat samalla kortilla rivien kanssa. Tila-suodatin näkyy vain tuloissa ja menoissa, joissa tapahtuman toteutumisella on merkitys. Työpöydällä nimi-, kategoria-, summa- ja lisätietosarakkeet lajitellaan otsikosta; puhelimella otsikoiden piilotus korvataan näkyvällä lajitteluvalikolla. Lajittelu käyttää näkymässä näytettävää summaa, päiväystä tai vastaavaa lukua.
+
+50/30/20- ja kategoriarajojen ainoa muokkauspaikka on Asetukset. Budjetti näyttää raamit ja tarjoaa suoran siirtymän asetuksiin. Kategoriakohtaiset rajat löytyvät myös aiemmin käytetyille ja arkistoiduille kategorioille. Menetelmän taustoitus on avattavissa; tärkeä muistutus oman elämäntilanteen ja välttämättömän hoidon huomioimisesta jää näkyviin.
+
+Tulojen ja menojen viivakaavio näyttää viivat; aluekaavio näyttää lisäksi täytetyt sarjat, joten esitystavat erottuvat. Sijoituskohteen valinta yhdistettiin sijoituksen lisäys-/muokkauslomakkeeseen. Kohteen valinta esitäyttää nimen, kategorian ja saatavilla olevan päivätyn hinnan. Historiatiedot ja lähderajaukset avautuvat sijoituskortilta.
+
+Muiden avattavien osioiden tarkistuksessa säilytettiin kohdat, joilla on oma selkeä tehtävä: harvoin käytettävät lisäkentät, laskentaoletukset, velan maksusuunnitelma, tiedostojen tekniset asetukset ja peruuttamattomien poistojen suoja. Ne pysyvät suljettuina kunnes käyttäjä tarvitsee niitä. Pitkää budjettikehikon selitystä lyhennettiin oletusnäkymästä.

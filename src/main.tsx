@@ -1571,14 +1571,11 @@ function BudgetCategoryRuleEditor({ state, name, onSave }: { state: State; name:
     <button type="button" onClick={() => onSave(policy.key, { group, maxPercent: enabled ? cap : null })}>Tallenna kategorian {name} ohje</button>
   </details>;
 }
-function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory, onBudget }: {
+function BudgetGuidancePanel({ state, month, euro, detailed, onCategory, onBudget, onSettings }: {
   state: State; month: string; euro: (amount: number) => string; detailed: boolean;
-  onSave: (rule: BudgetGuidanceSettings) => void; onCategory: (name: string) => void; onBudget: () => void;
+  onCategory: (name: string) => void; onBudget: () => void; onSettings: () => void;
 }) {
   const result = budgetGuidance(state, month);
-  const [shares, setShares] = useState(state.settings.budgetGuidance);
-  const [error, setError] = useState("");
-  useEffect(() => { setShares(state.settings.budgetGuidance); }, [state.settings.budgetGuidance]);
   const excessCategories = result.categories.filter(category => category.excess > 0).sort((a, b) => b.excess - a.excess);
   const outside = result.checks.filter(check => check.outside);
   const unknown = result.categories.filter(category => category.group === "unclassified" && category.allocated > 0);
@@ -1588,7 +1585,7 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
     <button onClick={onBudget}>Tarkista budjetissa <ArrowRight size={16} aria-hidden="true" /></button>
   </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
-    <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div><ContextDetails title="Miten raamit lasketaan?"><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></ContextDetails>{!detailed && <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
+    <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div><ContextDetails title="Miten raamit lasketaan?"><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></ContextDetails>{detailed ? <button type="button" onClick={onSettings}>Muokkaa ohjeita asetuksissa <ArrowRight size={16} aria-hidden="true" /></button> : <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
     <div className="budget-income-basis"><span>Nettotulot · {month}</span><strong>{euro(result.income)}</strong><small>Toteutunut {euro(result.actualIncome)} · sisältää myös tulevat kirjaukset</small></div>
     {!result.coverageConfirmed && <p className="ux-status-note">Tietojen kattavuutta ei vahvistettu</p>}
     {result.income <= 0 ? <p className="alert warning" role="status">Tulopohja puuttuu: lisää valitulle kuukaudelle nettotulot ennen prosenttivertailua. Nollatuloista ei lasketa suosituksia.</p> : <>
@@ -1605,15 +1602,36 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onSave, onCategory,
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
-    {detailed && <details className="budget-rule-settings"><summary>Muokkaa prosentteja, kategoriaryhmiä ja suosituksia</summary>
-      <p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee. Sovita tavoitteet elämäntilanteeseen; älä leikkaa välttämätöntä hoitoa tai ota velkaa säästötavoitteen vuoksi.</p>
-      <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
-        <div className="budget-rule-grid">{(["needs", "wants", "saving"] as BudgetGroup[]).map(group => <PercentField key={group} label={`${budgetGroupNames[group]}, tavoite (%)`} value={shares[group]} min={0} max={100} onChange={value => setShares(current => ({ ...current, [group]: value }))} />)}</div>
-        {error && <p role="alert">{error}</p>}<button type="submit">Tallenna ryhmien osuudet</button>
-      </form>
-      <p>Luokitus koskee budjettiraameja. Menon oma välttämättömyysvalinta vaikuttaa erikseen hätävaralaskentaan. Säästö- ja sijoitussiirron menotyyppi ohjaa sen aina säästämisryhmään. Luottokorttilaskua ei pidä kirjata uudelleen, jos ostokset on jo kirjattu. Lisälyhennys voidaan luokitella säästämisryhmään, mutta sovellus ei erittele siitä korkoa tai päivitä velkasaldoa.</p>
-      {result.categories.map(category => <BudgetCategoryRuleEditor key={`${category.key}-${category.group}-${category.maxPercent}`} state={state} name={category.name} onSave={(key, value) => onSave({ ...rule, categories: { ...rule.categories, [key]: value } })} />)}
-    </details>}
+  </section>;
+}
+
+function BudgetGuidanceSettingsPanel({ state, onSave }: { state: State; onSave: (rule: BudgetGuidanceSettings) => void }) {
+  const rule = state.settings.budgetGuidance;
+  const [shares, setShares] = useState(rule);
+  const [error, setError] = useState("");
+  useEffect(() => { setShares(rule); }, [rule]);
+  const categoryNames = new Set<string>([
+    ...state.categories.filter(category => category.kind === "expenses").map(category => category.name),
+    ...state.expenses.map(item => item.category),
+    ...Object.values(state.budgets).flatMap(month => Object.keys(month)),
+    ...Object.values(state.budgetActuals).flatMap(month => Object.keys(month)),
+  ]);
+  for (const key of Object.keys(rule.categories)) {
+    const category = state.categories.find(item => item.id === key && item.kind === "expenses");
+    if (category) categoryNames.add(category.name);
+    else if (key.startsWith("name:")) categoryNames.add(key.slice(5));
+  }
+  const categories = [...categoryNames].filter(Boolean).sort((a, b) => a.localeCompare(b, "fi"));
+  return <section className="panel budget-rule-settings" aria-labelledby="budget-rule-settings-title">
+    <div className="section-head"><div><h2 id="budget-rule-settings-title">Budjetin suositukset</h2><p>Muokkaa prosenttiraameja ja kategoriakohtaisia ohjeita.</p></div></div>
+    <p className="ux-status-note">Sovita rajat omaan tilanteeseesi. Älä vaaranna välttämätöntä hoitoa tai velkaannu säästötavoitteen vuoksi.</p>
+    <ContextDetails title="Miten suositukset ja rajat toimivat?"><p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee.</p><p>Luokitus koskee budjettiraameja. Menon oma välttämättömyysvalinta vaikuttaa erikseen hätävaralaskentaan. Säästö- ja sijoitussiirron menotyyppi ohjaa sen aina säästämisryhmään. Luottokorttilaskua ei pidä kirjata uudelleen, jos ostokset on jo kirjattu. Lisälyhennys voidaan luokitella säästämisryhmään, mutta sovellus ei erittele siitä korkoa tai päivitä velkasaldoa.</p></ContextDetails>
+    <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
+      <div className="budget-rule-grid">{(["needs", "wants", "saving"] as BudgetGroup[]).map(group => <PercentField key={group} label={`${budgetGroupNames[group]}, tavoite (%)`} value={shares[group]} min={0} max={100} onChange={value => setShares(current => ({ ...current, [group]: value }))} />)}</div>
+      {error && <p role="alert">{error}</p>}<button type="submit">Tallenna ryhmien osuudet</button>
+    </form>
+    <h3>Kategoriakohtaiset suositukset</h3>
+    <div className="budget-category-rule-list">{categories.map(name => <BudgetCategoryRuleEditor key={name} state={state} name={name} onSave={(key, value) => onSave({ ...rule, categories: { ...rule.categories, [key]: value } })} />)}</div>
   </section>;
 }
 
@@ -1876,7 +1894,7 @@ function App() {
     [search, setSearch] = useState(""),
     [categoryFilter, setCategoryFilter] = useState(""),
     [statusFilter, setStatusFilter] = useState(""),
-    [sort, setSort] = useState("date"),
+    [sort, setSort] = useState("detail-desc"),
     [limit, setLimit] = useState(100),
     [pending, setPending] = useState<State | null>(null),
     [deleteOpen, setDeleteOpen] = useState(false),
@@ -2513,18 +2531,40 @@ function App() {
               .toLocaleLowerCase("fi")
               .includes(search.toLocaleLowerCase("fi")) &&
             (!categoryFilter || e.category === categoryFilter) &&
-            (!statusFilter ||
+            (!(page === "incomes" || page === "expenses") || !statusFilter ||
               scheduledOccurrences(e, month).some(
                 (date) => occurrenceStatus(e, date) === statusFilter,
               )),
         )
-        .sort((a, b) =>
-          sort === "amount"
-            ? (page === "assets" || page === "liabilities" ? datedValue(b,page,valuationDate).value - datedValue(a,page,valuationDate).value : b.amount - a.amount)
-            : sort === "name"
-              ? a.name.localeCompare(b.name, "fi")
-              : b.date.localeCompare(a.date),
-        )
+        .sort((a, b) => {
+          const [sortKey, sortDirection = "desc"] = sort.split("-");
+          const direction = sortDirection === "asc" ? 1 : -1;
+          let comparison = 0;
+          if (sortKey === "name") comparison = a.name.localeCompare(b.name, "fi", { sensitivity: "base" });
+          else if (sortKey === "category") comparison = a.category.localeCompare(b.category, "fi", { sensitivity: "base" });
+          else if (sortKey === "payment") comparison = a.payment - b.payment;
+          else if (sortKey === "amount") {
+            const valueFor = (item: Entry) => page === "assets" || page === "liabilities"
+              ? datedValue(item, page, valuationDate).value
+              : page === "incomes" || page === "expenses"
+                ? occurrenceSum(item, month)
+                : page === "investments" && item.marketSymbol
+                  ? marketQuote(item.marketSymbol, valuationDate)?.eurCents ?? item.amount
+                  : item.amount;
+            comparison = valueFor(a) - valueFor(b);
+          } else if (sortKey === "detail") {
+            if (page === "assets") comparison = a.ownership - b.ownership;
+            else if (page === "goals") comparison = a.target - b.target;
+            else if (page === "liabilities") comparison = a.rate - b.rate;
+            else {
+              const sortDate = (item: Entry) => page === "incomes" || page === "expenses"
+                ? scheduledOccurrences(item, month)[0] || item.date
+                : item.date;
+              comparison = sortDate(a).localeCompare(sortDate(b));
+            }
+          }
+          return comparison === 0 ? a.id.localeCompare(b.id) : comparison * direction;
+        })
     : [];
   function stat(label: string, value: string, note?: string) {
     return <MetricCard label={label} value={value} note={note} />;
@@ -4300,7 +4340,7 @@ function App() {
                 setUndo(s); receiptUndoActive.current = true; return true;
               }} />
             </ScannerDialog>
-            {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onSave={rule => settings({ budgetGuidance: rule })} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} />}
+            {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} onSettings={() => navigate("settings")} />}
             {page === "budget" && (
               <>
                 {!dismissedHelp.has("budget-actuals") && (
@@ -4542,10 +4582,10 @@ function App() {
                         ))}
                       </select>
                     </label>
-                    <label>
-                      Kuukauden tapahtuman tila
+                    {(page === "incomes" || page === "expenses") && <label>
+                      Tila
                       <select
-                        aria-label="Kuukauden tapahtuman tila"
+                        aria-label="Tila"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                       >
@@ -4554,23 +4594,27 @@ function App() {
                         <option value="planned">Suunniteltu</option>
                         <option value="skipped">Ohitettu</option>
                       </select>
-                    </label>
-                    <label>
+                    </label>}
+                    <label className="mobile-sort-control">
                       Lajittelu
                       <select
                         aria-label="Lajittelu"
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
                       >
-                        <option value="date">Uusin päivämäärä</option>
-                        <option value="amount">Suurin summa</option>
-                        <option value="name">Nimi</option>
+                        <option value="detail-desc">{page === "assets" ? "Suurin omistusosuus" : page === "goals" ? "Suurin tavoite" : page === "liabilities" ? "Suurin korko" : page === "incomes" ? "Uusin maksupäivä" : "Uusin päivämäärä"}</option>
+                        <option value="detail-asc">{page === "assets" ? "Pienin omistusosuus" : page === "goals" ? "Pienin tavoite" : page === "liabilities" ? "Pienin korko" : page === "incomes" ? "Vanhin maksupäivä" : "Vanhin päivämäärä"}</option>
+                        <option value="amount-desc">Suurin summa</option>
+                        <option value="amount-asc">Pienin summa</option>
+                        {page === "liabilities" && <><option value="payment-desc">Suurin kuukausierä</option><option value="payment-asc">Pienin kuukausierä</option></>}
+                        <option value="name-asc">Nimi A–Ö</option>
+                        <option value="name-desc">Nimi Ö–A</option>
+                        <option value="category-asc">Kategoria A–Ö</option>
+                        <option value="category-desc">Kategoria Ö–A</option>
                       </select>
                     </label>
                   </div>
                   {page === "investments" && <section className="entry-summary" aria-label="Salkun yhteenveto"><span>Salkun arvo</span><strong>{euro(m.investments)}</strong><StatusBadge>Lähdehistoria / omat hinnat</StatusBadge><ContextDetails title="Hankinta-arvo ja kirjaus"><p>Hankinta-arvo {euro(sum(s.investments.map(item => Math.round(item.purchasePrice * item.quantity))))}. Älä kirjaa samaa sijoitusta uudelleen omaisuuteen. Arvon ja hankinta-arvon ero ei yksin ole kassavirroista laskettu sijoitustuotto.</p></ContextDetails></section>}
-                  {page === "investments" && <details className="panel investment-catalog"><summary>Valitse sijoituskohde · 20 esimerkkiä</summary><p>Lähdehistoria 2024–2026 · aineistopäivä {marketSnapshot.asOf}. Päivitetty offline-otos, ei livekurssi. Lähde- ja valuuttapäivät näkyvät kortilla.</p><div className="investment-catalog-grid">{investmentCatalog.map(([name,symbol]) => { const quote=marketQuote(symbol,valuationDate); return <button type="button" key={symbol} onClick={() => setEdit({kind:"investments",item:{...newEntry("investments"),name,marketSymbol:symbol,category:symbol.endsWith(".DE")?"ETF":"Osakkeet",date:quote?.date||valuationDate,description:`Tunnus: ${symbol}. Päivätty lähdehistoria, ei livekurssi.`,amount:quote?.eurCents||0,quantity:1}})}><strong>{name}</strong><small>{symbol} · {quote?`${euro(quote.eurCents)} · ${quote.date}${quote.provisional?" · päivän havainto":""}`:"Ei havaintoa valitulle päivälle"}</small></button>; })}</div></details>}
-
                   {page === "assets" && <section className="entry-summary" aria-label="Omaisuuden yhteenveto"><span>Omistusosuuksien arvo</span><strong>{euro(m.assets)}</strong><StatusBadge>Arviot ja kirjatut arvot</StatusBadge><ContextDetails title="Miten omaisuus lasketaan?"><p>Rivin summa on valitun päivän laskennallinen arvio, kun malli on tallennettu; muulloin kirjattu arvo. Aiemmille kuukausille käytetään kuun viimeistä päivää, kuluvalle kuulle tätä päivää. Nettovarallisuuteen lasketaan omistusosuutesi, ja sijoitukset seurataan erikseen Sijoitukset-näkymässä.</p></ContextDetails></section>}
                   {page === "liabilities" && <section className="entry-summary" aria-label="Velkojen yhteenveto"><span>Velkaa yhteensä</span><strong>{euro(m.debts)}</strong><StatusBadge>Arviot ja kirjatut saldot</StatusBadge><StatusBadge tone="warning">Maksut kirjataan erikseen</StatusBadge><ContextDetails title="Saldo ja kuukausierä"><p>Kuukausierä ei luo menotapahtumaa. Rivin saldoarvio olettaa kuukausierät maksetuiksi; alkuperäinen kirjattu saldo säilyy kortilla. Kirjaa maksut Menot-näkymässä ja päivitä jäljellä oleva pääoma velan muokkauksessa. Omaisuuslinkki yhdistää velan oman pääoman tarkasteluun.</p></ContextDetails></section>}
                   {rows.length ? (
@@ -4578,15 +4622,18 @@ function App() {
                       <table className={`entry-table${page === "liabilities" ? " debt-table" : ""}`} role="table">
                         <thead role="rowgroup">
                           <tr role="row">
-                            <th role="columnheader">Nimi</th>
-                            <th role="columnheader">Kategoria</th>
-                            <th role="columnheader">
+                            <th role="columnheader" aria-sort={sort.startsWith("name-") ? sort.endsWith("asc") ? "ascending" : "descending" : "none"}><button type="button" className="entry-sort-button" onClick={() => setSort(sort.startsWith("name-") && sort.endsWith("asc") ? "name-desc" : "name-asc")}>Nimi <span aria-hidden="true">{sort.startsWith("name-") ? sort.endsWith("asc") ? "↑" : "↓" : "↕"}</span></button></th>
+                            <th role="columnheader" aria-sort={sort.startsWith("category-") ? sort.endsWith("asc") ? "ascending" : "descending" : "none"}><button type="button" className="entry-sort-button" onClick={() => setSort(sort.startsWith("category-") && sort.endsWith("asc") ? "category-desc" : "category-asc")}>Kategoria <span aria-hidden="true">{sort.startsWith("category-") ? sort.endsWith("asc") ? "↑" : "↓" : "↕"}</span></button></th>
+                            <th role="columnheader" aria-sort={sort.startsWith("amount-") ? sort.endsWith("asc") ? "ascending" : "descending" : "none"}>
+                              <button type="button" className="entry-sort-button" onClick={() => setSort(sort.startsWith("amount-") && sort.endsWith("asc") ? "amount-desc" : "amount-asc")}>
                               {page === "investments"
                                 ? "Yksikköhinta"
                                 : "Summa"}
+                                <span aria-hidden="true">{sort.startsWith("amount-") ? sort.endsWith("asc") ? "↑" : "↓" : "↕"}</span>
+                              </button>
                             </th>
-                            <th role="columnheader">{page === "assets" ? "Omistusosuus" : page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : page === "incomes" ? "Maksupäivä" : "Päivämäärä"}</th>
-                      {page === "liabilities" && <th role="columnheader">Kuukausierä</th>}
+                            <th role="columnheader" aria-sort={sort.startsWith("detail-") ? sort.endsWith("asc") ? "ascending" : "descending" : "none"}><button type="button" className="entry-sort-button" onClick={() => setSort(sort.startsWith("detail-") && sort.endsWith("asc") ? "detail-desc" : "detail-asc")}>{page === "assets" ? "Omistusosuus" : page === "goals" ? "Tavoite" : page === "liabilities" ? "Korko" : page === "incomes" ? "Maksupäivä" : "Päivämäärä"}<span aria-hidden="true">{sort.startsWith("detail-") ? sort.endsWith("asc") ? "↑" : "↓" : "↕"}</span></button></th>
+                      {page === "liabilities" && <th role="columnheader" aria-sort={sort.startsWith("payment-") ? sort.endsWith("asc") ? "ascending" : "descending" : "none"}><button type="button" className="entry-sort-button" onClick={() => setSort(sort.startsWith("payment-") && sort.endsWith("asc") ? "payment-desc" : "payment-asc")}>Kuukausierä <span aria-hidden="true">{sort.startsWith("payment-") ? sort.endsWith("asc") ? "↑" : "↓" : "↕"}</span></button></th>}
                       <th role="columnheader">
                         {page === "incomes" || page === "expenses"
                           ? "Tapahtuma"
@@ -5126,12 +5173,12 @@ function App() {
                                     <stop
                                       offset="0%"
                                       stopColor="#087f5b"
-                                      stopOpacity=".2"
+                                      stopOpacity=".42"
                                     />
                                     <stop
                                       offset="100%"
                                       stopColor="#087f5b"
-                                      stopOpacity="0"
+                                      stopOpacity=".04"
                                     />
                                   </linearGradient>
                                   <linearGradient
@@ -5144,12 +5191,12 @@ function App() {
                                     <stop
                                       offset="0%"
                                       stopColor="#d9480f"
-                                      stopOpacity=".16"
+                                      stopOpacity=".38"
                                     />
                                     <stop
                                       offset="100%"
                                       stopColor="#d9480f"
-                                      stopOpacity="0"
+                                      stopOpacity=".03"
                                     />
                                   </linearGradient>
                                 </defs>
@@ -5163,14 +5210,10 @@ function App() {
                                     className={`chart-axis${y === 95 ? " chart-axis-baseline" : ""}`}
                                   />
                                 ))}
-                                <path
-                                  d={reportArea("income")}
-                                  className="income-area"
-                                />
-                                <path
-                                  d={reportArea("expense")}
-                                  className="expense-area"
-                                />
+                                {reportFormat === "area" && <>
+                                  <path d={reportArea("income")} className="income-area" />
+                                  <path d={reportArea("expense")} className="expense-area" />
+                                </>}
                                 <path
                                   d={reportLine("income")}
                                   className="income-line"
@@ -6493,6 +6536,7 @@ function App() {
                   </div>
                   <StatusBadge>EUR · Suomi</StatusBadge>
                 </section>
+                <BudgetGuidanceSettingsPanel state={s} onSave={rule => settings({ budgetGuidance: rule })} />
                 <section
                   className="panel help-settings"
                   aria-labelledby="help-settings-title"
@@ -7307,6 +7351,10 @@ function EntryForm({
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categoryActiveIndex, setCategoryActiveIndex] = useState(-1);
   const categoryValue = watch("category") || item.category;
+  const marketSymbolField = register("marketSymbol");
+  const watchedMarketSymbol = watch("marketSymbol");
+  const selectedMarketSymbol = watchedMarketSymbol === undefined ? item.marketSymbol || "" : watchedMarketSymbol;
+  const selectedMarketQuote = selectedMarketSymbol ? marketQuote(selectedMarketSymbol, atDate) : null;
   useEffect(() => {
     if (kind !== "assets") return;
     const selected = defaultAssetModel(categoryValue);
@@ -7411,7 +7459,7 @@ function EntryForm({
         <DatePickerField
           label={label}
           name={key}
-          value={String(value)}
+          value={key === "date" ? entryDate : String(value)}
           required={required}
           minDate={key === "endDate" ? entryDate : undefined}
           onChange={key === "date" ? setEntryDate : () => {}}
@@ -7690,7 +7738,24 @@ function EntryForm({
         )}
         {kind === "investments" && (
           <>
-            <label>Kurssiaineisto<select name="marketSymbol" defaultValue={item.marketSymbol || ""}><option value="">Oma EUR-hinta · ei lähdehistoriaa</option>{investmentCatalog.map(([name,symbol])=><option key={symbol} value={symbol}>{name} · {symbol}</option>)}</select><small>Lähdehistoria päivittää rivin hinnan valitun ajankohdan havaintoon. Oma EUR-hinta käyttää käsin syötettyä arvoa.</small></label>
+            <label>Kurssiaineisto<select {...marketSymbolField} onChange={event => {
+              marketSymbolField.onChange(event);
+              const symbol = event.target.value;
+              if (!symbol) return;
+              const selected = investmentCatalog.find(([, candidate]) => candidate === symbol);
+              if (!selected) return;
+              const [name] = selected;
+              const quote = marketQuote(symbol, atDate);
+              setValue("name", name, { shouldDirty: true });
+              setValue("category", symbol.endsWith(".DE") ? "ETF" : "Osakkeet", { shouldDirty: true });
+              setValue("quantity", "1", { shouldDirty: true });
+              setValue("description", `Tunnus: ${symbol}. Päivätty lähdehistoria, ei livekurssi.`, { shouldDirty: true });
+              if (quote) {
+                setValue("amount", (quote.eurCents / 100).toFixed(2).replace(".", ","), { shouldDirty: true });
+                setValue("date", quote.date, { shouldDirty: true });
+                setEntryDate(quote.date);
+              }
+            }}><option value="">Oma EUR-hinta · ei lähdehistoriaa</option>{investmentCatalog.map(([name,symbol])=><option key={symbol} value={symbol}>{name} · {symbol}</option>)}</select><small>Valinta täyttää nimen, kategorian ja päivätyn lähdehinnan. Aineisto kattaa vuodet 2024–2026, eikä ole reaaliaikainen. Oma EUR-hinta käyttää käsin syötettyä arvoa.</small>{selectedMarketSymbol && <small>{selectedMarketQuote ? `${euro(selectedMarketQuote.eurCents)} · havainto ${selectedMarketQuote.date}${selectedMarketQuote.provisional ? " · päivän havainto" : ""}` : "Valitulle päivälle ei ole havaintoa; syötä hinta itse."}</small>}</label>
             {field("Määrä", "quantity", item.quantity, "text", true)}
             {field(
               "Hankintahinta / yksikkö (€)",
