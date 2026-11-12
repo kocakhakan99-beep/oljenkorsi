@@ -31,7 +31,7 @@ with sync_playwright() as p:
     page.on('console',lambda m:consoles.append(m.text) if m.type=='error' else None)
     page.on('request',lambda r:network.append(r.url) if not r.url.startswith(('http://127.0.0.1:','http://localhost:','data:','blob:','file:')) else None)
     page.goto(os.environ.get('TALOUS_URL','http://127.0.0.1:8765/index.html'))
-    page.get_by_role('button',name='Aloita tyhjästä',exact=True).click()
+    page.get_by_role('button',name='Jatka vieraana',exact=True).click()
     state=lambda:page.evaluate("localStorage.getItem('taloussuunnittelu.v1')")
     original=state();nav(page,'Menot');expect(page.locator('.receipt-scanner')).not_to_be_visible()
     launch=page.get_by_role('button',name='Skannaa kuitti',exact=True);expect(launch).to_have_attribute('aria-expanded','false');launch.focus();launch.press('Enter');expect(launch).to_have_attribute('aria-expanded','true')

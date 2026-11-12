@@ -46,7 +46,7 @@ with tempfile.TemporaryDirectory(prefix='receipt-check-') as tmp:
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', mock_ai)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
-        page.get_by_role('button', name='Aloita tyhjästä', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click()
+        page.get_by_role('button', name='Jatka vieraana', exact=True).click(); nav(page, 'Menot'); page.get_by_role('button', name='Lisää kuitti', exact=True).click()
         page.get_by_role('button', name='Lisää avain', exact=True).click()
         page.get_by_role('dialog', name='Analyysin avain').get_by_label('Avain', exact=True).fill('test-key')
         page.get_by_role('dialog', name='Analyysin avain').get_by_role('button', name='Tallenna', exact=True).click()

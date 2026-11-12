@@ -32,7 +32,7 @@ with tempfile.TemporaryDirectory() as tmp:
             route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'choices': [{'message': {'content': json.dumps(result)}}]}))
         page.route('https://api-worker.kocakhakan99.workers.dev/chat', handle)
         page.goto(os.environ.get('TALOUS_URL', 'http://127.0.0.1:8765/index.html'))
-        page.get_by_role('button', name='Aloita tyhjästä').click()
+        page.get_by_role('button', name='Jatka vieraana').click()
         payload = [{'name': f.name, 'base64': base64.b64encode(f.read_bytes()).decode()} for f in files]
         def drop():
             page.evaluate('''items => {
