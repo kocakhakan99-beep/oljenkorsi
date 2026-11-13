@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { supabase, supabaseUrl, supabasePublishableKey } from './supabase';
+import { supabase, supabaseUrl, supabasePublishableKey, authCallbackAttempt } from './supabase';
 
 type Provider = 'google' | 'apple';
 
@@ -17,6 +17,23 @@ export function useAuth() {
       if (!active) return;
       setUser(session?.user ?? null);
       setLoading(false);
+    });
+    // Initial auth errors are returned by initialize(), not by INITIAL_SESSION.
+    // Never show provider error text or authorization codes to the user.
+    void supabase.auth.initialize().then(async result => {
+      if (!authCallbackAttempt || !active) return;
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!active || (!result.error && !sessionError && data.session)) return;
+      setError('Kirjautumista ei voitu viimeistellä. Yritä uudelleen samassa selaimessa. Jos virhe jatkuu, tarkista kirjautumispalvelun asetukset.');
+      const url = new URL(window.location.href);
+      for (const key of ['code', 'sb_flow_id', 'error', 'error_code', 'error_description']) url.searchParams.delete(key);
+      const hash = new URLSearchParams(url.hash.slice(1));
+      const hadErrorHash = ['error', 'error_code', 'error_description'].some(key => hash.has(key));
+      if (hadErrorHash) url.hash = 'settings';
+      window.history.replaceState(window.history.state, '', url.toString());
+      if (hadErrorHash) window.dispatchEvent(new Event('hashchange'));
+    }).catch(() => {
+      if (active && authCallbackAttempt) setError('Kirjautumista ei voitu viimeistellä. Yritä uudelleen samassa selaimessa.');
     });
     void fetch(`${supabaseUrl}/auth/v1/settings`, { headers: { apikey: supabasePublishableKey } })
       .then(response => {
