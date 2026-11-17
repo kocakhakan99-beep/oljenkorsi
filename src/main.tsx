@@ -1,6 +1,8 @@
 import { Account, GoogleButton } from "./components/account";
 import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
+import { useCloudIntegration } from "./services/use-cloud-integration";
+import type { FamilyRevisionSession } from "./services/family-session";
 import { InvoiceScanner } from "./components/invoice-scanner";
 import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
 import { ReceiptDropZone } from "./components/receipt-drop-zone";
@@ -1880,6 +1882,11 @@ function CashEntryForm({
 }
 function App() {
   const auth = useAuth();
+  const familyRevisionSession = useRef<FamilyRevisionSession | null>(null);
+  useEffect(() => {
+    if (!auth.user || familyRevisionSession.current?.userId !== auth.user.id)
+      familyRevisionSession.current = null;
+  }, [auth.user?.id]);
   const receiptScanner = useRef<ReceiptScannerHandle>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
@@ -1937,6 +1944,23 @@ function App() {
     [systemPrefersDark, setSystemPrefersDark] = useState(
       () => matchMedia("(prefers-color-scheme: dark)").matches,
     );
+  const testState = useRef(s);
+  testState.current = s;
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    type TestWindow = Window & {
+      __oljenkorsiTestMode?: boolean;
+      __oljenkorsiTest?: { getState: () => State };
+    };
+    const testWindow = window as TestWindow;
+    if (testWindow.__oljenkorsiTestMode) {
+      testWindow.__oljenkorsiTest = { getState: () => testState.current };
+      return () => {
+        delete testWindow.__oljenkorsiTest;
+      };
+    }
+    delete testWindow.__oljenkorsiTest;
+  }, []);
   const menuButton = useRef<HTMLButtonElement>(null);
   const reportDetailRef = useRef<HTMLElement>(null);
   const month = s.settings.month;
@@ -2051,8 +2075,15 @@ function App() {
   }
   const receiptUndoActive = useRef(false);
   const hasTemporaryChanges = useRef(false);
+  const cloudEnabled = import.meta.env.VITE_CLOUD_SAVE_ENABLED === 'true';
+  const cloud = useCloudIntegration(cloudEnabled, auth.loading, auth.user?.id ?? null, s, hasTemporaryChanges, next => {
+    storage.update(next);
+    setUndo(null);
+    setS(next);
+  });
   function commit(next: State) {
     try {
+      if (cloudEnabled && !cloud.canEdit) { setNotice('Odota, että talouden lataus on valmis.'); return false; }
       if (next.coverage === s.coverage)
         next = { ...next, coverage: coverageAfterEntryChanges(s, next) };
       let valid = validate(next);
@@ -2085,6 +2116,7 @@ function App() {
         setCompassRefreshMessage("");
       }
       setS(valid);
+      try { cloud.update(valid); } catch { setNotice('Pilvitallennus ei ole valmis. Tiedot ovat muistissa; vie tarvittaessa varmuuskopio.'); }
       return true;
     } catch (e) {
       setNotice(String(e));
@@ -2095,8 +2127,8 @@ function App() {
     commit({ ...s, settings: { ...s.settings, ...v } });
   }
   useEffect(() => {
-    if (!auth.loading && auth.user && !s.settings.onboarded) settings({ onboarded: true });
-  }, [auth.loading, auth.user, s.settings.onboarded]);
+    if (!cloudEnabled && !auth.loading && auth.user && !s.settings.onboarded) settings({ onboarded: true });
+  }, [auth.loading, auth.user, s.settings.onboarded, cloudEnabled]);
   function setMonthCoverage(kind: "incomes" | "expenses", confirmed: boolean) {
     const field = kind === "incomes" ? "incomeMonths" : "expenseMonths";
     const months = new Set(s.coverage[field]);
@@ -3146,8 +3178,9 @@ function App() {
       ...Object.keys(s.budgets[month] || {}),
     ]),
   );
-  const monthBudgetSummary = budgetSummary(s, month);
-  const monthGuidance = budgetGuidance(s, month);
+  const calculationDate = today();
+  const monthBudgetSummary = useMemo(() => budgetSummary(s, month), [s, month, calculationDate]);
+  const monthGuidance = useMemo(() => budgetGuidance(s, month), [s, month, calculationDate]);
   const monthBudgets = s.budgets[month] || {};
   const budgetCategoriesByName = new Map(
     monthBudgetSummary.categories.map((category) => [
@@ -3174,8 +3207,8 @@ function App() {
     : relevantBudgetCategories.length
       ? relevantBudgetCategories
       : expCats.slice(0, 4);
-  const compassTasks = planActions(valuedState, month);
-  const visibleCompassTasks = visibleActions(s, month);
+  const compassTasks = useMemo(() => planActions(valuedState, month), [valuedState, month, calculationDate]);
+  const visibleCompassTasks = useMemo(() => visibleActions(s, month, calculationDate), [s, month, calculationDate]);
   const filteredCompassTasks =
     compassTrack === "all"
       ? visibleCompassTasks
@@ -3189,17 +3222,17 @@ function App() {
       (scenario) => scenario.profile.id === selectedCompassDemo,
     ) || compassDemos[1];
   const demoSelectedMonth = activeCompassDemo.state.settings.month;
-  const demoSelectedSummary = demoMonthSummary(activeCompassDemo.state, demoSelectedMonth);
+  const demoSelectedSummary = useMemo(() => demoMonthSummary(activeCompassDemo.state, demoSelectedMonth), [activeCompassDemo, demoSelectedMonth, calculationDate]);
   const activeCompassDemoMetrics = { income: demoSelectedSummary.income, consumption: demoSelectedSummary.expense, cash: demoSelectedSummary.cash };
-  const activeCompassDemoBuffer = emergencyFund(
+  const activeCompassDemoBuffer = useMemo(() => emergencyFund(
     activeCompassDemo.state,
     demoSelectedMonth,
     3,
-  );
-  const activeCompassDemoActions = planActions(
+  ), [activeCompassDemo, demoSelectedMonth, calculationDate]);
+  const activeCompassDemoActions = useMemo(() => planActions(
     activeCompassDemo.state,
     demoSelectedMonth,
-  ).slice(0, 3);
+  ).slice(0, 3), [activeCompassDemo, demoSelectedMonth, calculationDate]);
   function loadDemoHousehold(id: CompassDemoId) {
     const scenario = compassDemos.find((item) => item.profile.id === id);
     if (!scenario) return;
@@ -3236,6 +3269,12 @@ function App() {
       (saved.status === "done" || (saved.until && saved.until > today()))
     );
   });
+  if (cloudEnabled && !cloud.canEdit) return <main className="panel" role="status">
+    <h1>Talouden tallennus</h1>
+    {cloud.status === 'transition' ? <><p>Muistissa on tallentamattomia tietoja ennen tilin vaihtoa. Vie ne tarvittaessa varmuuskopioksi.</p><button onClick={exportBackup}>Vie varmuuskopio</button><button onClick={cloud.discardAndContinue}>Hylkää muistissa olevat tiedot ja jatka</button></> :
+      cloud.status === 'legacy-review' ? <><p>Vanhan perhetallennuksen eheyttä ei voida varmistaa. Lataus korvaa tämän välilehden tiedot; tarkista ja vie ladattu varmuuskopio ennen muokkausta.</p><button onClick={exportBackup}>Vie nykyinen varmuuskopio</button><button onClick={() => { if (confirm('Ladataanko vanha tarkistamaton talous?')) void cloud.acceptLegacy(); }}>Lataa vanha talous</button></> :
+      cloud.status === 'error' ? <><p>Taloutta ei voitu ladata. Muistissa olevat tiedot ovat tallella.</p><button onClick={exportBackup}>Vie varmuuskopio</button>{cloud.hasUnsaved ? <button onClick={() => { if (confirm('Hylätäänkö muistissa olevat tiedot ja yritetään uudelleen?')) cloud.discardAndContinue(); }}>Hylkää ja yritä uudelleen</button> : <button onClick={cloud.retry}>Yritä uudelleen</button>}</> : <p>Haetaan taloutta…</p>}
+  </main>;
   return (
     <>
       <a
@@ -3369,7 +3408,16 @@ function App() {
                   <EyeOff size={19} aria-hidden="true" />
                 )}
               </button>
-              <ProfileMenu auth={auth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings")} />
+              {cloudEnabled && auth.user && <div className="cloud-status" role="status">
+                <label>Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna tai vie keskeneräiset muutokset ennen talouden vaihtoa.')); }}>
+                  {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
+                </select></label>{' '}
+                <span>{({ empty: 'Ei vielä tallennettu', saved: 'Tallennettu', dirty: 'Muutoksia tallentamatta', saving: 'Tallennetaan…', uncertain: 'Yhteysvirhe – yritetään uudelleen', conflict: 'Versioristiriita', rejected: 'Tallennus estetty', loading: 'Haetaan…', error: 'Lataus epäonnistui', 'legacy-review': 'Tarkistus vaaditaan', 'remote-change': 'Uusi pilviversio saatavilla', guest: 'Vierastila', transition: 'Tilin vaihto' } as const)[cloud.status]}</span>{' '}
+                {cloud.status === 'remote-change' && cloud.active && <button onClick={() => { if (!document.querySelector('dialog[open]')) void cloud.select(cloud.active!).catch(() => setNotice('Vie tai tallenna keskeneräiset muutokset ensin.')); }}>Lataa uusin versio</button>}
+                {(cloud.status === 'dirty' || cloud.status === 'uncertain') && <button onClick={() => void cloud.saveNow()}>Tallenna nyt</button>}
+                {(cloud.status === 'conflict' || cloud.status === 'rejected') && <><button onClick={exportBackup}>Vie varmuuskopio</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan talous uudelleen? Vie tarvittaessa ensin varmuuskopio.')) cloud.discardAndContinue(); }}>Hylkää muutokset ja lataa uudelleen</button></>}
+              </div>}
+              <ProfileMenu auth={auth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings")} cloudManaged={cloudEnabled} />
             </div>
           </header>
           <main id="main" tabIndex={-1}>
@@ -6568,14 +6616,14 @@ function App() {
                   <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
-                <Account exportBackup={exportBackup} state={s} onLoad={commit} auth={auth} hasChanges={hasTemporaryChanges.current} />
+                <Account exportBackup={exportBackup} state={s} onLoad={commit} auth={auth} hasChanges={hasTemporaryChanges.current} revisionSession={familyRevisionSession} cloudManaged={cloudEnabled} />
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
-                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
+                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{cloudEnabled && auth.user ? 'Pilvitallennuksen tila yläpalkissa' : storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
                   {!storageOk && <p role="alert">Vie varmuuskopio ennen kuin suljet tämän välilehden.</p>}
                   <p className="ux-status-note">Varmuuskopio ei ole automaattinen.</p>
                   <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
-                  <ContextDetails title="Miten tiedot säilyvät?"><p>Tiedot katoavat sivun uudelleenlatauksessa ja sulkemisessa. Vie tiedot ennen poistumista. JSON-varmuuskopio sisältää koko talouden; CSV-vienti ei sisällä kaikkia tietoja.</p></ContextDetails>
+                  <ContextDetails title="Miten tiedot säilyvät?"><p>{cloudEnabled && auth.user ? 'Vahvistetut muutokset tallennetaan valittuun pilvitalouteen. Tallentamattomat muutokset katoavat, jos sivu suljetaan.' : 'Tiedot katoavat sivun uudelleenlatauksessa ja sulkemisessa. Vie tiedot ennen poistumista.'} JSON-varmuuskopio sisältää koko talouden; CSV-vienti ei sisällä kaikkia tietoja.</p></ContextDetails>
                   <ContextDetails title="Tallennuksen lisätyökalut"><p>Aiemman version selaintallennuksen voi viedä tästä ja palauttaa JSON-tiedostona. Sitä ei poisteta automaattisesti.</p>
                     <button
                       onClick={() => {
@@ -6638,8 +6686,7 @@ function App() {
               <section className="panel prose">
                 <h2>Talous haltuun ilman käyttäjätiliä</h2>
                 <p>
-                  Tämä sovellus toimii yhdestä HTML-tiedostosta. Talousdataasi
-                  ei lähetetä sovelluksesta verkkoon. Ei pankkiyhteyksiä,
+                  {cloudEnabled && auth.user ? 'Kirjautuneena aktiivisen talouden tiedot tallennetaan pilveen. ' : 'Vieraana taloustiedot ovat välilehden muistissa. '} Ei pankkiyhteyksiä,
                   analytiikkaa, mainoksia tai käyttäjätiliä.
                 </p>
                 <h3>Aloita näin</h3>
@@ -6703,7 +6750,7 @@ function App() {
             )}
           </main>
           <footer>
-            Tiedot ovat väliaikaisesti muistissa · Vie tiedot ennen poistumista
+            {cloudEnabled && auth.user ? 'Pilvitallennuksen tila näkyy yläpalkissa · Varmuuskopion voi viedä itse' : 'Tiedot ovat väliaikaisesti muistissa · Vie tiedot ennen poistumista'}
           </footer>
         </div>
       </div>
@@ -7162,6 +7209,15 @@ function App() {
             disabled={deleteText !== "POISTA"}
             onClick={() => {
               try {
+                if (cloudEnabled && auth.user) {
+                  const cleared = empty();
+                  cleared.settings.onboarded = true;
+                  if (!commit(cleared)) return;
+                  setUndo(null);
+                  setDeleteOpen(false);
+                  setNotice('Talous tyhjennetty. Muutos tallennetaan valittuun talouteen.');
+                  return;
+                }
                 storage.clear();
                 setS(empty());
                 setUndo(null);

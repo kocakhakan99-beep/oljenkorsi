@@ -1,4 +1,42 @@
-# Testausraportti 11.11.2026
+# Testausraportti 13.11.2026
+
+## Pilvitallennuksen kirjoituskuitti 14.11.2026
+
+- 17.11.2026 erillinen paikallinen Supabase-pino (Auth, PostgREST, Edge Runtime ja PostgreSQL) läpäisi skriptin `scripts/cloud-local-integration.mjs` kahdella synteettisellä käyttäjällä. Koe varmisti henkilökohtaisen talouden kirjoituksen ja lukemisen, käyttäjien eristyksen, saman pyynnön uusinnan, ristiriidan, virheellisen asiakirjan hylkäämisen, palvelinvalidoinnin ohitusyrityksen, perhekutsun, molempien jäsenten pääsyn, jäsenyyden poistamisen ja vanhan kirjoitusreitin eston. Auth käytti paikallista sähköposti/salasana-kirjautumista, ei Googlea tai Applea.
+- Koe käyttää `LOCAL_SUPABASE_URL`- ja `LOCAL_SUPABASE_ANON_KEY`-ympäristömuuttujia ja synteettisen pilvidokumentin polkua; skripti kieltäytyy muista kuin paikallisista osoitteista. Synteettinen dokumentti voidaan luoda selainkokeella ympäristömuuttujaan `CLOUD_TEST_SNAPSHOT_PATH` annetun polun avulla. Paikallista ajoa varten Edge Function paketoitiin samoista lähteistä yhteen tiedostoon, koska testiympäristön välityspalvelimen varmenne esti riippuvuuksien latauksen Edge Runtimeen. Vanhan, jo tuotannossa ajetun `rls_auto_enable`-migraation testikopioon lisättiin paikallisesti olemassaolotarkistus, sillä paikallisesta ympäristöstä kyseinen funktio puuttui; repositorion migraatiota ei muutettu.
+- `e2e_cloud_local.py` lisäsi Chromiumissa synteettisen menon paikallisen Authin, Edge Functionin ja tietokannan läpi ja löysi sen uudelleenlatauksen jälkeen. Testi ohjasi sovelluksen Supabase-pyynnöt selaimessa paikalliseen testipalveluun; kirjautumisistunto luotiin paikallisella sähköposti/salasana-API:lla. Koe ei todista isännöidyn projektin asetuksia tai oikeaa Google- tai Apple-kirjautumista. Tuotantoon ei ole asennettu pilvimigraatioita eikä tallennusfunktiota.
+- `supabase/tests/cloud_receipts.sql` tarkistaa eristetyssä PostgreSQL 17 -tietokannassa saman pyynnön uusinnan, eri sisällöllä kierrätetyn tunnisteen hylkäyksen, vanhan revision ja jäsenyystarkistukset. API-roolit eivät voi kutsua sisäistä funktiota.
+- Kahdella samanaikaisella yhteydellä saman pyynnön uusinta tuotti vain yhden tallennusrevision. Koe käytti fiktiivistä dataa ja paikallista tietokantaa; se ei ole Supabase-integraatiotesti eikä todista koko dokumentin validointia.
+- `cloud-save`-funktion dokumenttivalidointi rakennetaan selaimen kanssa samasta lähdekoodista komennolla `npm run build:cloud-validation`; tavallinen `npm run build` ajaa sen automaattisesti. Validointikokeet kattavat kelvollisen aineiston, väärän tarkistussumman, ylimääräiset kentät ja UTF-8-kokorajan. Deno-tyyppitarkistus ei korvaa Edge Functionin oikeaa Auth- ja tietokantaintegraatiotestiä.
+- Oma talous ja olemassa oleva perhetalous testattiin eristetyssä PostgreSQL-tietokannassa: sama käyttäjä voi listata molemmat, ulkopuolinen ei voi lukea tai kirjoittaa omaan talouteen, tilin poisto poistaa oman talouden ja kaksi rinnakkaista perustamista palauttaa saman talouden. Selainrajapinnan yksikkötestit kattavat istunnon vaihtumisen, virheellisen vastauksen ja versioristiriidan.
+- Tallennusistunnon yksikkötestit varmistavat perhetalouden ensisijaisen latauksen, paikallisten näyttöasetusten erottamisen, tallentamattomien muutosten suojan taloutta vaihtaessa, vanhentuneen latausvastauksen ohituksen ja kirjoitusten estämisen epäonnistuneen tai epävarman latauksen jälkeen. Kytkentä käyttöliittymään on ominaisuuslipun takana.
+- Vanhan varmuuskopion palautuspolku vaatii nimenomaisen hyväksynnän; jos palvelimen revisio vaihtuu hyväksymisen aikana, uutta sisältöä ei ladata vanhan hyväksynnän perusteella. Myös kokeiluversion hyväksyntäpainike testattiin selaimessa.
+- Käyttöliittymän kokeellinen kytkentä testattiin Chromiumissa komennolla `TALOUS_BROWSER=/usr/bin/chromium python e2e_cloud.py` Vite-palvelinta vasten, kun `VITE_CLOUD_SAVE_ENABLED=true`: automaattinen tallennus ja uudelleenlataus, ristiriidassa paikallisen muutoksen säilyttäminen, tallentamattomien muutosten suoja uloskirjautuessa, epäonnistuneen alkulatauksen suoja ja vanhan varmuuskopion hyväksyntä läpäisivät. Supabasen vastaukset simuloitiin; oikea Edge Function ja tietokanta eivät sisältyneet tähän selainkokeeseen.
+- Samassa simuloidussa selainkokeessa palvelin hyväksyi tallennuksen mutta verkkovastaus katosi. Asiakas lähetti saman dokumentin samalla muutostunnisteella uudelleen, ja tieto säilyi uudelleenlatauksessa ilman ylimääräistä revisiota.
+- Koko yksikkötestisarja läpäisi 213 testiä. Edge Functionin Deno-kokeet tarkistivat OPTIONS-vastauksen, anonyymin pyynnön ja väärän originin hylkäyksen sekä allekirjoitetulla synteettisellä tokenilla kelvollisen tallennuksen ja asiakirjaan lisätyn ylimääräisen avaimen hylkäyksen. Auth- ja tietokantavastaukset simuloitiin; oikea Supabase-kirjautuminen ja tietokantakirjoitus ovat vielä testaamatta yhdessä.
+- Erillisessä PostgreSQL-testikannassa käyttöönoton katkaisumigraatio esti vanhan `family_save`-kirjoitusreitin ja säilytti perheen ja pilvitietojen lukuoikeudet. Migraatiota ei ole ajettu tuotantoon.
+
+## Kirjautumisen paluu 13.11.2026
+
+- Chromiumissa simuloitiin onnistunut PKCE-paluu, kirjautumispalvelun virhe sekä paluu ilman saman selaimen PKCE-avainta. Onnistunut paluu avasi kirjautuneen tilan; virhetilanteet näyttivät ilmoituksen ja poistivat paluuparametrit osoitteesta. Koe ei käytä oikeaa Google-tiliä eikä todenna tuotannon provider-asetuksia.
+- Toista koe käynnistämällä Vite porttiin 5182 ja ajamalla `python e2e_auth.py`. Selainpolun voi antaa `TALOUS_BROWSER`-muuttujalla ja palvelinosoitteen `TALOUS_URL`-muuttujalla.
+
+## Laskennan välimuisti 12.11.2026
+
+- Budjettikoosteen, kompassin ehdotusten ja esimerkkitalouden laskentatulosten muistaminen tarkistettiin 189 yksikkötestillä, tyyppitarkistuksella, lintillä ja tuotantobuildilla. Chromiumin laaja E2E-ajo läpäisi 83 tarkistusta, mukaan lukien budjetin muuttaminen, kompassin ehdotukset, kuukauden vaihtaminen sekä varmuuskopioiden palautus.
+- Vasteaikaa ei mitattu ennen muutosta ja sen jälkeen. Suuren aineiston suorituskyvystä ei tämän perusteella ilmoiteta nopeutumisprosenttia.
+
+## Supabase-elinkaarikorjaukset 12.11.2026
+
+- Käyttäjätilin poisto, perheen poistaminen ja ylläpitäjyyden siirto lisättiin lähdekoodiin. Tietokantamigraatiota ei ole sovellettu eikä Edge Functionia ole otettu tuotantoon.
+- `npm run typecheck`, `npm run lint`, `npm run build`, `python -m py_compile e2e.py`, `git diff --check` ja 189 yksikkötestiä läpäisivät.
+- `delete-account` Edge Function läpäisi erillisen Deno-tyyppitarkistuksen; tämä ei osoita palveluun käyttöönotetun funktion tai käyttäjätokenien toimintaa.
+- Paikallisessa PostgreSQL 17 -testitietokannassa kokeiltiin migraatiota fiktiivisillä käyttäjillä: jäsenen ja ulkopuolisen oikeudet, ylläpitäjyyden siirto, kutsun luojan poistaminen, viimeisen ylläpitäjän seuraaja sekä viimeisen jäsenen ja perheen poistaminen. Transaktio peruttiin kokeen jälkeen. Kaksi samanaikaista tietokantayhteyttä varmisti, ettei lukkoa odottanut ja sillä välin poistettu ylläpitäjä voi siirtää roolia; kyseisen tilanteen tarkistus korjattiin.
+- Toistettava SQL-koe on tiedostossa `supabase/tests/family_lifecycle.sql`. Se ajetaan tietokannan omistajana erillisessä testitietokannassa, johon migraatiot on ensin asennettu; skripti peruu testidatan transaktion lopuksi.
+- Chromiumin kohdennettu vierastilan koe lisäsi testimenon, varmisti ettei talous tallentunut localStorageen ja tarkisti, että uudelleenlataus tyhjentää muistissa olevan talouden. Päivitetty laaja E2E-ajo läpäisi kaikki 83 tarkistusta ilman sivuvirheitä, konsolivirheitä tai odottamattomia verkkopyyntöjä. Supabasen kirjautumisasetuksen vastaus oli simuloitu, joten ajo ei varmista oikeaa kirjautumista.
+- Edge Functionin oikeutta poistaa vain kutsuva käyttäjä ja koko Auth-poistopolkua on vielä varmennettava erillisessä Supabase-testiympäristössä ennen julkaisua. Google- ja Apple-kirjautumisen oikeita käyttäjäpolkuja ei ole varmennettu; Apple-provider on pois käytöstä.
+
+## Worker-rajapinnan tarkistus 11.11.2026
 
 ## Worker-rajapinnan tarkistus 11.11.2026
 

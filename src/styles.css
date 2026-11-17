@@ -5645,6 +5645,9 @@ button.primary,
 @keyframes receipt-sort-spark { 0%, 100% { transform: rotate(-8deg) scale(.9); } 50% { transform: rotate(10deg) scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .receipt-unresolved-heading > span { animation: none; } }
 .invoice-review-card { border: 1px solid #aabfe1; border-radius: 1rem; padding: 1rem; background: #f8faff; color: #18344c; display: grid; gap: .75rem; }
+.invoice-source-preview { border: 1px solid var(--line); border-radius: .75rem; padding: .65rem .8rem; }
+.invoice-source-preview summary { cursor: pointer; font-weight: 650; }
+.invoice-source-preview pre { max-height: 18rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
 .invoice-review-card-heading { display: flex; align-items: center; gap: .65rem; }
 .invoice-review-card-heading svg { color: #315b92; flex-shrink: 0; }
 .invoice-review-card-heading strong:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }

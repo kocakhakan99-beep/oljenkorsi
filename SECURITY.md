@@ -1,32 +1,30 @@
 # Tietoturva
 
-## Toteutetut suojaukset
+## Selain ja tietojen käsittely
 
-- Ei evalia, vaarallista HTML-injektiota, ulkoisia skriptejä tai ulkoisia fontti- ja kuvapyyntöjä. Verkkoversion OpenRouter-pyyntö kuvataan alla.
-- React esittää käyttäjän tekstit tekstinä, ei HTML:nä.
-- CSP: default-src none; connect-src https://openrouter.ai https://api-worker.kocakhakan99.workers.dev; script/style vain inline; ei objectia, fonttiverkkoa, base-uri-muutoksia tai lomakkeen verkkolähetystä. Standalone-build tarkistaa CSP-metatagin ja hylkää ulkoiset script/link-tunnisteet.
-- Zod validoi tilan rakenteen; domain-tarkistukset validoivat tietueet, päivät, prosentit, kokonaislukusentit ja listakoot.
-- **proto**, constructor ja prototype hylätään JSON-tuonnissa ja validoinnissa.
-- JSON enintään 10 Mt; CSV enintään 5 Mt; enintään 20 000 tietuetta/lista, 500 kategoriaa ja 100 skenaariota. Selaimen kiintiö voi tulla vastaan aiemmin.
-- CSV-vienti lainaa kentät ja lisää apostrofin kaava-alkuisiin (=, +, -, @) kenttiin myös alkuvälilyöntien jälkeen. Taulukkolaskentaohjelmien käyttäytyminen vaihtelee; Excelissä ei ole tehty erillistä testiä.
-- Backupin FNV-1a-32 tarkistaa tahattomia muutoksia. Se ei ole kryptografinen eikä suojaa tahallista väärentämistä.
-- Tallennus tarkistetaan takaisinluvulla. Toisen välilehden muuttama tallennus tunnistetaan ennen kirjoitusta. Tarkistus ei ole atominen.
-- Vioittunutta tallennusta ei automaattisesti korvata; alkuperäinen raakakopio voidaan pelastaa onboardingista.
+- Käyttäjän teksti esitetään Reactin tekstisolmuina. PDF.js lukee PDF:n tekstikerroksen selaimessa eikä suorita dokumentin JavaScriptiä, linkkejä tai liitteitä.
+- JSON-tuonti ja sovellustila validoidaan Zodilla ja domain-tarkistuksilla. `__proto__`, `constructor` ja `prototype` hylätään. JSON on enintään 10 Mt; rivimäärille ja yksittäisille kentille on kokorajoja.
+- Kirjautumattoman käyttäjän talous on muistissa eikä pysyvässä selainvarastossa. Supabase-istunto tallennetaan selaimeen. Sovelluksen asetuksissa voi yhä olla käyttöliittymän tai vanhan tallennuksen tietoja.
+- CSP rajaa verkkopyynnöt Supabaseen ja sovelluksen Cloudflare Workeriin. Ulkoisia skriptejä, fontteja tai CDN:iä ei ladata.
 
-## Uhkamallin ulkopuolella
+## Supabase ja perhetili
 
-Haittaohjelmat, laitteen muut käyttäjät, selainlaajennukset, selaimen omat verkkotoiminnot, pilveen synkronoitu latauskansio ja käyttöjärjestelmän varmuuskopiot. Offline ei yksin tarkoita salausta tai täydellistä turvallisuutta.
+- Selain sisältää vain Supabasen publishable-avaimen. Service-role- tai muuta ylläpitoavainta ei saa viedä selainkoodiin.
+- Perhetaulut ovat `family_private`-skeemassa, johon selainrooleilla ei ole tauluoikeuksia. RLS on päällä puolustukseksi. Selaimen RPC-kutsut tarkistavat kirjautumisen ja perheen jäsenyyden; kutsun luonti, lunastus, jäsenyys ja kirjoitukset kulkevat rajattujen funktioiden kautta.
+- Ylläpitäjäroolia ei hyväksytä käyttäjän muokattavista profiilimetatiedoista. Kutsukoodi tallennetaan tietokantaan tiivisteenä, se vanhenee 24 tunnissa ja palvelin rajoittaa luontia sekä lunastusyrityksiä.
+- Perheen tallennus käyttää palvelimen revisiota ja lukitusta, jotta vanha muutos ei hiljaisesti korvaa uutta. Jäsenyystestit kahdella erillisellä oikealla käyttäjällä ja kutsukilpailun testaus puuttuvat.
+- Perheen JSON-dokumenttia validoidaan selaimessa ennen tallennusta. Uuden formaatin eheystarkistus kestää JSONB:n avainten uudelleenjärjestelyn. Vanha formaatti voi vaatia vahvistuksen, koska sen FNV-tarkistussummaa ei aina voi palauttaa avainjärjestyksen muututtua. FNV-1a-32 ei ole kryptografinen eikä estä tahallista muuttamista.
+- Perheen poisto, ylläpitäjyyden siirto ja käyttäjätilin poisto on toteutettu lähdekoodissa. Käyttäjätilin Edge Function tarkistaa istunnon palvelinpuolella ja voi poistaa vain kutsuvan käyttäjän; Supabase secret -avain ei päädy selaimeen. Tietokantatriggeri siirtää viimeisen ylläpitäjän roolin vanhimmalle jäljelle jäävälle jäsenelle tai poistaa perheen viimeisen jäsenen mukana. Uusi migraatio ja Edge Function eivät vielä ole tuotantopalvelussa.
 
-## Jatkotehtävät
+## Tekoäly ja PDF:t
 
-Kryptografinen backup-tarkiste, valinnainen salasanasalaus, riippuvuusauditointi, kattava fuzz-testaus sekä manuaalinen tietoturvakatselmointi. Npm-lukitustiedosto on käytössä, mutta riippuvuuksien CVE-auditointia ei ole tehty tässä kierroksessa.
+Laskun PDF luetaan selaimessa. Analyysi ei käynnisty avaimen läsnäolon tai PDF:n valinnan perusteella: käyttäjä painaa erillistä lähetyspainiketta. Ennen sitä hän voi avata poimitun tekstin esikatselun. Lähetetty teksti kulkee Cloudflare Workerin ja OpenRouterin kautta. Sovellus ei voi valvoa Worker- tai mallipalvelun omaa säilytyskäytäntöä, kustannuksia tai edelleenreititystä.
 
-## PDF-kuittien paikallinen käsittely
+Kuittien AI-kategorisointi lähettää tuotenimiä ja kategoriavaihtoehtoja. Paikallisen jäsennyksen epäonnistuessa kuittitekstiä voidaan lähettää varareitille rajattuna. Pyyntöjen vastaukset validoidaan, mutta käyttäjä tarkistaa AI:n ehdotukset ennen kirjausta. API-avain on välilehden istunnossa eikä talousvarmuuskopiossa.
 
-PDF.js 6.5.438 ja sen käsittelijä on pakattu HTML:ään ilman ulkoista workeria tai CDN:ää. PDF:stä luetaan tekstikerros ja koordinaatit; dokumentin JavaScriptiä, linkkejä tai liitteitä ei suoriteta. Sovelluksen CSP sallii yhteyden vain OpenRouteriin ja käyttäjän Worker-palveluun laskuanalyysiä varten. Tiedosto-, sivu- ja tekstirajat sekä peruutus rajaavat käsittelyä, mutta pääsäikeen synkronista työtä ei voi katkaista välittömästi. Lähde-PDF ja tuoterivit eivät tallennu hyväksynnän jälkeen; kuittihistoriaan perustuvaa pysyvää kaksoistunnistusta ei ole. [Tarkemmat rajat](RECEIPT_SCANNER.md).
+## Avoimet tarkistukset
 
-PDF-kierroksen tuotantoriippuvuuksien npm-audit: Zod päivitettiin versioon 4.6.7 muistinkulutushaavoittuvuuden korjaamiseksi; tarkistus raportoi päivityksen jälkeen 0 tunnettua tuotantoriippuvuuksien haavoittuvuutta. Kattava riippuvuus-/manuaaliauditointi säilyy jatkotyönä.
-
-## OpenRouter-laskuanalyysi
-
-Tavallinen `index.html` sallii CSP:llä yhteyden vain OpenRouteriin tai käyttäjän Cloudflare Workeriin. Sovellus lähettää vain ilmaismallien tunnisteita. Worker-palvelimen omaa malliohjausta tai mahdollisia kustannuksia asiakassovellus ei voi tarkistaa. Worker vaatii käyttäjän antaman API-avaimen Bearer-otsakkeessa; palvelimen omistaja hallitsee käyttöoikeudet ja mahdolliset käyttörajat. Käyttäjä esikatselee ja voi muokata lähetettävää tekstiä ennen jokaista pyyntöä. Valitun palvelun avain syötetään joka analyysiä varten, tyhjennetään kentästä pyynnön alussa ja on vain tilapäisesti muistissa; palvelun virherunkoja ei näytetä. Vastaukselle tehdään skeema- ja kokotarkistukset, ja käyttäjä tarkistaa tiedot sekä tallentaa menon erikseen. Mallin vastaukset tai PDF:n teksti eivät ole komentoja. API:n CORS, tietojenkäsittelyehdot ja ilmaismallien saatavuus on varmistettava ennen todellista käyttöä. OCR tai laskujen automaattinen kaksoiskirjauksen tunnistus ei ole käytössä.
+- Google-palveluntarjoaja on Supabasessa aktiivinen ja tuotanto-osoitteen OAuth-aloitus ohjautuu Googleen. Oikeaa kirjautumista ja paluuta sovellukseen ei ole varmennettu erillisellä käyttäjätilillä. Apple-palveluntarjoaja on pois käytöstä.
+- Julkisessa repositoriossa aiemmin olleet PDF:t on poistettu nykyisestä työpuusta. Git-historiaa ei ole siivottu; vanhat commitit voivat sisältää aiempia tiedostoja.
+- Tuotantopalvelun lokit, varmuuskopioiden säilytys ja poistokäytännöt ovat palveluntarjoajien vastuulla. Sovellus ei ole päästä päähän salattu.
+- Erilliset käyttäjätilien oikeustestit oikeassa Supabase-ympäristössä, Edge Functionin integraatiotesti ja manuaalinen tietoturvakatselmus ovat jatkotyötä. Poistomigraation toimintaa on kokeiltu paikallisessa PostgreSQL-testitietokannassa fiktiivisillä käyttäjillä.

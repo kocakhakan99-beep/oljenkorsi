@@ -121,7 +121,7 @@ export function validate(raw: unknown): State {
     ...defaults,
     settings: {
       ...defaults.settings,
-      ...x.settings,
+      ...check.data.settings,
       budgetGuidance: check.data.settings.budgetGuidance ?? defaults.settings.budgetGuidance,
       currency: "EUR",
       language: "fi",

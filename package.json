@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node standalone.mjs",
+    "build": "npm run build:cloud-validation && vite build && node publish-static.mjs",
+    "build:cloud-validation": "node build-cloud-validation.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",

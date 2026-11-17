@@ -1,0 +1,8 @@
+[functions.delete-account]
+# @supabase/server verifies user credentials and the function uses the project
+# secret client only to delete the already verified caller's own account.
+verify_jwt = false
+
+[functions.cloud-save]
+# The function verifies the caller using @supabase/server before any write.
+verify_jwt = false

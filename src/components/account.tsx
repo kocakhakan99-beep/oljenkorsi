@@ -1,6 +1,7 @@
 import { Family } from './family';
 import type { State } from '../domain/model';
 import type { AuthState } from '../services/use-auth';
+import type { FamilyRevisionSession } from '../services/family-session';
 
 export function GoogleButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
   return <button type="button" className="google-signin" disabled={disabled} onClick={onClick}>
@@ -14,12 +15,12 @@ export function GoogleButton({ onClick, disabled = false }: { onClick: () => voi
   </button>;
 }
 
-export function Account({ exportBackup, state, onLoad, auth, hasChanges }: { exportBackup: () => void; state: State; onLoad: (state: State) => boolean | undefined; auth: AuthState; hasChanges: boolean }) {
+export function Account({ exportBackup, state, onLoad, auth, hasChanges, revisionSession, cloudManaged = false }: { exportBackup: () => void; state: State; onLoad: (state: State) => boolean | undefined; auth: AuthState; hasChanges: boolean; revisionSession: { current: FamilyRevisionSession | null }; cloudManaged?: boolean }) {
   const { user, providers, error, pending, signIn, signOut } = auth;
   return <section className="panel" aria-labelledby="account-title">
     <h2 id="account-title">Käyttäjätili</h2>
     <p>Kirjautuminen ei itsessään tallenna taloustietoja.</p>
-    {user ? <><p>Kirjautunut{user.email ? `: ${user.email}` : '.'}</p><p>Uloskirjautuminen ei tyhjennä tässä välilehdessä jo näkyviä tietoja.</p><button disabled={pending} onClick={() => void signOut()}>Kirjaudu ulos</button><Family state={state} onLoad={onLoad} exportBackup={exportBackup} userId={user.id} /></> : <>
+    {user ? <><p>Kirjautunut{user.email ? `: ${user.email}` : '.'}</p><p>{cloudManaged ? 'Tallentamattomat muutokset voi viedä varmuuskopioksi ennen tilin vaihtoa.' : 'Uloskirjautuminen ei tyhjennä tässä välilehdessä jo näkyviä tietoja.'}</p><button disabled={pending} onClick={() => void signOut()}>Kirjaudu ulos</button><Family state={state} onLoad={onLoad} exportBackup={exportBackup} userId={user.id} revisionSession={revisionSession} cloudManaged={cloudManaged} /></> : <>
       <p>Kirjautumiseen siirtyminen sulkee nykyisen näkymän ja tyhjentää sen muistissa olevat tiedot.</p>
       <button onClick={exportBackup}>Vie JSON-varmuuskopio</button>{' '}
       <GoogleButton disabled={pending || !providers?.google} onClick={() => void signIn('google', hasChanges)} />{' '}

@@ -1,13 +1,27 @@
 # Tietosuoja
 
-> Kehitysversiossa Asetusten käyttäjätilinäkymä tarkistaa Supabasesta kirjautumispalveluiden tilan. Kirjautumisen käyttö välittää tietoja Supabaselle ja valitulle kirjautumispalvelulle; perhetilin ensimmäinen versio on kehitteillä ja käyttäjä voi erikseen tallentaa siihen taloustiedot. Tiedot lähetetään Supabaseen, ja kaikki perheen jäsenet voivat nähdä ja muokata niitä. Automaattista synkronointia ei ole. OAuth-istunnon tiedot voivat tallentua selaimeen. Talousdataa ei lähetetä näissä kirjautumispyynnöissä.
+## Kirjautumaton käyttö
 
-> **Kehitysversion muutos:** Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa. Vie tiedot ennen poistumista. Aiempi selaintallennus säilyy ja on vietävissä asetuksista. Alla olevat offline- ja pysyvää localStorage-tallennusta koskevat kuvaukset ovat aiemman version dokumentaatiota. Supabase-kirjautumisen selainpuoli on kehitteillä, mutta kirjautumispalveluiden asetukset, perhetilin ensimmäinen versio on kehitteillä ja käyttäjä voi erikseen tallentaa siihen taloustiedot. Tiedot lähetetään Supabaseen, ja kaikki perheen jäsenet voivat nähdä ja muokata niitä. Automaattista synkronointia ei ole.
+Kirjautumatta sovellus pitää taloustiedot vain avoimen välilehden muistissa. Tietoja ei tallenneta automaattisesti selaimen pysyvään tallennustilaan eikä pilveen. Sivun päivitys, sulkeminen tai istunnon katkeaminen hävittää muistissa olevan talouden. JSON-varmuuskopion ja CSV-tiedostot voi ladata itse laitteelle. Aiemman sovellusversion selaintallennus voidaan viedä asetuksista; sitä ei tuoda automaattisesti.
 
-Sovellus ei pyydä nimeä, sähköpostia, henkilötunnusta, pankkitunnuksia tai tiliä. `index.html` lähettää käyttäjän erikseen käynnistämän laskuanalyysin tekstin valitulle palvelulle: OpenRouterille tai käyttäjän Cloudflare Workerille. Valitun palvelun pyyntö sisältää käyttäjän antaman API-avaimen Bearer-otsakkeessa. Muutoin sovellus ei tee automaattisia API-pyyntöjä. Valittu palvelu voi välittää tekstin edelleen mallipalvelulle. Palveluntarjoajien säilytys- ja koulutusehdot on tarkistettava ennen käyttöä. Avainta ja laskutekstiä ei tallenneta sovelluksen talousdataan. Ei analytiikkaa, telemetryä, mainoksia, automaattisia päivityksiä, markkinadataa tai pankkiyhteyksiä.
+## Kirjautuminen ja perhetili
 
-Data käsitellään selaimen muistissa ja tallennetaan localStorageen. JSON ja CSV luetaan Browser File API:lla paikallisesti. Vienti luo paikallisen Blob-latauksen. Jos käyttäjä itse tallentaa varmuuskopion pilveen synkronoituun kansioon, pilvisynkronointi on käyttöjärjestelmän tai muun ohjelman toimintaa, ei tämän sovelluksen.
+Google- tai Apple-kirjautuminen välittää kirjautumispyynnön Supabaselle ja valitulle kirjautumispalvelulle. Supabase Auth käsittelee tilin tunnisteet ja palveluntarjoajalta saadut tiedot, kuten sähköpostiosoitteen silloin kun palvelu sen antaa. Kirjautumisistunto tallentuu selaimeen, jotta kirjautuminen säilyy sivun päivityksen yli.
 
-Sovellus ei salaa tallennusta tai varmuuskopioita. Summien piilotus on esitystilan suoja, ei salaus. Muokkauslomakkeet näyttävät muokattavat arvot. Suojaa laite, selainprofiili ja varmuuskopiot.
+Kirjautuminen ei itsessään siirrä taloustietoja. Käyttäjä lataa tai tallentaa perheen talouden erikseen ja vahvistaa toiminnon sovelluksessa. Tallennettu talous sijaitsee Supabasen tietokannassa EU Central -alueella. Perheen jokainen jäsen voi nähdä ja muokata yhteistä taloutta. Perhetili ei ole päästä päähän salattu; palveluntarjoajan tietokanta- ja palvelinkerros voi käsitellä tietoja selväkielisinä. Perheen ja käyttäjätilin poistaminen on lisätty sovellukseen lähdekoodissa; ominaisuus tulee käyttöön vasta, kun uusi tietokantamigraatio ja Edge Function on otettu käyttöön.
 
-Poista kaikki tietoni poistaa sovelluksen oman localStorage-avaimen ja tarkistaa poiston. Se ei poista ladattuja JSON/CSV-tiedostoja, selaimen lataushistoriaa tai käyttöjärjestelmän varmuuskopioita. Esimerkkitalouden poistaminen poistaa koko kyseisen talouden, myös siihen tehdyt muutokset; ei vain alkuperäisiä fiktiivisiä rivejä.
+Kutsukoodin haltija saa perheen jäsenyyden ja pääsyn sen kaikkiin tietoihin. Jäsenen myöhempi poistaminen ei poista hänen aiemmin lataamiaan kopioita.
+
+## PDF-tiedostot ja tekoäly
+
+PDF luetaan selaimessa. Itse PDF-tiedostoa ei lähetetä laskuanalyysiin. Laskun tekstiä ei lähetetä automaattisesti; lähetys käynnistyy erillisestä painikkeesta. Halutessaan käyttäjä voi avata poimitun tekstin esikatselun ennen lähetystä. Cloudflare Worker välittää pyynnön OpenRouterin `openrouter/free`-reitittimelle. Lähetetyssä tekstissä voi olla tunnisteita, yhteystietoja tai maksutietoja; esikatselun voi avata ennen päätöstä lähettää aineisto.
+
+Kuittien tavallinen AI-kategorisointi lähettää tuotenimiä ja kategoriavaihtoehtoja. Jos paikallinen kuittiparseri ei tunnista tekstiä, varareitti voi lähettää rajatun kuittitekstin; yleisiä maksu- ja asiakasnumerorivejä suodatetaan, mutta täydellistä anonymisointia ei voida taata. Tarkista näkyvä kuittiesikatselu ennen AI-toimintoa. Palveluntarjoajien saatavuus, reititys, säilytyskäytännöt ja käsittelyehdot voivat muuttua.
+
+API-avain pyydetään erikseen ja säilytetään vain välilehden istunnossa. PDF-tekstiä, API-avaimia tai AI-vastauksia ei lisätä sovelluksen talousdataan tai JSON-varmuuskopioon.
+
+## Vienti, istunto ja poistaminen
+
+JSON-varmuuskopio sisältää koko talouden. CSV on rajattu rivitietojen vienti eikä täydellinen varmuuskopio. Vientitiedostoja ei salata sovelluksessa; niiden suojaaminen ja poistaminen on käyttäjän vastuulla.
+
+Uloskirjautuminen poistaa nykyisen selaimen kirjautumisistunnon, mutta ei poista pilveen tallennettua perheen taloutta. Perheen ylläpitäjä voi poistaa perheen, jolloin sen pilvitalous, kutsut ja jäsenyydet poistuvat tietokannasta. Käyttäjätilin poistossa viimeisen jäsenen perhe poistetaan; jos ylläpitäjä jättää muita jäseniä, ylläpitäjyys siirtyy pisimpään perheessä olleelle jäsenelle. Aiemmin ladattuja varmuuskopioita ei voida poistaa jäsenten laitteilta. Supabasen teknisten varmuuskopioiden ja lokien säilytysaikoja hallinnoi palveluntarjoaja, joten sovellus ei voi luvata niiden välitöntä poistumista. Poistotoiminnot ovat käytettävissä, kun backend-migraatio ja Edge Function on julkaistu.

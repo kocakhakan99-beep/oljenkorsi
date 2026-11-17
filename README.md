@@ -1,27 +1,24 @@
 # Taloussuunnittelu 0.1.0
 
-> **Kehitysversion muutos:** Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa. Vie tiedot ennen poistumista. Aiempi selaintallennus säilyy ja on vietävissä asetuksista. Alla olevat offline- ja pysyvää localStorage-tallennusta koskevat kuvaukset ovat aiemman version dokumentaatiota. Supabase-kirjautumisen ja perhetilin ensimmäinen versio on kehitteillä. Talous tallennetaan ja ladataan perhetilillä toistaiseksi käyttäjän toiminnolla; automaattista synkronointia ei ole. Google on otettu käyttöön, Apple-asetukset ja oikeilla käyttäjillä tehtävät päästä päähän -testit ovat kesken.
+> **Käyttö:** julkaistu selainversio toimii HTTPS-osoitteessa. Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa; vie JSON-varmuuskopio tai CSV ennen poistumista. Google-kirjautuminen on Supabasessa käytössä, Apple ei ole vielä aktiivinen. Perheen talous tallentuu pilveen vain käyttäjän erillisellä tallennusvalinnalla; automaattista synkronointia ei ole.
 
 Ajantasainen selkokielinen kokonaiskuva: [checklist ja dokumentaatio aiheittain](CHECKLIST.md).
 
-Ilmainen, yksityinen henkilökohtaisen talouden paikallinen suunnittelusovellus. Tarkoitus on auttaa käyttäjää hyötymään omasta taloudestaan, ei myydä hänen tietojaan.
+Henkilökohtaisen talouden selainpohjainen suunnittelusovellus. Kirjautuminen on valinnainen; perhetili tallentaa yhteisen talouden Supabaseen. Katso [tietosuoja](PRIVACY.md) ja [tietoturva](SECURITY.md).
 
 ## Valinnainen AI-laskuanalyysi
 
-Tavallisessa `index.html`-sovelluksessa avaa **Menot → Lisää lasku** tai budjetin vastaava pikatoiminto. Valitse tekstimuotoinen PDF. Sen teksti lähetetään analyysiin, kun avain on käytössä. Lisää Workerin avain kortin avainpainikkeesta. Sovellus lähettää tekstin aina Cloudflare Workerin kautta OpenRouterin ilmaismallireitittimelle (`openrouter/free`); palvelua tai mallia ei tarvitse valita. OpenRouter-avain jää Workerille. Saatavuus, kiintiöt ja tietojenkäsittelyehdot voivat vaihdella. Tarkista AI:n ehdotus ennen menon tallentamista. Avain lisätään skannerikortin oikean yläkulman avainpainikkeesta kerran välilehden istunnossa. Samaa Worker-avainta käytetään kuitti- ja laskuanalyysissä; Suoraa OpenRouter-yhteyttä ei käytetä. Avainta voi vaihtaa tai sen voi poistaa painikkeesta. Avain säilytetään sessionStorage-tallennuksessa ja muistissa, ei localStoragessa tai talousvarmuuskopioissa. Se säilyy sivun päivityksessä ja poistuu välilehden sulkeutuessa. Avain ja laskuteksti eivät tallennu talousdataan.
+Avaa **Menot → Lisää lasku**, valitse tekstimuotoinen PDF ja lisää tarvittaessa avain kortin avainpainikkeesta. Laskun teksti luetaan selaimessa. Se ei lähde AI-palveluun automaattisesti: tarkista halutessasi avattava tekstiesikatselu ja paina **Lähetä teksti AI-analyysiin**, jos haluat jatkaa. Lähetetty teksti kulkee Cloudflare Workerin kautta OpenRouterin `openrouter/free`-reitittimelle. Avain säilyy vain välilehden istunnossa, ei talousdatassa tai varmuuskopioissa. Tarkista ehdotus ennen menon tallentamista.
 
-Kuitti ja lasku avautuvat omiin ikkunoihinsa, ja keskeneräiset luonnokset säilyvät ikkunan sulkemisen yli. Muut ominaisuudet toimivat edelleen ilman verkkoyhteyttä; kuittien ja laskujen AI-analyysi tarvitsee verkkoyhteyden. Kuvapohjaiset PDF:t tarvitsevat OCR:n, jota ei vielä ole. Jos analyysi epäonnistuu, tarkista sovelluksen virheilmoitus, Worker-avain, ilmaismallien kiintiö ja Privacy-asetukset sekä Workerin CORS-asetukset. Workerin HTTP 401 voi tarkoittaa joko virheellistä `APP_API_KEY`-avainta tai palvelinpuolen OpenRouter-avainta, koska Worker välittää OpenRouterin virheet sellaisinaan. Selain lähettää ennen varsinaista pyyntöä avaimettoman OPTIONS-esitarkistuksen: Workerin on vastattava siihen ennen API-avaimen tarkistusta ja palautettava CORS-otsakkeet myös varsinaisten pyyntöjen onnistumis- ja virhevastauksissa. `index-online.html` säilyy yhteensopivuuskopiona, mutta sen erillinen avaaminen ei ole tarpeen. `file://`-käytössä eri HTML-tiedostojen selaintallennus voi olla erillinen; käytä aiempaa tiedostoa tai siirrä tiedot JSON-varmuuskopiolla.
+Kuitti- ja laskuluonnokset pysyvät selaimen muistissa ikkunan sulkemisen yli. Kirjautumiseen, perheen tietojen lataamiseen ja AI-analyysiin tarvitaan verkkoyhteys. Kuvapohjaisten PDF:ien OCR ei ole käytössä. Analyysivirheessä tarkista virheilmoitus, Worker-avain ja palvelun tila. Laskuanalyysiä voi yrittää uudelleen samalla aineistolla.
 
-## Käyttö ilman asennusta
+## Käyttö selaimessa
 
-1. Tallenna projektin juuren valmis `index.html` pysyvään paikkaan, esimerkiksi työpöydälle. Tiedoston voi nimetä uudelleen haluamakseen.
-2. Avaa se kaksoisklikkaamalla selaimessa. Osoite on `file://`.
-3. Kirjaudu Googlella, jatka vieraana, kokeile fiktiivistä esimerkkitaloutta tai palauta JSON.
-4. Vie varmuuskopio tärkeiden muutosten jälkeen ja ennen tiedoston siirtämistä.
+Avaa julkaistu HTTPS-sovellus. Voit jatkaa kirjautumatta tai kirjautua Googlella; Apple-kirjautuminen aktivoidaan erikseen. Vierastilan tiedot ovat vain välilehden muistissa. Lataa JSON-varmuuskopio tai CSV ennen sivun päivittämistä tai sulkemista.
 
-Neljä kompassiesimerkkiä voi ladata käyttöönotossa, kompassissa tai Asetuksista. Valitun talouden lataaminen korvaa nykyisen talouden vahvistuksen jälkeen; vie JSON-varmuuskopio ensin, jos haluat palauttaa omat tietosi. Esimerkeissä on kahden aikuisen palkat, lapsilisä, vuosien 2024–2026 kaikki 36 kuukautta vaihtelevine tuloineen, menoineen ja budjetteineen sekä omaisuutta, linkitettyjä velkoja, sijoituksia, tavoitteita ja tallennettuja skenaarioita. Ne ovat fiktiivisiä käyttöliittymän testidatoja, eivät ennusteita.
+Perhetilin tiedot ladataan ja tallennetaan erillisillä sovelluksen valinnoilla. Kutsukoodilla liittyvä jäsen saa pääsyn yhteiseen perhetalouteen. CSV ei sisällä koko tietomallia; käytä JSON-vientiä täydelliseen siirtoon.
 
-Loppukäyttäjä ei tarvitse Node.js:ää, Pythonia, palvelinta, tiliä tai internetiä. Älä käytä sähköpostin tai pilvitallennuksen HTML-esikatselua; lataa tiedosto ensin paikalliseksi. Älä käytä yksityistä selausta, jos odotat datan säilyvän.
+Neljä kompassiesimerkkiä voi ladata kompassissa tai asetuksissa. Esimerkit ovat fiktiivisiä käyttöliittymän testidatoja, eivät ennusteita. Vanhan version selaintallennuksen voi viedä asetusten lisätyökaluista; sitä ei tuoda automaattisesti.
 
 ## Toteutettu
 
@@ -75,19 +72,19 @@ npm test
 npm run build
 ```
 
-Build suorittaa Viten ja `standalone.mjs`:n. Viten kehitysmalli on `src/index.html`. Valmis, itsenäinen sovellus kirjoitetaan projektin juuren `index.html`-tiedostoon. Väliaikainen `dist/` poistetaan koosteen lopuksi. Vite dev ei ole loppukäyttäjän käyttötapa. Asenna lukitulla riippuvuuspuulla komennolla `npm ci`.
+Build suorittaa Viten ja `publish-static.mjs`:n. Viten kehitysmalli on `src/index.html`; julkaisu kirjoittaa projektin juureen `index.html`-tiedoston ja versioidut, koodijaetut tiedostot `assets/`-hakemistoon. `index-online.html` on sama sivu vanhan osoitteen yhteensopivuutta varten. Kehityspalvelin ei ole loppukäyttäjän käyttötapa. Asenna lukitulla riippuvuuspuulla komennolla `npm ci`.
 
 E2E: asenna kehityskoneelle Python Playwright ja sen Chromium. Aja `python e2e.py`. Vaihtoehtoinen selainpolku annetaan `TALOUS_BROWSER`-ympäristömuuttujalla. Testit käyttävät erillistä tilapäistä selainprofiilia, eivät henkilökohtaista profiilia. Python ei ole sovelluksen ajonaikainen riippuvuus.
 
 ## Tallennus ja varmuuskopio
 
-Selaimen localStorage toimii testatussa Chrome for Testing -ympäristössä file://-osoitteella. Tätä ei luvata kaikille selaimille. Tallennus tarkistetaan kirjoituksen jälkeen. Tallennusvirheessä sovellus pitää datan muistissa ja varoittaa viemään varmuuskopion. Älä sulje välilehteä ennen vientiä. Samanaikaista muokkausta useassa välilehdessä ei tueta; ristiriitainen kirjoitus estetään parhaalla mahdollisella tarkistuksella, ei atomisella lukituksella.
+Kirjautumattoman käyttäjän talous säilyy vain avoimen välilehden muistissa. Vie JSON ennen sulkemista tai päivittämistä; CSV ei ole täydellinen varmuuskopio. Supabase säilyttää kirjautumisistunnon selaimessa, mutta talousdataa ei tallenneta siellä automaattisesti. Vanhan version selaintallennus on erikseen vietävissä asetuksista.
 
 JSON on koko talouden siirrettävä kopio. CSV on tietuelistojen siirtomuoto, ei koko sovelluksen varmuuskopio. JSON ja selaindata ovat salaamattomia.
 
 ## Selainyhteensopivuus ja testit
 
-Testattu: Google Chrome for Testing 149.0.7827.55, Linux, headless, Playwrightin offline-tila, file://, pysyvä profiili. Selainprosessi suljettiin ja käynnistettiin uudelleen; data säilyi. Edge, Firefox ja Windows-työpöydän kaksoisklikkaus eivät ole testattuja. Koneen fyysistä verkkoliitäntää ei katkaistu.
+Aiemmat selaintestit koskivat vanhaa paikallista versiota eivätkä varmista Supabase-kirjautumista tai perhetiliä. Tämän verkkoversion kirjautuminen ja perhetilin oikeudet varmennetaan erillisillä käyttäjätileillä ennen kuin niiden päästä päähän -testit merkitään valmiiksi.
 
 Testien valinta muutoksen mukaan on kuvattu tiedostossa [CONTRIBUTING.md](CONTRIBUTING.md). Aiemmat testiajot löytyvät tiedostosta `TESTING.md` ja niiden lokit hakemistosta `qa/`.
 
@@ -97,7 +94,7 @@ Testien valinta muutoksen mukaan on kuvattu tiedostossa [CONTRIBUTING.md](CONTRI
 
 ## Tietosuoja ja turvallisuus
 
-Sovellus sallii OpenRouter-yhteyden vain käyttäjän käynnistämään laskuanalyysiin. Muut ominaisuudet toimivat ilman verkkoyhteyttä. Tietojen suojaus ei kata haittaohjelmia, laajennuksia tai laitteen muita käyttäjiä. Katso `PRIVACY.md` ja `SECURITY.md`.
+Sovellus pyytää verkkoyhteyttä Supabase-kirjautumiseen, perhetilin toimintoihin ja käyttäjän itse käynnistämään AI-analyysiin. Katso [tietosuoja](PRIVACY.md) ja [tietoturva](SECURITY.md).
 
 ## Rajaus
 
@@ -119,7 +116,7 @@ Asetusten demopainike avaa yhteisen valintaikkunan. Tallennuksen lisätyökalut 
 
 Velkalistassa korolle ja kuukausierälle on omat sarakkeet. Omaisuuslinkin kuvakkeet avaavat linkitetyn omaisuuden katselun. Tavoitelomake laskee kuukausisäästön tavoitesummasta ja tavoitepäivästä; kuukausisäästön muuttaminen puolestaan laskee samassa ajassa saavutettavan tavoitesumman. Nykyinen säästö huomioidaan. Laskenta olettaa kuukausierät kuukauden päästä alkaen ilman tuottoa eikä luo rahansiirtoja.
 
-Velan katselukortissa voi avata valitun päivän saldoarvion ja kuluja huomioivan vuosikorkolaskelman. Arvio olettaa erät maksetuiksi eikä muuta kirjattua velkaa; opintolainan pääomitus tarkistetaan pankista. Skenaarioiden alussa valitaan kysymykseen sopiva laskuri. Sijoitusten 20 kohteella on nyt päivätty offline-historia 2024–2026. Ajonaikaista kurssiyhteyttä ei ole vielä otettu käyttöön: [kurssidatan jatkosuunnitelma](INVESTMENT_MARKET_DATA_PLAN.md).
+Velan katselukortissa voi avata valitun päivän saldoarvion ja kuluja huomioivan vuosikorkolaskelman. Arvio olettaa erät maksetuiksi eikä muuta kirjattua velkaa; opintolainan pääomitus tarkistetaan pankista. Skenaarioiden alussa valitaan kysymykseen sopiva laskuri. Sijoitusten 20 kohteella on päivätty historia vuosilta 2024–2026. Ajonaikaista kurssiyhteyttä ei ole vielä otettu käyttöön: [kurssidatan jatkosuunnitelma](INVESTMENT_MARKET_DATA_PLAN.md).
 
 Omaisuuden muokkausikkunan **Arvonmuutos**-välilehti tarjoaa asunto-, ajoneuvo-, laite-, maa- ja muun omaisuuden mallit. Rakennusvuosi/vuosimalli sekä käyttäjän markkina- ja kulumisoletukset tuottavat erillisen arvion valitulle päivälle. Oletukset voi tallentaa JSON-varmuuskopioon ilman kirjatun lähtöarvon muuttamista. Tallennetun mallin arvio näkyy valitun ajankohdan rivillä ja yhteenvedoissa. [Kaavat ja rajaukset](ASSET_VALUATION_PLAN.md).
 
@@ -129,9 +126,9 @@ Ylävalikon kuukausi rajaa tulo-/menolistojen tapahtumat ja omaisuus-/velkalisto
 
 Uutta: arvonmuutoslomake näkyy muokkausvälilehdellä myös silloin, kun mallia ei ole otettu käyttöön. Välilehtivalitsin on selvästi erottuva palkki. Auton porrastettu v2-malli alentaa uuden auton arvoa alkuvaiheessa nopeammin ja huomioi 20 merkin arvio-oletukset. Neljä demotaloutta sisältävät yhteensä 4 480 tulo-/menokirjausta vuosille 2024–2026, tallennetut arvomallit, opintolainat, tavoitteet ja lähdehintoihin kytketyt salkut. [Kurssien lähteet](MARKET_DATA_SOURCES.md) · [Maksuttomien API:en suunnitelma](FREE_API_INTEGRATION_PLAN.md).
 
-PDF-erätuonti: pudota missä tahansa näkymässä 1–50 PDF-tiedostoa (yhteensä enintään 100 Mt, tiedosto enintään 20 Mt). Valitse **Kuitti** tai **Lasku**; erityyppiset tiedostot tuodaan eri erissä. Molempien kotinäkymä on Menot. Avoin lomake suljetaan ennen pudottamista. Kuittien paikallinen parseri toimii ilman verkkoa: kaikki kuitit luetaan samaan tarkistusnäkymään, ja hyväksytyn erän voi kirjata yhdellä kertaa. Epäonnistuneen kuitin voi ohittaa; tuonti ei ohita summien täsmäytystä eikä duplikaattitarkistuksia.
+PDF-erätuonti: pudota missä tahansa näkymässä 1–50 PDF-tiedostoa (yhteensä enintään 100 Mt, tiedosto enintään 20 Mt). Valitse **Kuitti** tai **Lasku**; erityyppiset tiedostot tuodaan eri erissä. Molempien kotinäkymä on Menot. Avoin lomake suljetaan ennen pudottamista. Kuittien parseri lukee tiedostot selaimessa: kaikki kuitit luetaan samaan tarkistusnäkymään, ja hyväksytyn erän voi kirjata yhdellä kertaa. Epäonnistuneen kuitin voi ohittaa; tuonti ei ohita summien täsmäytystä eikä duplikaattitarkistuksia.
 
-Laskut ja kuitit ovat AI-avusteisia. Kun avain on käytössä, analyysi käynnistyy PDF:n lukemisen jälkeen automaattisesti. Jos avain puuttuu, sen lisääminen käynnistää analyysin. Virhetilanteessa voi yrittää uudelleen. Laskuista lähetetään luettu teksti, kuiteista yleensä yksilölliset tuotenimet ja sallitut kategoriat. Jos kuitin rakennetta ei tunnisteta, myös kuittiteksti voidaan lähettää rakenteen jäsentämistä varten; yleisimpiä maksu- ja asiakasrivitietoja rajataan pois, mutta täydellistä anonymisointia ei voida taata. PDF:ää ei lähetetä. Enintään viisi laskua käsitellään yhdessä pyynnössä, kuiteilla 100 yksilöllistä tuotetta / 24 000 merkkiä. Tarkista laskujen ja kuittien yhteenveto: nimeä, summaa, eräpäivää, kategoriaa ja laskun toistuvuutta voi muuttaa. Kuittien summat tarkistetaan paikallisesti, pantti kuuluu automaattisesti Päivittäistavaraan, ja epäselvät tuotteet luokitellaan yksitellen ennen piirakkayhteenvetoa. Epäselvät kentät, samat kuitit ja mahdolliset päällekkäiset maksut vaativat tarkistuksen ennen tallentamista. Kumpikin erä kirjataan yhdellä painikkeella ja voidaan kumota kokonaisuutena. Alkuperäisiä tiedostoja, tekstejä tai avaimia ei tallenneta talousdataan. Yhteinen pyyntö vähentää pyyntöjen lukumäärää muttei takaa pienempää token-hintaa.
+Laskun AI-analyysi käynnistyy vasta erillisestä lähetyspainikkeesta; avaimen tallennus tai PDF:n valinta ei lähetä laskutekstiä. Poimittu teksti on haluttaessa avattavassa esikatselussa. Kuittien AI-kategorisointi lähettää tuotenimiä ja kategoriavaihtoehtoja; parserin varareitti voi lähettää rajattua kuittitekstiä, josta tavallisia maksu- ja asiakasnumerorivejä suodatetaan. PDF-tiedostoa ei lähetetä AI-palveluun. Enintään viisi laskua käsitellään samassa pyynnössä. Tarkista ehdotetut nimet, summat, eräpäivät ja kategoriat ennen kirjausta. AI:n ehdotukset eivät aina ole täydellisiä. Alkuperäisiä tiedostoja, tekstejä tai avaimia ei tallenneta talousdataan.
 
 AI:n seuraavat hyödylliset käyttökohteet ja laskujen lisätiedot: [priorisoitu jatkosuunnitelma](PDF_IMPORT_PLAN.md#ajantasainen-ai-jatkosuunnitelma-11112026). Suunnitelma erottaa toteutetut ominaisuudet tulevista ehdotuksista.
 

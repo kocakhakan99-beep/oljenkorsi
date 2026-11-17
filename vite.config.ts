@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig(({ command }) => ({
   root: 'src',
   base: './',
-  // Standalone output runs as a classic inline script; PDF.js must not retain import.meta.
+  // Avoid PDF.js runtime import.meta while keeping the app's PDF parser in a lazy chunk.
   define: command === 'build' ? { 'import.meta.url': 'globalThis.location.href' } : {},
   plugins: [tailwindcss()],
   build: {
@@ -12,6 +12,5 @@ export default defineConfig(({ command }) => ({
     modulePreload: false,
     cssCodeSplit: false,
     assetsInlineLimit: 10000000,
-    rollupOptions: { output: { codeSplitting: false } },
   },
 }));

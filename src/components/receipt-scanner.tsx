@@ -11,7 +11,6 @@ import { receiptSourceLines, verifyAIReceipt } from "../domain/receipts/ai-fallb
 import type { ReceiptDraft } from "../domain/receipts/schema";
 import { prepareReceiptImport, receiptCategoryTotals, receiptMatches, receiptCategoryOptions } from "../domain/receipts/import";
 import { receiptFileError, importBatchError } from "../domain/receipts/files";
-import { receiptPDF } from "../services/receipt-pdf";
 
 const euro = (n: number) => new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR" }).format(n / 100);
 export interface ReceiptScannerHandle { scanFile: (file: File) => boolean; scanFiles: (files: File[]) => void; focusPanel: () => void }
@@ -77,6 +76,7 @@ export const ReceiptScanner = forwardRef<ReceiptScannerHandle, ScannerProps>(fun
         if (current.signal.aborted) return;
         setProgress(`Luetaan kuittia ${index + 1}/${files.length}: ${file.name}`);
         try {
+          const { receiptPDF } = await import("../services/receipt-pdf");
           const result = await receiptPDF(file, current.signal, () => {});
           const draft = parseReceipt(result.pages);
           next.push({ id: String(index), name: file.name, draft, ...(mayTryFallback(draft) ? { pages: result.pages } : {}) });

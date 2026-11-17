@@ -1,6 +1,6 @@
-# Offline-arkkitehtuuri
+# Historiallinen dokumentti: offline-arkkitehtuuri
 
-> **Kehitysversion muutos:** Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa. Vie tiedot ennen poistumista. Aiempi selaintallennus säilyy ja on vietävissä asetuksista. Alla olevat offline- ja pysyvää localStorage-tallennusta koskevat kuvaukset ovat aiemman version dokumentaatiota. Supabase-kirjautumisen ja perhetilin ensimmäinen versio on kehitteillä. Talous tallennetaan ja ladataan perhetilillä toistaiseksi käyttäjän toiminnolla; automaattista synkronointia ei ole. Google on otettu käyttöön, Apple-asetukset ja oikeilla käyttäjillä tehtävät päästä päähän -testit ovat kesken.
+Tämä tiedosto kuvaa aiempaa paikallista versiota. Se ei ole nykyisen verkkosovelluksen kuvaus tai kehitystavoite. Vierastilan tiedot ovat vain välilehden muistissa; julkaisu ja Supabase-toiminnot vaativat HTTPS-yhteyden.
 
 V1:n virallinen jakelutavoite on yksi itsenäinen HTML, jonka käyttäjä avaa paikallisesti file://-protokollalla. Tässä toimituksessa se on toteutettu. Kehityspalvelin ei ole loppukäyttäjän vaatimus.
 

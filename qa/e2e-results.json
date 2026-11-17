@@ -4,7 +4,7 @@
   "protocol": "localhost HTTP",
   "passed": [
     "Onboarding näyttää samat neljä demoreittiä kuin kompassi",
-    "Onboarding tyhjästä paikallisessa yhden tiedoston sovelluksessa localhost-testipalvelimella",
+    "Onboarding ja vierastila toimivat paikallisessa verkkosovelluksessa",
     "Rajattu aloituskategorioiden joukko, valinnaiset kategoriat ja kuvan esikatselu uuden kategorian ikonille",
     "Ohje avautuu kulmakuvakkeesta ponnahdusikkunaan ja voidaan piilottaa/palauttaa; Enter ja Escape toimivat",
     "Nopea tulokirjaus tallentaa sekä tyhjentää lomakkeen usean kirjauksen sarjassa",
@@ -61,8 +61,9 @@
     "Kompassin ehdotus voidaan kuitata, siirtää myöhemmäksi ja arvioida käsin uudelleen",
     "Tummassa teemassa raporttikortit käyttävät tummaa pintaa ja valkoista tekstiä",
     "Mobiilileveydet 320–768 px: sivu ja taulukkosäiliöt eivät ylitä näkymää",
-    "Selainprosessi suljettu ja uudelleenavattu: data säilyi",
-    "Tallennuksen lisätyökalu säilyy avattavana ja alkuperäisen datan vienti ei muuta taloutta",
+    "Vierastalous katoaa selainprosessin sulkeutuessa ja avautuu uudelleen vain tuodusta varmuuskopiosta",
+    "Muistissa ollut talous palautuu ladatusta JSON-varmuuskopiosta",
+    "Tallennuksen lisätyökalu vie vanhan selaintallennuksen ilman että vierastalous muuttuu",
     "JSON backup ladattu ja sisältö tarkistettu",
     "CSV vienti",
     "CSV-tuonti estää päivämäärättömän tapahtuman hiljaisen sijoittamisen tälle päivälle",
@@ -70,7 +71,7 @@
     "CSV:n suomalaiset otsikot ja pankin summien etumerkit käsitellään turvallisesti; perustiedot näkyvät ja lisäkentät pysyvät suljettuina",
     "CSV tuonnin kumoaminen",
     "Tietueen poisto ja kumoaminen",
-    "Kaiken datan poisto ja tarkistus",
+    "Kaiken muistissa olevan talousdatan poisto ja tarkistus",
     "JSON restore onboardingista: kaikki tiedot palautettu",
     "Väärä varmuuskopio hylätty ilman datan muutosta",
     "Kompassin demotalous ladattavissa koko sovellukseen: Haastava",
@@ -89,5 +90,5 @@
   "pageErrors": [],
   "consoleErrors": [],
   "networkRequests": [],
-  "notes": "Linux headless persistent profile; localhost-ajossa sama valmis yhden HTML-tiedoston sovellus ilman ulkoisia pyyntöjä."
+  "notes": "Linux headless persistent profile; vierastalous säilyy vain istunnon muistissa. Supabasen julkisen kirjautumisasetuksen vastaus on stubattu."
 }

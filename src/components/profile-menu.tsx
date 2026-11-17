@@ -3,7 +3,7 @@ import { UserRound } from 'lucide-react';
 import type { AuthState } from '../services/use-auth';
 import { GoogleButton } from './account';
 
-export function ProfileMenu({ auth, onAccount, hasChanges }: { auth: AuthState; onAccount: () => void; hasChanges: boolean }) {
+export function ProfileMenu({ auth, onAccount, hasChanges, cloudManaged = false }: { auth: AuthState; onAccount: () => void; hasChanges: boolean; cloudManaged?: boolean }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const provider = auth.user?.app_metadata?.provider;
   const method = provider === 'google' ? 'Google' : provider === 'apple' ? 'Apple' : 'Muu kirjautuminen';
@@ -18,7 +18,7 @@ export function ProfileMenu({ auth, onAccount, hasChanges }: { auth: AuthState; 
       <p className="profile-kicker">{auth.user ? 'OMA PROFIILI' : 'VIERASTILA'}</p>
       <strong>{auth.user?.email || (auth.user ? 'Kirjautunut' : 'Käytät sovellusta vieraana')}</strong>
       <p>{auth.user ? `Kirjautumistapa: ${method}` : 'Tiedot ovat vain tämän välilehden muistissa.'}</p>
-      {auth.user && <p>Perhetilin tiedot ladataan ja tallennetaan erikseen.</p>}
+      {auth.user && <p>{cloudManaged ? 'Aktiivinen talous ja tallennustila näkyvät yläpalkissa.' : 'Perhetilin tiedot ladataan ja tallennetaan erikseen.'}</p>}
       {!auth.user && <GoogleButton disabled={auth.loading || auth.pending || !auth.providers?.google} onClick={() => void auth.signIn('google', hasChanges)} />}
       <button type="button" onClick={() => { if (ref.current) ref.current.open = false; onAccount(); }}>Tili ja perhetili</button>
       {auth.user && <button type="button" disabled={auth.pending} onClick={() => void auth.signOut()}>Kirjaudu ulos</button>}
