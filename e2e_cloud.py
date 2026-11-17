@@ -17,6 +17,8 @@ with sync_playwright() as p:
   if '/auth/v1/settings' in url:data={'external':{'google':True,'apple':False}}
   elif '/rpc/cloud_ensure_personal' in url:data=hid
   elif '/rpc/cloud_list_households' in url:data=[{'id':hid,'name':'Oma talous','kind':'personal','revision':stored['revision']}]
+  elif '/rpc/user_preferences_get' in url:data={'revision':0,'preferences':None}
+  elif '/rpc/family_get' in url:data=None
   elif '/rpc/cloud_get_household' in url:
    if stored['failLoad']:return route.fulfill(status=500,headers=headers,json={'message':'synthetic failure'})
    data={'id':hid,'name':'Oma talous','kind':'personal','revision':stored['revision'],'state':stored['state']}
@@ -37,6 +39,12 @@ with sync_playwright() as p:
  if os.environ.get('CLOUD_TEST_SNAPSHOT_PATH'):
   from pathlib import Path
   Path(os.environ['CLOUD_TEST_SNAPSHOT_PATH']).write_text(json.dumps(stored['state']))
+ page.get_by_role('navigation').get_by_role('button',name='Asetukset',exact=True).click();page.get_by_role('tab',name='Tiedot').click();page.get_by_role('button',name='Valitse demotalous').click()
+ warning=[]
+ def reject_demo(dialog):
+  warning.append(dialog.message);dialog.dismiss()
+ page.once('dialog',reject_demo);page.get_by_role('button',name='Lataa esimerkkitalous: Keskiverto').click();assert warning and 'Oma talous' in warning[0] and 'pilveen' in warning[0] and stored['requests']==1
+ page.locator('dialog[open]').get_by_role('button',name='Sulje',exact=True).click();page.get_by_role('navigation').get_by_role('button',name='Menot',exact=True).click();expect(page.get_by_text('Pilvitesti',exact=True).first).to_be_visible();print('PASS demo replacement is clearly confirmed',flush=True)
  stored['loseResponse']=True
  page.get_by_role('button',name='Lisää kertaluonteinen meno',exact=True).click();d=page.locator('dialog[open]');d.locator('[name=name]').fill('Kadonnut kuittaus');d.locator('[name=amount]').fill('1200');d.locator('[name=category]').select_option(label='Asuminen');d.get_by_role('button',name='Tallenna meno',exact=True).click()
  expect(page.get_by_text('Tallennettu',exact=True)).to_be_visible(timeout=20000);assert stored['requests']==3 and stored['revision']==2 and stored['bodies'][-1]==stored['bodies'][-2]
@@ -44,7 +52,12 @@ with sync_playwright() as p:
  stored['conflict']=True
  page.get_by_role('button',name='Lisää kertaluonteinen meno',exact=True).click();d=page.locator('dialog[open]');d.locator('[name=name]').fill('Vientitesti');d.locator('[name=amount]').fill('1100');d.locator('[name=category]').select_option(label='Asuminen');d.get_by_role('button',name='Tallenna meno',exact=True).click()
  expect(page.get_by_text('Versioristiriita',exact=True)).to_be_visible(timeout=20000);expect(page.get_by_text('Vientitesti',exact=True).first).to_be_visible();assert stored['requests']==4;print('PASS conflict preserves local changes',flush=True)
- page.evaluate("async()=>{const {supabase}=await import('/services/supabase.ts');await supabase.auth.signOut({scope:'local'})}")
+ for width in (320,390):
+  page.set_viewport_size({'width':width,'height':844});assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1')
+ expect(page.locator('.active-household')).to_have_text('Oma talous · oma')
+ page.get_by_role('button',name='Tarkastele pilviversiota',exact=True).click();preview=page.locator('dialog[open]');expect(preview.get_by_role('heading',name='Pilviversion yhteenveto')).to_be_visible();expect(preview).to_contain_text('tämän välilehden muutoksia ei ole korvattu');expect(preview).to_contain_text('Pilvitesti');expect(preview).not_to_contain_text('Vientitesti');preview.get_by_role('button',name='Takaisin',exact=True).click();expect(page.get_by_text('Vientitesti',exact=True).first).to_be_visible();assert stored['requests']==4;print('PASS cloud preview preserves local changes',flush=True)
+ page.set_viewport_size({'width':1280,'height':800})
+ page.get_by_label('Oma profiili',exact=True).click();page.get_by_role('button',name='Kirjaudu ulos',exact=True).click()
  expect(page.get_by_text('Muistissa on tallentamattomia tietoja ennen tilin vaihtoa.',exact=False)).to_be_visible(timeout=10000)
  with page.expect_download() as download:page.get_by_role('button',name='Vie varmuuskopio',exact=True).click()
  assert download.value.suggested_filename.endswith('.json')

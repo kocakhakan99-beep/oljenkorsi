@@ -5730,7 +5730,9 @@ button.primary,
 .profile-popover button { width: 100%; }
 .profile-household { display: grid; gap: 6px; font-size: 13px; font-weight: 650; }
 .profile-household select { width: 100%; min-width: 0; }
+.active-household { display: inline-block; max-width: 15rem; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
+  .metric-card > strong { font-size: clamp(15px, 4vw, 20px); overflow-wrap: anywhere; }
   .shell > aside > .brand { padding-right: 0; font-size: 16px; }
   .aside-top-actions { position: static; margin: 0; }
   .aside-top-actions .mobile-menu-toggle { flex: 1; width: auto; min-width: 0; }

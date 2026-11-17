@@ -1,5 +1,12 @@
 # Testausraportti 13.11.2026
 
+## Käytettävyyden jatkokehitys 17.11.2026
+
+- Tulevien menojen yksikkökoe tarkistaa toistuvan tapahtuman esiintymäkohtaisen päiväjärjestyksen, ohitukset, summapoikkeuksen ja yhteissumman.
+- Simuloidun palvelun selainkoe tarkistaa aktiivisen talouden, ristiriidan, pilviversion erillisen esikatselun sekä sen, ettei paikallinen muutos katoa tai aiheuta uutta kirjoitusta esikatselussa. Myös 390 pikselin näkymä ja valmiin tuotantobuildin sama polku tarkistettiin.
+- Synteettisen demotalouden 390 × 844 -kokeessa yhteenvedon korkeus oli 4 631 CSS-pikseliä; aiemmin samassa rajatussa kokeessa 5 348. Ero kuvaa kokeiltua näkymää, ei osoita käytettävyyden paranemista kaikille käyttäjille.
+- Tarkistukset: 219 yksikkötestiä, tyyppitarkistus ja lint läpäisivät. Laaja 83 kohdan Chromium-regressioajo läpäisi ennen ristiriitayhteenvedon viimeistä, erikseen testattua sisältölaajennusta. Valmiin buildin simuloitu kirjautuneen käyttäjän koe kattoi lisäksi demokorvauksen perumisen, katkenneen kuittauksen, ristiriidan, esikatselun, uloskirjautumisen ja epäonnistuneen latauksen.
+
 ## Laskurit ja henkilökohtaiset asetukset 17.11.2026
 
 - Profiilikortin sijoittelu tarkistettiin simuloidulla kirjautuneella käyttäjällä 390 ja 1280 pikselin näkymissä: talouden valinta näkyy kortissa, kortti mahtuu näyttöön, Escape sulkee sen ja muistivaroitus puuttuu kirjautuneelta. Sama koe läpäisi valmiilla buildilla.

@@ -3,6 +3,7 @@ import { empty, type State } from '../domain/model';
 import { supabase } from './supabase';
 import { CloudApi, type CloudHousehold } from './cloud-api';
 import { CloudSession, type CloudSessionStatus } from './cloud-session';
+import { withLocalDisplaySettings } from './cloud-state';
 
 type View = { owner: string | null; status: CloudSessionStatus | 'guest' | 'transition'; items: CloudHousehold[]; active: string | null };
 
@@ -20,11 +21,11 @@ export function useCloudIntegration(enabled: boolean, authLoading: boolean, user
   desired.current = userId;
   applyRef.current = apply;
 
-  function activate(target: string | null, clear: boolean) {
+  function activate(target: string | null, clear: boolean, preferredId?: string) {
     session.current?.dispose();
     session.current = null;
     transition.current = false;
-    if (clear) { const fresh = empty(); applyRef.current(fresh); latest.current = fresh; dirty.current = false; }
+    if (clear) { const fresh = target && target === owner.current ? withLocalDisplaySettings(empty(), latest.current) : empty(); applyRef.current(fresh); latest.current = fresh; dirty.current = false; }
     owner.current = target;
     if (!target) { setView({ owner: null, status: 'guest', items: [], active: null }); return; }
     setView({ owner: target, status: 'loading', items: [], active: null });
@@ -43,7 +44,7 @@ export function useCloudIntegration(enabled: boolean, authLoading: boolean, user
       },
       items => { if (session.current === controller && desired.current === target) setView(current => ({ ...current, items })); });
     session.current = controller;
-    void controller.start(latest.current);
+    void controller.start(latest.current, preferredId);
   }
 
   useEffect(() => {
@@ -95,7 +96,7 @@ export function useCloudIntegration(enabled: boolean, authLoading: boolean, user
   }
   async function select(id: string) {
     if (!session.current || !identityMatches) return;
-    if (dirty.current) throw new Error('Tallenna tai vie keskeneräiset muutokset ennen talouden vaihtoa.');
+    if (dirty.current) throw new Error('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.');
     await session.current.open(id, latest.current);
   }
   async function acceptLegacy() { await session.current?.acceptLegacy(latest.current); }
@@ -104,5 +105,13 @@ export function useCloudIntegration(enabled: boolean, authLoading: boolean, user
     activate(userId, false);
   }
   function discardAndContinue() { activate(desired.current, true); }
-  return { ...view, canEdit, identityMatches, hasUnsaved: dirty.current, update, select, acceptLegacy, retry, discardAndContinue, saveNow: () => session.current?.saveNow() };
+  function discardAndReloadActive() { if (identityMatches && userId && view.active) activate(userId, true, view.active); }
+  async function previewLatest() {
+    const current = session.current;
+    if (!current || !identityMatches || !userId) throw new Error('Taloutta ei voi tarkastella.');
+    const loaded = await current.previewLatest();
+    if (session.current !== current || desired.current !== userId) throw new Error('Käyttäjä tai talous vaihtui.');
+    return loaded;
+  }
+  return { ...view, canEdit, identityMatches, hasUnsaved: dirty.current, update, select, acceptLegacy, retry, discardAndContinue, discardAndReloadActive, previewLatest, saveNow: () => session.current?.saveNow() };
 }

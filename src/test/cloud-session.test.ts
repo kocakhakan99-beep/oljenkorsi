@@ -16,6 +16,43 @@ function mockApi() {
 afterEach(() => vi.useRealTimers());
 
 describe('cloud session', () => {
+  it('reloads the requested accessible household instead of the default shared one', async () => {
+    const api = mockApi();
+    const session = new CloudSession(api as unknown as CloudApi, vi.fn(), vi.fn(), vi.fn());
+    await session.start(empty(), personal.id);
+    expect(session.getActiveId()).toBe(personal.id);
+    expect(api.load).toHaveBeenCalledWith(personal.id);
+    session.dispose();
+  });
+
+  it('previews the cloud copy without applying it or discarding local work', async () => {
+    const api = mockApi();
+    const onLoad = vi.fn();
+    const session = new CloudSession(api as unknown as CloudApi, onLoad, vi.fn(), vi.fn());
+    await session.start(empty());
+    const local = structuredClone(onLoad.mock.calls[0][0]);
+    local.budgets['2026-11'] = { Ruoka: 10000 };
+    session.update(local);
+    const remote = { ...shared, revision: 4, state: empty(), integrity: 'verified' as const };
+    api.load.mockResolvedValueOnce(remote);
+    expect(await session.previewLatest()).toEqual(remote);
+    expect(onLoad).toHaveBeenCalledTimes(1);
+    expect(session.getStatus()).toBe('dirty');
+    await expect(session.open(personal.id, local)).rejects.toThrow(/keskeneräiset/);
+    session.dispose();
+  });
+
+  it('rejects a preview response after the session is disposed', async () => {
+    const api = mockApi();
+    const session = new CloudSession(api as unknown as CloudApi, vi.fn(), vi.fn(), vi.fn());
+    await session.start(empty());
+    let resolve!: (value: LoadedHousehold) => void;
+    api.load.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+    const pending = session.previewLatest();
+    session.dispose();
+    resolve({ ...shared, state: empty(), integrity: 'verified' });
+    await expect(pending).rejects.toThrow(/vaihtui/);
+  });
   it('loads the existing family first and saves only a genuine data change', async () => {
     vi.useFakeTimers();
     const api = mockApi();

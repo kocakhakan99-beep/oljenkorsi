@@ -31,7 +31,7 @@ export class CloudSession {
   getStatus(): CloudSessionStatus { return this.status; }
   getActiveId(): string | null { return this.activeId; }
 
-  async start(local: State): Promise<void> {
+  async start(local: State, preferredId?: string): Promise<void> {
     if (this.closed) return;
     if (this.queue) throw new Error('Sulje nykyinen tallennusistunto ennen uuden käynnistämistä.');
     const generation = ++this.generation;
@@ -41,8 +41,8 @@ export class CloudSession {
       if (!this.isCurrent(generation)) return;
       const items = await this.api.list();
       if (!this.isCurrent(generation)) return;
-      const selected = items.find(item => item.kind === 'shared') ?? items.find(item => item.id === personalId);
-      if (!selected) throw new Error('Omaa taloutta ei löytynyt.');
+      const selected = preferredId ? items.find(item => item.id === preferredId) : items.find(item => item.kind === 'shared') ?? items.find(item => item.id === personalId);
+      if (!selected) throw new Error('Valittua taloutta ei löytynyt tai siihen ei ole enää oikeutta.');
       this.onHouseholds(items);
       await this.open(selected.id, local);
     } catch {
@@ -117,6 +117,16 @@ export class CloudSession {
   }
 
   async saveNow(): Promise<void> { await this.scheduler?.flush(); }
+  /** Read a separate copy; never applies it or changes the active save queue. */
+  async previewLatest() {
+    const id = this.activeId;
+    const generation = this.generation;
+    if (!id || this.closed) throw new Error('Aktiivista taloutta ei ole.');
+    const loaded = await this.api.load(id);
+    if (!this.isCurrent(generation) || this.activeId !== id) throw new Error('Talouden tila vaihtui.');
+    if (loaded.integrity === 'unverified-legacy') throw new Error('Pilvitietojen eheyttä ei voitu varmistaa.');
+    return loaded;
+  }
   async refreshHouseholds(): Promise<void> {
     const generation = this.generation;
     const items = await this.api.list();

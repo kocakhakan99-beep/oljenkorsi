@@ -2,6 +2,7 @@ import { Account, GoogleButton } from "./components/account";
 import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
 import { useCloudIntegration } from "./services/use-cloud-integration";
+import { upcomingExpenses } from "./domain/upcoming";
 import { useUserPreferences } from "./services/use-user-preferences";
 import { preferencesFromState } from "./services/user-preferences";
 import { withLocalDisplaySettings } from "./services/cloud-state";
@@ -1913,6 +1914,7 @@ function App() {
     [sort, setSort] = useState("detail-desc"),
     [limit, setLimit] = useState(100),
     [pending, setPending] = useState<State | null>(null),
+    [cloudPreview, setCloudPreview] = useState<{ userId: string; householdId: string; revision: number; name: string; state: State | null } | null>(null),
     [deleteOpen, setDeleteOpen] = useState(false),
     [demoPickerOpen, setDemoPickerOpen] = useState(false),
     [deleteText, setDeleteText] = useState(""),
@@ -1920,6 +1922,7 @@ function App() {
     [undo, setUndo] = useState<State | null>(null),
     [correctOccurrences, setCorrectOccurrences] = useState(false),
     [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
+    [showAllConsumption, setShowAllConsumption] = useState(false),
     [budgetCategory, setBudgetCategory] = useState<string | null>(null),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
@@ -2087,6 +2090,8 @@ function App() {
     setUndo(null);
     setS(next);
   });
+  const activeHousehold = cloud.items.find(item => item.id === cloud.active);
+  useEffect(() => { setCloudPreview(null); }, [auth.user?.id, cloud.active]);
   const preferencesEnabled = import.meta.env.VITE_USER_PREFERENCES_ENABLED === 'true';
   // Household loads must not dispose a user's in-flight preference save.
   const preferenceReadyUser = useRef<string | null>(null);
@@ -3252,6 +3257,10 @@ function App() {
       actualForBudgetCategory(category) > 0 ||
       Object.hasOwn(s.budgetActuals[month] || {}, category),
   );
+  const consumptionCategories = page === 'dashboard' ? expCats.map(category => ({
+    category,
+    amount: total(s.expenses.filter(item => item.category === category && expenseType(item) === 'consumption'), month, true),
+  })).filter(item => item.amount > 0).sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category, 'fi')) : [];
   const visibleBudgetCategories = showAllBudgetCategories
     ? expCats
     : relevantBudgetCategories.length
@@ -3289,7 +3298,9 @@ function App() {
     if (
       (s.settings.onboarded || loaded.error) &&
       !confirm(
-        `Ladataanko “${scenario.profile.title}” tähän selaimeen? Nykyinen talous korvataan. Voit palauttaa sen vain varmuuskopiosta.`,
+        cloudEnabled && auth.user
+          ? `Ladataanko “${scenario.profile.title}”? Talous “${cloud.items.find(item => item.id === cloud.active)?.name ?? 'valittu talous'}” korvataan esimerkkitiedoilla ja muutos tallennetaan pilveen. Vie ensin JSON-varmuuskopio, jos haluat säilyttää nykyiset tiedot.`
+          : `Ladataanko “${scenario.profile.title}” tähän selaimeen? Nykyinen talous korvataan. Voit palauttaa sen vain varmuuskopiosta.`,
       )
     )
       return;
@@ -3356,7 +3367,7 @@ function App() {
           >
             Valikko · {names[page] || "Yhteenveto"}
           </button>
-          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna tai vie keskeneräiset muutokset ennen talouden vaihtoa.')); }}>
+          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.')); }}>
             {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
           </select></label>} />
           </div>
@@ -3465,10 +3476,11 @@ function App() {
                 )}
               </button>
               {cloudEnabled && auth.user && <div className="cloud-status" role="status">
+                <strong className="active-household">{activeHousehold ? `${activeHousehold.name} · ${activeHousehold.kind === 'shared' ? 'yhteinen' : 'oma'}` : 'Talous ei saatavilla'}</strong>{' '}
                 <span>{({ empty: 'Ei vielä tallennettu', saved: 'Tallennettu', dirty: 'Muutoksia tallentamatta', saving: 'Tallennetaan…', uncertain: 'Yhteysvirhe – yritetään uudelleen', conflict: 'Versioristiriita', rejected: 'Tallennus estetty', loading: 'Haetaan…', error: 'Lataus epäonnistui', 'legacy-review': 'Tarkistus vaaditaan', 'remote-change': 'Uusi pilviversio saatavilla', guest: 'Vierastila', transition: 'Tilin vaihto' } as const)[cloud.status]}</span>{' '}
                 {cloud.status === 'remote-change' && cloud.active && <button onClick={() => { if (!document.querySelector('dialog[open]')) void cloud.select(cloud.active!).catch(() => setNotice('Vie tai tallenna keskeneräiset muutokset ensin.')); }}>Lataa uusin versio</button>}
                 {(cloud.status === 'dirty' || cloud.status === 'uncertain') && <button onClick={() => void cloud.saveNow()}>Tallenna nyt</button>}
-                {(cloud.status === 'conflict' || cloud.status === 'rejected') && <><button onClick={exportBackup}>Vie varmuuskopio</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan talous uudelleen? Vie tarvittaessa ensin varmuuskopio.')) cloud.discardAndContinue(); }}>Hylkää muutokset ja lataa uudelleen</button></>}
+                {(cloud.status === 'conflict' || cloud.status === 'rejected') && <><button onClick={exportBackup}>Vie tämän välilehden varmuuskopio</button><button onClick={() => { if (!auth.user || !cloud.active || document.querySelector('dialog[open]')) return; const userId = auth.user.id; const householdId = cloud.active; void cloud.previewLatest().then(latest => setCloudPreview({ userId, householdId, revision: latest.revision, name: latest.name, state: latest.state })).catch(() => setNotice('Pilviversiota ei voitu tarkastella. Tämän välilehden muutokset säilyvät muistissa.')); }}>Tarkastele pilviversiota</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan sama talous pilvestä? Vie tarvittaessa ensin varmuuskopio.')) cloud.discardAndReloadActive(); }}>Hylkää muutokset ja lataa sama talous</button></>}
               </div>}
               {preferencesEnabled && auth.user && <div className="cloud-status" role="status">
                 <span>{({ empty: 'Oletusasetukset', saved: 'Asetukset tallennettu', dirty: 'Asetuksia tallentamatta', saving: 'Tallennetaan asetuksia…', uncertain: 'Asetusten yhteysvirhe', conflict: 'Asetusten versioristiriita', rejected: 'Asetusten tallennus estetty', loading: 'Haetaan asetuksia…', error: 'Asetusten lataus epäonnistui', guest: 'Vieras' } as const)[preferences.status]}</span>{' '}
@@ -4277,29 +4289,8 @@ function App() {
                       <p className="muted">
                         Toteutuneet kulutusmenot valitussa kuussa
                       </p>
-                      {expCats
-                        .filter(
-                          (c) =>
-                            total(
-                              s.expenses.filter(
-                                (e) =>
-                                  e.category === c &&
-                                  expenseType(e) === "consumption",
-                              ),
-                              month,
-                              true,
-                            ) > 0,
-                        )
-                        .map((c) => {
-                          let n = total(
-                            s.expenses.filter(
-                              (e) =>
-                                e.category === c &&
-                                expenseType(e) === "consumption",
-                            ),
-                            month,
-                            true,
-                          );
+                      {(showAllConsumption ? consumptionCategories : consumptionCategories.slice(0, 5))
+                        .map(({ category: c, amount: n }) => {
                           return (
                             <div className="bar-row" key={c}>
                               <div>
@@ -4314,6 +4305,7 @@ function App() {
                             </div>
                           );
                         })}
+                      {consumptionCategories.length > 5 && <button type="button" onClick={() => setShowAllConsumption(value => !value)} aria-expanded={showAllConsumption}>{showAllConsumption ? 'Näytä vähemmän' : `Näytä kaikki kategoriat (${consumptionCategories.length})`}</button>}
                       {!m.consumption && (
                         <Empty text="Lisää ensimmäinen kulutusmeno nähdäksesi, mihin rahat kuluvat." />
                       )}
@@ -4400,37 +4392,7 @@ function App() {
                       <strong>{euro(m.planned)}</strong>. Suunniteltuja
                       tapahtumia ei lasketa toteutuneeseen kassavirtaan.
                     </p>
-                    {s.expenses
-                      .filter(
-                        (e) =>
-                          occurrencesWithStatus(e, month, "planned").length > 0,
-                      )
-                      .map((e) => {
-                        const dates = occurrencesWithStatus(
-                          e,
-                          month,
-                          "planned",
-                        );
-                        return (
-                          <div className="simple-row" key={e.id}>
-                            <span>
-                              {e.name} ·{" "}
-                              {dates
-                                .map((d) => d.split("-").reverse().join("."))
-                                .join(", ")}
-                            </span>
-                            <strong>
-                              {euro(
-                                dates.reduce(
-                                  (amount, date) =>
-                                    amount + occurrenceAmount(e, date),
-                                  0,
-                                ),
-                              )}
-                            </strong>
-                          </div>
-                        );
-                      })}
+                    {upcomingExpenses(s.expenses, month).map(item => <div className="simple-row" key={`${item.id}-${item.date}`}><span>{item.name} · {item.date.split('-').reverse().join('.')}</span><strong>{euro(item.amount)}</strong></div>)}
                   </section>
                 </>
               ))}
@@ -6683,7 +6645,7 @@ function App() {
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={settingsTab !== 'account'}><Account exportBackup={exportBackup} state={s} onLoad={commit} auth={safeAuth} hasChanges={hasTemporaryChanges.current} revisionSession={familyRevisionSession} cloudManaged={cloudEnabled} /></div>
                 <div role="tabpanel" id="settings-panel-data" aria-labelledby="settings-tab-data" hidden={settingsTab !== 'data'}>
                 <section className="panel settings-demo-entry" aria-labelledby="settings-demo-title">
-                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
+                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">{cloudEnabled && auth.user ? 'Lataus korvaa valitun talouden ja tallentuu pilveen.' : 'Lataus korvaa nykyisen talouden.'}</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
                 <section className="panel">
@@ -7207,6 +7169,15 @@ function App() {
               )}
             </>
           )}
+        </Modal>
+      )}
+      {cloudPreview && auth.user?.id === cloudPreview.userId && cloud.active === cloudPreview.householdId && (
+        <Modal title="Pilviversion yhteenveto" onClose={() => setCloudPreview(null)}>
+          <p>Talouden ”{cloudPreview.name}” pilviversio {cloudPreview.revision}. Tämä on erillinen tarkastelu; tämän välilehden muutoksia ei ole korvattu.</p>
+          <ul>{kinds.map(kind => { const entries = cloudPreview.state?.[kind] ?? []; return <li key={kind}>{names[kind]}: pilvessä {entries.length}, tässä välilehdessä {s[kind].length}{entries.length > 0 && <small>Pilven tietueita: {entries.slice(0, 5).map(item => item.name || item.category).join(', ')}{entries.length > 5 ? ' …' : ''}</small>}</li>; })}</ul>
+          <p>Listassa näkyy enintään viisi pilven tietueen nimeä kustakin lajista. Määrät eivät yksin kerro kaikkia versioiden eroja.</p>
+          <p>Pilviversio voi muuttua tarkastelun jälkeen. Lataus hakee aina senhetkisen uusimman version.</p>
+          <div className="actions"><button onClick={exportBackup}>Vie tämän välilehden varmuuskopio</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan uusin pilviversio?')) { setCloudPreview(null); cloud.discardAndReloadActive(); } }}>Hylkää muutokset ja lataa pilviversio</button><button onClick={() => setCloudPreview(null)}>Takaisin</button></div>
         </Modal>
       )}
       {pending && (
