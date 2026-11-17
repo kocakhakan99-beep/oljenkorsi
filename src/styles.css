@@ -5706,6 +5706,9 @@ button.primary,
 .profile-menu > summary::-webkit-details-marker { display: none; }
 .profile-menu > summary:hover, .profile-menu[open] > summary { border-color: var(--focus); background: var(--soft); }
 .profile-avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--soft); color: var(--accent-ink); }
+.profile-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.profile-provider { display: flex; align-items: center; gap: 6px; }
+.profile-provider svg { width: 16px; height: 16px; flex: none; }
 .profile-popover {
   position: absolute;
   z-index: 50;

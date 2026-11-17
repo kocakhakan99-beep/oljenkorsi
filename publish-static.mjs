@@ -11,7 +11,7 @@ fs.cpSync(assetsOutput, 'assets', { recursive: true });
 
 const charsetTag = /<meta charset="UTF-8"\s*\/?>/i;
 if (!charsetTag.test(html)) throw new Error('Charset metadata missing from built HTML');
-const policy = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src https://api-worker.kocakhakan99.workers.dev https://xabfflmujxejqzhphpkh.supabase.co; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'";
+const policy = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src data: https://lh3.googleusercontent.com; connect-src https://api-worker.kocakhakan99.workers.dev https://xabfflmujxejqzhphpkh.supabase.co; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'";
 html = html.replace(charsetTag, (tag) => `${tag}<meta http-equiv="Content-Security-Policy" content="${policy}">`);
 
 for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {

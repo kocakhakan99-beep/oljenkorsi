@@ -12,7 +12,7 @@ users = {}
 for number in (1, 2):
     user_id = f'a0000000-0000-4000-8000-00000000000{number}'
     token = encode({'alg': 'none', 'typ': 'JWT'}) + '.' + encode({'sub': user_id, 'exp': int(time.time()) + 3600, 'role': 'authenticated'}) + '.signature'
-    user = {'id': user_id, 'aud': 'authenticated', 'role': 'authenticated', 'email': f'test{number}@example.invalid', 'app_metadata': {'provider': 'google'}, 'user_metadata': {}, 'created_at': '2026-01-01T00:00:00Z'}
+    user = {'id': user_id, 'aud': 'authenticated', 'role': 'authenticated', 'email': f'test{number}@example.invalid', 'app_metadata': {'provider': 'google'}, 'user_metadata': {'full_name': 'Testi Käyttäjä', 'avatar_url': 'https://lh3.googleusercontent.com/synthetic-photo'}, 'created_at': '2026-01-01T00:00:00Z'}
     users[token] = {'user': user, 'preferences': None, 'revision': 0}
 
 headers = {'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS'}
@@ -22,6 +22,7 @@ with sync_playwright() as p:
         user = users[token]['user']
         session = {'access_token': token, 'refresh_token': 'fake-refresh', 'token_type': 'bearer', 'expires_in': 3600, 'expires_at': int(time.time()) + 3600, 'user': user}
         context = browser.new_context()
+        context.route('https://lh3.googleusercontent.com/**', lambda route: route.fulfill(status=200, content_type='image/svg+xml', body='<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'))
         context.add_init_script("localStorage.setItem('sb-xabfflmujxejqzhphpkh-auth-token', " + json.dumps(json.dumps(session)) + ")")
         context.add_init_script("localStorage.setItem('taloussuunnittelu.dismissed-help.v1', JSON.stringify(['dashboard-start']))")
         def handle(route):
@@ -54,6 +55,9 @@ with sync_playwright() as p:
     expect(page.get_by_text('Tiedot ovat vain tämän välilehden muistissa', exact=False)).not_to_be_visible()
     page.set_viewport_size({'width': 1280, 'height': 800})
     page.get_by_label('Oma profiili', exact=True).click()
+    expect(page.locator('.profile-popover strong')).to_have_text('Testi Käyttäjä')
+    expect(page.locator('.profile-provider svg')).to_be_visible()
+    expect(page.locator('.profile-avatar img')).to_be_visible()
     expect(page.get_by_label('Talouden valinta', exact=True)).to_be_visible()
     card = page.locator('.profile-popover').bounding_box()
     assert card['x'] >= 0 and card['x'] + card['width'] <= 1280

@@ -8,6 +8,8 @@ Kirjautumatta sovellus pitää taloustiedot vain avoimen välilehden muistissa. 
 
 Google- tai Apple-kirjautuminen välittää kirjautumispyynnön Supabaselle ja valitulle kirjautumispalvelulle. Supabase Auth käsittelee tilin tunnisteet ja palveluntarjoajalta saadut tiedot, kuten sähköpostiosoitteen silloin kun palvelu sen antaa. Kirjautumisistunto tallentuu selaimeen, jotta kirjautuminen säilyy sivun päivityksen yli.
 
+Google-kirjautumisen profiilista saatu nimi ja profiilikuva voivat näkyä profiilivalikossa. Profiilikuva ladataan Googlen palvelimelta, jolloin Googlelle välittyy kuvan latauspyyntö ja sen yhteystiedot, kuten IP-osoite. Kuvaa ei tallenneta taloustietoihin.
+
 Kirjautuneen vahvistetut muutokset tallennetaan automaattisesti valittuun talouteen Supabasen tietokannassa EU Central -alueella. Oma talous on henkilökohtainen; perheen jokainen jäsen voi nähdä ja muokata yhteistä taloutta. Kirjautuminen ei automaattisesti siirrä vierastilan muistissa olevia tietoja pilveen. Tallennus ei ole päästä päähän salattu; palveluntarjoajan tietokanta- ja palvelinkerros voi käsitellä tietoja selväkielisinä.
 
 Kun henkilökohtaisten asetusten tallennus on käytössä, teema, väritila, korostusväri, summien piilotus, valittu kuukausi ja piilotetut ohjeet tallennetaan käyttäjätilin omiin asetuksiin. Asetukset eivät näy muille perheenjäsenille, ja ne poistuvat käyttäjätilin mukana. Vieraan valinnat ovat muistissa. Vanha ohjevalinta voi edelleen olla aiemman sovellusversion selaintallennuksessa; sitä ei siirretä automaattisesti.
