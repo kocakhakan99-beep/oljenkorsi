@@ -3343,9 +3343,10 @@ function App() {
           <div className="brand">
             <span className="brand-mark">T</span>
             <div>
-              Taloussuunnittelu<small>Oma talous. Omalla laitteella.</small>
+              Taloussuunnittelu<small>Oma talous, selkeästi.</small>
             </div>
           </div>
+          <div className="aside-top-actions">
           <button
             ref={menuButton}
             className="mobile-menu-toggle"
@@ -3355,6 +3356,10 @@ function App() {
           >
             Valikko · {names[page] || "Yhteenveto"}
           </button>
+          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna tai vie keskeneräiset muutokset ennen talouden vaihtoa.')); }}>
+            {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
+          </select></label>} />
+          </div>
           <nav
             id="main-navigation"
             aria-label="Päänavigaatio"
@@ -3460,9 +3465,6 @@ function App() {
                 )}
               </button>
               {cloudEnabled && auth.user && <div className="cloud-status" role="status">
-                <label>Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna tai vie keskeneräiset muutokset ennen talouden vaihtoa.')); }}>
-                  {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
-                </select></label>{' '}
                 <span>{({ empty: 'Ei vielä tallennettu', saved: 'Tallennettu', dirty: 'Muutoksia tallentamatta', saving: 'Tallennetaan…', uncertain: 'Yhteysvirhe – yritetään uudelleen', conflict: 'Versioristiriita', rejected: 'Tallennus estetty', loading: 'Haetaan…', error: 'Lataus epäonnistui', 'legacy-review': 'Tarkistus vaaditaan', 'remote-change': 'Uusi pilviversio saatavilla', guest: 'Vierastila', transition: 'Tilin vaihto' } as const)[cloud.status]}</span>{' '}
                 {cloud.status === 'remote-change' && cloud.active && <button onClick={() => { if (!document.querySelector('dialog[open]')) void cloud.select(cloud.active!).catch(() => setNotice('Vie tai tallenna keskeneräiset muutokset ensin.')); }}>Lataa uusin versio</button>}
                 {(cloud.status === 'dirty' || cloud.status === 'uncertain') && <button onClick={() => void cloud.saveNow()}>Tallenna nyt</button>}
@@ -3473,7 +3475,6 @@ function App() {
                 {(preferences.status === 'error' || preferences.status === 'uncertain') && <button onClick={preferences.retry}>Yritä uudelleen</button>}
                 {(preferences.status === 'conflict' || preferences.status === 'rejected') && <button onClick={() => { if (confirm('Hylätäänkö tämän laitteen tallentamattomat asetukset ja ladataan pilven asetukset?')) preferences.reload(); }}>Lataa pilven asetukset</button>}
               </div>}
-              <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} />
             </div>
           </header>
           <main id="main" tabIndex={-1}>
@@ -3520,7 +3521,7 @@ function App() {
                 </button>
               )}
             </div>
-            <div className="alert warning" role="status">Tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan. Vie tiedot ennen poistumista.</div>
+            {(!cloudEnabled || !auth.user) && <div className="alert warning" role="status">Tiedot ovat vain tämän välilehden muistissa ja katoavat, kun sivu ladataan uudelleen tai suljetaan. Vie tiedot ennen poistumista.</div>}
             {(!storageOk || loaded.error) && (
               <div className="alert warning">
                 {loaded.error ||
@@ -6714,9 +6715,7 @@ function App() {
                   <details className="danger-zone"><summary>Poista tietoja</summary>
                     <h3>Kaikkien tietojen poisto</h3>
                     <p>
-                      Poisto tyhjentää tämän välilehden muistissa olevan talouden. Vie
-                      JSON-varmuuskopio ennen poistamista, jos haluat säilyttää
-                      tiedot.
+                      {cloudEnabled && auth.user ? 'Poisto tyhjentää valitun pilvitalouden.' : 'Poisto tyhjentää tämän välilehden muistissa olevan talouden.'} Vie JSON-varmuuskopio ennen poistamista, jos haluat säilyttää tiedot.
                     </p>
                     <button
                       className="danger"
@@ -6756,7 +6755,7 @@ function App() {
                 <h2>Talous haltuun ilman käyttäjätiliä</h2>
                 <p>
                   {cloudEnabled && auth.user ? 'Kirjautuneena aktiivisen talouden tiedot tallennetaan pilveen. ' : 'Vieraana taloustiedot ovat välilehden muistissa. '} Ei pankkiyhteyksiä,
-                  analytiikkaa, mainoksia tai käyttäjätiliä.
+                  analytiikkaa tai mainoksia.
                 </p>
                 <h3>Aloita näin</h3>
                 <ol>
@@ -7263,7 +7262,7 @@ function App() {
           onClose={() => setDeleteOpen(false)}
         >
           <p>
-            Tyhjentää tämän välilehden muistissa olevan talouden. Aiemman version selaintallennus ja ladatut tiedostot eivät poistu.
+            {cloudEnabled && auth.user ? 'Tyhjentää valitun pilvitalouden.' : 'Tyhjentää tämän välilehden muistissa olevan talouden.'} Aiemman version selaintallennus ja ladatut tiedostot eivät poistu.
           </p>
           <button onClick={exportBackup}>Vie varmuuskopio</button>
           <label>

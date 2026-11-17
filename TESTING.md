@@ -2,6 +2,7 @@
 
 ## Laskurit ja henkilökohtaiset asetukset 17.11.2026
 
+- Profiilikortin sijoittelu tarkistettiin simuloidulla kirjautuneella käyttäjällä 390 ja 1280 pikselin näkymissä: talouden valinta näkyy kortissa, kortti mahtuu näyttöön, Escape sulkee sen ja muistivaroitus puuttuu kirjautuneelta. Sama koe läpäisi valmiilla buildilla.
 - `e2e_preferences.py` tarkisti vanhan skenaariolinkin, laskurin valinnan, asetusvälilehdet, vanhojen ohjeasetusten tietoisen tuonnin, valinnan palautumisen, kahden selaimen ristiriidan ja kahden käyttäjän eristyksen simuloiduilla palvelinvastauksilla. Sama koe läpäisi valmiilla tuotantobuildilla.
 - `e2e_preferences_local.py` testasi synteettisillä tileillä teemavalinnan tallentamisen, uuden selainistunnon ja käyttäjien eristyksen paikallisessa Supabase Auth- ja PostgreSQL-ympäristössä. Production-OAuthia ei tässä testissä käytetty.
 - `supabase/tests/user_preferences.sql` tarkisti eristetyssä PostgreSQL-kannassa oikeudet, käyttäjien eristyksen, virheelliset kentät, version ristiriidan, saman pyynnön uusinnan ja asetusten poistumisen käyttäjätilin mukana. Testiaineisto peruttiin.

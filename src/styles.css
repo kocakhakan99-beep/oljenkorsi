@@ -5684,12 +5684,16 @@ button.primary,
 .welcome-signin .google-signin { min-width: min(100%, 250px); }
 .welcome-note { color: var(--muted); font-size: 0.93rem; }
 .profile-menu { position: relative; flex: 0 0 auto; }
+.shell > aside { overflow: visible; z-index: 20; }
+.shell > aside > nav { overflow-y: auto; min-height: 0; }
+.shell > aside > .brand { padding-right: 46px; font-size: 13px; }
+.aside-top-actions { position: absolute; top: 28px; right: 18px; display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
 .profile-menu > summary {
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 4px 10px 4px 4px;
+  padding: 4px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
@@ -5705,7 +5709,7 @@ button.primary,
 .profile-popover {
   position: absolute;
   z-index: 50;
-  right: 0;
+  left: 0;
   top: calc(100% + 8px);
   display: grid;
   gap: 10px;
@@ -5721,9 +5725,14 @@ button.primary,
 .profile-popover strong { overflow-wrap: anywhere; }
 .profile-popover .profile-kicker { color: var(--accent-ink); font-size: 10px; font-weight: 750; letter-spacing: 0.1em; }
 .profile-popover button { width: 100%; }
+.profile-household { display: grid; gap: 6px; font-size: 13px; font-weight: 650; }
+.profile-household select { width: 100%; min-width: 0; }
 @media (max-width: 760px) {
-  .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shell > aside > .brand { padding-right: 0; font-size: 16px; }
+  .aside-top-actions { position: static; margin: 0; }
+  .aside-top-actions .mobile-menu-toggle { flex: 1; width: auto; min-width: 0; }
+  .profile-popover { left: auto; right: 0; }
+  .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toolbar > .toolbar-icon-button:first-of-type { grid-column: 1; justify-self: end; }
-  .toolbar > .toolbar-icon-button:last-of-type { grid-column: 2; justify-self: center; }
-  .profile-menu { grid-column: 3; grid-row: 2; justify-self: start; }
+  .toolbar > .toolbar-icon-button:last-of-type { grid-column: 2; justify-self: start; }
 }

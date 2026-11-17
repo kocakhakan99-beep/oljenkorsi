@@ -51,6 +51,25 @@ with sync_playwright() as p:
 
     token_a, token_b = users.keys()
     context, page = open_user(token_a)
+    expect(page.get_by_text('Tiedot ovat vain tämän välilehden muistissa', exact=False)).not_to_be_visible()
+    page.set_viewport_size({'width': 1280, 'height': 800})
+    page.get_by_label('Oma profiili', exact=True).click()
+    expect(page.get_by_label('Talouden valinta', exact=True)).to_be_visible()
+    card = page.locator('.profile-popover').bounding_box()
+    assert card['x'] >= 0 and card['x'] + card['width'] <= 1280
+    page.keyboard.press('Escape')
+    page.set_viewport_size({'width': 390, 'height': 844})
+    profile = page.get_by_label('Oma profiili', exact=True)
+    profile.click()
+    expect(page.get_by_label('Talouden valinta', exact=True)).to_be_visible()
+    menu_rect = page.locator('.mobile-menu-toggle').bounding_box()
+    profile_rect = profile.bounding_box()
+    assert abs(menu_rect['y'] - profile_rect['y']) < 5
+    card = page.locator('.profile-popover').bounding_box()
+    assert card['x'] >= 0 and card['x'] + card['width'] <= 390
+    page.keyboard.press('Escape')
+    expect(page.get_by_label('Talouden valinta', exact=True)).not_to_be_visible()
+    page.set_viewport_size({'width': 1440, 'height': 900})
     expect(page.get_by_role('heading', name='FI-pääomatavoite')).to_be_visible()
     page.get_by_role('button', name='Korkoa korolle', exact=True).click()
     expect(page.get_by_role('heading', name='Korkoa korolle ja kulujen vaikutus')).to_be_visible()
