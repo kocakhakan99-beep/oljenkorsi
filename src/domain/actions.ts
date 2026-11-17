@@ -708,7 +708,7 @@ export function planActions(state: State, month: string): PlannedAction[] {
       priority: "low",
       score: 180,
       track: "future",
-      destination: "scenarios",
+      destination: "calculators",
       destinationLabel: "Avaa nostoskenaariot",
       nextStep:
         "Vertaa useita nosto-oletuksia ja pitkiä heikkojen tuottojen alkujaksoja. Lisää arvioon verot, kulut, eläke ja menojen jousto ennen johtopäätöksiä.",

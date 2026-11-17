@@ -2,6 +2,9 @@ import { Account, GoogleButton } from "./components/account";
 import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
 import { useCloudIntegration } from "./services/use-cloud-integration";
+import { useUserPreferences } from "./services/use-user-preferences";
+import { preferencesFromState } from "./services/user-preferences";
+import { withLocalDisplaySettings } from "./services/cloud-state";
 import type { FamilyRevisionSession } from "./services/family-session";
 import { InvoiceScanner } from "./components/invoice-scanner";
 import { ReceiptScanner, ReceiptScanButton, type ReceiptScannerHandle } from "./components/receipt-scanner";
@@ -154,7 +157,7 @@ const names: Record<string, string> = {
   liabilities: "Velat",
   investments: "Sijoitukset",
   goals: "Tavoitteet",
-  scenarios: "Skenaariot",
+  calculators: "Laskurit",
   reports: "Raportit",
   transfer: "Tuonti ja vienti",
   settings: "Asetukset",
@@ -185,11 +188,11 @@ const expenseTypeName = (type: "consumption" | "saving" | "investment") =>
       ? "Säästösiirto"
       : "Sijoitussiirto";
 const navGroups = [
-  { label: "Aloitus", pages: ["dashboard", "compass"] },
-  { label: "Arki", pages: ["incomes", "expenses", "budget"] },
+  { label: "Kokonaiskuva", pages: ["dashboard", "compass"] },
+  { label: "Rahankäyttö", pages: ["incomes", "expenses", "budget"] },
   { label: "Varallisuus", pages: ["assets", "liabilities", "investments"] },
-  { label: "Tulevaisuus", pages: ["goals", "scenarios", "reports"] },
-  { label: "Hallinta", pages: ["transfer", "settings", "help"] },
+  { label: "Suunnittelu", pages: ["goals", "calculators", "reports"] },
+  { label: "Sovellus", pages: ["transfer", "settings", "help"] },
 ];
 const navIcons = {
   dashboard: LayoutDashboard,
@@ -201,12 +204,20 @@ const navIcons = {
   liabilities: Landmark,
   investments: ChartNoAxesCombined,
   goals: GoalIcon,
-  scenarios: PiggyBank,
+  calculators: PiggyBank,
   reports: FileChartColumn,
   transfer: ArrowLeftRight,
   settings: Settings,
   help: CircleHelp,
 };
+type SettingsTab = 'appearance' | 'finance' | 'account' | 'data';
+function settingsTabFromHash(hash: string): SettingsTab | null {
+  const tab = hash.startsWith('settings-') ? hash.slice('settings-'.length) : '';
+  return (['appearance', 'finance', 'account', 'data'] as string[]).includes(tab) ? tab as SettingsTab : null;
+}
+function pageFromHash(hash: string): string {
+  return hash === 'scenarios' ? 'calculators' : settingsTabFromHash(hash) ? 'settings' : hash || 'dashboard';
+}
 const reportTabs = [
   { id: "overview", label: "Tulot ja menot", Icon: ChartNoAxesCombined },
   { id: "categories", label: "Kulurakenne", Icon: ChartPie },
@@ -223,24 +234,17 @@ const compassTrackOptions: { id: ActionTrack | "all"; label: string }[] = [
   { id: "resilience", label: actionTrackLabels.resilience },
   { id: "future", label: actionTrackLabels.future },
 ];
-const helpPreferencesKey = "taloussuunnittelu.dismissed-help.v1";
 const compassWeatherIcons = {
   "cloud-rain": CloudRain,
   "cloud-sun": CloudSun,
   sun: Sun,
   lightning: Zap,
 } as const;
-function readDismissedHelp() {
+function legacyDismissedHelp(): string[] {
   try {
-    const saved = JSON.parse(localStorage.getItem(helpPreferencesKey) || "[]");
-    return new Set<string>(
-      Array.isArray(saved)
-        ? saved.filter((id): id is string => typeof id === "string")
-        : [],
-    );
-  } catch {
-    return new Set<string>();
-  }
+    const value: unknown = JSON.parse(localStorage.getItem('taloussuunnittelu.dismissed-help.v1') || '[]');
+    return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id.length <= 100))].slice(0, 100) : [];
+  } catch { return []; }
 }
 type ReportView = (typeof reportTabs)[number]["id"];
 const reportFormats: Record<ReportView, { value: string; label: string }[]> = {
@@ -1892,10 +1896,11 @@ function App() {
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [s, setS] = useState<State>(loaded.data),
-    [page, setPage] = useState(location.hash.slice(1) || "dashboard"),
+    [page, setPage] = useState(pageFromHash(location.hash.slice(1))),
+    [settingsTab, setSettingsTab] = useState<SettingsTab>(() => settingsTabFromHash(location.hash.slice(1)) ?? 'appearance'),
     [notice, setNotice] = useState(loaded.error),
     [storageOk, setStorageOk] = useState(storage.healthCheck().ok),
-    [edit, setEdit] = useState<{ kind: Kind; item: Entry } | null>(null),
+    [edit, setEdit] = useState<{ kind: Kind; item: Entry; openValuation?: boolean } | null>(null),
     [viewEntry, setViewEntry] = useState<{ kind: Kind; id: string } | null>(null),
     [quick, setQuick] = useState(false),
     [quickEntryKind, setQuickEntryKind] = useState<"incomes" | "expenses" | null>(null),
@@ -1940,7 +1945,8 @@ function App() {
     [selectedCompassDemo, setSelectedCompassDemo] =
       useState<CompassDemoId>("everyday"),
     [dismissedHelp, setDismissedHelp] =
-      useState<Set<string>>(readDismissedHelp),
+      useState<Set<string>>(() => new Set()),
+    [legacyHelp] = useState(legacyDismissedHelp),
     [systemPrefersDark, setSystemPrefersDark] = useState(
       () => matchMedia("(prefers-color-scheme: dark)").matches,
     );
@@ -2081,6 +2087,32 @@ function App() {
     setUndo(null);
     setS(next);
   });
+  const preferencesEnabled = import.meta.env.VITE_USER_PREFERENCES_ENABLED === 'true';
+  // Household loads must not dispose a user's in-flight preference save.
+  const preferenceReadyUser = useRef<string | null>(null);
+  if (!auth.user) preferenceReadyUser.current = null;
+  else if (cloud.canEdit && !auth.loading) preferenceReadyUser.current = auth.user.id;
+  const preferences = useUserPreferences(preferencesEnabled, auth.user?.id ?? null, !!auth.user && preferenceReadyUser.current === auth.user.id, value => {
+    setS(current => {
+      const next = { ...current, settings: { ...current.settings, theme: value.theme, mode: value.mode, accent: value.accent, private: value.private, month: value.month } };
+      storage.update(next);
+      return next;
+    });
+    setDismissedHelp(new Set(value.dismissedHelp));
+  });
+  const preferenceOwner = useRef<string | null>(null);
+  useEffect(() => {
+    const nextOwner = auth.user?.id ?? null;
+    if (preferenceOwner.current !== nextOwner) {
+      preferenceOwner.current = nextOwner;
+      setDismissedHelp(new Set());
+    }
+  }, [auth.user?.id]);
+  const preferencesPending = preferencesEnabled && !!auth.user && ['dirty', 'saving', 'uncertain', 'conflict', 'rejected'].includes(preferences.status);
+  const safeAuth = { ...auth, signOut: async () => {
+    if (preferencesPending && !confirm('Asetuksia on tallentamatta. Hylätäänkö ne ja kirjaudutaan ulos?')) return;
+    await auth.signOut();
+  } };
   function commit(next: State) {
     try {
       if (cloudEnabled && !cloud.canEdit) { setNotice('Odota, että talouden lataus on valmis.'); return false; }
@@ -2124,7 +2156,16 @@ function App() {
     }
   }
   function settings(v: Partial<State["settings"]>) {
-    commit({ ...s, settings: { ...s.settings, ...v } });
+    const personal = ['theme', 'mode', 'accent', 'private', 'month'].some(key => Object.hasOwn(v, key));
+    if (personal && !preferences.current) { setNotice('Asetuksia ei voitu ladata. Yritä asetusten latausta uudelleen.'); return; }
+    const next = { ...s, settings: { ...s.settings, ...v } };
+    if (commit(next) && personal) {
+      try { preferences.update(preferencesFromState(next, dismissedHelp)); }
+      catch { setNotice('Asetuksia ei voitu tallentaa.'); }
+    }
+  }
+  function preservePersonalSettings(next: State): State {
+    return preferencesEnabled && auth.user ? withLocalDisplaySettings(next, s) : next;
   }
   useEffect(() => {
     if (!cloudEnabled && !auth.loading && auth.user && !s.settings.onboarded) settings({ onboarded: true });
@@ -2160,26 +2201,28 @@ function App() {
     );
   }
   function dismissHelp(id: string) {
-    setDismissedHelp((current) => {
-      const next = new Set(current).add(id);
-      try {
-        localStorage.setItem(helpPreferencesKey, JSON.stringify([...next]));
-      } catch {
-        // Dismissing a tip remains available for this session if storage is unavailable.
-      }
-      return next;
-    });
+    if (!preferences.current) { setNotice('Asetuksia ei voitu ladata.'); return; }
+    const next = new Set(dismissedHelp).add(id);
+    try { preferences.update(preferencesFromState(s, next)); setDismissedHelp(next); }
+    catch { setNotice('Asetuksia ei voitu tallentaa.'); }
   }
   function restoreHelp() {
-    setDismissedHelp(new Set());
-    try {
-      localStorage.removeItem(helpPreferencesKey);
-    } catch {
-      // The visible tips are restored for this session.
-    }
+    if (!preferences.current) { setNotice('Asetuksia ei voitu ladata.'); return; }
+    const next = new Set<string>();
+    try { preferences.update(preferencesFromState(s, next)); setDismissedHelp(next); }
+    catch { setNotice('Asetuksia ei voitu tallentaa.'); }
+  }
+  function importLegacyHelp() {
+    if (!preferences.current) { setNotice('Asetuksia ei voitu ladata.'); return; }
+    const next = new Set([...dismissedHelp, ...legacyHelp].slice(0, 100));
+    try { preferences.update(preferencesFromState(s, next)); setDismissedHelp(next); setNotice('Selaimen vanhat ohjeasetukset otettiin käyttöön.'); }
+    catch { setNotice('Asetuksia ei voitu tallentaa.'); }
   }
   function navigate(p: string) {
-    setPage(p);
+    if (p === "scenarios") p = "calculators";
+    const tab = settingsTabFromHash(p);
+    if (tab) setSettingsTab(tab);
+    setPage(pageFromHash(p));
     location.hash = p;
     setCategoryFilter("");
     setStatusFilter("");
@@ -2193,6 +2236,10 @@ function App() {
       () => document.querySelector<HTMLElement>("main h1")?.focus(),
       0,
     );
+  }
+  function selectSettingsTab(tab: SettingsTab) {
+    setSettingsTab(tab);
+    location.hash = `settings-${tab}`;
   }
   function closeInvoice() {
     setInvoiceOpen(false);
@@ -2234,7 +2281,10 @@ function App() {
   }
   useEffect(() => {
     let f = () => {
-      setPage(location.hash.slice(1) || "dashboard");
+      const next = location.hash.slice(1);
+      setPage(pageFromHash(next));
+      const tab = settingsTabFromHash(next);
+      if (tab) setSettingsTab(tab);
       setMenuOpen(false);
     };
     window.addEventListener("hashchange", f);
@@ -2277,14 +2327,14 @@ function App() {
   }, [selectedReport]);
   useEffect(() => {
     let f = (e: BeforeUnloadEvent) => {
-      if (!storageOk || hasTemporaryChanges.current) {
+      if (!storageOk || hasTemporaryChanges.current || preferencesPending) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", f);
     return () => window.removeEventListener("beforeunload", f);
-  }, [storageOk]);
+  }, [storageOk, preferencesPending]);
   useEffect(() => {
     const colorScheme = matchMedia("(prefers-color-scheme: dark)");
     const update = (event: MediaQueryListEvent) =>
@@ -3253,7 +3303,7 @@ function App() {
         accent: s.settings.accent,
       },
     };
-    if (commit(household)) {
+    if (commit(preservePersonalSettings(household))) {
       setDemoPickerOpen(false);
       setSelectedCompassDemo(id);
       navigate("dashboard");
@@ -3275,6 +3325,7 @@ function App() {
       cloud.status === 'legacy-review' ? <><p>Vanhan perhetallennuksen eheyttä ei voida varmistaa. Lataus korvaa tämän välilehden tiedot; tarkista ja vie ladattu varmuuskopio ennen muokkausta.</p><button onClick={exportBackup}>Vie nykyinen varmuuskopio</button><button onClick={() => { if (confirm('Ladataanko vanha tarkistamaton talous?')) void cloud.acceptLegacy(); }}>Lataa vanha talous</button></> :
       cloud.status === 'error' ? <><p>Taloutta ei voitu ladata. Muistissa olevat tiedot ovat tallella.</p><button onClick={exportBackup}>Vie varmuuskopio</button>{cloud.hasUnsaved ? <button onClick={() => { if (confirm('Hylätäänkö muistissa olevat tiedot ja yritetään uudelleen?')) cloud.discardAndContinue(); }}>Hylkää ja yritä uudelleen</button> : <button onClick={cloud.retry}>Yritä uudelleen</button>}</> : <p>Haetaan taloutta…</p>}
   </main>;
+  if (preferencesEnabled && auth.user && preferences.status === 'loading') return <main className="panel" role="status"><h1>Asetukset</h1><p>Haetaan omia asetuksia…</p></main>;
   return (
     <>
       <a
@@ -3417,7 +3468,12 @@ function App() {
                 {(cloud.status === 'dirty' || cloud.status === 'uncertain') && <button onClick={() => void cloud.saveNow()}>Tallenna nyt</button>}
                 {(cloud.status === 'conflict' || cloud.status === 'rejected') && <><button onClick={exportBackup}>Vie varmuuskopio</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan talous uudelleen? Vie tarvittaessa ensin varmuuskopio.')) cloud.discardAndContinue(); }}>Hylkää muutokset ja lataa uudelleen</button></>}
               </div>}
-              <ProfileMenu auth={auth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings")} cloudManaged={cloudEnabled} />
+              {preferencesEnabled && auth.user && <div className="cloud-status" role="status">
+                <span>{({ empty: 'Oletusasetukset', saved: 'Asetukset tallennettu', dirty: 'Asetuksia tallentamatta', saving: 'Tallennetaan asetuksia…', uncertain: 'Asetusten yhteysvirhe', conflict: 'Asetusten versioristiriita', rejected: 'Asetusten tallennus estetty', loading: 'Haetaan asetuksia…', error: 'Asetusten lataus epäonnistui', guest: 'Vieras' } as const)[preferences.status]}</span>{' '}
+                {(preferences.status === 'error' || preferences.status === 'uncertain') && <button onClick={preferences.retry}>Yritä uudelleen</button>}
+                {(preferences.status === 'conflict' || preferences.status === 'rejected') && <button onClick={() => { if (confirm('Hylätäänkö tämän laitteen tallentamattomat asetukset ja ladataan pilven asetukset?')) preferences.reload(); }}>Lataa pilven asetukset</button>}
+              </div>}
+              <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} />
             </div>
           </header>
           <main id="main" tabIndex={-1}>
@@ -4399,7 +4455,7 @@ function App() {
                 setUndo(s); receiptUndoActive.current = true; return true;
               }} />
             </ScannerDialog>
-            {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} onSettings={() => navigate("settings")} />}
+            {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} onSettings={() => navigate("settings-finance")} />}
             {page === "budget" && (
               <>
                 {!dismissedHelp.has("budget-actuals") && (
@@ -4810,7 +4866,7 @@ function App() {
                 )}
               </>
             )}
-            {page === "scenarios" && (
+            {page === "calculators" && (
               <ScenarioView
                 scenarios={s.scenarios}
                 euro={euro}
@@ -4823,6 +4879,11 @@ function App() {
                   })
                 }
                 liabilities={valuedState.liabilities}
+                emergencyPlanner={emergencyPlanner()}
+                assets={s.assets}
+                goals={s.goals}
+                onEdit={(kind, item) => setEdit({ kind, item, openValuation: kind === 'assets' })}
+                atDate={valuationDate}
               />
             )}
             {page === "reports" && (
@@ -6550,6 +6611,10 @@ function App() {
             )}
             {page === "settings" && (
               <>
+                <div role="tablist" aria-label="Asetukset" className="settings-tabs">
+                  {([['appearance', 'Ulkoasu ja käyttö'], ['finance', 'Talous'], ['account', 'Tili ja perhe'], ['data', 'Tiedot']] as const).map(([id, label], index, tabs) => <button key={id} type="button" role="tab" id={`settings-tab-${id}`} aria-controls={`settings-panel-${id}`} aria-selected={settingsTab === id} tabIndex={settingsTab === id ? 0 : -1} onClick={() => selectSettingsTab(id)} onKeyDown={event => { const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1; if (next >= 0) { event.preventDefault(); selectSettingsTab(tabs[next][0]); document.getElementById(`settings-tab-${tabs[next][0]}`)?.focus(); } }}>{label}</button>)}
+                </div>
+                <div role="tabpanel" id="settings-panel-appearance" aria-labelledby="settings-tab-appearance" hidden={settingsTab !== 'appearance'}>
                 <section className="panel panel-plan">
                   <h2>Ulkoasu</h2>
                   <div className="form-grid">
@@ -6595,7 +6660,6 @@ function App() {
                   </div>
                   <StatusBadge>EUR · Suomi</StatusBadge>
                 </section>
-                <BudgetGuidanceSettingsPanel state={s} onSave={rule => settings({ budgetGuidance: rule })} />
                 <section
                   className="panel help-settings"
                   aria-labelledby="help-settings-title"
@@ -6611,12 +6675,16 @@ function App() {
                   >
                     Palauta piilotetut ohjeet ({dismissedHelp.size})
                   </button>
+                  {legacyHelp.length > 0 && <button type="button" onClick={importLegacyHelp}>Tuo tämän selaimen vanhat ohjeasetukset</button>}
                 </section>
+                </div>
+                <div role="tabpanel" id="settings-panel-finance" aria-labelledby="settings-tab-finance" hidden={settingsTab !== 'finance'}><BudgetGuidanceSettingsPanel state={s} onSave={rule => settings({ budgetGuidance: rule })} /></div>
+                <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={settingsTab !== 'account'}><Account exportBackup={exportBackup} state={s} onLoad={commit} auth={safeAuth} hasChanges={hasTemporaryChanges.current} revisionSession={familyRevisionSession} cloudManaged={cloudEnabled} /></div>
+                <div role="tabpanel" id="settings-panel-data" aria-labelledby="settings-tab-data" hidden={settingsTab !== 'data'}>
                 <section className="panel settings-demo-entry" aria-labelledby="settings-demo-title">
                   <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">Lataus korvaa nykyisen talouden.</p></div>
                   <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
                 </section>
-                <Account exportBackup={exportBackup} state={s} onLoad={commit} auth={auth} hasChanges={hasTemporaryChanges.current} revisionSession={familyRevisionSession} cloudManaged={cloudEnabled} />
                 <section className="panel">
                   <h2>Tallennus ja datan hallinta</h2>
                   <StatusBadge tone={storageOk ? "positive" : "warning"}>{cloudEnabled && auth.user ? 'Pilvitallennuksen tila yläpalkissa' : storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
@@ -6670,7 +6738,7 @@ function App() {
                           ) {
                             let n = empty();
                             n.settings.onboarded = true;
-                            commit(n);
+                            commit(preservePersonalSettings(n));
                           }
                         }}
                       >
@@ -6680,6 +6748,7 @@ function App() {
                   )}
                   </details>
                 </section>
+                </div>
               </>
             )}
             {page === "help" && (
@@ -7023,6 +7092,7 @@ function App() {
           {edit.kind === "incomes" || edit.kind === "expenses" ? <CashEntryForm key={edit.item.id} kind={edit.kind} item={edit.item} editing={s[edit.kind].some(item => item.id === edit.item.id)} categories={categoryChoices(edit.kind)} onSave={item => saveEntry(edit.kind, item)} onCancel={() => setEdit(null)} /> : <EntryForm key={edit.item.id} euro={euro} atDate={valuationDate}
             kind={edit.kind}
             item={edit.item}
+            openValuation={edit.openValuation}
             categories={categoryChoices(edit.kind)}
             assets={s.assets}
             onSave={(e) => saveEntry(edit.kind, e)}
@@ -7172,7 +7242,7 @@ function App() {
                     ...pending,
                     settings: { ...pending.settings, onboarded: true },
                   };
-                  if (commit(n)) {
+                  if (commit(preservePersonalSettings(n))) {
                     setPending(null);
                     setNotice(
                       "Varmuuskopio palautettu ja tietomalli validoitu.",
@@ -7212,7 +7282,7 @@ function App() {
                 if (cloudEnabled && auth.user) {
                   const cleared = empty();
                   cleared.settings.onboarded = true;
-                  if (!commit(cleared)) return;
+                  if (!commit(preservePersonalSettings(cleared))) return;
                   setUndo(null);
                   setDeleteOpen(false);
                   setNotice('Talous tyhjennetty. Muutos tallennetaan valittuun talouteen.');
@@ -7393,6 +7463,7 @@ function Goal({
 function EntryForm({
   kind,
   item,
+  openValuation,
   euro,
   atDate,
   categories,
@@ -7401,6 +7472,7 @@ function EntryForm({
   onCancel,
 }: {
   kind: Exclude<Kind, "incomes" | "expenses">;
+  openValuation?: boolean;
   euro: (n: number) => string;
   atDate: string;
   item: Entry;
@@ -7412,7 +7484,7 @@ function EntryForm({
   const { register, handleSubmit, setValue, watch } =
     useForm<Record<string, string>>();
   const [error, setError] = useState("");
-  const [editorTab, setEditorTab] = useState<"basic" | "valuation">("basic");
+  const [editorTab, setEditorTab] = useState<"basic" | "valuation">(openValuation ? "valuation" : "basic");
   const editorId = React.useId();
   const [valuationEnabled, setValuationEnabled] = useState(!!item.assetModel);
   const [assetDraft, setAssetDraft] = useState<AssetModel>(() => ({ ...(item.assetModel || defaultAssetModel(item.category)), automatic: item.assetModel ? item.assetModel.automatic === true : true }));
@@ -8182,6 +8254,11 @@ function ScenarioView({
   onSave,
   onDelete,
   liabilities,
+  emergencyPlanner,
+  assets,
+  goals,
+  onEdit,
+  atDate,
 }: {
   scenarios: Scenario[];
   euro: (n: number) => string;
@@ -8189,7 +8266,13 @@ function ScenarioView({
   onSave: (q: Scenario) => boolean;
   onDelete: (id: string) => boolean;
   liabilities: Entry[];
+  emergencyPlanner: React.ReactNode;
+  assets: Entry[];
+  goals: Entry[];
+  onEdit: (kind: Kind, item: Entry) => void;
+  atDate: string;
 }) {
+  const [calculator, setCalculator] = useState<'fi' | 'invest' | 'compare' | 'debt' | 'buffer' | 'assets' | 'goals'>('fi');
   const [q, setQ] = useState<Scenario>({
       id: uid(),
       name: "Oma skenaario",
@@ -8269,8 +8352,10 @@ function ScenarioView({
   };
   return (
     <>
-      <section className="panel scenario-start"><h2>Mitä haluat selvittää?</h2><p>Valitse laskuri, muuta oletuksia ja vertaile tulosta. Laskelmat eivät muuta kirjattua taloutta.</p><div role="group" className="scenario-shortcuts" aria-label="Skenaariolaskurit"><button type="button" onClick={() => document.getElementById("scenario-fi")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Milloin taloudellinen riippumattomuus?</button><button type="button" onClick={() => document.getElementById("scenario-invest")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Miten säästöni voivat kasvaa?</button><button type="button" onClick={() => document.getElementById("scenario-compare")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Vertaa tallennettuja suunnitelmia</button><button type="button" onClick={() => document.getElementById("scenario-debt")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Miten velan maksaminen etenee?</button></div></section>
-      <section className="panel panel-plan">
+      <section className="panel scenario-start"><h2>Mitä haluat selvittää?</h2><p>Valitse laskuri ja muuta oletuksia. Laskelmat eivät muuta kirjattua taloutta ilman erillistä tallennusta.</p><div role="group" className="scenario-shortcuts" aria-label="Laskurit">{([
+        ['fi', 'FI-pääomatavoite'], ['invest', 'Korkoa korolle'], ['compare', 'Tallennetut suunnitelmat'], ['debt', 'Velanmaksu ja vuosikorko'], ['buffer', 'Puskuri ja tulokatkos'], ['assets', 'Omaisuuden arvon arvio'], ['goals', 'Tavoitteen säästölaskuri'],
+      ] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={calculator === id} onClick={() => setCalculator(id)}>{label}</button>)}</div></section>
+      <section className="panel panel-plan" hidden={calculator !== 'fi'}>
         <h2 id="scenario-fi" tabIndex={-1}>FI-pääomatavoite</h2>
         <p className="muted">
           Yhden vaiheen havainnollistus omilla oletuksillasi. Syötä vuosikulut
@@ -8421,7 +8506,7 @@ function ScenarioView({
           luvattu päivämäärä.
         </p>
       </section>
-      <section className="panel panel-cash">
+      <section className="panel panel-cash" hidden={calculator !== 'invest'}>
         <h2 id="scenario-invest" tabIndex={-1}>Korkoa korolle ja kulujen vaikutus</h2>
         <p className="muted">
           Oletukset ovat muokattavia arvioita, eivät historiallisia tuottoja tai
@@ -8515,7 +8600,7 @@ function ScenarioView({
           Tallenna vertailuun
         </button>
       </section>
-      <section className="panel">
+      <section className="panel" hidden={calculator !== 'compare'}>
         <h2 id="scenario-compare" tabIndex={-1}>Skenaarioiden vertailu</h2>
         <p>Voit tallentaa ja vertailla useita omia oletuksia.</p>
         {scenarios.length ? (
@@ -8556,7 +8641,7 @@ function ScenarioView({
                         {euro(r.real)}
                       </td>
                       <td role="cell" data-label="Toiminnot">
-                        <button onClick={() => setQ({ ...v, id: uid() })}>
+                        <button onClick={() => { setQ({ ...v, id: uid() }); setCalculator('invest'); }}>
                           Lataa laskuriin
                         </button>
                         <button onClick={() => onDelete(v.id)}>Poista</button>
@@ -8571,7 +8656,7 @@ function ScenarioView({
           <Empty text="Tallenna ensimmäinen skenaario vertailuun." />
         )}
       </section>
-      <section className="panel">
+      <section className="panel" hidden={calculator !== 'debt'}>
         <h2 id="scenario-debt" tabIndex={-1}>Velanmaksuskenaariot</h2>
         <p className="muted">
           Vakioitu vuosikorko, kuukausittainen korko ja erä. Ei muita kuluja
@@ -8597,6 +8682,7 @@ function ScenarioView({
                 . Arvioitu saldo erän jälkeen{" "}
                 {euro(installment.remainingBalance)}.
               </p>
+              <DebtEstimate item={e} atDate={atDate} euro={euro} />
             </article>
           );
         })}
@@ -8604,6 +8690,9 @@ function ScenarioView({
           <p>Lisää velka ja kuukausierä nähdäksesi arvion.</p>
         )}
       </section>
+      <section className="panel" hidden={calculator !== 'buffer'}><h2>Puskuri ja tulokatkos</h2>{emergencyPlanner}</section>
+      <section className="panel" hidden={calculator !== 'assets'}><h2>Omaisuuden arvon arviointi</h2><p>Valitse omaisuuserä ja avaa sen arvonmuutoslaskuri.</p>{assets.length ? assets.map(item => <p key={item.id}><button type="button" onClick={() => onEdit('assets', item)}>{item.name}</button></p>) : <p>Lisää ensin omaisuuserä Omaisuus-sivulla.</p>}</section>
+      <section className="panel" hidden={calculator !== 'goals'}><h2>Tavoitteen säästölaskuri</h2><p>Valitse tavoite ja arvioi siihen tarvittava kuukausisäästö.</p>{goals.length ? goals.map(item => <p key={item.id}><button type="button" onClick={() => onEdit('goals', item)}>{item.name}</button></p>) : <p>Lisää ensin tavoite Tavoitteet-sivulla.</p>}</section>
     </>
   );
 }

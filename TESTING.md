@@ -1,5 +1,13 @@
 # Testausraportti 13.11.2026
 
+## Laskurit ja henkilökohtaiset asetukset 17.11.2026
+
+- `e2e_preferences.py` tarkisti vanhan skenaariolinkin, laskurin valinnan, asetusvälilehdet, vanhojen ohjeasetusten tietoisen tuonnin, valinnan palautumisen, kahden selaimen ristiriidan ja kahden käyttäjän eristyksen simuloiduilla palvelinvastauksilla. Sama koe läpäisi valmiilla tuotantobuildilla.
+- `e2e_preferences_local.py` testasi synteettisillä tileillä teemavalinnan tallentamisen, uuden selainistunnon ja käyttäjien eristyksen paikallisessa Supabase Auth- ja PostgreSQL-ympäristössä. Production-OAuthia ei tässä testissä käytetty.
+- `supabase/tests/user_preferences.sql` tarkisti eristetyssä PostgreSQL-kannassa oikeudet, käyttäjien eristyksen, virheelliset kentät, version ristiriidan, saman pyynnön uusinnan ja asetusten poistumisen käyttäjätilin mukana. Testiaineisto peruttiin.
+- 215 yksikkötestiä sekä TypeScript- ja lint-tarkistukset läpäisivät. Tuotantobuildin asetukset on asetettu Viten juurihakemistoon `src/.env.production`, jotta sekä talouden että asetusten pilvitallennus pysyvät käytössä tavallisella build-komennolla.
+- Laaja Chromiumin vierastilan regressioajo läpäisi 83 tarkistusta, mukaan lukien skenaariot, laskelmat, 320–768 pikselin näkymät, JSON-palautus ja CSV-vienti. JavaScript-, konsoli- tai odottamattomia verkkovirheitä ei ollut.
+
 ## Pilvitallennuksen kirjoituskuitti 14.11.2026
 
 - 17.11.2026 erillinen paikallinen Supabase-pino (Auth, PostgREST, Edge Runtime ja PostgreSQL) läpäisi skriptin `scripts/cloud-local-integration.mjs` kahdella synteettisellä käyttäjällä. Koe varmisti henkilökohtaisen talouden kirjoituksen ja lukemisen, käyttäjien eristyksen, saman pyynnön uusinnan, ristiriidan, virheellisen asiakirjan hylkäämisen, palvelinvalidoinnin ohitusyrityksen, perhekutsun, molempien jäsenten pääsyn, jäsenyyden poistamisen ja vanhan kirjoitusreitin eston. Auth käytti paikallista sähköposti/salasana-kirjautumista, ei Googlea tai Applea.
