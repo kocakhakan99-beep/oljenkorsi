@@ -1,17 +1,17 @@
 # Talouden arjen uudet toiminnot – toteutussuunnitelma
 
-Päiväys: 18.11.2026. Tila: toteutus paikallisesti valmis, julkaisu ja käyttäjän tuotantotestaus odottavat.
+Päiväys: 18.11.2026. Tila: julkaistu; käyttäjän tuotantotestaus odottaa.
 
 ## Toteutuksen eteneminen
 
-- Vaihe 1: kuukausivertailu ja budjetin kopiointi toteutettu.
-- Vaihe 2: ohjattu kuukauden tarkistus ja vahvistusten avaamissäännöt toteutettu.
-- Vaihe 3: alkuperätieto ja vanhojen kirjoittajien yhteensopivuussuoja toteutettu paikallisessa koodissa.
-- Vaihe 4: toistuvan hinnan voimaantulohistoria toteutettu paikallisessa koodissa.
-- Vaihe 5: vuosikello, eräkohtaiset varaukset, varauksen käytetyksi kuittaus ja budjetin erillinen varausosio toteutettu paikalliseen koodiin.
-- Vaihe 6: erillinen, tallennuksesta irrotettu kokeilutila toteutettu paikalliseen koodiin.
+- Vaihe 1: kuukausivertailu ja budjetin kopiointi toteutettu ja julkaistu.
+- Vaihe 2: ohjattu kuukauden tarkistus ja vahvistusten avaamissäännöt toteutettu ja julkaistu.
+- Vaihe 3: alkuperätieto ja vanhojen kirjoittajien yhteensopivuussuoja toteutettu ja julkaistu.
+- Vaihe 4: toistuvan hinnan voimaantulohistoria toteutettu ja julkaistu.
+- Vaihe 5: vuosikello, eräkohtaiset varaukset, varauksen käytetyksi kuittaus ja budjetin erillinen varausosio toteutettu ja julkaistu.
+- Vaihe 6: erillinen, tallennuksesta irrotettu kokeilutila toteutettu ja julkaistu.
 
-Vuosikellon ja hintahistorian kirjoittavan sovellusversion julkaisu edellyttää päivitetyn `cloud-save`-validaattorin ja verkkosovelluksen yhteisjulkaisua.
+Vuosikellon ja hintahistorian kirjoittava sovellusversio on julkaistu yhdessä päivitetyn `cloud-save`-validaattorin kanssa.
 
 ## Rajaus ja päätökset
 
