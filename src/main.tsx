@@ -2,7 +2,6 @@ import { Account, GoogleButton } from "./components/account";
 import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
 import { useCloudIntegration } from "./services/use-cloud-integration";
-import { upcomingExpenses } from "./domain/upcoming";
 import { budgetCopyPreview, shiftMonth, type BudgetCopyMode } from "./domain/monthly-planning";
 import { useUserPreferences } from "./services/use-user-preferences";
 import { preferencesFromState } from "./services/user-preferences";
@@ -1607,8 +1606,10 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onCategory, onBudge
   const unknown = result.categories.filter(category => category.group === "unclassified" && category.allocated > 0);
   const rule = state.settings.budgetGuidance;
   if (!detailed) return <section className="panel budget-guidance-compact" aria-label="Budjetin raamit">
-    <div><strong>Budjetin raamit</strong><p role="status">{result.income <= 0 ? "Lisää kuukauden nettotulot." : outside.length || excessCategories.length ? `Huomiot · ${outside.length} ryhmää · ${excessCategories.length} kategoriaa` : "Raameissa"}{unknown.length > 0 ? ` · ${unknown.length} luokittelematta` : ""}{result.income > 0 && result.totalAllocated > result.income && <> · Rahoitus <SignedAmount amount={result.income - result.totalAllocated} format={euro} label="Kuukauden tulot miinus varaukset" /></>}</p></div>
-    <button onClick={onBudget}>Tarkista budjetissa <ArrowRight size={16} aria-hidden="true" /></button>
+    <div className="budget-compact-content"><strong>Budjetin raamit</strong><p>Kuukauden varaukset suhteessa omiin ohjerajoihin</p>
+      {result.income <= 0 ? <p>Lisää kuukauden nettotulot nähdäksesi vertailun.</p> : <div className="budget-compact-bars">{result.checks.map(check => <div className="budget-compact-row" key={check.group}><div><span>{budgetGroupNames[check.group]}</span><span>{euro(check.allocated)} / {euro(check.target)}</span></div><progress max={Math.max(check.target, check.allocated, 1)} value={check.allocated} aria-label={`${budgetGroupNames[check.group]}: varattu ${euro(check.allocated)}, ohjeraja ${euro(check.target)}`} /><small>{check.group === "saving" ? "Säästötavoite" : "Ohjeraja"}{check.outside ? " · Huomio" : ""}</small></div>)}</div>}
+      {unknown.length > 0 && <p>{unknown.length} kategoriaa luokittelematta</p>}</div>
+    <button type="button" onClick={onBudget}>Tarkista budjetissa</button>
   </section>;
   return <section className="panel budget-guidance" aria-label="Budjetin raamit">
     <div className="section-head"><div><span className="eyebrow">OMA MENOSUUNNITELMA</span><h2>{percentText(rule.needs)}/{percentText(rule.wants)}/{percentText(rule.saving)} · Budjetin raamit</h2></div><ContextDetails title="Miten raamit lasketaan?"><p>Merkitse tulot nettona. Tulevat tulot eivät ole varmistettuja. Varattu summa huomioi kategoriakohtaisesti suuremman budjetista, kuukauden tapahtumista tai käsin syötetystä toteumasta; budjettia ja tapahtumia ei lasketa yhteen. Säästämisryhmään lasketaan säästö-/sijoitussiirrot ja siihen luokitellut menot, ei automaattisesti kulutusylijäämää. Tietojen kattavuus ja oma elämäntilanne vaikuttavat suositusten tulkintaan. Menoissa erotus on raja miinus varattu summa; säästämisessä varattu summa miinus vähimmäistavoite. Vihreä plus tarkoittaa liikkumavaraa tai tavoitteen ylittävää säästövarausta, punainen miinus vajetta. Kategorian ohjeraja ja oma kategoriabudjetti ovat eri vertailuja.</p></ContextDetails>{detailed ? <button type="button" onClick={onSettings}>Muokkaa ohjeita asetuksissa <ArrowRight size={16} aria-hidden="true" /></button> : <button onClick={onBudget}>Muokkaa budjetissa <ArrowRight size={16} aria-hidden="true" /></button>}</div>
@@ -1964,7 +1965,6 @@ function App() {
     [selectedReport, setSelectedReport] = useState<ReportSelection | null>(
       null,
     ),
-    [bufferMonths, setBufferMonths] = useState(3),
     [incomeLossPercent, setIncomeLossPercent] = useState(100),
     [stressMonths, setStressMonths] = useState(3),
     [selectedCompassDemo, setSelectedCompassDemo] =
@@ -2030,10 +2030,6 @@ function App() {
     });
     if (page !== "reports") setSelectedReport(null);
   };
-  const buffer = useMemo(
-    () => emergencyFund(valuedState, month, bufferMonths),
-    [valuedState, month, bufferMonths],
-  );
   const incomeHistory = useMemo(
     () => confirmedIncomeAverage(s, month),
     [s, month],
@@ -2255,6 +2251,7 @@ function App() {
     );
     setMonthReviewOpen(true);
   }
+  const buffer = emergencyFund(valuedState, month, 3);
   function emergencyPlanner() {
     return (
       <EmergencyPlanner
@@ -4527,90 +4524,7 @@ function App() {
                         <Empty text="Lisää ensimmäinen kulutusmeno nähdäksesi, mihin rahat kuluvat." />
                       )}
                     </section>
-                    <section className="panel">
-                      <h2>Hätävara ja tavoitteet</h2>
-                      <label className="buffer-period">
-                        Tarkastelujakso
-                        <select
-                          value={bufferMonths}
-                          onChange={(e) =>
-                            setBufferMonths(Number(e.target.value))
-                          }
-                        >
-                          <option value={1}>1 kuukausi</option>
-                          <option value={3}>3 kuukautta</option>
-                          <option value={6}>6 kuukautta</option>
-                          <option value={12}>12 kuukautta</option>
-                        </select>
-                      </label>
-                      <div className="buffer">
-                        <strong>
-                          {buffer.buffer === null
-                            ? "—"
-                            : s.settings.private
-                              ? "•••"
-                              : buffer.buffer.toLocaleString("fi-FI", {
-                                  maximumFractionDigits: 1,
-                                })}
-                        </strong>
-                        <span>kuukautta välttämättömiä menoja</span>
-                      </div>
-                      <p className="muted">
-                        Likvidiksi merkitty omaisuus / vahvistettujen
-                        päättyneiden kuukausien välttämättömien kulutusmenojen
-                        keskiarvo. Vahvistettuja kuukausia{" "}
-                        {buffer.observedMonths}/{buffer.requestedMonths}{" "}
-                        valitusta.
-                      </p>
-                      {buffer.observedMonths < buffer.requestedMonths && (
-                        <p className="muted">
-                          Puuttuvia tai vahvistamattomia kuukausia ei lasketa
-                          nollamenoiksi. Vahvista kuukauden menot
-                          Menot-näkymässä.
-                        </p>
-                      )}
-                      {buffer.averageEssential === 0 && (
-                        <p className="muted">
-                          Kirjattuja välttämättömiä menoja on 0 €. Hätävaran
-                          kestoa ei voi laskea.
-                        </p>
-                      )}
-                      <p className="muted">
-                        Kuluvaa kuukautta ei lasketa täytenä. Vahvistus kertoo
-                        omasta tarkistuksesta, ei pankkivarmennuksesta.
-                      </p>
-                      {emergencyPlanner()}
-                      {s.goals.filter(e=>visibleInMonth(e,"goals",month)).map((e) => (
-                        <Goal
-                          key={e.id}
-                          e={e}
-                          euro={euro}
-                          privateMode={s.settings.private}
-                        />
-                      ))}
-                      {!s.goals.some(e=>visibleInMonth(e,"goals",month)) && (
-                        <button
-                          onClick={() =>
-                            setEdit({
-                              kind: "goals",
-                              item: entry({ category: "Hätävara" }),
-                            })
-                          }
-                        >
-                          Luo oma tavoite
-                        </button>
-                      )}
-                    </section>
                   </div>
-                  <section className="panel">
-                    <h2>Tulevat suunnitellut menot</h2>
-                    <p>
-                      Valitussa kuussa yhteensä{" "}
-                      <strong>{euro(m.planned)}</strong>. Suunniteltuja
-                      tapahtumia ei lasketa toteutuneeseen kassavirtaan.
-                    </p>
-                    {upcomingExpenses(s.expenses, month).map(item => <div className="simple-row" key={`${item.id}-${item.date}`}><span>{item.name} · {item.date.split('-').reverse().join('.')}</span><strong>{euro(item.amount)}</strong></div>)}
-                  </section>
                 </>
               ))}
             <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner onClose={closeInvoice} files={invoiceFiles} categories={cats("expenses")} onBatch={(batch, allowDuplicates) => {
