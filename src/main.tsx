@@ -1902,6 +1902,15 @@ function CashEntryForm({
     </form>
   );
 }
+function StartupScreen({ exiting = false }: { exiting?: boolean }) {
+  return <div className={`startup-screen${exiting ? " is-exiting" : ""}`} role={exiting ? undefined : "status"} aria-live={exiting ? undefined : "polite"} aria-hidden={exiting || undefined}>
+    {!exiting && <div className="startup-content">
+      <div className="startup-mark" aria-hidden="true"><span /><span /><span /></div>
+      <strong>Valmistellaan talouttasi</strong>
+      <span>Hetki, avataan sovellus.</span>
+    </div>}
+  </div>;
+}
 function App() {
   const auth = useAuth();
   const familyRevisionSession = useRef<FamilyRevisionSession | null>(null);
@@ -2139,6 +2148,8 @@ function App() {
   const receiptUndoActive = useRef(false);
   const hasTemporaryChanges = useRef(false);
   const cloudEnabled = import.meta.env.VITE_CLOUD_SAVE_ENABLED === 'true';
+  const preferencesEnabled = import.meta.env.VITE_USER_PREFERENCES_ENABLED === 'true';
+  const [startupPhase, setStartupPhase] = useState<'loading' | 'revealing' | 'ready'>(() => cloudEnabled || preferencesEnabled ? 'loading' : 'ready');
   const cloud = useCloudIntegration(cloudEnabled, auth.loading, auth.user?.id ?? null, s, hasTemporaryChanges, next => {
     storage.update(next);
     setUndo(null);
@@ -2146,7 +2157,6 @@ function App() {
   });
   const activeHousehold = cloud.items.find(item => item.id === cloud.active);
   useEffect(() => { setCloudPreview(null); }, [auth.user?.id, cloud.active]);
-  const preferencesEnabled = import.meta.env.VITE_USER_PREFERENCES_ENABLED === 'true';
   // Household loads must not dispose a user's in-flight preference save.
   const preferenceReadyUser = useRef<string | null>(null);
   if (!auth.user) preferenceReadyUser.current = null;
@@ -2159,6 +2169,17 @@ function App() {
     });
     setDismissedHelp(new Set(value.dismissedHelp));
   });
+  useEffect(() => {
+    if (startupPhase === 'ready') return;
+    if (startupPhase === 'revealing') {
+      const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 380;
+      const timer = window.setTimeout(() => setStartupPhase('ready'), duration);
+      return () => window.clearTimeout(timer);
+    }
+    const ready = !auth.loading && (!cloudEnabled || cloud.canEdit) &&
+      (!preferencesEnabled || !auth.user || preferences.status !== 'loading');
+    if (ready) setStartupPhase('revealing');
+  }, [startupPhase, auth.loading, auth.user, cloudEnabled, cloud.canEdit, preferencesEnabled, preferences.status]);
   const preferenceOwner = useRef<string | null>(null);
   useEffect(() => {
     const nextOwner = auth.user?.id ?? null;
@@ -3524,15 +3545,17 @@ function App() {
       (saved.status === "done" || (saved.until && saved.until > today()))
     );
   });
+  if (cloudEnabled && !cloud.canEdit && !['error', 'legacy-review', 'transition'].includes(cloud.status) && startupPhase !== 'ready') return <StartupScreen />;
   if (cloudEnabled && !cloud.canEdit) return <main className="panel" role="status">
     <h1>Talouden tallennus</h1>
     {cloud.status === 'transition' ? <><p>Muistissa on tallentamattomia tietoja ennen tilin vaihtoa. Vie ne tarvittaessa varmuuskopioksi.</p><button onClick={exportBackup}>Vie varmuuskopio</button><button onClick={cloud.discardAndContinue}>Hylkää muistissa olevat tiedot ja jatka</button></> :
       cloud.status === 'legacy-review' ? <><p>Vanhan perhetallennuksen eheyttä ei voida varmistaa. Lataus korvaa tämän välilehden tiedot; tarkista ja vie ladattu varmuuskopio ennen muokkausta.</p><button onClick={exportBackup}>Vie nykyinen varmuuskopio</button><button onClick={() => { if (confirm('Ladataanko vanha tarkistamaton talous?')) void cloud.acceptLegacy(); }}>Lataa vanha talous</button></> :
       cloud.status === 'error' ? <><p>Taloutta ei voitu ladata. Muistissa olevat tiedot ovat tallella.</p><button onClick={exportBackup}>Vie varmuuskopio</button>{cloud.hasUnsaved ? <button onClick={() => { if (confirm('Hylätäänkö muistissa olevat tiedot ja yritetään uudelleen?')) cloud.discardAndContinue(); }}>Hylkää ja yritä uudelleen</button> : <button onClick={cloud.retry}>Yritä uudelleen</button>}</> : <p>Haetaan taloutta…</p>}
   </main>;
-  if (preferencesEnabled && auth.user && preferences.status === 'loading') return <main className="panel" role="status"><h1>Asetukset</h1><p>Haetaan omia asetuksia…</p></main>;
+  if (preferencesEnabled && auth.user && preferences.status === 'loading') return startupPhase === 'ready' ? <main className="panel" role="status"><h1>Asetukset</h1><p>Haetaan omia asetuksia…</p></main> : <StartupScreen />;
   return (
     <>
+      {startupPhase === 'revealing' && <StartupScreen exiting />}
       <a
         className="skip"
         href="#main"
