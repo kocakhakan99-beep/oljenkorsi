@@ -23,7 +23,7 @@ var vehicleBrandProfiles = [
 	["Tesla", 1.16]
 ];
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/util.js
+//#region node_modules/zod/v4/core/util.js
 function getEnumValues(entries) {
 	const numericValues = Object.values(entries).filter((v) => typeof v === "number");
 	return Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
@@ -552,7 +552,7 @@ function constantCatch(value) {
 	return fn;
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/core.js
+//#region node_modules/zod/v4/core/core.js
 var _a$1;
 var _zodDesc = {
 	value: void 0,
@@ -658,7 +658,7 @@ function config(newConfig) {
 	return globalConfig;
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/errors.js
+//#region node_modules/zod/v4/core/errors.js
 function _getMessage() {
 	const internals = this._zod;
 	internals.message ?? (internals.message = JSON.stringify(internals.def, jsonStringifyReplacer, 2));
@@ -772,7 +772,7 @@ function formatError(error, mapper = (issue) => issue.message) {
 	return fieldErrors;
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/parse.js
+//#region node_modules/zod/v4/core/parse.js
 function finalizeParams(callee, params) {
 	return {
 		callee: params?.callee ?? callee,
@@ -973,7 +973,7 @@ var _safeDecodeAsync = (_Err) => async (schema, value, _ctx) => {
 	return _safeParseAsync(_Err)(schema, value, _ctx);
 };
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/regexes.js
+//#region node_modules/zod/v4/core/regexes.js
 /**
 * @deprecated CUID v1 is deprecated by its authors due to information leakage
 * (timestamps embedded in the id). Use {@link cuid2} instead.
@@ -1045,7 +1045,7 @@ var boolean$1 = /^(?:true|false)$/i;
 var lowercase = /^[^A-Z]*$/;
 var uppercase = /^[^a-z]*$/;
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/checks.js
+//#region node_modules/zod/v4/core/checks.js
 var $ZodCheck = /*@__PURE__*/ $constructor("$ZodCheck", (inst, def) => {
 	var _a;
 	inst._zod ?? (inst._zod = {});
@@ -1341,7 +1341,7 @@ var $ZodCheckOverwrite = /*@__PURE__*/ $constructor("$ZodCheckOverwrite", (inst,
 	};
 });
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/doc.js
+//#region node_modules/zod/v4/core/doc.js
 var Doc = class {
 	constructor(args = [], closed = {}) {
 		this.content = [];
@@ -1375,14 +1375,14 @@ var Doc = class {
 	}
 };
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/versions.js
+//#region node_modules/zod/v4/core/versions.js
 var version = {
 	major: 4,
 	minor: 6,
 	patch: 7
 };
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/schemas.js
+//#region node_modules/zod/v4/core/schemas.js
 var $ZodType = /*@__PURE__*/ $constructor("$ZodType", (inst, def) => {
 	var _a;
 	inst ?? (inst = {});
@@ -2771,7 +2771,7 @@ function handleRefineResult(result, payload, input, inst) {
 	}
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/memoizer.js
+//#region node_modules/zod/v4/core/memoizer.js
 var $ZodCyclicError = class extends Error {
 	constructor() {
 		super(`Cannot parse a reference cycle that closes through a transform`);
@@ -3024,7 +3024,7 @@ function isBackEdge(ctx, value) {
 	return backEdges !== void 0 && isRef(value) && backEdges.has(value);
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/locales/en.js
+//#region node_modules/zod/v4/locales/en.js
 var error = () => {
 	const Sizable = {
 		string: {
@@ -3132,7 +3132,7 @@ function en_default() {
 	return { localeError: error() };
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/registries.js
+//#region node_modules/zod/v4/core/registries.js
 var _a;
 var $ZodRegistry = class {
 	constructor() {
@@ -3179,7 +3179,7 @@ function registry() {
 (_a = globalThis).__zod_globalRegistry ?? (_a.__zod_globalRegistry = registry());
 var globalRegistry = globalThis.__zod_globalRegistry;
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/api.js
+//#region node_modules/zod/v4/core/api.js
 function snapshotChecks(def) {
 	if (def.checks) def.checks = [...def.checks];
 	return def;
@@ -3688,7 +3688,7 @@ function _check(fn, params) {
 	return ch;
 }
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/to-json-schema.js
+//#region node_modules/zod/v4/core/to-json-schema.js
 function assignProps(target, ...sources) {
 	for (const source of sources) for (const key of Reflect.ownKeys(source)) if (Object.prototype.propertyIsEnumerable.call(source, key)) assignProp(target, key, source[key]);
 	return target;
@@ -4130,7 +4130,7 @@ var createStandardJSONSchemaMethod = (schema, io, processors = {}) => (params) =
 	return finalize(ctx, schema);
 };
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/core/json-schema-processors.js
+//#region node_modules/zod/v4/core/json-schema-processors.js
 var narrowMin = (agg, key, value) => {
 	if (agg[key] === void 0 || value > agg[key]) agg[key] = value;
 };
@@ -4576,7 +4576,7 @@ var optionalProcessor = (schema, ctx, _json, params) => {
 	seen.ref = def.innerType;
 };
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/classic/errors.js
+//#region node_modules/zod/v4/classic/errors.js
 var _installedErrorProtos = /* @__PURE__ */ new WeakSet([Object.prototype, Error.prototype]);
 function _lazyMethod(proto, key, make) {
 	Object.defineProperty(proto, key, {
@@ -4626,7 +4626,7 @@ var initializer = (inst, issues) => {
 };
 var ZodRealError = /*@__PURE__*/ $constructor("ZodError", initializer, void 0, { Parent: Error });
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/classic/parse.js
+//#region node_modules/zod/v4/classic/parse.js
 var parse = /* @__PURE__ */ _parse(ZodRealError);
 var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
 var safeParse = /* @__PURE__ */ _safeParse(ZodRealError);
@@ -4640,7 +4640,7 @@ var safeDecode = /* @__PURE__ */ _safeDecode(ZodRealError);
 var safeEncodeAsync = /* @__PURE__ */ _safeEncodeAsync(ZodRealError);
 var safeDecodeAsync = /* @__PURE__ */ _safeDecodeAsync(ZodRealError);
 //#endregion
-//#region ../../workspace/oljenkorsi/node_modules/zod/v4/classic/schemas.js
+//#region node_modules/zod/v4/classic/schemas.js
 function _ensureDefaultLocale() {
 	if (!globalConfig.localeError) config(en_default());
 }
@@ -5744,7 +5744,7 @@ var uid = () => crypto.randomUUID();
 function empty() {
 	return {
 		schemaVersion: 1,
-		applicationVersion: "0.1.0",
+		applicationVersion: "0.4.0",
 		createdAt: (/* @__PURE__ */ new Date()).toISOString(),
 		settings: {
 			onboarded: false,
@@ -5880,6 +5880,13 @@ var shellSchema = object({
 	goals: array(unknown()).max(2e4),
 	budgets: record$1(string(), record$1(string(), number().int().nonnegative().max(MAX))),
 	budgetActuals: record$1(string(), record$1(string(), number().int().nonnegative().max(MAX))).optional(),
+	annualReservePlans: array(string().min(1).max(200)).max(200).optional(),
+	annualReservations: array(object({
+		expenseId: string().min(1).max(200),
+		occurrenceDate: string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		amount: number().int().nonnegative().max(MAX),
+		usedAmount: number().int().nonnegative().max(MAX).optional()
+	}).refine((item) => item.usedAmount === void 0 || item.usedAmount <= item.amount)).max(5e3).optional(),
 	coverage: object({
 		incomeMonths: array(string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)).max(1200),
 		expenseMonths: array(string().regex(/^\d{4}-(0[1-9]|1[0-2])$/)).max(1200)
@@ -5928,12 +5935,30 @@ function validate(raw) {
 			language: "fi"
 		},
 		createdAt: String(x.createdAt),
-		applicationVersion: String(x.applicationVersion),
+		applicationVersion: "0.4.0",
 		coverage: check.data.coverage || {
 			incomeMonths: [],
 			expenseMonths: []
 		}
 	};
+	if (check.data.annualReservePlans !== void 0) {
+		if (new Set(check.data.annualReservePlans).size !== check.data.annualReservePlans.length) throw Error("Vuosikellon kirjauksia ei voi valita kahdesti.");
+		s.annualReservePlans = check.data.annualReservePlans;
+	}
+	if (check.data.annualReservations !== void 0) {
+		const selectedPlans = new Set(check.data.annualReservePlans || []);
+		const seenReservations = /* @__PURE__ */ new Set();
+		let reservedTotal = 0;
+		for (const reservation of check.data.annualReservations) {
+			if (!validDate(reservation.occurrenceDate) || !selectedPlans.has(reservation.expenseId)) throw Error("Vuosikellon varaus viittaa virheelliseen tapahtumaan.");
+			const key = `${reservation.expenseId}:${reservation.occurrenceDate}`;
+			if (seenReservations.has(key)) throw Error("Samalle menolle ja päivälle on useampi varaus.");
+			seenReservations.add(key);
+			reservedTotal += reservation.amount;
+			if (!Number.isSafeInteger(reservedTotal)) throw Error("Varaussummat ylittävät turvallisen laskentarajan.");
+		}
+		s.annualReservations = check.data.annualReservations;
+	}
 	let ids = /* @__PURE__ */ new Set();
 	for (let k of kinds) {
 		if (!Array.isArray(x[k]) || x[k].length > 2e4) throw Error("Virheellinen tietuelista: " + k);
@@ -5955,7 +5980,11 @@ function validate(raw) {
 			validateEntry(normalized);
 			if (ids.has(e.id)) throw Error("Päällekkäinen tunniste.");
 			ids.add(e.id);
-			return Object.fromEntries(Object.keys(defaultsEntry).map((key) => [key, normalized[key] ?? defaultsEntry[key]]));
+			let allowed = Object.keys(defaultsEntry);
+			if (normalized.source !== void 0) allowed.push("source");
+			if (normalized.priceHistory !== void 0) allowed.push("priceHistory");
+			const defaultValues = defaultsEntry;
+			return Object.fromEntries(allowed.map((key) => [key, normalized[key] ?? defaultValues[key]]));
 		});
 	}
 	const assetIds = new Set(s.assets.map((asset) => asset.id));
@@ -6081,6 +6110,23 @@ var defaultsEntry = {
 };
 function validateEntry(e) {
 	if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+	if (e.source !== void 0 && ![
+		"manual",
+		"csv",
+		"receipt",
+		"invoice",
+		"unknown"
+	].includes(e.source)) throw Error("Virheellinen kirjauksen alkuperä.");
+	if (e.priceHistory !== void 0) {
+		if (!Array.isArray(e.priceHistory) || e.priceHistory.length > 240 || e.recurrence === "once") throw Error("Virheellinen toistuvan hinnan historia.");
+		const seenStartDates = /* @__PURE__ */ new Set();
+		let previousStartDate = "";
+		for (const change of e.priceHistory) {
+			if (!change || !validDate(change.startDate) || change.startDate < e.date || !Number.isSafeInteger(change.amount) || change.amount < 0 || change.amount > 0xe8d4a51000 || seenStartDates.has(change.startDate) || change.startDate < previousStartDate) throw Error("Virheellinen toistuvan hinnan muutos.");
+			seenStartDates.add(change.startDate);
+			previousStartDate = change.startDate;
+		}
+	}
 	if (e.marketSymbol !== void 0 && (typeof e.marketSymbol !== "string" || !/^[A-Z0-9.^=-]{0,30}$/.test(e.marketSymbol))) throw Error("Virheellinen sijoitustunnus.");
 	if (e.assetModel != null) assetModelSchema.parse(e.assetModel);
 	if (typeof e.adjustToPreviousBankDay !== "boolean") throw Error("Virheellinen tulon pankkipäiväasetus.");
@@ -6235,7 +6281,7 @@ function validateCloudWrite(input) {
 		"checksum",
 		"data"
 	])) throw new Error("Virheellinen varmuuskopion rakenne.");
-	if (backup.applicationVersion !== "0.1.0" || typeof backup.createdAt !== "string" || backup.createdAt.length > 50 || backup.checksumAlgorithm !== "FNV-1a-32 (ei kryptografinen)") throw new Error("Virheellinen varmuuskopion metatieto.");
+	if (backup.applicationVersion !== "0.4.0" || typeof backup.createdAt !== "string" || backup.createdAt.length > 50 || backup.checksumAlgorithm !== "FNV-1a-32 (ei kryptografinen)") throw new Error("Virheellinen varmuuskopion metatieto.");
 	const serialized = JSON.stringify(input);
 	if (new TextEncoder().encode(serialized).byteLength > 5e6) throw new Error("Pilvitallennus ylittää 5 MB rajan.");
 	const restored = restoreFamilyBackup(input);

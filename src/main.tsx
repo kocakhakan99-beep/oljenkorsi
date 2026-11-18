@@ -3,6 +3,7 @@ import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
 import { useCloudIntegration } from "./services/use-cloud-integration";
 import { upcomingExpenses } from "./domain/upcoming";
+import { budgetCopyPreview, shiftMonth, type BudgetCopyMode } from "./domain/monthly-planning";
 import { useUserPreferences } from "./services/use-user-preferences";
 import { preferencesFromState } from "./services/user-preferences";
 import { withLocalDisplaySettings } from "./services/cloud-state";
@@ -19,6 +20,12 @@ import { loanEstimate } from "./domain/loan-estimate";
 import { goalPlan } from "./domain/goal-plan";
 import { RecurrenceIndicator, EventStatusIndicator } from "./components/event-indicators";
 import { MetricCard, StatusBadge, BudgetUsage, ContextDetails, RowActions, SignedAmount } from "./components/summary";
+import { MonthComparisonCard } from "./components/month-comparison";
+import { PriceHistoryEditor } from "./components/price-history-editor";
+import { AnnualCalendar } from "./components/annual-calendar";
+import { annualReserveSummary } from "./domain/annual-planning";
+import { TrialModePanel } from "./components/trial-mode-panel";
+import { emptyTrialAdjustments, trialBasisFingerprint, type TrialAdjustments } from "./domain/trial-mode";
 import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -28,6 +35,7 @@ import {
   entry,
   uid,
   today,
+  entrySourceLabel,
   kinds,
   type State,
   type Entry,
@@ -160,6 +168,7 @@ const names: Record<string, string> = {
   goals: "Tavoitteet",
   calculators: "Laskurit",
   reports: "Raportit",
+  "annual-calendar": "Vuosikello",
   transfer: "Tuonti ja vienti",
   settings: "Asetukset",
   help: "Ohje ja tietosuoja",
@@ -192,7 +201,7 @@ const navGroups = [
   { label: "Kokonaiskuva", pages: ["dashboard", "compass"] },
   { label: "Rahankäyttö", pages: ["incomes", "expenses", "budget"] },
   { label: "Varallisuus", pages: ["assets", "liabilities", "investments"] },
-  { label: "Suunnittelu", pages: ["goals", "calculators", "reports"] },
+  { label: "Suunnittelu", pages: ["goals", "calculators", "reports", "annual-calendar"] },
   { label: "Sovellus", pages: ["transfer", "settings", "help"] },
 ];
 const navIcons = {
@@ -207,9 +216,16 @@ const navIcons = {
   goals: GoalIcon,
   calculators: PiggyBank,
   reports: FileChartColumn,
+  "annual-calendar": CalendarDays,
   transfer: ArrowLeftRight,
   settings: Settings,
   help: CircleHelp,
+};
+type TrialSession = {
+  baseline: State;
+  asOf: string;
+  fingerprint: string;
+  adjustments: TrialAdjustments;
 };
 type SettingsTab = 'appearance' | 'finance' | 'account' | 'data';
 function settingsTabFromHash(hash: string): SettingsTab | null {
@@ -1924,6 +1940,12 @@ function App() {
     [showAllBudgetCategories, setShowAllBudgetCategories] = useState(false),
     [showAllConsumption, setShowAllConsumption] = useState(false),
     [budgetCategory, setBudgetCategory] = useState<string | null>(null),
+    [budgetCopyOpen, setBudgetCopyOpen] = useState(false),
+    [budgetCopySource, setBudgetCopySource] = useState(loaded.data.settings.month),
+    [budgetCopyTarget, setBudgetCopyTarget] = useState(shiftMonth(loaded.data.settings.month, 1)),
+    [budgetCopyMode, setBudgetCopyMode] = useState<BudgetCopyMode>("fill-missing"),
+    [monthReviewOpen, setMonthReviewOpen] = useState(false),
+    [monthReviewStep, setMonthReviewStep] = useState(0),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
     [reportPeriodMode, setReportPeriodMode] = useState<"month" | "range">("month"),
@@ -1953,6 +1975,8 @@ function App() {
     [systemPrefersDark, setSystemPrefersDark] = useState(
       () => matchMedia("(prefers-color-scheme: dark)").matches,
     );
+  const [trialSession, setTrialSession] = useState<TrialSession | null>(null);
+  const trialNavigationAllowed = useRef(false);
   const testState = useRef(s);
   testState.current = s;
   useEffect(() => {
@@ -1980,6 +2004,18 @@ function App() {
     page === "expenses" ? "expenseMonths" : "incomeMonths";
   const monthCoverageConfirmed = s.coverage[coverageField].includes(month);
   const canConfirmMonthCoverage = month < today().slice(0, 7);
+  const actualIncomeOccurrences = s.incomes.reduce(
+    (count, item) => count + occurrencesWithStatus(item, month, "actual").length,
+    0,
+  );
+  const plannedIncomeOccurrences = s.incomes.reduce(
+    (count, item) => count + occurrencesWithStatus(item, month, "planned").length,
+    0,
+  );
+  const plannedExpenseOccurrences = s.expenses.reduce(
+    (count, item) => count + occurrencesWithStatus(item, month, "planned").length,
+    0,
+  );
   useEffect(() => {
     // Reports keep their own period when the global month changes.
   }, [month, reportPeriodMode]);
@@ -2028,9 +2064,15 @@ function App() {
     const exact = new Set<string>();
     const cutoffs: string[] = [];
     const root = (item: Entry) => {
-      const { occurrenceStatuses, occurrenceAmounts, ...fields } = item;
+      const { occurrenceStatuses, occurrenceAmounts, priceHistory, source, description, tags, createdAt, updatedAt, ...fields } = item;
       void occurrenceStatuses;
       void occurrenceAmounts;
+      void priceHistory;
+      void source;
+      void description;
+      void tags;
+      void createdAt;
+      void updatedAt;
       return fields;
     };
     const addMonth = (date: string) => {
@@ -2040,6 +2082,10 @@ function App() {
       const oldItem = oldById.get(id);
       const newItem = newById.get(id);
       if (JSON.stringify(oldItem) === JSON.stringify(newItem)) continue;
+      const oldPrices = new Map((oldItem?.priceHistory || []).map(change => [change.startDate, change.amount]));
+      const newPrices = new Map((newItem?.priceHistory || []).map(change => [change.startDate, change.amount]));
+      for (const date of new Set([...oldPrices.keys(), ...newPrices.keys()]))
+        if (oldPrices.get(date) !== newPrices.get(date)) cutoffs.push(date.slice(0, 7));
       const oldRoot = oldItem ? JSON.stringify(root(oldItem)) : null;
       const newRoot = newItem ? JSON.stringify(root(newItem)) : null;
       if (oldRoot !== newRoot) {
@@ -2069,17 +2115,29 @@ function App() {
     );
   }
   function coverageAfterEntryChanges(previous: State, next: State) {
+    const manualActualMonths = new Set<string>();
+    for (const period of new Set([
+      ...Object.keys(previous.budgetActuals),
+      ...Object.keys(next.budgetActuals),
+    ])) {
+      if (
+        JSON.stringify(previous.budgetActuals[period] || {}) !==
+        JSON.stringify(next.budgetActuals[period] || {})
+      ) manualActualMonths.add(period);
+    }
+    const expenseMonths = new Set(invalidatedCoverageMonths(
+      previous.expenses,
+      next.expenses,
+      previous.coverage.expenseMonths,
+    ));
+    for (const period of manualActualMonths) expenseMonths.delete(period);
     return {
       incomeMonths: invalidatedCoverageMonths(
         previous.incomes,
         next.incomes,
         previous.coverage.incomeMonths,
       ),
-      expenseMonths: invalidatedCoverageMonths(
-        previous.expenses,
-        next.expenses,
-        previous.coverage.expenseMonths,
-      ),
+      expenseMonths: [...expenseMonths].sort(),
     };
   }
   const receiptUndoActive = useRef(false);
@@ -2116,6 +2174,7 @@ function App() {
   const preferencesPending = preferencesEnabled && !!auth.user && ['dirty', 'saving', 'uncertain', 'conflict', 'rejected'].includes(preferences.status);
   const safeAuth = { ...auth, signOut: async () => {
     if (preferencesPending && !confirm('Asetuksia on tallentamatta. Hylätäänkö ne ja kirjaudutaan ulos?')) return;
+    setTrialSession(null);
     await auth.signOut();
   } };
   function commit(next: State) {
@@ -2180,10 +2239,21 @@ function App() {
     const months = new Set(s.coverage[field]);
     if (confirmed) months.add(month);
     else months.delete(month);
-    commit({
+    return commit({
       ...s,
       coverage: { ...s.coverage, [field]: [...months].sort() },
     });
+  }
+  function openMonthReview() {
+    if (!canConfirmMonthCoverage) return;
+    setMonthReviewStep(
+      !s.coverage.incomeMonths.includes(month)
+        ? 0
+        : !s.coverage.expenseMonths.includes(month)
+          ? 1
+          : 2,
+    );
+    setMonthReviewOpen(true);
   }
   function emergencyPlanner() {
     return (
@@ -2223,12 +2293,31 @@ function App() {
     try { preferences.update(preferencesFromState(s, next)); setDismissedHelp(next); setNotice('Selaimen vanhat ohjeasetukset otettiin käyttöön.'); }
     catch { setNotice('Asetuksia ei voitu tallentaa.'); }
   }
+  function startTrial() {
+    const asOf = today();
+    setTrialSession({ baseline: s, asOf, fingerprint: trialBasisFingerprint(s), adjustments: emptyTrialAdjustments() });
+  }
+  function restartTrial() {
+    const asOf = today();
+    setTrialSession({ baseline: s, asOf, fingerprint: trialBasisFingerprint(s), adjustments: emptyTrialAdjustments() });
+  }
+  function updateTrialAdjustments(adjustments: TrialAdjustments) {
+    setTrialSession(current => current ? { ...current, adjustments } : current);
+  }
   function navigate(p: string) {
     if (p === "scenarios") p = "calculators";
+    const targetPage = pageFromHash(p);
+    if (trialSession && page !== targetPage) {
+      if (!confirm("Kokeilu on käynnissä. Lopetetaanko se ja siirrytään toiselle sivulle? Kokeilu ei muuta talouden tietoja.")) return;
+      setTrialSession(null);
+    }
     const tab = settingsTabFromHash(p);
     if (tab) setSettingsTab(tab);
-    setPage(pageFromHash(p));
-    location.hash = p;
+    setPage(targetPage);
+    if (location.hash !== `#${p}`) {
+      trialNavigationAllowed.current = true;
+      location.hash = p;
+    }
     setCategoryFilter("");
     setStatusFilter("");
     setLimit(100);
@@ -2287,6 +2376,15 @@ function App() {
   useEffect(() => {
     let f = () => {
       const next = location.hash.slice(1);
+      if (trialNavigationAllowed.current) {
+        trialNavigationAllowed.current = false;
+      } else if (trialSession && page !== pageFromHash(next)) {
+        if (!confirm("Kokeilu on käynnissä. Lopetetaanko se ja siirrytään toiselle sivulle? Kokeilu ei muuta talouden tietoja.")) {
+          window.history.replaceState(null, "", `${location.pathname}${location.search}#${page}`);
+          return;
+        }
+        setTrialSession(null);
+      }
       setPage(pageFromHash(next));
       const tab = settingsTabFromHash(next);
       if (tab) setSettingsTab(tab);
@@ -2294,7 +2392,7 @@ function App() {
     };
     window.addEventListener("hashchange", f);
     return () => window.removeEventListener("hashchange", f);
-  }, []);
+  }, [trialSession, page]);
   useEffect(() => {
     let f = (e: KeyboardEvent) => {
       if (
@@ -2413,6 +2511,17 @@ function App() {
     setQuickEntryKind(kind);
     setQuick(true);
   }
+  function beginAnnualExpense(recurrence: "once" | "monthly") {
+    const date = today();
+    setQuickSeed(entry({
+      category: cats("expenses")[0] || "Muu",
+      date,
+      status: "actual",
+      recurrence,
+    }));
+    setQuickEntryKind("expenses");
+    setQuick(true);
+  }
   function saveQuickEntry(
     kind: "incomes" | "expenses",
     item: Entry,
@@ -2519,6 +2628,84 @@ function App() {
     } catch (e) {
       setNotice(String(e));
     }
+  }
+  function openBudgetCopy() {
+    setBudgetCopySource(month);
+    try {
+      setBudgetCopyTarget(shiftMonth(month, 1));
+    } catch {
+      setBudgetCopyTarget("");
+    }
+    setBudgetCopyMode("fill-missing");
+    setBudgetCopyOpen(true);
+  }
+  function applyBudgetCopy() {
+    try {
+      const result = budgetCopyPreview(s, budgetCopySource, budgetCopyTarget, budgetCopyMode);
+      if (Object.keys(s.budgets[budgetCopySource] || {}).length === 0) {
+        setNotice("Lähdekuukaudella ei ole budjettia kopioitavaksi.");
+        return;
+      }
+      if (result.unchanged) {
+        setNotice("Kohdekuukauden budjetti vastaa jo valittua toimintoa.");
+        return;
+      }
+      if (!commit({ ...s, budgets: result.budgets })) return;
+      setBudgetCopyOpen(false);
+      setNotice(`Budjetti kopioitu kuukaudelle ${budgetCopyTarget}. Toteutuneita kirjauksia ei muutettu.`);
+    } catch (error) {
+      setNotice(String(error));
+    }
+  }
+  function changeAnnualPlan(expenseId: string, selected: boolean) {
+    const plans = new Set(s.annualReservePlans || []);
+    if (selected) {
+      if (plans.has(expenseId)) return;
+      plans.add(expenseId);
+    }
+    else {
+      if (!plans.has(expenseId)) return;
+      const relatedReservations = (s.annualReservations || []).filter(item => item.expenseId === expenseId);
+      if (relatedReservations.length && !confirm("Poistetaanko varaussuunnitelma ja kaikki siihen tallennetut eräkohtaiset varaukset?")) return;
+      plans.delete(expenseId);
+    }
+    const annualReservePlans = [...plans];
+    const annualReservations = selected
+      ? s.annualReservations
+      : (s.annualReservations || []).filter(item => item.expenseId !== expenseId);
+    const next: State = { ...s, annualReservePlans, annualReservations };
+    if (!annualReservePlans.length && !annualReservations?.length) {
+      delete next.annualReservePlans;
+      delete next.annualReservations;
+    }
+    commit(next);
+  }
+  function changeAnnualReservation(expenseId: string, occurrenceDate: string, amount: number) {
+    const existing = (s.annualReservations || []).find(item => item.expenseId === expenseId && item.occurrenceDate === occurrenceDate);
+    const usedAmount = existing?.usedAmount || 0;
+    if (Math.max(0, (existing?.amount || 0) - usedAmount) === amount) return;
+    if (amount + usedAmount > MAX) { setNotice("Varaussumma ylittää sallitun enimmäismäärän."); return; }
+    const annualReservations = (s.annualReservations || []).filter(item =>
+      item.expenseId !== expenseId || item.occurrenceDate !== occurrenceDate,
+    );
+    if (amount > 0 || usedAmount > 0) annualReservations.push({
+      expenseId,
+      occurrenceDate,
+      amount: amount + usedAmount,
+      ...(usedAmount > 0 ? { usedAmount } : {}),
+    });
+    commit({ ...s, annualReservations });
+  }
+  function useAnnualReservation(expenseId: string, occurrenceDate: string) {
+    const annualReservations = (s.annualReservations || []).map(item =>
+      item.expenseId === expenseId && item.occurrenceDate === occurrenceDate
+        ? { ...item, usedAmount: item.amount }
+        : item,
+    );
+    commit({ ...s, annualReservations });
+  }
+  function deleteAnnualReservation(expenseId: string, occurrenceDate: string) {
+    commit({ ...s, annualReservations: (s.annualReservations || []).filter(item => item.expenseId !== expenseId || item.occurrenceDate !== occurrenceDate) });
   }
   function actualChange(cat: string, text: string) {
     try {
@@ -3234,7 +3421,17 @@ function App() {
     ]),
   );
   const calculationDate = today();
+  const currentTrialFingerprint = useMemo(() => trialBasisFingerprint(s), [s]);
+  const trialStale = Boolean(trialSession && trialSession.fingerprint !== currentTrialFingerprint);
   const monthBudgetSummary = useMemo(() => budgetSummary(s, month), [s, month, calculationDate]);
+  const annualReserve = useMemo(() => annualReserveSummary(s, calculationDate), [s, calculationDate]);
+  const budgetCopyResult = useMemo(() => {
+    try {
+      return budgetCopyPreview(s, budgetCopySource, budgetCopyTarget, budgetCopyMode);
+    } catch {
+      return null;
+    }
+  }, [s, budgetCopySource, budgetCopyTarget, budgetCopyMode]);
   const monthGuidance = useMemo(() => budgetGuidance(s, month), [s, month, calculationDate]);
   const monthBudgets = s.budgets[month] || {};
   const budgetCategoriesByName = new Map(
@@ -3367,7 +3564,7 @@ function App() {
           >
             Valikko · {names[page] || "Yhteenveto"}
           </button>
-          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.')); }}>
+          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).then(() => setTrialSession(null)).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.')); }}>
             {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
           </select></label>} />
           </div>
@@ -3489,6 +3686,10 @@ function App() {
               </div>}
             </div>
           </header>
+          {trialSession && <section className={`trial-mode-banner${trialStale ? " stale" : ""}`} role="status">
+            <div><strong>Kokeilutila · ei tallennu</strong><span>{trialStale ? "Talouden tulot tai menot ovat muuttuneet kokeilun aloittamisen jälkeen. Lähtötilanne pysyy ennallaan." : "Kokeilun arvoja ei lisätä talouteen, vientiin tai pilvitallennukseen."}</span></div>
+            <div>{page !== "calculators" && <button type="button" onClick={() => navigate("calculators")}>Avaa kokeilu</button>}{trialStale && <button type="button" onClick={restartTrial}>Aloita nykyisillä tiedoilla uudelleen</button>}<button type="button" onClick={() => setTrialSession(null)}>Lopeta kokeilu</button></div>
+          </section>}
           <main id="main" tabIndex={-1}>
             <div className="page-head">
               <div>
@@ -4246,6 +4447,22 @@ function App() {
                       {stat("Tulot kulutuksen jälkeen", euro(m.surplus), "Ei ole sama kuin todennettu sijoitussumma.")}
                     </div></div>
                   </section>
+                  <MonthComparisonCard state={s} month={month} asOf={calculationDate} format={euro} />
+                  <section className="panel month-review-launch" aria-labelledby="month-review-launch-title">
+                    <div>
+                      <h2 id="month-review-launch-title">Tarkista kuukausi</h2>
+                      <p className="muted">Käy läpi kuukauden tulot ja menot. Tarkistus käyttää olemassa olevia kuukausivahvistuksia.</p>
+                      <StatusBadge tone={s.coverage.incomeMonths.includes(month) && s.coverage.expenseMonths.includes(month) ? "positive" : "neutral"}>
+                        {s.coverage.incomeMonths.includes(month) && s.coverage.expenseMonths.includes(month)
+                          ? "Tulot ja menot tarkistettu"
+                          : `Tulot ${s.coverage.incomeMonths.includes(month) ? "tarkistettu" : "odottavat"} · menot ${s.coverage.expenseMonths.includes(month) ? "tarkistettu" : "odottavat"}`}
+                      </StatusBadge>
+                    </div>
+                    <div>
+                      {!canConfirmMonthCoverage && <small>Tarkistus on käytettävissä, kun kuukausi on päättynyt.</small>}
+                      <button type="button" className="primary" disabled={!canConfirmMonthCoverage} onClick={openMonthReview}>Aloita tarkistus</button>
+                    </div>
+                  </section>
                   <section
                     className="metric-group metric-group-wealth"
                     aria-labelledby="wealth-heading"
@@ -4403,7 +4620,7 @@ function App() {
                 if (!allowDuplicates && (seen.has(fingerprint) || s.expenses.some(e => e.active && e.name.trim().toLocaleLowerCase("fi-FI") === suggestion.name.trim().toLocaleLowerCase("fi-FI") && e.amount === suggestion.amountCents && e.date === suggestion.date))) return "Sama lasku saattaa olla jo kirjattu tai esiintyä erässä kahdesti. Tarkista laskut ennen tallentamista.";
                 seen.add(fingerprint);
               }
-              const expenses = batch.map(({ suggestion, recurring, category }) => entry({ name: suggestion.name, amount: suggestion.amountCents!, date: suggestion.date, category, recurrence: recurring ? "monthly" : "once" }));
+              const expenses = batch.map(({ suggestion, recurring, category }) => entry({ name: suggestion.name, amount: suggestion.amountCents!, date: suggestion.date, category, recurrence: recurring ? "monthly" : "once", source: "invoice" }));
               if (!commit({ ...s, expenses: [...s.expenses, ...expenses] })) return "Laskujen tallentaminen epäonnistui.";
               setUndo(s); receiptUndoActive.current = true; setNotice(`${expenses.length} laskua kirjattu. Voit kumota erän Kumoa-painikkeella.`); return "";
             }} /></ScannerDialog>
@@ -4419,6 +4636,17 @@ function App() {
               }} />
             </ScannerDialog>
             {(["budget", "incomes", "expenses"].includes(page)) && <BudgetGuidancePanel state={s} month={month} euro={euro} detailed={page === "budget"} onCategory={setBudgetCategory} onBudget={() => navigate("budget")} onSettings={() => navigate("settings-finance")} />}
+            {page === "annual-calendar" && <AnnualCalendar
+              state={s}
+              asOf={calculationDate}
+              format={euro}
+              householdLabel={s.settings.demo ? "Esimerkkitalous" : activeHousehold ? `${activeHousehold.name}${activeHousehold.kind === "shared" ? " · yhteinen" : " · oma"}` : auth.user ? "Oma talous" : "Vierastila"}
+              onPlanChange={changeAnnualPlan}
+              onReserveChange={changeAnnualReservation}
+              onUseReservation={useAnnualReservation}
+              onDeleteReservation={deleteAnnualReservation}
+              onAddExpense={beginAnnualExpense}
+            />}
             {page === "budget" && (
               <>
                 {!dismissedHelp.has("budget-actuals") && (
@@ -4439,33 +4667,18 @@ function App() {
                   {stat("Budjettien erotus", euro(budgetDifference))}
                   {stat("Kulutus ilman budjettia", euro(unbudgetedActual))}
                 </div>
+                <section className="panel budget-annual-reserve-summary" aria-labelledby="budget-annual-reserve-title">
+                  <div><h2 id="budget-annual-reserve-title">Vuosikulujen varaus</h2><p>{s.annualReservePlans?.length ? "Valittujen tulevien toistuvien menojen tasaus seuraavalle 12 kuukaudelle." : "Valitse ennakoitavat laskut vuosikelloon ja tarkastele tarvittavaa tasausta."}</p></div>
+                  {s.annualReservePlans?.length ? <strong>{euro(annualReserve.monthlyReserve)} / kk</strong> : <span>Ei valittuja menoja</span>}
+                  <button type="button" onClick={() => navigate("annual-calendar")}>Avaa vuosikello <ArrowRight size={16} aria-hidden="true" /></button>
+                  {annualReserve.items.some(item => item.eligible && item.expense.recurrence !== "once") && <ul className="annual-reserve-budget-list">{annualReserve.items.filter(item => item.eligible && item.expense.recurrence !== "once").map(item => <li key={item.expense.id}><span>{item.expense.name}</span><strong>{euro(item.annualizedMonthly)} / kk</strong></li>)}</ul>}
+                  <small>Erillinen suunnitteluluku. Se ei sisälly tämän kuun budjettiin tai toteutuneisiin menoihin.</small>
+                </section>
                 <section className="panel">
                   <div className="section-head">
                     <h2>Kategoriabudjetti</h2>
-                    <button
-                      onClick={() => {
-                        let [y, mo] = month.split("-").map(Number),
-                          d = new Date(y, mo - 2, 1),
-                          prev = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                        if (!s.budgets[prev])
-                          setNotice(
-                            "Edellisellä kuukaudella ei ole budjettia.",
-                          );
-                        else if (
-                          confirm(
-                            "Korvataanko tämän kuukauden budjetti edellisen kuukauden kopiolla?",
-                          )
-                        )
-                          commit({
-                            ...s,
-                            budgets: {
-                              ...s.budgets,
-                              [month]: { ...s.budgets[prev] },
-                            },
-                          });
-                      }}
-                    >
-                      Kopioi edellinen kuukausi
+                    <button type="button" onClick={openBudgetCopy}>
+                      Kopioi budjetti
                     </button>
                   </div>
 
@@ -4727,6 +4940,7 @@ function App() {
                                 <td role="cell" data-label="Nimi">
                                   <div className="row-title">
                                     <strong>{e.name}</strong>
+                                    {(s.settings.demo || e.source !== "manual") && <StatusBadge>{entrySourceLabel(e.source, s.settings.demo)}</StatusBadge>}
                                   </div>
                                 </td>
                                 <td role="cell" data-label="Kategoria"><span className="entry-category-label">
@@ -4829,7 +5043,17 @@ function App() {
                 )}
               </>
             )}
-            {page === "calculators" && (
+            {page === "calculators" && <>
+              {trialSession ? <TrialModePanel
+                state={trialSession.baseline}
+                asOf={trialSession.asOf}
+                adjustments={trialSession.adjustments}
+                format={euro}
+                onChange={updateTrialAdjustments}
+              /> : <section className="panel trial-mode-launch">
+                <div><span className="eyebrow">ERILLINEN LASKELMA</span><h2>Kokeile omaa taloutta</h2><p>Tee muistissa vaihtoehtoinen laskelma tulojen, kulutusmenojen tai yhden toistuvan menon muutoksesta. Kokeilu ei koske varsinaisia tietoja.</p></div>
+                <button type="button" className="primary" onClick={startTrial}>Aloita kokeilu</button>
+              </section>}
               <ScenarioView
                 scenarios={s.scenarios}
                 euro={euro}
@@ -4848,7 +5072,7 @@ function App() {
                 onEdit={(kind, item) => setEdit({ kind, item, openValuation: kind === 'assets' })}
                 atDate={valuationDate}
               />
-            )}
+            </>}
             {page === "reports" && (
               <>
                 {!dismissedHelp.has("reports-interaction") && (
@@ -6770,7 +6994,7 @@ function App() {
                 </p>
                 <h3>Version rajaus</h3>
                 <p>
-                  Versio 0.1.0 on toimiva paikallinen ensimmäinen toimitus, ei
+                  Versio 0.4.0 on toimiva ensimmäinen toimitus, ei
                   koko laajan V1-määrittelyn hyväksytty lopputulos. Edistyneet
                   arvostushistoriat, sijoitustapahtumat, monivaluutat, kaikki
                   budjetointitavat ja täydellinen saavutettavuusauditointi ovat
@@ -6867,6 +7091,125 @@ function App() {
           />
         </Modal>
       )}
+      {budgetCopyOpen && (
+        <Modal title="Kopioi budjetti kuukausien välillä" onClose={() => setBudgetCopyOpen(false)}>
+          <p>Aktiivinen talous: <strong>{activeHousehold ? `${activeHousehold.name} · ${activeHousehold.kind === "shared" ? "yhteinen" : "oma"}` : "Vierastila"}</strong></p>
+          <div className="form-grid">
+            <label>
+              Kopioi kuukaudelta
+              <input type="month" value={budgetCopySource} onChange={event => setBudgetCopySource(event.target.value)} />
+            </label>
+            <label>
+              Kohdekuukausi
+              <input type="month" value={budgetCopyTarget} onChange={event => setBudgetCopyTarget(event.target.value)} />
+            </label>
+          </div>
+          <fieldset className="budget-copy-options">
+            <legend>Miten kohteen nykyiset budjetit käsitellään?</legend>
+            <label><input type="radio" name="budget-copy-mode" checked={budgetCopyMode === "fill-missing"} onChange={() => setBudgetCopyMode("fill-missing")} /> Täydennä puuttuvat · säilytä kaikki kohteen nykyiset arvot</label>
+            <label><input type="radio" name="budget-copy-mode" checked={budgetCopyMode === "replace"} onChange={() => setBudgetCopyMode("replace")} /> Korvaa kohdebudjetti lähdekuukauden budjetilla</label>
+          </fieldset>
+          {budgetCopyResult ? (
+            <section className="budget-copy-preview" aria-live="polite">
+              <h3>Esikatselu</h3>
+              {Object.keys(s.budgets[budgetCopySource] || {}).length === 0 ? (
+                <p>Lähdekuukaudella ei ole budjettia kopioitavaksi.</p>
+              ) : budgetCopyResult.unchanged ? (
+                <p>Valittu toiminto ei muuttaisi kohdekuukauden budjettia.</p>
+              ) : (
+                <>
+                  <p>Kopioitavat kategoriat: <strong>{budgetCopyResult.copiedCount}</strong> · yhteensä <strong>{euro(budgetCopyResult.copiedTotal)}</strong></p>
+                  {budgetCopyMode === "fill-missing" && <p>Säilytettävät kohteen kategoriat: {budgetCopyResult.preserved.length}</p>}
+                  {budgetCopyMode === "replace" && <>
+                    {!!budgetCopyResult.overwritten.length && <p>Korvattavat kategoriat: {budgetCopyResult.overwritten.join(", ")}</p>}
+                    {!!budgetCopyResult.removed.length && <p>Poistuvat kohteen kategoriat: {budgetCopyResult.removed.join(", ")}</p>}
+                  </>}
+                  {!!budgetCopyResult.skipped.length && <p>Ohitetaan poistetut tai arkistoidut kategoriat: {budgetCopyResult.skipped.join(", ")}</p>}
+                  {budgetCopyResult.copiedCount > 0 && <ul>{Object.entries(budgetCopyResult.copied).map(([category, amount]) => <li key={category}>{category}: {euro(amount)}</li>)}</ul>}
+                </>
+              )}
+              <small>Vain budjettisuunnitelmat kopioidaan. Menokirjaukset, toteumat ja kuukausivahvistukset säilyvät ennallaan.</small>
+            </section>
+          ) : <p role="alert">Valitse kaksi eri kelvollista kuukautta.</p>}
+          <div className="actions">
+            <button type="button" onClick={() => setBudgetCopyOpen(false)}>Peruuta</button>
+            <button type="button" className="primary" onClick={applyBudgetCopy} disabled={!budgetCopyResult || budgetCopyResult.unchanged || budgetCopyResult.copiedCount === 0}>
+              {budgetCopyMode === "replace" ? "Korvaa kohdebudjetti" : "Kopioi puuttuvat budjetit"}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {monthReviewOpen && (
+        <Modal title={`Kuukauden ${month} tarkistus`} onClose={() => setMonthReviewOpen(false)}>
+          <p className="month-review-progress" role="status">Vaihe {monthReviewStep + 1} / 3 · Tulot → menot → yhteenveto</p>
+          {monthReviewStep === 0 && (
+            <section className="month-review-step" aria-labelledby="month-review-income-title">
+              <h3 id="month-review-income-title">1. Tarkista tulot</h3>
+              <p>Varmista, että kaikki kuukauden tulot ovat mukana. Myös tuloton kuukausi voidaan vahvistaa.</p>
+              <div className="stats month-review-stats">
+                <MetricCard label="Kirjatut toteutuneet tulot" value={euro(m.income)} />
+                <MetricCard label="Toteutuneet tulotapahtumat" value={String(actualIncomeOccurrences)} />
+                <MetricCard label="Suunniteltuja tapahtumia" value={String(plannedIncomeOccurrences)} />
+              </div>
+              {s.coverage.incomeMonths.includes(month) && <StatusBadge tone="positive">Tulot on jo vahvistettu</StatusBadge>}
+              <small>Tila tarkoittaa omaa tarkistusta. Sovellus ei varmista tuloja pankista.</small>
+              <div className="actions">
+                <button type="button" onClick={() => { setMonthReviewOpen(false); navigate("incomes"); }}>Avaa tulot</button>
+                <button type="button" className="primary" onClick={() => {
+                  if (!s.coverage.incomeMonths.includes(month) && !setMonthCoverage("incomes", true)) return;
+                  setMonthReviewStep(1);
+                }}>{s.coverage.incomeMonths.includes(month) ? "Jatka menoihin" : "Vahvista tulot ja jatka"}</button>
+              </div>
+            </section>
+          )}
+          {monthReviewStep === 1 && (
+            <section className="month-review-step" aria-labelledby="month-review-expense-title">
+              <h3 id="month-review-expense-title">2. Tarkista menot</h3>
+              <p>Varmista, että kulutusmenot ja säästö- tai sijoitussiirrot ovat oikeilla tyypeillä.</p>
+              <div className="stats month-review-stats">
+                <MetricCard label="Kulutusmenot" value={euro(m.consumption)} />
+                <MetricCard label="Säästösiirrot" value={euro(m.savingTransfers)} />
+                <MetricCard label="Sijoitussiirrot" value={euro(m.investmentTransfers)} />
+                <MetricCard label="Suunniteltuja tapahtumia" value={String(plannedExpenseOccurrences)} />
+              </div>
+              {Object.keys(s.budgetActuals[month] || {}).length > 0 && (
+                <p className="month-review-manual-note">Budjetissa on {Object.keys(s.budgetActuals[month]).length} omaa kategoriatoteumaa. Tarkista ne budjetissa; ne eivät ole erillisiä menokirjauksia.</p>
+              )}
+              {s.coverage.expenseMonths.includes(month) && <StatusBadge tone="positive">Menot on jo vahvistettu</StatusBadge>}
+              <small>Toteutuneen tapahtuman tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small>
+              <div className="actions">
+                <button type="button" onClick={() => { setMonthReviewOpen(false); navigate("expenses"); }}>Avaa menot</button>
+                <button type="button" onClick={() => setMonthReviewStep(0)}>Takaisin tuloihin</button>
+                <button type="button" className="primary" onClick={() => {
+                  if (!s.coverage.expenseMonths.includes(month) && !setMonthCoverage("expenses", true)) return;
+                  setMonthReviewStep(2);
+                }}>{s.coverage.expenseMonths.includes(month) ? "Jatka yhteenvetoon" : "Vahvista menot ja jatka"}</button>
+              </div>
+            </section>
+          )}
+          {monthReviewStep === 2 && (
+            <section className="month-review-step" aria-labelledby="month-review-summary-title">
+              <h3 id="month-review-summary-title">3. Kuukauden yhteenveto</h3>
+              <div className="stats month-review-stats">
+                <MetricCard label="Toteutuneet tulot" value={euro(m.income)} />
+                <MetricCard label="Toteutuneet menot ja siirrot" value={euro(m.expense)} />
+                <MetricCard label="Kassavirran erotus" value={euro(m.cash)} note="Toteutuneet tulot miinus toteutuneet menot. Ei tilisaldo." />
+              </div>
+              <div className="month-review-confirmations">
+                <StatusBadge tone={s.coverage.incomeMonths.includes(month) ? "positive" : "warning"}>Tulot {s.coverage.incomeMonths.includes(month) ? "tarkistettu" : "vahvistamatta"}</StatusBadge>
+                <StatusBadge tone={s.coverage.expenseMonths.includes(month) ? "positive" : "warning"}>Menot {s.coverage.expenseMonths.includes(month) ? "tarkistettu" : "vahvistamatta"}</StatusBadge>
+              </div>
+              <p>Kuukauden tarkistus ei lukitse tietoja. Jos muokkaat kirjauksia myöhemmin, sovellus avaa vaikutuksen alaisen vahvistuksen uudelleen.</p>
+              <small>Vahvistus kertoo omasta tarkistuksesta, ei pankin varmistamasta maksusta.</small>
+              <div className="actions">
+                <button type="button" onClick={() => setMonthReviewStep(1)}>Takaisin menoihin</button>
+                <button type="button" onClick={() => { setMonthReviewOpen(false); navigate("budget"); }}>Avaa budjetti</button>
+                <button type="button" className="primary" onClick={() => setMonthReviewOpen(false)}>Valmis</button>
+              </div>
+            </section>
+          )}
+        </Modal>
+      )}
       {budgetCategory !== null && (() => {
         const category = budgetCategory;
         const recommendation = monthGuidance.categories.find(item => item.name === category);
@@ -6914,10 +7257,11 @@ function App() {
         const linkedDebts = kind === "assets" ? s.liabilities.filter(debt => debt.linkedAssetId === id) : [];
         return <Modal title={`${singular[kind]} · ${item.name}`} onClose={() => setViewEntry(null)}>
           <section className="entry-reader" aria-label="Tietueen tiedot">
-            <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round((positionQuote?.exactUnitCents ?? item.amount) * item.quantity) : item.amount)}</strong></div>
+            <div className="entry-reader-summary"><span>{item.category}</span><strong>{euro(kind === "investments" ? Math.round((positionQuote?.exactUnitCents ?? item.amount) * item.quantity) : cash ? occurrenceSum(item, month) : item.amount)}</strong></div>
 
             {(kind === "assets" || kind === "liabilities") && <p className="ux-status-note">{viewDate} · {datedValue(item,kind,viewDate).note} · {euro(datedValue(item,kind,viewDate).value)}. Kirjattu lähtöarvo näkyy yllä.</p>}
             <dl className="entry-facts">
+              <div><dt>Alkuperä</dt><dd>{entrySourceLabel(item.source, s.settings.demo)}</dd></div>
               <div><dt>{kind === "assets" || kind === "investments" ? "Arvostuspäivä" : kind === "goals" ? "Tavoitepäivä" : "Päiväys"}</dt><dd>{(positionQuote?.date || item.date).split("-").reverse().join(".")}</dd></div>
               {cash && <><div><dt>Toistuvuus</dt><dd>{recNames[item.recurrence]}</dd></div><div><dt>Kuukauden tila</dt><dd>{monthEntryStatus(item, month)}</dd></div><div><dt>Sarja</dt><dd>{item.active ? "Aktiivinen" : "Keskeytetty"}</dd></div>{item.endDate && <div><dt>Päättyy</dt><dd>{item.endDate.split("-").reverse().join(".")}</dd></div>}{kind === "incomes" && <div><dt>Maksupäivän siirto</dt><dd>{item.adjustToPreviousBankDay ? "Edeltävä pankkipäivä" : "Ei siirtoa"}</dd></div>}{kind === "expenses" && <><div><dt>Menotyyppi</dt><dd>{expenseTypeName(expenseType(item))}</dd></div><div><dt>Välttämätön meno</dt><dd>{item.essential ? "Kyllä" : "Ei"}</dd></div></>}</>}
               {kind === "assets" && <><div><dt>Omistusosuus</dt><dd>{percentText(item.ownership)} %</dd></div><div><dt>Likvidiys</dt><dd>{item.liquid ? "Likvidi" : "Ei likvidi"}</dd></div><div><dt>Oman osuuden arvo</dt><dd>{euro(Math.round(item.amount * item.ownership / 100))}</dd></div><div><dt>Linkitetyt velat</dt><dd>{linkedDebts.map(debt => debt.name).join(", ") || "Ei linkkejä"}</dd></div></>}
@@ -6926,6 +7270,7 @@ function App() {
               {kind === "goals" && <><div><dt>Tavoite</dt><dd>{euro(item.target)}</dd></div><div><dt>Kuukausisäästö</dt><dd>{euro(item.monthly)}</dd></div></>}
               {userTags(item.tags) && <div><dt>Tunnisteet</dt><dd>{userTags(item.tags)}</dd></div>}
             </dl>
+            <small className="entry-origin-note">Alkuperä kertoo vain lisäystavan. Se ei varmista tietueen oikeellisuutta eikä ole muokkaushistoria.</small>
             {item.description && <p className="entry-reader-description">{item.description}</p>}
             {cash && <><p className="muted">{Object.keys(item.occurrenceStatuses).length} tallennettua tilakorjausta · {Object.keys(item.occurrenceAmounts).length} summakorjausta. Korjaukset koskevat yksittäisiä tapahtumia.</p><h3>Kuukauden tapahtumat</h3><ul className="entry-reader-events">{scheduledOccurrences(item, month).map(date => <li key={date}><span>{date.split("-").reverse().join(".")}</span><strong>{euro(occurrenceAmount(item, date))}</strong><span>{entryStatusName(occurrenceStatus(item, date))}</span></li>)}</ul>{!scheduledOccurrences(item, month).length && <p>Ei tapahtumia valitussa kuussa.</p>}<small>Tila perustuu päivämäärään tai omaan korjaukseen, ei pankkivarmennukseen.</small></>}
 
@@ -6934,6 +7279,14 @@ function App() {
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
+            {(kind === "incomes" || kind === "expenses") && item.recurrence !== "once" && <PriceHistoryEditor item={item} format={euro} onSave={changes => {
+              const updated: Entry = { ...item, updatedAt: new Date().toISOString() };
+              if (changes.length) updated.priceHistory = changes;
+              else delete updated.priceHistory;
+              return kind === "incomes"
+                ? commit({ ...s, incomes: s.incomes.map(entry => entry.id === id ? updated : entry) })
+                : commit({ ...s, expenses: s.expenses.map(entry => entry.id === id ? updated : entry) });
+            }} />}
           </section>
           {cash && <div className="entry-corrections"><button type="button" aria-expanded={correctOccurrences} aria-controls="reader-occurrence-editor" onClick={() => setCorrectOccurrences(value => !value)}>{correctOccurrences ? "Sulje tapahtumakorjaukset" : "Korjaa kuukauden tapahtumia"}</button>{correctOccurrences && <div id="reader-occurrence-editor">                                      <fieldset className="occurrence-statuses">
                                         <legend>

@@ -2,6 +2,7 @@ import {
   entry,
   legacyExpenseType,
   type Entry,
+  type EntrySource,
   type ExpenseType,
 } from "../domain/model";
 import { money, userTags, validDate } from "../domain/calculations";
@@ -44,6 +45,7 @@ export const csvFields = [
   "category",
   "expenseType",
   "date",
+  "source",
   "recurrence",
   "status",
   "description",
@@ -61,6 +63,7 @@ export const csvFields = [
   "essential",
   "occurrenceStatuses",
   "occurrenceAmounts",
+  "priceHistory",
 ];
 export const csvFieldLabels: Record<string, string> = {
   name: "Nimi",
@@ -68,6 +71,7 @@ export const csvFieldLabels: Record<string, string> = {
   category: "Kategoria",
   expenseType: "Menon tyyppi",
   date: "Päivä",
+  source: "Alkuperä",
   recurrence: "Toistuvuus",
   status: "Tila",
   description: "Kuvaus",
@@ -85,6 +89,7 @@ export const csvFieldLabels: Record<string, string> = {
   essential: "Välttämätön meno",
   occurrenceStatuses: "Esiintymien tilat",
   occurrenceAmounts: "Esiintymien summat",
+  priceHistory: "Hinnanmuutokset",
 };
 const csvHeaderAliases: Record<string, string[]> = {
   name: [
@@ -118,6 +123,7 @@ const csvHeaderAliases: Record<string, string[]> = {
     "transaction date",
     "value date",
   ],
+  source: ["alkuperä", "tietojen alkuperä"],
 };
 function normalizedHeader(value: string) {
   return value
@@ -170,6 +176,7 @@ export function exportCSV(es: Entry[]) {
               v = (Number(v) / 100).toFixed(2).replace(".", ",");
             if (k === "occurrenceStatuses") v = JSON.stringify(v);
             if (k === "occurrenceAmounts") v = JSON.stringify(v);
+            if (k === "priceHistory") v = v === undefined ? "" : JSON.stringify(v);
             return safe(String(v));
           })
           .join(";"),
@@ -200,6 +207,10 @@ export function csvEntry(
   const category = get("category") || "Muu";
   const tags = get("tags");
   const importedType = get("expenseType");
+  const importedSource = get("source").trim();
+  const sources: EntrySource[] = ["manual", "csv", "receipt", "invoice", "unknown"];
+  if (importedSource && !sources.includes(importedSource as EntrySource))
+    throw Error("Kirjauksen alkuperän pitää olla manual, csv, receipt, invoice tai unknown.");
   let e = entry({
     name: get("name"),
     amount,
@@ -210,6 +221,7 @@ export function csvEntry(
       "consumption",
     tags: userTags(tags),
     date: d,
+    source: importedSource ? importedSource as EntrySource : "csv",
   });
   for (let k of csvFields) {
     let v = get(k);
@@ -217,7 +229,7 @@ export function csvEntry(
       continue;
     if (["purchasePrice", "payment", "target", "monthly"].includes(k))
       (e as any)[k] = money(v);
-    else if (k === "occurrenceStatuses" || k === "occurrenceAmounts")
+    else if (k === "occurrenceStatuses" || k === "occurrenceAmounts" || k === "priceHistory")
       (e as any)[k] = JSON.parse(v);
     else if (["quantity", "ownership", "rate"].includes(k))
       (e as any)[k] = Number(v.replace(",", "."));

@@ -35,7 +35,7 @@ export function prepareReceiptImport(s: State, draftRaw: ReceiptDraft, categorie
   if (options.replaceEntryId && !matches.some(e => e.id === options.replaceEntryId)) throw Error("Täsmäytettävä maksu on muuttunut. Tarkista valinta uudelleen.");
   const affectedCategories = new Set([...totals.keys(), ...matches.filter(e => e.id === options.replaceEntryId).map(e => e.category)]);
   for (const name of affectedCategories) if (s.budgetActuals[month]?.[name] !== undefined && !options.clearActuals) throw Error("Kategoriassa on käsin asetettu toteuma. Hyväksy paluu kirjauksista laskettavaan toteumaan.");
-  const entries = [...totals].filter(([, amount]) => amount > 0).map(([category, amount]) => entry({ name: `${draft.merchant} · ${category}`.slice(0, 200), category, amount, date: draft.date, status: draft.date <= today() ? "actual" : "planned", recurrence: "once", essential: ["Ruoka", "Päivittäistavara", "Hygieniatarvikkeet", "Lapset ja perhe"].includes(category) }));
+  const entries = [...totals].filter(([, amount]) => amount > 0).map(([category, amount]) => entry({ name: `${draft.merchant} · ${category}`.slice(0, 200), category, amount, date: draft.date, status: draft.date <= today() ? "actual" : "planned", recurrence: "once", essential: ["Ruoka", "Päivittäistavara", "Hygieniatarvikkeet", "Lapset ja perhe"].includes(category), source: "receipt" }));
   const expenses = s.expenses.flatMap(e => {
     if (e.id !== options.replaceEntryId) return [e];
     if (e.recurrence === "once") return [];

@@ -1,6 +1,6 @@
 # Tietomalli, schemaVersion 1
 
-AppState sisältää schemaVersionin, applicationVersionin, createdAtin, settingsin, categoriesin, incomesin, expensesin, budgetsin, budgetActualsin, `coverage`-tiedon, actionStatesin, assetsin, liabilitiesin, investmentsin, investmentTransactionsin, goalsin, scenariosin ja themesin.
+AppState sisältää schemaVersionin, applicationVersionin, createdAtin, settingsin, categoriesin, incomesin, expensesin, budgetsin, budgetActualsin, `coverage`-tiedon, actionStatesin, assetsin, liabilitiesin, investmentsin, investmentTransactionsin, goalsin, scenariosin ja themesin. Vuosikellon `annualReservePlans` ja `annualReservations` ovat valinnaisia, jotta vanhat varmuuskopiot säilyvät muuttumattomina.
 
 `coverage.incomeMonths` ja `coverage.expenseMonths` ovat käyttäjän vahvistamia päättyneitä kuukausia muodossa `yyyy-mm`. Menokattavuutta käytetään hätävaran keskiarvossa ja tulokattavuutta kompassin tulovaihtelussa. Vahvistus kertoo, että käyttäjä on tarkistanut kirjaukset; se ei varmista niitä pankista. Vahvistettu nollakuukausi on eri asia kuin kuukausi, jonka tietojen kattavuutta ei ole vahvistettu. Vanha varmuuskopio saa tyhjät listat, eikä sen historiakattavuutta päätellä tapahtumista.
 
@@ -8,7 +8,7 @@ AppState sisältää schemaVersionin, applicationVersionin, createdAtin, setting
 
 ## Entry
 
-Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, adjustToPreviousBankDay, occurrenceStatuses, occurrenceAmounts, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion.
+Kuudelle tietotyypille yhteinen malli: id, name, amount, category, expenseType, date, endDate, recurrence, status, adjustToPreviousBankDay, occurrenceStatuses, occurrenceAmounts, active, essential, description, tags, quantity, purchasePrice, ownership, liquid, linkedAssetId, rate, payment, target, monthly, createdAt, updatedAt, schemaVersion. Valinnainen `source` kertoo alkuperän (`manual`, `csv`, `receipt`, `invoice` tai `unknown`). Kentän puuttuminen vanhasta varmuuskopiosta tarkoittaa tuntematonta alkuperää. Toistuvuus tallentuu erilliseen `recurrence`-kenttään ja alkuperä säilyy muokkauksissa. Valinnainen `priceHistory` sisältää toistuvan tietueen järjestetyt hinnanmuutokset `(startDate, amount)`.
 
 - Rahat: kokonaislukusentit. quantity voi olla desimaalinen; määrä × yksikköhinta pyöristetään senttiin.
 - Date: kalenteripäivä `yyyy-mm-dd`, ei aikavyöhykettä.
@@ -21,6 +21,7 @@ Kuudelle tietotyypille yhteinen suppea V0.1-malli: id, name, amount, category, e
 - `expenseType` erottaa kulutuksen, säästösiirron ja sijoitussiirron omaksi kentäkseen. Vanhan varmuuskopion piilotettu tags-merkintä tai kaksi vanhaa oletuskategoriaa muunnetaan palautuksessa kentäksi ja merkintä poistetaan käyttäjän tunnisteista. Tämä ei vielä mallinna tilisiirtoa tai lainan pääomalyhennystä.
 - Tavoitteen amount on nykyinen säästösumma; target tavoite ja monthly säästö.
 - `status`: sarjan oletustila (`actual`, `planned` tai `skipped`); `active: false` keskeyttää toistuvuuden. Näytettävä ja laskennassa käytettävä esiintymän tila lasketaan maksupäivästä: mennyt tai tämä päivä on actual, tuleva planned. Sarjan `skipped` ohittaa esiintymät. `occurrenceStatuses` tallentaa yksittäisten päivien valinnaiset poikkeukset; päiväkohtainen tila ohittaa automatiikan. Automaattinen tila ei varmista maksua pankista.
+- `priceHistory` muuttaa toistuvan tapahtuman oletussummaa alkamispäivästä eteenpäin. Päiväkohtainen `occurrenceAmounts` ohittaa edelleen sarjan hinnan. Muutokset ovat sallittuja vain toistuvalle tietueelle, ja vanhoista tietueista kenttä puuttuu.
 - `adjustToPreviousBankDay` siirtää toistuvan tulon viikonlopulle tai huomioidulle Suomen pankkipyhälle osuvan esiintymän edeltävälle pankkipäivälle. Oletus on päällä uusille tulokirjauksille. Kertakirjaus ja menot eivät siirry. Vanhoista varmuuskopioista puuttuva arvo alustetaan tulolle todeksi ja muille tyypeille epätodeksi.
 
 ## Category
@@ -30,6 +31,8 @@ id, name, kind (incomes/expenses), color, icon ja archived. `icon` viittaa paika
 ## Budget
 
 Kuukausi → kategorian nimi → suunniteltu senttimäärä. `budgetActuals` sisältää erikseen käyttäjän manuaalisesti syöttämän toteuman kuukausi- ja kategoriatasolla. Vanhoista varmuuskopioista puuttuva rakenne alustetaan tyhjäksi. Puuttuva toteuma näytetään tapahtumista lasketulla kulutuksella, eikä manuaalinen arvo muuta kassavirtaa. Kategorioita ei vielä viitata ID:llä; nimeämisen migraatio hoidetaan yhdessä UI-muutoksessa.
+
+`annualReservePlans` sisältää vuosikelloon valittujen menokirjausten ID:t. `annualReservations` sisältää `{ expenseId, occurrenceDate, amount, usedAmount? }` -kohdistuksia sentteinä tiettyyn tulevaan erään. `usedAmount` kuitataan erikseen; se ei vahvista laskua maksetuksi. Kuukausivaraus ja kalenterin erät johdetaan kirjauksista ja toistuvuudesta, eikä niitä tallenneta erillisinä tapahtumina. Kertamenoa ei oleteta vuosittaiseksi. Poistettu meno voi jättää suunnitelmaan näkyvän orpo-ID:n, jotta kohdistuksia ei poisteta huomaamatta. Varaus ei ole pankkisaldo eikä toteutunut meno.
 
 Raportin toteuma käyttää kategoriakohtaista manuaalista arvoa silloin, kun käyttäjä on syöttänyt sen, ja muuten tapahtumista laskettua toteutunutta kulutusta. Säästö- ja sijoitussiirrot rajataan kulutusraportista pois.
 
@@ -43,6 +46,10 @@ Kompassin ohjeet kertovat havainnon, kokeiltavan askeleen, lähdeviitteen ja las
 
 id, name, initial, monthly, rate, fee, inflation ja years. Oletukset validoidaan; aikaa 1–50 vuotta.
 
+## Kokeilutila
+
+Kokeilun lähtötilan kopio ja laskentamuutokset ovat vain React-istunnon muistissa. Niitä ei sisällytetä AppStateen, pilvitallennukseen, JSON-varmuuskopioon tai CSV-vientiin. Selaimen päivitys tai sulkeminen hävittää kokeilun.
+
 ## Tulevat mallit
 
 Erilliset AssetValuation, PortfolioValuation, InvestmentTransaction, ImportJob, ImportError, BudgetPeriod ja täydellinen RecurrenceRule ovat jatkokehitystä. investmentTransactions ja themes ovat tällä hetkellä tyhjiä varattuja listoja; ei-tyhjä sisältö hylätään, jotta sitä ei hukata palautuksessa.
@@ -52,6 +59,8 @@ Erilliset AssetValuation, PortfolioValuation, InvestmentTransaction, ImportJob, 
 Vain skeema 1 hyväksytään. Tuntematon versio hylätään eikä dataa ylikirjoiteta. Skeema 1:n puuttuvat `linkedAssetId`-, `actionStates`-, `coverage`-, `occurrenceStatuses`-, `occurrenceAmounts`- ja `adjustToPreviousBankDay`-kentät alustetaan yhteensopivuuden vuoksi. Puuttuva pankkipäiväsiirto oletetaan vanhoilla tulotietueilla päälle ja muilla pois. Puuttuvat uudet oletuskategoriat lisätään palautuksen yhteydessä; jo olemassa olevat säilyttävät värinsä, kuvakkeensa ja arkistointitilansa. Vanhan menotyypin tags-merkintä tai vanha säästö-/sijoituskategoria muunnetaan palautuksessa `expenseType`-kentäksi ja tekninen merkintä poistetaan käyttäjän tunnisteista. Migraatio on additive eikä luo historiatietoa. Uuden skeemaversion julkaisu vaatii eksplisiittisen migraation ja roundtrip-testit.
 
 ## Budjetin ohjearvot
+
+Vuosikellon valinnaiset kentät säilytetään palautuksessa vain, jos ne olivat lähdeaineistossa mukana. Siksi vanhan dokumentin kanoninen JSON-muoto ei muutu pelkästään uudempaan versioon avaamisen vuoksi. Yhteensopivan JSON-varmuuskopion palautus asettaa `applicationVersion`-arvoksi nykyisen kirjoittajaversion.
 
 `settings.budgetGuidance` sisältää `needs`, `wants` ja `saving` -prosentit (0–100, summa 100) sekä `categories`-sanakirjan. Kategoria-asetuksen avain on kategorian ID; näin käyttäjän ryhmä ja raja säilyvät nimeämisessä. Ilman kategoria-ID:tä käytetään `name:`-alkuista avainta. Arvo on `{ group: needs | wants | saving | unclassified, maxPercent: number | null }`. Null poistaa kategoriakohtaisen rajan. Puuttuvat asetukset saavat 50/30/20-jaon ja tyhjän poikkeusluettelon; kategoriakohtainen oletus päätellään nimestä laskennassa. Tuntemattoman kategorian oletus on luokittelematta. Säästö-/sijoitussiirron eksplisiittinen menotyyppi ohittaa kategoriaryhmän. Ohjearvot säilyvät JSON-varmuuskopiossa; CSV ei ole asetusten siirtomuoto.
 

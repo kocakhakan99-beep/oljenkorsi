@@ -65,6 +65,13 @@ const shellSchema = z.object({
       z.record(z.string(), z.number().int().nonnegative().max(MAX)),
     )
     .optional(),
+  annualReservePlans: z.array(z.string().min(1).max(200)).max(200).optional(),
+  annualReservations: z.array(z.object({
+    expenseId: z.string().min(1).max(200),
+    occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    amount: z.number().int().nonnegative().max(MAX),
+    usedAmount: z.number().int().nonnegative().max(MAX).optional(),
+  }).refine(item => item.usedAmount === undefined || item.usedAmount <= item.amount)).max(5000).optional(),
   coverage: z
     .object({
       incomeMonths: z
@@ -127,12 +134,32 @@ export function validate(raw: unknown): State {
       language: "fi",
     },
     createdAt: String(x.createdAt),
-    applicationVersion: String(x.applicationVersion),
+    applicationVersion: "0.4.0",
     coverage: check.data.coverage || {
       incomeMonths: [],
       expenseMonths: [],
     },
   };
+  if (check.data.annualReservePlans !== undefined) {
+    if (new Set(check.data.annualReservePlans).size !== check.data.annualReservePlans.length)
+      throw Error("Vuosikellon kirjauksia ei voi valita kahdesti.");
+    s.annualReservePlans = check.data.annualReservePlans;
+  }
+  if (check.data.annualReservations !== undefined) {
+    const selectedPlans = new Set(check.data.annualReservePlans || []);
+    const seenReservations = new Set<string>();
+    let reservedTotal = 0;
+    for (const reservation of check.data.annualReservations) {
+      if (!validDate(reservation.occurrenceDate) || !selectedPlans.has(reservation.expenseId))
+        throw Error("Vuosikellon varaus viittaa virheelliseen tapahtumaan.");
+      const key = `${reservation.expenseId}:${reservation.occurrenceDate}`;
+      if (seenReservations.has(key)) throw Error("Samalle menolle ja päivälle on useampi varaus.");
+      seenReservations.add(key);
+      reservedTotal += reservation.amount;
+      if (!Number.isSafeInteger(reservedTotal)) throw Error("Varaussummat ylittävät turvallisen laskentarajan.");
+    }
+    s.annualReservations = check.data.annualReservations;
+  }
   let ids = new Set<string>();
   for (let k of kinds) {
     if (!Array.isArray(x[k]) || x[k].length > 20000)
@@ -166,10 +193,13 @@ export function validate(raw: unknown): State {
       if (ids.has(e.id)) throw Error("Päällekkäinen tunniste.");
       ids.add(e.id);
       let allowed = Object.keys(defaultsEntry);
+      if (normalized.source !== undefined) allowed.push("source");
+      if (normalized.priceHistory !== undefined) allowed.push("priceHistory");
+      const defaultValues = defaultsEntry as Partial<Entry>;
       return Object.fromEntries(
         allowed.map((key) => [
           key,
-          normalized[key as keyof Entry] ?? defaultsEntry[key as keyof Entry],
+          normalized[key as keyof Entry] ?? defaultValues[key as keyof Entry],
         ]),
       ) as unknown as Entry;
     });
@@ -408,6 +438,22 @@ const defaultsEntry = {
 };
 export function validateEntry(e: Entry) {
   if (!e || e.schemaVersion !== 1) throw Error("Virheellinen tietue.");
+  if (e.source !== undefined && !["manual", "csv", "receipt", "invoice", "unknown"].includes(e.source))
+    throw Error("Virheellinen kirjauksen alkuperä.");
+  if (e.priceHistory !== undefined) {
+    if (!Array.isArray(e.priceHistory) || e.priceHistory.length > 240 || e.recurrence === "once")
+      throw Error("Virheellinen toistuvan hinnan historia.");
+    const seenStartDates = new Set<string>();
+    let previousStartDate = "";
+    for (const change of e.priceHistory) {
+      if (!change || !validDate(change.startDate) || change.startDate < e.date ||
+          !Number.isSafeInteger(change.amount) || change.amount < 0 || change.amount > MAX ||
+          seenStartDates.has(change.startDate) || change.startDate < previousStartDate)
+        throw Error("Virheellinen toistuvan hinnan muutos.");
+      seenStartDates.add(change.startDate);
+      previousStartDate = change.startDate;
+    }
+  }
   if (e.marketSymbol !== undefined && (typeof e.marketSymbol !== "string" || !/^[A-Z0-9.^=-]{0,30}$/.test(e.marketSymbol))) throw Error("Virheellinen sijoitustunnus.");
   if (e.assetModel != null) assetModelSchema.parse(e.assetModel);
   if (typeof e.adjustToPreviousBankDay !== "boolean")
@@ -517,7 +563,7 @@ export function backup(s: State) {
     {
       format: "Taloussuunnittelu",
       schemaVersion: 1,
-      applicationVersion: "0.1.0",
+      applicationVersion: "0.4.0",
       createdAt: new Date().toISOString(),
       checksumAlgorithm: "FNV-1a-32 (ei kryptografinen)",
       checksum: checksum(JSON.stringify(data)),

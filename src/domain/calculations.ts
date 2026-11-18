@@ -203,7 +203,12 @@ export function occurrenceStatus(e: Entry, date: string): EntryStatus {
 }
 
 export function occurrenceAmount(e: Entry, date: string): number {
-  return e.occurrenceAmounts?.[date] ?? e.amount;
+  const override = e.occurrenceAmounts?.[date];
+  if (override !== undefined) return override;
+  const change = [...(e.priceHistory || [])]
+    .reverse()
+    .find((item) => item.startDate <= date);
+  return change?.amount ?? e.amount;
 }
 
 export function occurrencesWithStatus(

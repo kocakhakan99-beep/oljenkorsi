@@ -2,7 +2,7 @@
 
 ## JSON
 
-Vienti sisältää wrapperin: format, schemaVersion, applicationVersion, createdAt, checksumAlgorithm, checksum ja data. Kaikki palautettava sovellustila on data-objektissa. Tyhjät investmentTransactions/themes-listat ovat mukana, mutta niiden käyttö ei ole vielä toteutettu.
+Vienti sisältää wrapperin: format, schemaVersion, applicationVersion, createdAt, checksumAlgorithm, checksum ja data. Kaikki palautettava sovellustila on data-objektissa. Vuosikellon valinnat ja eräkohtaiset varaukset sisältyvät dataan vain, jos käyttäjä on tehnyt niitä. Tyhjät investmentTransactions/themes-listat ovat mukana, mutta niiden käyttö ei ole vielä toteutettu.
 
 Palautus: tiedostokokoraja → paikallinen luku → JSON-parseri ja vaarallisten avainten esto → wrapper/versio/eheys → Zod ja domain-validointi → tietuemäärien esikatselu → nykyisen backupin vientipainike → vahvistus → tallennus → laskelmien uudelleenrenderöinti. Vienti ennen korvausta on tarjottu, ei pakotettu. Väärä tiedosto ei muuta nykyistä tilaa. Tuntematon skeema hylätään.
 
@@ -12,13 +12,17 @@ FNV-1a-32 on ei-kryptografinen. JSON ei ole salattu. Varmuuskopioi ennen selaind
 
 Kuusi tietotyyppiä: incomes, expenses, assets, liabilities, investments, goals. Tuonti lisää, ei korvaa. UTF-8 ja valinnainen Windows-1252, pilkku tai puolipiste, desimaalipilkku/piste, dd.mm.yyyy ja yyyy-mm-dd. UTF-8-dekoodaus on strict; virheessä valitse toinen merkistö. Ei täydellistä automaattista merkistötunnistusta.
 
-Vientipohjan sarakkeet: name, amount, category, expenseType, date, recurrence, status, description, quantity, purchasePrice, ownership, liquid, rate, payment, target, monthly, endDate, tags, active, essential.
+Vientipohjan sarakkeet: name, amount, category, expenseType, date, source, recurrence, status, description, quantity, purchasePrice, ownership, liquid, rate, payment, target, monthly, endDate, tags, active, essential, occurrenceStatuses, occurrenceAmounts, priceHistory.
+
+`source` säilyttää alkuperätiedon, jos se on CSV:ssä. Ulkoinen CSV ilman alkuperä-saraketta merkitään CSV-tuonniksi. JSON-varmuuskopion vanhat kirjaukset, joilta kenttä puuttuu, näytetään alkuperältään tuntemattomina; sitä ei päätellä kuvauksesta.
+
+`priceHistory`, `occurrenceStatuses` ja `occurrenceAmounts` viedään JSON-muotoisina CSV-soluina.
 
 Nimi, summa ja päivämäärä ovat pakollisia. Puuttuva kategoria on Muu. Yleisiä suomalaisia pankkiotsikoita tunnistetaan automaattisesti, ja tuonti näyttää ensin perustiedot. Menojen miinusmerkkinen pankkisumma muunnetaan positiiviseksi menoksi; etumerkillisen seka-aineiston positiiviset tulorivit pitää tuoda Tulot-valinnalla. Rahasarakkeet ovat euroina. Toistuvuus: once/weekly/biweekly/monthly/bimonthly/quarterly/semiannual/yearly. Tila: actual/planned/skipped. Menon tyyppi: consumption/saving/investment. Booleanit true/false.
 
 Tuonti näyttää sarakekartoituksen, viisi esimerkkiriviä, virheet ja duplikaattimäärät. Harvemmin tarvittavien kenttien kartoitus on suljettavissa. Virheet voidaan ohittaa tai korjata alkuperäisessä CSV:ssä ja valita tiedosto uudelleen. Duplikaattiheuristiikka: sama nimi, päivä, summa ja kategoria, myös tuontierän sisällä. Ei pankkikohtaista parseria. Viimeisin tuonti voidaan kumota istunnon aikana; kumoaminen palauttaa koko aiemman tilan, joten tee se ennen muita muutoksia.
 
-CSV ei säilytä ID:tä tai koko sovellustilaa. Käytä JSON:ia täydelliseen palautukseen. Kaavasuoja voi lisätä tekstin alkuun apostrofin, joka voi jäädä näkyviin CSV:n takaisinluvussa.
+CSV ei säilytä ID:tä, budjetteja, kuukausivahvistuksia, vuosikellon suunnitelmia tai koko sovellustilaa. Käytä JSON:ia täydelliseen palautukseen. Kaavasuoja voi lisätä tekstin alkuun apostrofin, joka voi jäädä näkyviin CSV:n takaisinluvussa.
 
 ## Käyttöliittymän pääpaikat
 

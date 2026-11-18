@@ -25,6 +25,19 @@ export type Recurrence =
   | "yearly";
 export type EntryStatus = "actual" | "planned" | "skipped";
 export type ExpenseType = "consumption" | "saving" | "investment";
+export type EntrySource = "manual" | "csv" | "receipt" | "invoice" | "unknown";
+export type EntryPriceChange = { startDate: string; amount: number };
+export type AnnualReservation = { expenseId: string; occurrenceDate: string; amount: number; usedAmount?: number };
+export function entrySourceLabel(source?: EntrySource, demo = false) {
+  if (demo) return "Esimerkkitieto";
+  return {
+    manual: "Lisätty käsin",
+    csv: "Tuotu CSV:stä",
+    receipt: "Tuotu kuitista",
+    invoice: "Tuotu laskusta",
+    unknown: "Alkuperä ei tiedossa",
+  }[source || "unknown"];
+}
 const legacyExpenseTypeTag =
   /^talous:expense-type=(consumption|saving|investment)$/;
 export function legacyExpenseType(tags: string, category: string) {
@@ -79,6 +92,10 @@ export interface Entry {
   createdAt: string;
   updatedAt: string;
   schemaVersion: 1;
+  /** Optional for backwards compatibility; absence means unknown. */
+  source?: EntrySource;
+  /** Effective-dated default amounts for recurring occurrences. */
+  priceHistory?: EntryPriceChange[];
 }
 export interface Category {
   id: string;
@@ -129,6 +146,8 @@ export interface State {
   goals: Entry[];
   budgets: Record<string, Record<string, number>>;
   budgetActuals: Record<string, Record<string, number>>;
+  annualReservePlans?: string[];
+  annualReservations?: AnnualReservation[];
   coverage: { incomeMonths: string[]; expenseMonths: string[] };
   actionStates: Record<string, ActionState>;
   investmentTransactions: unknown[];
@@ -151,7 +170,7 @@ export const uid = () => crypto.randomUUID();
 export function empty(): State {
   return {
     schemaVersion: 1,
-    applicationVersion: "0.1.0",
+    applicationVersion: "0.4.0",
     createdAt: new Date().toISOString(),
     settings: {
       onboarded: false,
@@ -218,6 +237,7 @@ export function entry(v: Partial<Entry> = {}): Entry {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     schemaVersion: 1,
+    source: "manual",
     ...v,
   };
   if (v.expenseType === undefined)

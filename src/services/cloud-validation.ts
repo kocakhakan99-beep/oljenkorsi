@@ -19,7 +19,7 @@ export function validateCloudWrite(input: unknown): void {
   const backup = record(envelope.backup);
   if (!exactKeys(backup, ['format', 'schemaVersion', 'applicationVersion', 'createdAt', 'checksumAlgorithm', 'checksum', 'data']))
     throw new Error('Virheellinen varmuuskopion rakenne.');
-  if (backup.applicationVersion !== '0.1.0' || typeof backup.createdAt !== 'string' || backup.createdAt.length > 50 ||
+  if (backup.applicationVersion !== '0.4.0' || typeof backup.createdAt !== 'string' || backup.createdAt.length > 50 ||
       backup.checksumAlgorithm !== 'FNV-1a-32 (ei kryptografinen)') throw new Error('Virheellinen varmuuskopion metatieto.');
   const serialized = JSON.stringify(input);
   if (new TextEncoder().encode(serialized).byteLength > MAX_CLOUD_DOCUMENT_BYTES) throw new Error('Pilvitallennus ylittää 5 MB rajan.');
