@@ -1,5 +1,15 @@
 # Testausraportti 13.11.2026
 
+## Laskurinäkymän moduulijako 19.11.2026
+
+- Laskurit, numerokontrollit, päivämäärävalitsin, lainalaskelman erittely ja tyhjän näkymän komponentti erotettiin pääkomponentista.
+- 226 yksikkötestiä, tyypitys, lint ja tuotantobuild läpäisivät siirron jälkeen.
+- Uusi toistettava `python3 e2e_calculators.py` avaa paikallisen HTTP-palvelimen valmiille buildille ja fiktiivisen vierastalouden erillisessä selainprofiilissa. Chromium-polun voi antaa TALOUS_BROWSER-muuttujalla.
+- Selainkoe tarkisti FI-tavoitteen 600 000 € syötteellä 24 000 €/vuosi ja 4 %, rahakentät, prosenttisäätimen nuolinäppäimen, suunnitelman tallennuksen/latauksen/JSON-säilymisen sekä 390/1280 px vaakarajat.
+- Erillinen mobiilikoe tarkisti kalenterin vaakarajat, päivän valinnan, fokuksen palautumisen ja kokeilutilan aloituksen/muutoksen/lopetuksen. Ensimmäinen koe pysähtyi moniselitteiseen testivalitsimeen; täsmällisellä päivämääräpainikkeen valitsimella se läpäisi.
+- Koetta ei ajettu oikealla Google-/perhetilillä. Tuotannon tilidataa ei käytetty.
+
+
 ## Auditoinnin korjauserä 19.11.2026
 
 - Tyypitys, lint ja 28 testitiedostoa / 226 testiä läpäisivät vanhan perhetallennuspolun poistamisen ja Transfer-näkymän siirron jälkeen.

@@ -30,3 +30,7 @@ Korjausten eteneminen ja hyväksyntäkriteerit: [toteutussuunnitelma](KORJAUSSUU
 - Tuonti ja vienti -näkymä siirretty `components/transfer.tsx`-moduuliin.
 - Poistettu enää testeissä käytetty tulevien menojen laskentamoduuli sekä käytöstä poistettujen painikkeiden CSS-säännöt.
 - Testimäärä on nyt 28 tiedostoa / 226 testiä; kolmen testin poistuminen johtuu poistetuista tuotantomoduuleista.
+
+### Laskurinäkymän moduulijako 19.11.2026
+
+Laskurit ja yhteiset numerokontrollit, kalenteri sekä lainalaskelman erittely ovat omissa komponenteissaan. main.tsx pieneni tässä erässä noin 900 rivillä (jäljellä 8 039). Sivujen laiska lataus ja CSS:n laajempi ryhmittely ovat edelleen tekemättä; tiedostojakoa ei pidetä osoitettuna nopeusparannuksena.
