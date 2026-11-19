@@ -75,12 +75,62 @@ with sync_playwright() as p:
   assert page.locator('main').evaluate('(e)=>e.scrollWidth <= e.clientWidth+1')
  page.set_viewport_size({'width':1280,'height':900});navigate('Tuonti ja vienti')
  with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).click()
- state=json.load(open(d.value.path()))['data']
+ backup=json.load(open(d.value.path()))
+ state=backup['data']
  assert state['settings']['theme']=='blue' and state['settings']['mode']=='dark'
  assert state['settings']['budgetGuidance']['needs']==40 and state['settings']['budgetGuidance']['wants']==40
  assert len(state['expenses'])==2 and len(state['incomes'])==1
+ # Add controlled fictional wealth/debt data through the supported JSON restore path.
+ from uuid import uuid4
+ asset_id=str(uuid4())
+ template=state['expenses'][0]
+ state['assets']=[dict(template,id=asset_id,name='Testiasunto',amount=10000000,ownership=100,category='Asuminen')]
+ state['investments']=[dict(template,id=str(uuid4()),name='Testisijoitus',amount=100000,quantity=1,category='Rahastot')]
+ state['liabilities']=[dict(template,id=str(uuid4()),name='Testilaina',amount=4000000,payment=50000,rate=0,linkedAssetId=asset_id,category='Lainat')]
+ payload=page.evaluate("""doc => {
+   const text=JSON.stringify(doc.data);let h=2166136261;
+   for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}
+   doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);
+ }""",backup)
+ page.locator('input[accept=".json"]').set_input_files({'name':'synthetic-backup.json','mimeType':'application/json','buffer':payload.encode()})
+ page.get_by_role('button',name='Korvaa ja palauta',exact=True).click()
+ navigate('Raportit')
+ page.get_by_role('tab',name='Varallisuus',exact=True).click()
+ wealth=page.locator('#report-panel-wealth')
+ expect(wealth.locator('.wealth-summary')).to_contain_text('61\u00a0000,00\u00a0€')
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('table')
+ expect(wealth.locator('tbody tr')).to_have_count(3)
+ page.get_by_role('tab',name='Velat ja oma pääoma',exact=True).click()
+ debt=page.locator('#report-panel-debt')
+ expect(debt).to_contain_text('Testiasunto')
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('table')
+ expect(debt.locator('tbody tr').first).to_contain_text('60\u00a0000,00\u00a0€')
+ page.get_by_role('tab',name='Säästöaste ja FIRE',exact=True).click()
+ fire=page.locator('#report-panel-fire')
+ expect(fire.locator('.fire-target-card')).to_contain_text('4\u00a0500,00\u00a0€')
+ for tab,panel in [('Varallisuus','#report-panel-wealth'),('Velat ja oma pääoma','#report-panel-debt'),('Säästöaste ja FIRE','#report-panel-fire')]:
+  page.get_by_role('tab',name=tab,exact=True).click()
+  page.set_viewport_size({'width':390,'height':844})
+  assert page.locator('main').evaluate('(e)=>e.scrollWidth <= e.clientWidth+1')
+  expect(page.locator(panel)).to_be_visible()
+  page.set_viewport_size({'width':1280,'height':900})
+ navigate('Asetukset');page.get_by_role('tab',name='Tiedot',exact=True).click()
+ page.get_by_role('button',name='Varmuuskopiot, tuonti ja vienti',exact=True).click()
+ expect(page.get_by_role('heading',name='JSON-varmuuskopio',exact=True)).to_be_visible()
+ navigate('Asetukset');page.get_by_role('tab',name='Tiedot',exact=True).click()
+ page.get_by_text('Poista tietoja',exact=True).click()
+ page.get_by_role('button',name='Poista kaikki tietoni',exact=True).click()
+ deletion=page.locator('dialog[open]')
+ expect(deletion.get_by_role('button',name='Poista pysyvästi',exact=True)).to_be_disabled()
+ deletion.get_by_label('Kirjoita POISTA',exact=True).fill('POISTA')
+ expect(deletion.get_by_role('button',name='Poista pysyvästi',exact=True)).to_be_enabled()
+ deletion.get_by_role('button',name='Sulje',exact=True).click()
+ navigate('Tuonti ja vienti')
+ with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).click()
+ unchanged=json.load(open(d.value.path()))['data']
+ assert len(unchanged['assets'])==1 and len(unchanged['liabilities'])==1
  assert not errors,errors
- print('Flow report, filters/sort, mobile month picker, settings keyboard navigation/theme/budget validation and JSON persistence: OK.')
+ print('Flow/wealth/debt/FIRE reports, filters, mobile controls, settings/JSON and delete confirmation cancellation: OK.')
  b.close()
 server.shutdown()
 server.server_close()

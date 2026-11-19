@@ -1,3 +1,8 @@
+import { DataSettings } from './components/data-settings';
+import { CategoryImage } from './components/category-image';
+import { WealthReport } from './components/wealth-report';
+import { DebtReport } from './components/debt-report';
+import { FireReport } from './components/fire-report';
 import { SettingsTabs, settingsTabFromHash, type SettingsTab } from './components/settings-tabs';
 import { FlowReport } from './components/flow-report';
 import { AppearanceSettings } from './components/appearance-settings';
@@ -63,7 +68,6 @@ import {
   optionalCategoryDefinitions,
   type CategoryIconId,
 } from "./domain/categories";
-import { categoryIconSources } from "./assets/category-icons";
 import {
   metrics,
   budgetSummary,
@@ -1732,6 +1736,21 @@ function App() {
         return true;
       }
     }
+  }
+  function exportLegacyStorage() {
+    try {
+      const text = localStorage.getItem(storage.key);
+      if (text) download(text, 'talous-alkuperainen-tallennus.json');
+      else setNotice('Alkuperäistä tallennusta ei löytynyt.');
+    } catch (error) {
+      setNotice('Selaintallennusta ei voi lukea: ' + String(error));
+    }
+  }
+  function removeDemoHousehold() {
+    if (!confirm('Poistetaanko koko esimerkkitalous? Myös siihen tekemäsi muutokset poistuvat.')) return;
+    const next = empty();
+    next.settings.onboarded = true;
+    commit(preservePersonalSettings(next));
   }
   function exportBackup() {
     download(backup(s), "taloussuunnittelu-backup-" + today() + ".json");
@@ -5175,445 +5194,13 @@ function App() {
                   </section>
                 )}
                 {reportView === "wealth" && (
-                  <section
-                    className="panel report-panel"
-                    id="report-panel-wealth"
-                    role="tabpanel"
-                    aria-labelledby="report-tab-wealth"
-                    tabIndex={0}
-                  >
-                    <h2>Valitun päivän varallisuuskuva</h2>
-                    <p className="muted">
-                      Tämä on valitun päivän arvio ja kirjattujen arvojen tilannekuva, ei todennettu historiaseuranta.
-                      Omaisuusarvot perustuvat itse syöttämiisi arvoihin ja
-                      arvostuspäiviin.
-                    </p>
-                    <div className="report-summary-strip wealth-summary">
-                      <article>
-                        <small>Omaisuus</small>
-                        <strong>{euro(assetBalance)}</strong>
-                      </article>
-                      <article>
-                        <small>Sijoitukset</small>
-                        <strong>{euro(investmentBalance)}</strong>
-                      </article>
-                      <article>
-                        <small>Velat</small>
-                        <strong>{euro(debtBalance)}</strong>
-                      </article>
-                      <article>
-                        <small>Nettovarallisuus</small>
-                        <strong>{euro(netWorth)}</strong>
-                      </article>
-                    </div>
-                    {reportFormat === "breakdown" ? (
-                      <div className="wealth-report-grid">
-                        <section>
-                          <h3>Omaisuuserät</h3>
-                          {currentAssets.length ? (
-                            currentAssets.map((asset) => (
-                              <article key={asset.id}>
-                                <div className="wealth-report-item-label">
-                                  <CategoryImage
-                                    icon={categoryIconFor(
-                                      asset.category,
-                                      "assets",
-                                    )}
-                                    size={28}
-                                  />
-                                  <span>
-                                    {asset.name}
-                                    <small>
-                                      {asset.category} · arvostettu{" "}
-                                      {asset.date
-                                        .split("-")
-                                        .reverse()
-                                        .join(".")}
-                                    </small>
-                                  </span>
-                                </div>
-                                <strong>{euro(asset.ownedValue)}</strong>
-                              </article>
-                            ))
-                          ) : (
-                            <p className="muted">Omaisuutta ei ole kirjattu.</p>
-                          )}
-                        </section>
-                        <section>
-                          <h3>Sijoitukset</h3>
-                          {currentInvestments.length ? (
-                            currentInvestments.map((investment) => (
-                              <article key={investment.id}>
-                                <div className="wealth-report-item-label">
-                                  <CategoryImage
-                                    icon={categoryIconFor(
-                                      investment.category,
-                                      "investments",
-                                    )}
-                                    size={28}
-                                  />
-                                  <span>
-                                    {investment.name}
-                                    <small>
-                                      {investment.category} ·{" "}
-                                      {investment.quantity} kpl
-                                    </small>
-                                  </span>
-                                </div>
-                                <strong>{euro(investment.marketValue)}</strong>
-                              </article>
-                            ))
-                          ) : (
-                            <p className="muted">
-                              Sijoituksia ei ole kirjattu.
-                            </p>
-                          )}
-                        </section>
-                        <section>
-                          <h3>Velat</h3>
-                          {currentDebts.length ? (
-                            currentDebts.map((debt) => (
-                              <article key={debt.id}>
-                                <div className="wealth-report-item-label">
-                                  <CategoryImage
-                                    icon={categoryIconFor(
-                                      debt.category,
-                                      "liabilities",
-                                    )}
-                                    size={28}
-                                  />
-                                  <span>
-                                    {debt.name}
-                                    <small>{debt.category}</small>
-                                  </span>
-                                </div>
-                                <strong>−{euro(debt.amount)}</strong>
-                              </article>
-                            ))
-                          ) : (
-                            <p className="muted">Velkoja ei ole kirjattu.</p>
-                          )}
-                        </section>
-                      </div>
-                    ) : (
-                      <div className="table-wrap mobile-card-table">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Tietue</th>
-                              <th>Kategoria</th>
-                              <th>Arvo / saldo</th>
-                              <th>Päivä</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredWealthTableRows.map((row) => (
-                              <tr key={row.id}>
-                                <th scope="row" data-label="Tietue">
-                                  {row.name}
-                                </th>
-                                <td data-label="Kategoria">{row.category}</td>
-                                <td data-label="Arvo">
-                                  {row.value < 0
-                                    ? `−${euro(Math.abs(row.value))}`
-                                    : euro(row.value)}
-                                </td>
-                                <td data-label="Päivä">
-                                  {row.date.split("-").reverse().join(".")}
-                                </td>
-                              </tr>
-                            ))}
-                            {filteredWealthTableRows.length === 0 && (
-                              <tr>
-                                <td colSpan={4}>Suodattimella ei löytynyt tietueita.</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </section>
+                  <WealthReport currentAssets={currentAssets} currentInvestments={currentInvestments} currentDebts={currentDebts} filteredWealthTableRows={filteredWealthTableRows} assetBalance={assetBalance} investmentBalance={investmentBalance} debtBalance={debtBalance} netWorth={netWorth} reportFormat={reportFormat} euro={euro} />
                 )}
                 {reportView === "debt" && (
-                  <section
-                    className="panel report-panel"
-                    id="report-panel-debt"
-                    role="tabpanel"
-                    aria-labelledby="report-tab-debt"
-                    tabIndex={0}
-                  >
-                    <h2>Velat, vakuutena oleva omaisuus ja oma pääoma</h2>
-                    <p className="muted">
-                      Linkitä laina omaisuuserään velan muokkauksessa. Arvio
-                      olettaa nykyisen lainasaldon, koron ja maksuerän pysyvän
-                      voimassa eikä huomioi kuluja, lyhennysvapaita tai uusia
-                      nostoja.
-                    </p>
-                    <div className="report-assumption">
-                      <PercentField
-                        label="Omaisuuden oletettu vuotuinen arvonmuutos"
-                        value={assetChangeRate}
-                        min={-99.9}
-                        max={100}
-                        step={0.1}
-                        onChange={setAssetChangeRate}
-                      />
-                      <small>
-                        Oletus vaikuttaa vain tulevan arvon suuntaa-antavaan
-                        arvioon. Nykyinen oma pääoma = omaisuuden omistusosuus −
-                        siihen linkitetyt velat.
-                      </small>
-                    </div>
-                    {reportFormat === "table" ? (
-                      <div className="table-wrap mobile-card-table">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Omaisuus / laina</th>
-                              <th>Velkasaldo</th>
-                              <th>Oma pääoma nyt</th>
-                              <th>Maksuaika-arvio</th>
-                              <th>Arvioitu korko</th>
-                              <th>Oma pääoma maksuajan lopussa</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredLinkedOutlooks.map(({ asset, outlook }) => (
-                              <tr key={asset.id}>
-                                <th scope="row" data-label="Omaisuus / laina">
-                                  {asset.name}
-                                </th>
-                                <td data-label="Velkasaldo">
-                                  {euro(outlook!.debtBalance)}
-                                </td>
-                                <td data-label="Oma pääoma nyt">
-                                  {euro(outlook!.currentEquity)}
-                                </td>
-                                <td data-label="Maksuaika">
-                                  {outlook!.payoffMonths === null
-                                    ? "Ei laskettavissa"
-                                    : `${outlook!.payoffMonths} kk`}
-                                </td>
-                                <td data-label="Korkoarvio">
-                                  {outlook!.estimatedInterest === null
-                                    ? "Ei laskettavissa"
-                                    : euro(outlook!.estimatedInterest)}
-                                </td>
-                                <td data-label="Arvio lopussa">
-                                  {outlook!.estimatedEquityAtPayoff === null
-                                    ? "Ei laskettavissa"
-                                    : euro(outlook!.estimatedEquityAtPayoff)}
-                                </td>
-                              </tr>
-                            ))}
-                            {filteredLinkedOutlooks.length === 0 && (
-                              <tr>
-                                <td colSpan={6}>Suodattimella ei löytynyt velka–omaisuuspareja.</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="debt-outlook-list">
-                        {linkedOutlooks.map(({ asset, outlook }) => (
-                          <article key={asset.id} className="debt-outlook-card">
-                            <header>
-                              <h3>{asset.name}</h3>
-                              <span>{asset.category}</span>
-                            </header>
-                            <div className="debt-outlook-values">
-                              <span>
-                                <small>Omaisuuden omistusosuus</small>
-                                <strong>{euro(outlook!.ownedValue)}</strong>
-                              </span>
-                              <span>
-                                <small>Linkitetty velka</small>
-                                <strong>−{euro(outlook!.debtBalance)}</strong>
-                              </span>
-                              <span>
-                                <small>Oma pääoma nyt</small>
-                                <strong>{euro(outlook!.currentEquity)}</strong>
-                              </span>
-                            </div>
-                            <p>
-                              {outlook!.payoffMonths === null
-                                ? "Maksuaikaa ei voi arvioida: tarkista lainan korko ja kuukausierä."
-                                : `Velat maksettu arviolta ${outlook!.payoffMonths} kuukaudessa; korkoja maksetaan arviolta ${euro(outlook!.estimatedInterest || 0)}. Omaisuuden arvioitu arvo silloin: ${euro(outlook!.projectedValueAtPayoff || 0)}.`}
-                            </p>
-                            <strong className="debt-equity-result">
-                              Oma pääoma velkojen maksun jälkeen:{" "}
-                              {outlook!.estimatedEquityAtPayoff === null
-                                ? "Ei laskettavissa"
-                                : euro(outlook!.estimatedEquityAtPayoff)}
-                            </strong>
-                          </article>
-                        ))}
-                      </div>
-                    )}
-                    {currentDebts.some((debt) => !debt.linkedAssetId) && (
-                      <div className="alert report-alert">
-                        Linkittämättömiä lainoja:{" "}
-                        {currentDebts
-                          .filter((debt) => !debt.linkedAssetId)
-                          .map((debt) => debt.name)
-                          .join(", ")}
-                        . Linkitä ne velan muokkausnäkymässä, jos niillä on
-                        omaisuuserä vastinparina.
-                      </div>
-                    )}
-                    {linkedOutlooks.length === 0 && currentDebts.length > 0 && (
-                      <Empty text="Yhtään velkaa ei ole vielä linkitetty omaisuuserään." />
-                    )}
-                    {currentDebts.length === 0 && (
-                      <Empty text="Lisää velka ja omaisuuserä, jotta voit tarkastella pääomaa ja takaisinmaksuarviota." />
-                    )}
-                  </section>
+                  <DebtReport linkedOutlooks={linkedOutlooks} filteredLinkedOutlooks={filteredLinkedOutlooks} currentDebts={currentDebts} assetChangeRate={assetChangeRate} setAssetChangeRate={setAssetChangeRate} reportFormat={reportFormat} euro={euro} />
                 )}
                 {reportView === "fire" && (
-                  <section
-                    className="panel report-panel"
-                    id="report-panel-fire"
-                    role="tabpanel"
-                    aria-labelledby="report-tab-fire"
-                    tabIndex={0}
-                  >
-                    <h2>Säästöaste ja taloudellinen riippumattomuus</h2>
-                    <p className="muted">
-                      Säästöaste käyttää valitun aikavälin tuloja ja
-                      kulutusmenoja. FIRE-tavoite annualisoi vain kuukaudet,
-                      joissa on kirjattuja tuloja tai menoja; tyhjää kuukautta
-                      ei tulkita kuluttomaksi. Arvio olettaa havaittujen
-                      kuukausien kuvaavan tulevaa kulutusta. Havaintoja on{" "}
-                      {observedCashflowMonths.length} / {history.length}{" "}
-                      kuukaudelta.
-                    </p>
-                    <div className="report-assumption">
-                      <PercentField
-                        label="Esimerkin nostoprosentti vuodessa"
-                        value={withdrawalRate}
-                        min={2}
-                        max={10}
-                        step={0.1}
-                        onChange={setWithdrawalRate}
-                      />
-                      <small>
-                        Nostoprosentti on laskennan oletus, ei lupaus tuoton
-                        riittävyydestä eikä henkilökohtainen sijoitussuositus.
-                      </small>
-                    </div>
-                    <div className="report-summary-strip">
-                      <article>
-                        <small>Jakson säästöaste</small>
-                        <strong>{pct(periodSavingRate)}</strong>
-                      </article>
-                      <article>
-                        <small>Keskimääräinen kulutus / kk</small>
-                        <strong>{euro(averageMonthlyConsumption)}</strong>
-                      </article>
-                      <article>
-                        <small>Annualisoitu kulutus</small>
-                        <strong>{euro(annualizedSpending)}</strong>
-                      </article>
-                      <article>
-                        <small>Kirjatut sijoitukset nykyarvossa</small>
-                        <strong>{euro(investmentBalance)}</strong>
-                      </article>
-                    </div>
-                    {reportFormat === "bars" &&
-                      observedCashflowMonths.length > 0 && (
-                        <div
-                          className="fire-trend"
-                          role="group"
-                          aria-label="Kuukausittaiset säästöasteet"
-                        >
-                          {observedCashflowMonths.map((item) => (
-                            <button
-                              type="button"
-                              key={item.key}
-                              onClick={() =>
-                                setSelectedReport({
-                                  type: "month",
-                                  month: item.key,
-                                  metric: "income",
-                                })
-                              }
-                              aria-label={`${item.key}: säästöaste ${pct(item.savingRate)}. Avaa tulot.`}
-                            >
-                              <span
-                                style={{
-                                  height: `${Math.max(4, Math.min(100, Math.max(0, item.savingRate || 0)))}%`,
-                                }}
-                              />
-                              <small>
-                                {observedCashflowMonths.length > 12
-                                  ? item.key
-                                  : item.key.slice(5)}
-                              </small>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    {reportFormat === "table" && (
-                      <div className="table-wrap mobile-card-table">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Kuukausi</th>
-                              <th>Tulot</th>
-                              <th>Kulutus</th>
-                              <th>Säästöaste</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredFireMonths.map((item) => (
-                              <tr key={item.key}>
-                                <th scope="row" data-label="Kuukausi">
-                                  {item.key}
-                                </th>
-                                <td data-label="Tulot">{euro(item.income)}</td>
-                                <td data-label="Kulutus">
-                                  {euro(item.consumption)}
-                                </td>
-                                <td data-label="Säästöaste">
-                                  {pct(item.savingRate)}
-                                </td>
-                              </tr>
-                            ))}
-                            {filteredFireMonths.length === 0 && (
-                              <tr>
-                                <td colSpan={4}>Suodattimella ei löytynyt kuukausia.</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    <div className="fire-target-card">
-                      <div>
-                        <span className="eyebrow">ESIMERKKILASKELMA</span>
-                        <h3>Arvioitu sijoitusvarallisuuden tavoite</h3>
-                      </div>
-                      {fireCalculation ? (
-                        <>
-                          <strong>{euro(fireCalculation.target)}</strong>
-                          <p>
-                            Perustuu {euro(annualizedSpending)} vuotuiseen
-                            kulutukseen ja {pct(withdrawalRate)}{" "}
-                            nostoprosenttiin. Nykyisistä kirjatuista
-                            sijoituksista puuttuu arviolta{" "}
-                            {euro(fireCalculation.shortfall)}.
-                          </p>
-                        </>
-                      ) : (
-                        <p>
-                          Tavoitetta ei voi laskea tämän aikavälin tiedoilla.
-                        </p>
-                      )}
-                    </div>
-                    <StatusBadge tone="warning">Skenaario, ei ennuste</StatusBadge>
-                    <ContextDetails title="FIRE-laskelman rajaukset"><p>Tämä karkea laskelma jättää pois verot, inflaation, kulujen muutokset, sijoitustuotot ja nostojen ajoituksen. Säästöaste on kuvaus kirjatuista tiedoista, ei ennuste.</p></ContextDetails>
-                  </section>
+                  <FireReport observedCashflowMonths={observedCashflowMonths} filteredFireMonths={filteredFireMonths} historyCount={history.length} withdrawalRate={withdrawalRate} setWithdrawalRate={setWithdrawalRate} periodSavingRate={periodSavingRate} averageMonthlyConsumption={averageMonthlyConsumption} annualizedSpending={annualizedSpending} investmentBalance={investmentBalance} fireCalculation={fireCalculation} reportFormat={reportFormat} euro={euro} pct={pct} onSelectMonth={month => setSelectedReport({ type: "month", month, metric: "income" })} />
                 )}
                 {selectedReport && (
                   <section
@@ -5738,71 +5325,7 @@ function App() {
                 <div role="tabpanel" id="settings-panel-finance" aria-labelledby="settings-tab-finance" hidden={settingsTab !== 'finance'}><BudgetGuidanceSettingsPanel state={s} onSave={rule => settings({ budgetGuidance: rule })} /></div>
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={settingsTab !== 'account'}><Account exportBackup={exportBackup} auth={safeAuth} hasChanges={hasTemporaryChanges.current} cloudManaged={cloudEnabled} /></div>
                 <div role="tabpanel" id="settings-panel-data" aria-labelledby="settings-tab-data" hidden={settingsTab !== 'data'}>
-                <section className="panel settings-demo-entry" aria-labelledby="settings-demo-title">
-                  <div><h2 id="settings-demo-title">Esimerkkitaloudet</h2><StatusBadge>4 taloutta · 2024–2026</StatusBadge><p className="ux-status-note">{cloudEnabled && auth.user ? 'Lataus korvaa valitun talouden ja tallentuu pilveen.' : 'Lataus korvaa nykyisen talouden.'}</p></div>
-                  <button onClick={() => setDemoPickerOpen(true)}>Valitse demotalous</button>
-                </section>
-                <section className="panel">
-                  <h2>Tallennus ja datan hallinta</h2>
-                  <StatusBadge tone={storageOk ? "positive" : "warning"}>{cloudEnabled && auth.user ? 'Pilvitallennuksen tila yläpalkissa' : storageOk ? "Vain väliaikaisesti muistissa" : "Tallennus ei käytettävissä"}</StatusBadge>
-                  {!storageOk && <p role="alert">Vie varmuuskopio ennen kuin suljet tämän välilehden.</p>}
-                  <p className="ux-status-note">Varmuuskopio ei ole automaattinen.</p>
-                  <button onClick={() => navigate("transfer")}>Varmuuskopiot, tuonti ja vienti</button>
-                  <ContextDetails title="Miten tiedot säilyvät?"><p>{cloudEnabled && auth.user ? 'Vahvistetut muutokset tallennetaan valittuun pilvitalouteen. Tallentamattomat muutokset katoavat, jos sivu suljetaan.' : 'Tiedot katoavat sivun uudelleenlatauksessa ja sulkemisessa. Vie tiedot ennen poistumista.'} JSON-varmuuskopio sisältää koko talouden; CSV-vienti ei sisällä kaikkia tietoja.</p></ContextDetails>
-                  <ContextDetails title="Tallennuksen lisätyökalut"><p>Aiemman version selaintallennuksen voi viedä tästä ja palauttaa JSON-tiedostona. Sitä ei poisteta automaattisesti.</p>
-                    <button
-                      onClick={() => {
-                        try {
-                          let t = localStorage.getItem(storage.key);
-                          if (t)
-                            download(t, "talous-alkuperainen-tallennus.json");
-                          else
-                            setNotice("Alkuperäistä tallennusta ei löytynyt.");
-                        } catch (e) {
-                          setNotice(
-                            "Selaintallennusta ei voi lukea: " + String(e),
-                          );
-                        }
-                      }}
-                    >
-                      Vie alkuperäinen selaintallennus
-                    </button>
-                  </ContextDetails>
-                  <details className="danger-zone"><summary>Poista tietoja</summary>
-                    <h3>Kaikkien tietojen poisto</h3>
-                    <p>
-                      {cloudEnabled && auth.user ? 'Poisto tyhjentää valitun pilvitalouden.' : 'Poisto tyhjentää tämän välilehden muistissa olevan talouden.'} Vie JSON-varmuuskopio ennen poistamista, jos haluat säilyttää tiedot.
-                    </p>
-                    <button
-                      className="danger"
-                      onClick={() => {
-                        setDeleteText("");
-                        setDeleteOpen(true);
-                      }}
-                    >
-                      Poista kaikki tietoni
-                    </button>
-                  {s.settings.demo && (
-                    <p>
-                      <button
-                        onClick={() => {
-                          if (
-                            confirm(
-                              "Poistetaanko koko esimerkkitalous? Myös siihen tekemäsi muutokset poistuvat.",
-                            )
-                          ) {
-                            let n = empty();
-                            n.settings.onboarded = true;
-                            commit(preservePersonalSettings(n));
-                          }
-                        }}
-                      >
-                        Poista esimerkkitalous
-                      </button>
-                    </p>
-                  )}
-                  </details>
-                </section>
+                <DataSettings cloudManaged={cloudEnabled && !!auth.user} storageOk={storageOk} isDemo={s.settings.demo} onChooseDemo={() => setDemoPickerOpen(true)} onTransfer={() => navigate('transfer')} onExportLegacy={exportLegacyStorage} onRequestDelete={() => { setDeleteText(''); setDeleteOpen(true); }} onRemoveDemo={removeDemoHousehold} />
                 </div>
               </>
             )}
@@ -6502,29 +6025,6 @@ function App() {
         </Modal>
       )}
     </>
-  );
-}
-function CategoryImage({
-  icon,
-  size = 26,
-}: {
-  icon: CategoryIconId;
-  size?: number;
-}) {
-  return (
-    <span
-      className="category-icon-frame"
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    >
-      <img
-        className="category-icon"
-        src={categoryIconSources[icon]}
-        width={size * 0.72}
-        height={size * 0.72}
-        alt=""
-      />
-    </span>
   );
 }
 function CompassResearchDetails({

@@ -1,5 +1,15 @@
 # Testausraportti 13.11.2026
 
+## Varallisuusraportit ja tietojenhallinta 19.11.2026
+
+- Varallisuus-, velka- ja FIRE-raporttipaneelit sekä tietojenhallinta-asetukset erotettiin. CategoryImage on nyt yhteinen komponentti.
+- Tyypitys, lint, 226 yksikkötestiä ja tuotantobuild läpäisivät.
+- Molemmat paikalliset selainregressiot läpäisivät (`e2e_reports_settings.py`, `e2e_calculators.py`).
+- Raporttikokeeseen lisättiin fiktiivinen 100 000 € omaisuuserä, 40 000 € linkitetty velka ja 1 000 € sijoitus JSON-palautuksella: nettovarallisuus 61 000 €, oma pääoma 60 000 €. Kuukauden 15 € kulutus ja 4 % nostoprosentti tuottivat 4 500 € FIRE-tavoitteen. Molemmat raporttien esitysmuodot ja 390 px leveys tarkistettiin.
+- Tietojenhallinnan siirtymä varmuuskopioihin toimi. Poistodialogin painike oli estetty ennen POISTA-tekstiä ja käytettävissä sen jälkeen. Dialogi suljettiin ja vienti vahvisti omaisuus-/velkatietojen säilyneen. Varsinaista poistotoimintoa tai tuotantotilin oikeuksia ei tässä kokeessa testattu.
+- Ensimmäinen laajennettu koe pysähtyi väärään testipainikkeen nimeen; korjattu Poista pysyvästi/Sulje-valitsin läpäisi. Sovelluksen poistotoimintoa ei muutettu testin vuoksi.
+
+
 ## Raporttien ja asetusten moduulijako 19.11.2026
 
 - Kuukausivalitsin, raportin aikarajaus/taulukon kontrollit, rahavirran raporttipaneeli, asetusten välilehdet sekä ulkoasu- ja budjettiasetusten sisältö erotettiin omiin moduuleihin.

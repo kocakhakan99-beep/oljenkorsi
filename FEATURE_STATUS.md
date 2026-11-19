@@ -37,4 +37,8 @@ Laskurit ja yhteiset numerokontrollit, kalenteri sekä lainalaskelman erittely o
 
 ### Raporttien ja asetusten moduulijako 19.11.2026
 
-Aikarajaus, kuukausivalitsin, taulukon kontrollit, rahavirran paneeli sekä asetusten välilehdet/ulkoasu/budjettiraamit erotettu. main.tsx on nyt 7 423 riviä. Muiden raporttipaneelien ja tietojenhallinta-asetusten erottaminen jatkuu; raporttien laskenta säilyy vielä Appissa. Selainregressio: e2e_reports_settings.py.
+Aikarajaus, kuukausivalitsin, taulukon kontrollit, rahavirran paneeli sekä asetusten välilehdet/ulkoasu/budjettiraamit erotettu. main.tsx on nyt 7 423 riviä. Raporttien laskenta säilyy vielä Appissa. Seuraava erä erotti myös varallisuus-/velka-/FIRE-paneelit ja tietojenhallinta-asetukset, ks. alla. Selainregressio: e2e_reports_settings.py.
+
+### Varallisuusraportit ja tietojenhallinta 19.11.2026
+
+Varallisuuden, velkojen ja FIREn paneelit sekä tietojenhallinta-asetukset on erotettu. Niiden laskenta ja tallennuksen ohjaus säilyvät yhteisinä. main.tsx on 6 923 riviä. Raporttien yleiskuva, kulurakenne, budjettiraportti ja valinnan erittely ovat vielä erottamatta. Laajennettu selainregressio varmistaa fiktiivisen omaisuus-/velka-aineiston luvut sekä poistovahvistuksen ja perumisen.
