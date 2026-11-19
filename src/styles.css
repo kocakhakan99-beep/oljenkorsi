@@ -5918,7 +5918,7 @@ button.primary:hover { background: var(--soft); border-color: var(--accent); }
 @media (max-width: 600px) { .budget-compact-bars { grid-template-columns: 1fr; gap: .7rem; } }
 .compass-track-filter[aria-pressed="true"], .editor-tabbar [aria-selected="true"] { background: var(--surface); color: var(--text); border-color: var(--accent); box-shadow: inset 0 -3px var(--accent); }
 .startup-screen { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; background: var(--surface); color: var(--text); opacity: 1; transition: opacity 380ms ease, transform 380ms ease; }
-.startup-screen.is-exiting { opacity: 0; transform: scale(1.025); pointer-events: none; }
+.startup-screen.is-exiting { animation: startup-exit 380ms ease forwards; pointer-events: none; }
 .startup-content { display: grid; justify-items: center; gap: .65rem; padding: 1.5rem; text-align: center; animation: startup-arrive 500ms cubic-bezier(.2,.8,.2,1) both; }
 .startup-content strong { margin-top: .4rem; font-size: 1.2rem; font-weight: 650; }
 .startup-content > span:last-child { color: var(--muted); font-size: .95rem; }
@@ -5928,4 +5928,31 @@ button.primary:hover { background: var(--soft); border-color: var(--accent); }
 .startup-mark span:nth-child(3) { height: 19px; animation-delay: 280ms; }
 @keyframes startup-pulse { from { transform: scaleY(.55); opacity: .55; } to { transform: scaleY(1); opacity: 1; } }
 @keyframes startup-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .startup-screen, .startup-screen.is-exiting { transition-duration: 1ms; } .startup-content, .startup-mark span { animation-duration: 1ms; animation-iteration-count: 1; } }
+@keyframes startup-exit { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.025); } }
+@media (prefers-reduced-motion: reduce) { .startup-screen, .startup-screen.is-exiting { transition-duration: 1ms; animation-duration: 1ms; } .startup-content, .startup-mark span { animation-duration: 1ms; animation-iteration-count: 1; } }
+
+/* Compact account and cloud controls. */
+.mobile-profile { display: none; }
+.desktop-profile { display: flex; margin-bottom: 12px; }
+.desktop-profile .profile-popover { top: auto; bottom: calc(100% + 8px); }
+.shell > aside > .brand { padding-right: 0; }
+.household-toggle { display: inline-flex; align-items: center; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.household-toggle button { display: grid; place-items: center; width: 44px; min-height: 40px; padding: 6px; border: 0; border-radius: 999px; background: transparent; }
+.household-toggle button[aria-pressed="true"] { background: var(--soft); box-shadow: inset 0 0 0 1px var(--accent); color: var(--text); }
+.save-indicator { display: inline-flex; align-items: center; gap: 6px; }
+.save-indicator-icon { position: relative; display: inline-grid; place-items: center; width: 36px; height: 40px; border-radius: 9px; color: var(--muted); }
+.save-indicator.has-problem { color: var(--negative); }
+.save-indicator.has-problem .save-indicator-icon { color: inherit; }
+.save-tooltip { display: none; position: absolute; top: calc(100% + 5px); right: 0; z-index: 80; width: max-content; max-width: min(260px, calc(100vw - 32px)); padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); box-shadow: 0 5px 15px #0002; }
+.save-indicator-icon:hover .save-tooltip, .save-indicator-icon:focus .save-tooltip { display: block; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.save-spinning { animation: save-spin 1s linear infinite; }
+@keyframes save-spin { to { transform: rotate(360deg); } }
+.inline-context-help { margin: 8px 0 16px; }
+@media (prefers-reduced-motion: reduce) { .save-spinning { animation: none; } }
+@media (max-width: 760px) {
+  .mobile-profile { display: block; }
+  .desktop-profile { display: none; }
+  .aside-top-actions { width: 100%; }
+  .toolbar .cloud-status { width: auto; flex: 0 0 auto; }
+}

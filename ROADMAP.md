@@ -1,5 +1,7 @@
 # Roadmap
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 Päivitetty 12.11.2026. Nykyinen toimitus on 0.1.0, ei valmis V1. Nykytilan ja ehdotusten [kartoitus](FEATURE_RESEARCH.md), [tutkimuspohja](RESEARCH_SOURCES.md), [kompassin päätössäännöt](COMPASS_ENGINE.md), [FIRE-määrittely](FIRE_PLAN.md), [navigaation sekä ilmeen suunnitelma](UX_REDESIGN_PLAN.md) ja [budjetti-, raportti- ja käyttöliittymäsuunnitelma](UI_BUDGET_REPORTS_PLAN.md) täydentävät tätä suunnitelmaa. Prioriteetit ovat toteutusjärjestys, eivät aikataulu- tai julkaisulupaus. Selkokielinen yhdistelmälista on [CHECKLIST.md](CHECKLIST.md).
 
 ## PDF-tuonnin seuraavat vaiheet

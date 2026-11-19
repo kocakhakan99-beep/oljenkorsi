@@ -1,5 +1,7 @@
 # Taloussuunnittelu 0.1.0
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 > **Käyttö:** julkaistu selainversio toimii HTTPS-osoitteessa. Kirjautumattoman käyttäjän talous on vain välilehden muistissa ja katoaa sivun päivityksessä tai sulkemisessa; vie JSON-varmuuskopio tai CSV ennen poistumista. Google-kirjautuminen on Supabasessa käytössä, Apple ei ole vielä aktiivinen. Perheen talous tallentuu pilveen vain käyttäjän erillisellä tallennusvalinnalla; automaattista synkronointia ei ole.
 
 Ajantasainen selkokielinen kokonaiskuva: [checklist ja dokumentaatio aiheittain](CHECKLIST.md).

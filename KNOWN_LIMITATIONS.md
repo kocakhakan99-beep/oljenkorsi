@@ -1,5 +1,7 @@
 # Tunnetut rajoitukset
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 ## Data ja tallennus
 
 - Ei salausta. JSON/CSV ja selaintallennus ovat luettavissa laitteen käyttäjille.

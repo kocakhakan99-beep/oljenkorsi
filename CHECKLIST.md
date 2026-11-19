@@ -1,5 +1,7 @@
 # Oljenkorren selkokielinen tilannekatsaus
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 Päivitetty 12.11.2026. Tämä on roadmapin ja aihekohtaisten suunnitelmien yhteinen, selkokielinen tilannekatsaus. Päällekkäiset ehdotukset on yhdistetty. Jos vanhemmassa suunnitelmassa on ristiriita, tässä käytetään uusinta toteutusta ja UX-päätöstä. Valmis tarkoittaa kuvattua toteutusta, ei koko aihealueen lopullista valmistumista.
 
 **✅ Valmis** · **🟡 Osittain valmis / viimeisteltävä** · **📋 Suunnitelma valmis, toteutus puuttuu** · **⬜ Jonossa / vaatii tarkemman suunnitelman**

@@ -1,5 +1,7 @@
 # Historiallinen dokumentti: offline-arkkitehtuuri
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 Tämä tiedosto kuvaa aiempaa paikallista versiota. Se ei ole nykyisen verkkosovelluksen kuvaus tai kehitystavoite. Vierastilan tiedot ovat vain välilehden muistissa; julkaisu ja Supabase-toiminnot vaativat HTTPS-yhteyden.
 
 V1:n virallinen jakelutavoite on yksi itsenäinen HTML, jonka käyttäjä avaa paikallisesti file://-protokollalla. Tässä toimituksessa se on toteutettu. Kehityspalvelin ei ole loppukäyttäjän vaatimus.

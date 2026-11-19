@@ -1,5 +1,7 @@
 # Arkkitehtuuri
 
+> Nykytilan ensisijainen kuvaus: [ominaisuuksien nykytila](FEATURE_STATUS.md). Tämän dokumentin vanhat versio-, offline- ja tallennuskuvaukset ovat historiallisia, ellei niitä ole erikseen päivitetty.
+
 ## Kerrokset
 
 - React UI hallitsee navigointia, lomakkeita ja näkymiä.

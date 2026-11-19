@@ -1,3 +1,5 @@
+import { SaveStatus } from "./components/save-status";
+import { UserRound, UsersRound } from "lucide-react";
 import { Account, GoogleButton } from "./components/account";
 import { ProfileMenu } from "./components/profile-menu";
 import { useAuth } from "./services/use-auth";
@@ -624,10 +626,8 @@ function DemoHouseholdGrid({
   );
 }
 function HelpBox({
-  id,
   title,
   children,
-  onDismiss,
 }: {
   id: string;
   title: string;
@@ -635,18 +635,7 @@ function HelpBox({
   onDismiss: (id: string) => void;
 }) {
   return (
-    <aside className="help-box" aria-labelledby={`help-${id}-title`}>
-      <strong className="help-box-copy" id={`help-${id}-title`}>{title}</strong>
-      <ContextDetails title={title}>{children}</ContextDetails>
-      <button
-        type="button"
-        className="help-box-dismiss"
-        aria-label={`Piilota ohje: ${title}`}
-        onClick={() => onDismiss(id)}
-      >
-        <X size={18} aria-hidden="true" />
-      </button>
-    </aside>
+    <div className="inline-context-help"><ContextDetails title={title}>{children}</ContextDetails></div>
   );
 }
 function monthKey(year: number, monthIndex: number) {
@@ -1904,11 +1893,11 @@ function CashEntryForm({
 }
 function StartupScreen({ exiting = false }: { exiting?: boolean }) {
   return <div className={`startup-screen${exiting ? " is-exiting" : ""}`} role={exiting ? undefined : "status"} aria-live={exiting ? undefined : "polite"} aria-hidden={exiting || undefined}>
-    {!exiting && <div className="startup-content">
+    <div className="startup-content">
       <div className="startup-mark" aria-hidden="true"><span /><span /><span /></div>
       <strong>Valmistellaan talouttasi</strong>
       <span>Hetki, avataan sovellus.</span>
-    </div>}
+    </div>
   </div>;
 }
 function App() {
@@ -3545,6 +3534,13 @@ function App() {
       (saved.status === "done" || (saved.until && saved.until > today()))
     );
   });
+  function selectHousehold(id: string) {
+    if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; }
+    void cloud.select(id).then(() => setTrialSession(null)).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.'));
+  }
+  const profileMenu = <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={cloud.items.length > 1 ? <label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).then(() => setTrialSession(null)).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.')); }}>
+            {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
+          </select></label> : undefined} />;
   if (cloudEnabled && !cloud.canEdit && !['error', 'legacy-review', 'transition'].includes(cloud.status) && startupPhase !== 'ready') return <StartupScreen />;
   if (cloudEnabled && !cloud.canEdit) return <main className="panel" role="status">
     <h1>Talouden tallennus</h1>
@@ -3584,9 +3580,7 @@ function App() {
           >
             Valikko · {names[page] || "Yhteenveto"}
           </button>
-          <ProfileMenu auth={safeAuth} hasChanges={hasTemporaryChanges.current} onAccount={() => navigate("settings-account")} cloudManaged={cloudEnabled} householdPicker={<label className="profile-household">Talouden valinta <select aria-label="Talouden valinta" value={cloud.active ?? ''} onChange={event => { if (document.querySelector('dialog[open]')) { setNotice('Sulje ensin avoin lomake.'); return; } void cloud.select(event.target.value).then(() => setTrialSession(null)).catch(() => setNotice('Tallenna muutokset tai vie ja hylkää ne ennen talouden vaihtoa.')); }}>
-            {cloud.items.map(item => <option key={item.id} value={item.id}>{item.name}{item.kind === 'shared' ? ' · yhteinen' : ' · oma'}</option>)}
-          </select></label>} />
+          <div className="mobile-profile">{profileMenu}</div>
           </div>
           <nav
             id="main-navigation"
@@ -3621,8 +3615,7 @@ function App() {
             ))}
           </nav>
           <div className="aside-bottom">
-            <span className="dot" /> {auth.user ? "Kirjautunut" : "Vierastila"}
-            <small>Hallitse tiliäsi yläpalkista.</small>
+            <div className="desktop-profile">{profileMenu}</div>
             <button onClick={() => setQuick(true)}>
               Pikatoiminnot <kbd>Ctrl K</kbd>
             </button>
@@ -3692,15 +3685,22 @@ function App() {
                   <EyeOff size={19} aria-hidden="true" />
                 )}
               </button>
+              {cloudEnabled && auth.user && cloud.items.some(item => item.kind === 'personal') && cloud.items.some(item => item.kind === 'shared') && <div className="household-toggle" role="group" aria-label="Aktiivinen talous">
+                {(['personal', 'shared'] as const).map(kind => {
+                  const item = cloud.items.find(item => item.kind === kind);
+                  if (!item) return null;
+                  const Icon = kind === 'personal' ? UserRound : UsersRound;
+                  return <button key={kind} type="button" aria-label={kind === 'personal' ? 'Oma talous' : 'Perheen talous'} title={item.name} aria-pressed={activeHousehold?.kind === kind} onClick={() => selectHousehold(item.id)}><Icon size={19} aria-hidden="true" /></button>;
+                })}
+              </div>}
               {cloudEnabled && auth.user && <div className="cloud-status" role="status">
-                <strong className="active-household">{activeHousehold ? `${activeHousehold.name} · ${activeHousehold.kind === 'shared' ? 'yhteinen' : 'oma'}` : 'Talous ei saatavilla'}</strong>{' '}
-                <span>{({ empty: 'Ei vielä tallennettu', saved: 'Tallennettu', dirty: 'Muutoksia tallentamatta', saving: 'Tallennetaan…', uncertain: 'Yhteysvirhe – yritetään uudelleen', conflict: 'Versioristiriita', rejected: 'Tallennus estetty', loading: 'Haetaan…', error: 'Lataus epäonnistui', 'legacy-review': 'Tarkistus vaaditaan', 'remote-change': 'Uusi pilviversio saatavilla', guest: 'Vierastila', transition: 'Tilin vaihto' } as const)[cloud.status]}</span>{' '}
+                <SaveStatus status={cloud.status} label={({ empty: 'Ei vielä tallennettu', saved: 'Tallennettu', dirty: 'Muutoksia tallentamatta', saving: 'Tallennetaan…', uncertain: 'Yhteysvirhe – yritetään uudelleen', conflict: 'Versioristiriita', rejected: 'Tallennus estetty', loading: 'Haetaan…', error: 'Lataus epäonnistui', 'legacy-review': 'Tarkistus vaaditaan', 'remote-change': 'Uusi pilviversio saatavilla', guest: 'Vierastila', transition: 'Tilin vaihto' } as const)[cloud.status]} />
                 {cloud.status === 'remote-change' && cloud.active && <button onClick={() => { if (!document.querySelector('dialog[open]')) void cloud.select(cloud.active!).catch(() => setNotice('Vie tai tallenna keskeneräiset muutokset ensin.')); }}>Lataa uusin versio</button>}
                 {(cloud.status === 'dirty' || cloud.status === 'uncertain') && <button onClick={() => void cloud.saveNow()}>Tallenna nyt</button>}
                 {(cloud.status === 'conflict' || cloud.status === 'rejected') && <><button onClick={exportBackup}>Vie tämän välilehden varmuuskopio</button><button onClick={() => { if (!auth.user || !cloud.active || document.querySelector('dialog[open]')) return; const userId = auth.user.id; const householdId = cloud.active; void cloud.previewLatest().then(latest => setCloudPreview({ userId, householdId, revision: latest.revision, name: latest.name, state: latest.state })).catch(() => setNotice('Pilviversiota ei voitu tarkastella. Tämän välilehden muutokset säilyvät muistissa.')); }}>Tarkastele pilviversiota</button><button onClick={() => { if (confirm('Hylätäänkö tämän välilehden muutokset ja ladataan sama talous pilvestä? Vie tarvittaessa ensin varmuuskopio.')) cloud.discardAndReloadActive(); }}>Hylkää muutokset ja lataa sama talous</button></>}
               </div>}
               {preferencesEnabled && auth.user && <div className="cloud-status" role="status">
-                <span>{({ empty: 'Oletusasetukset', saved: 'Asetukset tallennettu', dirty: 'Asetuksia tallentamatta', saving: 'Tallennetaan asetuksia…', uncertain: 'Asetusten yhteysvirhe', conflict: 'Asetusten versioristiriita', rejected: 'Asetusten tallennus estetty', loading: 'Haetaan asetuksia…', error: 'Asetusten lataus epäonnistui', guest: 'Vieras' } as const)[preferences.status]}</span>{' '}
+                <SaveStatus status={preferences.status} label={({ empty: 'Oletusasetukset', saved: 'Asetukset tallennettu', dirty: 'Asetuksia tallentamatta', saving: 'Tallennetaan asetuksia…', uncertain: 'Asetusten yhteysvirhe', conflict: 'Asetusten versioristiriita', rejected: 'Asetusten tallennus estetty', loading: 'Haetaan asetuksia…', error: 'Asetusten lataus epäonnistui', guest: 'Vieras' } as const)[preferences.status]} />
                 {(preferences.status === 'error' || preferences.status === 'uncertain') && <button onClick={preferences.retry}>Yritä uudelleen</button>}
                 {(preferences.status === 'conflict' || preferences.status === 'rejected') && <button onClick={() => { if (confirm('Hylätäänkö tämän laitteen tallentamattomat asetukset ja ladataan pilven asetukset?')) preferences.reload(); }}>Lataa pilven asetukset</button>}
               </div>}
