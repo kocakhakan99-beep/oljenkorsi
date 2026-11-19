@@ -1,5 +1,5 @@
-import type { Entry } from './model';
-import type { metrics } from './calculations';
+import type { Entry } from "./model";
+import type { metrics } from "./calculations";
 
 export type ReportMonth = ReturnType<typeof metrics> & { key: string };
 export type ReportSelection =
@@ -25,3 +25,12 @@ export type ReportDetailEntry = {
   amount: number;
   occurrences?: number;
 };
+
+export type ReportView =
+  | "overview"
+  | "categories"
+  | "flow"
+  | "budget"
+  | "wealth"
+  | "debt"
+  | "fire";

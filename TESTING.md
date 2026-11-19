@@ -1,5 +1,13 @@
 # Testausraportti 13.11.2026
 
+## Raporttidatan domain-jako 19.11.2026
+
+- Report-series, report-tables ja report-selection sisältävät aiemmin Appissa olleen raporttidatan koostamisen. Arvostuksen nykykuukauden päivä välitetään eksplisiittisesti. Yhteisiä tapahtumatilojen nykyhetkisääntöjä ei muutettu.
+- Kahdeksan uutta report-data.test.ts-testiä tarkistaa manuaalisen budjettitoteuman, kulutuksen ja siirtojen erottelun; tyhjän kuukauden FIRE-käsittelyn; päivän tapahtumien yhdistämisen ja alijäämästä palautumisen; valinnan eri summapohjat; omistusosuuden/sijoitusmäärän/velkalinkin; arvostuspäivän; suodatuksen ja muuttumattomuuden; sekä tyhjän kaaviopolun.
+- 29 testitiedostoa / 234 testiä, tyypitys, lint ja tuotantobuild läpäisivät. Molemmat paikalliset selainregressiot (raportit/asetukset ja laskurit) läpäisivät valmiista buildista.
+- Testit käyttävät fiktiivisiä tietoja. Tuotantotilin pilvitallennusta tai käyttöoikeuksia ei tässä erässä muutettu eikä testattu.
+
+
 ## Raporttipaneelien erottaminen 19.11.2026
 
 - Yleiskuva, kulurakenne, budjettiraportti ja tietokortti erotettiin; valinnan/kuukausirivien tyypit siirrettiin yhteiseen report-model-moduuliin.

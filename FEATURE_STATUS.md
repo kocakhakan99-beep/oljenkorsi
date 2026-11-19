@@ -46,3 +46,7 @@ Varallisuuden, velkojen ja FIREn paneelit sekä tietojenhallinta-asetukset on er
 ### Raporttipaneelien erottaminen valmis 19.11.2026
 
 Myös yleiskuva, kulurakenne, budjettiraportti ja raporttivalinnan tietokortti ovat omissa komponenteissaan. Yhteiset valinta-/rivityypit ovat domain/report-model.ts-moduulissa. Kaikki raporttipaneelit on erotettu; raporttidatan koostaminen ja sovelluksen yhteinen ohjaus ovat yhä Appissa. main.tsx on nyt 5 906 riviä. Selainregressio kattaa kaikkien paneelien mobiilirajat ja uusien siirtojen valinta-/erittelypolut.
+
+### Raporttidatan koostaminen erotettu 19.11.2026
+
+Aikasarjat, varallisuus-/FIRE-koosteet, kategoriat ja rahavirta ovat report-series.ts-moduulissa; taulukoiden suodatus/lajittelu report-tables.ts:ssä ja valinnan erittely report-selection.ts:ssä. App säilyttää rajauksen ja valintojen ohjauksen. main.tsx on 5 419 riviä. Kahdeksan uutta koostetestiä läpäisi, kokonaismäärä 29 tiedostoa / 234 testiä; molemmat selainregressiot läpäisivät. Yhteiset tapahtumien tilasäännöt käyttävät edelleen sovelluksen nykyhetkeä; asOf-parametri koskee arvostuspäivän valintaa, ei koko raportin aikamatkustussimulaatiota.

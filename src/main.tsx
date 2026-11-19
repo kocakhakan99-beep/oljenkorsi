@@ -1,8 +1,11 @@
+import { reportHistory, reportBudgets, reportWealth, reportPeriod, reportCategories, reportFlow } from './domain/report-series';
+import { reportTables } from './domain/report-tables';
+import { reportSelection } from './domain/report-selection';
 import { OverviewReport } from './components/overview-report';
 import { CategoryReport } from './components/category-report';
 import { BudgetReport } from './components/budget-report';
 import { ReportDetail } from './components/report-detail';
-import type { ReportSelection, ReportDetailEntry } from './domain/report-model';
+import type { ReportSelection, ReportView } from './domain/report-model';
 import { DataSettings } from './components/data-settings';
 import { CategoryImage } from './components/category-image';
 import { WealthReport } from './components/wealth-report';
@@ -88,11 +91,9 @@ import {
   MAX,
   expenseType,
   userTags,
-  fiTarget,
   emergencyFund,
   confirmedIncomeAverage,
   incomeInterruptionStress,
-  linkedAssetOutlook,
 } from "./domain/calculations";
 import {
   actionTrackLabels,
@@ -261,7 +262,6 @@ function legacyDismissedHelp(): string[] {
     return Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === 'string' && id.length <= 100))].slice(0, 100) : [];
   } catch { return []; }
 }
-type ReportView = (typeof reportTabs)[number]["id"];
 const reportFormats: Record<ReportView, { value: string; label: string }[]> = {
   overview: [
     { value: "bars", label: "Pylväät" },
@@ -340,21 +340,6 @@ const reportTableSorts: Record<ReportView, ReportSortOption[]> = {
   ],
 };
 type CategoryChoice = { name: string; icon: CategoryIconId };
-function expCatsForReport(s: State, months: string[]): [string, number][] {
-  const totals = new Map<string, number>();
-  const expenses = s.expenses.filter(
-    (item) => expenseType(item) === "consumption",
-  );
-  for (const month of months)
-    for (const item of expenses) {
-      const amount = occurrenceSum(item, month, "actual");
-      if (amount)
-        totals.set(item.category, (totals.get(item.category) || 0) + amount);
-    }
-  return [...totals.entries()]
-    .filter(([, value]) => value > 0)
-    .sort((a, b) => b[1] - a[1]);
-}
 const singular: Record<Kind, string> = {
   incomes: "tulo",
   expenses: "meno",
@@ -2032,500 +2017,28 @@ function App() {
               end >= firstMonthIndex + rangeWindow - 1 && end <= lastMonthIndex,
           )
           .map(monthIndexKey);
-  const history = useMemo(
-    () =>
-      page === "reports" && customRangeValid
-        ? Array.from({ length: customRangeLength }, (_, i) => {
-            const index = reportStartNumber! + i;
-            const year = Math.floor(index / 12);
-            const monthIndex = index % 12;
-            const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-            return { key, ...metrics(datedState(s,selectedValuationDate(key)), key) };
-          })
-        : [],
-    [s, page, customRangeValid, customRangeLength, reportStartNumber],
-  );
-  const budgetReport = useMemo(
-    () =>
-      page === "reports" && reportView === "budget"
-        ? history
-            .map(({ key }) => {
-              const plannedByCategory = s.budgets[key] || {};
-              const summary = budgetSummary(s, key);
-              const planned = summary.planned;
-              const actual = summary.budgetedActual;
-              return {
-                key,
-                planned,
-                hasPlan: planned > 0,
-                actual,
-                unbudgetedActual: summary.unbudgetedActual,
-                plannedByCategory,
-              };
-            })
-            .filter(
-              (row) =>
-                row.hasPlan || row.actual > 0 || row.unbudgetedActual > 0,
-            )
-        : [],
-    [s, page, reportView, history],
-  );
-  const budgetTotals = budgetReport.reduce(
-    (totals, row) => ({
-      planned: totals.planned + row.planned,
-      actual: totals.actual + row.actual,
-      unbudgetedActual: totals.unbudgetedActual + row.unbudgetedActual,
-    }),
-    { planned: 0, actual: 0, unbudgetedActual: 0 },
-  );
-  const budgetReportScale = Math.max(
-    ...budgetReport.flatMap((row) => [
-      row.planned,
-      row.actual,
-      row.unbudgetedActual,
-    ]),
-    1,
-  );
+  const reportAsOf = today();
+  const history = useMemo(() => page === 'reports' && customRangeValid
+    ? reportHistory(s, reportStartNumber!, customRangeLength, reportAsOf) : [],
+    [s, page, customRangeValid, customRangeLength, reportStartNumber, reportAsOf]);
+  const { budgetReport, budgetTotals, budgetReportScale } = useMemo(
+    () => reportBudgets(s, page === 'reports' && reportView === 'budget' ? history : []),
+    [s, page, reportView, history]);
   const snapshotState = page === "reports" ? datedState(s,selectedValuationDate(reportEnd)) : valuedState;
-  const currentAssets = snapshotState.assets.map((asset) => ({
-    ...asset,
-    ownedValue: Math.round((asset.amount * asset.ownership) / 100),
-  }));
-  const currentInvestments = snapshotState.investments.map((investment) => ({
-    ...investment,
-    marketValue: Math.round(investment.amount * investment.quantity),
-  }));
-  const currentDebts = snapshotState.liabilities;
-  const debtBalance = sum(currentDebts.map((debt) => debt.amount));
-  const assetBalance = sum(currentAssets.map((asset) => asset.ownedValue));
-  const investmentBalance = sum(
-    currentInvestments.map((investment) => investment.marketValue),
-  );
-  const netWorth = assetBalance + investmentBalance - debtBalance;
-  const linkedOutlooks = currentAssets
-    .map((asset) => ({
-      asset,
-      outlook: linkedAssetOutlook(asset, currentDebts, assetChangeRate),
-    }))
-    .filter((item) => item.outlook !== null);
-  const observedCashflowMonths = history.filter(
-    (item) => item.income !== 0 || item.expense !== 0,
-  );
-  const averageMonthlyConsumption = observedCashflowMonths.length
-    ? sum(observedCashflowMonths.map((item) => item.consumption)) /
-      observedCashflowMonths.length
-    : 0;
-  const periodTotals = history.reduce(
-    (totals, current) => ({
-      income: totals.income + current.income,
-      expense: totals.expense + current.expense,
-      consumption: totals.consumption + current.consumption,
-      cash: totals.cash + current.cash,
-    }),
-    { income: 0, expense: 0, consumption: 0, cash: 0 },
-  );
-  const periodSavingRate = periodTotals.income
-    ? (100 * (periodTotals.income - periodTotals.consumption)) /
-      periodTotals.income
-    : null;
-  const annualizedSpending = Math.round(averageMonthlyConsumption * 12);
-  const fireCalculation = (() => {
-    if (
-      observedCashflowMonths.length === 0 ||
-      !Number.isSafeInteger(annualizedSpending) ||
-      annualizedSpending > MAX ||
-      !Number.isSafeInteger(investmentBalance) ||
-      investmentBalance > MAX
-    )
-      return null;
-    try {
-      return fiTarget(annualizedSpending, 0, investmentBalance, withdrawalRate);
-    } catch {
-      return null;
-    }
-  })();
-  const formatPeriodMonth = (key: string) => {
-    const [year, monthPart] = key.split("-").map(Number);
-    return new Intl.DateTimeFormat("fi-FI", {
-      month: "long",
-      year: "numeric",
-    }).format(new Date(year, monthPart - 1, 1));
-  };
-  const periodLabel =
-    history.length === 0
-      ? "Valitse voimassa oleva aikaväli"
-      : history.length === 1
-        ? formatPeriodMonth(history[0].key)
-        : `${formatPeriodMonth(history[0].key)} – ${formatPeriodMonth(history[history.length - 1].key)}`;
-  const reportHasData = history.some((h) => h.income !== 0 || h.expense !== 0);
-  const reportMax = Math.max(
-    ...history.flatMap((h) => [h.income, h.expense]),
-    1,
-  );
-  const reportCoordinates = (key: "income" | "expense") =>
-    history.map((h, index) => ({
-      x: history.length === 1 ? 50 : 5 + index * (90 / (history.length - 1)),
-      y: 95 - (h[key] / reportMax) * 85,
-    }));
-  const reportLine = (key: "income" | "expense") => {
-    const points = reportCoordinates(key);
-    if (points.length < 2)
-      return points.length ? `M ${points[0].x} ${points[0].y}` : "";
-    return points.reduce((path, point, index) => {
-      if (index === 0) return `M ${point.x} ${point.y}`;
-      const previous = points[index - 1];
-      const before = points[index - 2] ?? previous;
-      const after = points[index + 1] ?? point;
-      const controlOne = {
-        x: previous.x + (point.x - before.x) / 6,
-        y: previous.y + (point.y - before.y) / 6,
-      };
-      const controlTwo = {
-        x: point.x - (after.x - previous.x) / 6,
-        y: point.y - (after.y - previous.y) / 6,
-      };
-      return `${path} C ${controlOne.x} ${controlOne.y}, ${controlTwo.x} ${controlTwo.y}, ${point.x} ${point.y}`;
-    }, "");
-  };
-  const reportArea = (key: "income" | "expense") => {
-    const points = reportCoordinates(key);
-    const line = reportLine(key);
-    if (!points.length) return "";
-    return `${line} L ${points[points.length - 1].x} 95 L ${points[0].x} 95 Z`;
-  };
-  const incomeReportCoordinates = reportCoordinates("income");
-  const expenseReportCoordinates = reportCoordinates("expense");
-  const categoryReport = useMemo(
-    () =>
-      page === "reports" && reportView === "categories"
-        ? expCatsForReport(
-            s,
-            history.map((item) => item.key),
-          )
-        : [],
-    [s, page, reportView, history],
-  );
-  const categoryTotal = categoryReport.reduce(
-    (value, [, amount]) => value + amount,
-    0,
-  );
-  const maxCategoryExpense = Math.max(
-    ...categoryReport.map(([, value]) => value),
-    1,
-  );
-  const pieColors = [
-    "#087f5b",
-    "#d9480f",
-    "#7048e8",
-    "#ae7c00",
-    "#1971c2",
-    "#c2255c",
-    "#495057",
-    "#5c940d",
-  ];
-  let pieCursor = 0;
-  const pieSlices = categoryReport.map(([category, value], index) => {
-    const start = pieCursor;
-    pieCursor += categoryTotal ? (value * 100) / categoryTotal : 0;
-    return {
-      category,
-      value,
-      start,
-      end: pieCursor,
-      color: pieColors[index % pieColors.length],
-    };
-  });
-  const flowByDate = useMemo(() => {
-    const map = new Map<string, { income: number; expense: number }>();
-    if (page !== "reports" || reportView !== "flow") return map;
-    const incomes = s.incomes;
-    const expenses = s.expenses;
-    for (const period of history) {
-      for (const item of incomes)
-        for (const date of occurrencesWithStatus(item, period.key, "actual")) {
-          const value = map.get(date) || { income: 0, expense: 0 };
-          value.income += occurrenceAmount(item, date);
-          map.set(date, value);
-        }
-      for (const item of expenses)
-        for (const date of occurrencesWithStatus(item, period.key, "actual")) {
-          const value = map.get(date) || { income: 0, expense: 0 };
-          value.expense += occurrenceAmount(item, date);
-          map.set(date, value);
-        }
-    }
-    return map;
-  }, [s, history, page, reportView]);
-  let runningFlow = 0;
-  const dailyFlow = [...flowByDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, value]) => {
-      runningFlow += value.income - value.expense;
-      return { date, ...value, balance: runningFlow };
-    });
-  const firstShortfall = dailyFlow.find((day) => day.balance < 0);
-  const recoveryDay = firstShortfall
-    ? dailyFlow.find(
-        (day) => day.date > firstShortfall.date && day.balance >= 0,
-      )
-    : undefined;
-  const maxFlowMagnitude = Math.max(
-    ...dailyFlow.map((day) => Math.abs(day.balance)),
-    1,
-  );
-  const normalizedTableSearch = reportTableSearch.trim().toLocaleLowerCase("fi-FI");
-  const matchesTableSearch = (...values: Array<string | number | null | undefined>) =>
-    values
-      .filter((value) => value !== null && value !== undefined)
-      .join(" ")
-      .toLocaleLowerCase("fi-FI")
-      .includes(normalizedTableSearch);
-  const filteredHistory = history
-    .filter((row) => matchesTableSearch(row.key))
-    .sort((a, b) => {
-      if (reportTableSort === "income-desc") return b.income - a.income;
-      if (reportTableSort === "expense-desc") return b.expense - a.expense;
-      if (reportTableSort === "cash-asc") return a.cash - b.cash;
-      if (reportTableSort === "saving-desc")
-        return (b.savingRate ?? -Infinity) - (a.savingRate ?? -Infinity);
-      return reportTableSort === "date-asc"
-        ? a.key.localeCompare(b.key)
-        : b.key.localeCompare(a.key);
-    });
-  const filteredCategoryReport = categoryReport
-    .filter(([category]) => matchesTableSearch(category))
-    .sort(([nameA, amountA], [nameB, amountB]) =>
-      reportTableSort === "name-asc"
-        ? nameA.localeCompare(nameB, "fi-FI")
-        : reportTableSort === "amount-asc"
-          ? amountA - amountB
-          : amountB - amountA,
-    );
-  const filteredDailyFlow = dailyFlow
-    .filter((day) => matchesTableSearch(day.date))
-    .sort((a, b) => {
-      if (reportTableSort === "income-desc") return b.income - a.income;
-      if (reportTableSort === "expense-desc") return b.expense - a.expense;
-      if (reportTableSort === "cash-asc") return a.balance - b.balance;
-      return reportTableSort === "date-desc"
-        ? b.date.localeCompare(a.date)
-        : a.date.localeCompare(b.date);
-    });
-  const filteredBudgetReport = budgetReport
-    .filter((row) => matchesTableSearch(row.key))
-    .sort((a, b) => {
-      if (reportTableSort === "actual-desc") return b.actual - a.actual;
-      if (reportTableSort === "difference-asc")
-        return a.planned - a.actual - (b.planned - b.actual);
-      if (reportTableSort === "date-asc") return a.key.localeCompare(b.key);
-      return b.key.localeCompare(a.key);
-    });
-  const wealthTableRows = [
-    ...currentAssets.map((asset) => ({
-      id: `asset-${asset.id}`,
-      name: asset.name,
-      category: `Omaisuus · ${asset.category}`,
-      value: asset.ownedValue,
-      date: asset.date,
-    })),
-    ...currentInvestments.map((investment) => ({
-      id: `investment-${investment.id}`,
-      name: investment.name,
-      category: `Sijoitus · ${investment.category}`,
-      value: investment.marketValue,
-      date: investment.date,
-    })),
-    ...currentDebts.map((debt) => ({
-      id: `debt-${debt.id}`,
-      name: debt.name,
-      category: `Velka · ${debt.category}`,
-      value: -debt.amount,
-      date: debt.date,
-    })),
-  ];
-  const filteredWealthTableRows = wealthTableRows
-    .filter((row) => matchesTableSearch(row.name, row.category))
-    .sort((a, b) =>
-      reportTableSort === "name-asc"
-        ? a.name.localeCompare(b.name, "fi-FI")
-        : reportTableSort === "date-desc"
-          ? b.date.localeCompare(a.date)
-          : Math.abs(b.value) - Math.abs(a.value),
-    );
-  const filteredLinkedOutlooks = linkedOutlooks
-    .filter(({ asset }) => {
-      const linkedNames = currentDebts
-        .filter((debt) => debt.linkedAssetId === asset.id)
-        .map((debt) => debt.name);
-      return matchesTableSearch(asset.name, asset.category, ...linkedNames);
-    })
-    .sort((a, b) => {
-      if (reportTableSort === "debt-desc")
-        return b.outlook!.debtBalance - a.outlook!.debtBalance;
-      if (reportTableSort === "equity-asc")
-        return a.outlook!.currentEquity - b.outlook!.currentEquity;
-      if (reportTableSort === "payoff-asc")
-        return (a.outlook!.payoffMonths ?? Number.MAX_SAFE_INTEGER) -
-          (b.outlook!.payoffMonths ?? Number.MAX_SAFE_INTEGER);
-      return a.asset.name.localeCompare(b.asset.name, "fi-FI");
-    });
-  const filteredFireMonths = filteredHistory.filter(
-    (item) => item.income !== 0 || item.expense !== 0,
-  );
-  const reportTableVisibleCount = {
-    overview: filteredHistory.length,
-    categories: filteredCategoryReport.length,
-    flow: filteredDailyFlow.length,
-    budget: filteredBudgetReport.length,
-    wealth: filteredWealthTableRows.length,
-    debt: filteredLinkedOutlooks.length,
-    fire: filteredFireMonths.length,
-  }[reportView];
-  const reportTableTotalCount = {
-    overview: history.length,
-    categories: categoryReport.length,
-    flow: dailyFlow.length,
-    budget: budgetReport.length,
-    wealth: wealthTableRows.length,
-    debt: linkedOutlooks.length,
-    fire: observedCashflowMonths.length,
-  }[reportView];
-  const periodEntries = (
-    items: Entry[],
-    kind: "income" | "expense",
-  ): ReportDetailEntry[] => {
-    const grouped = new Map<string, ReportDetailEntry>();
-    for (const period of history) {
-      for (const record of items) {
-        const dates = occurrencesWithStatus(record, period.key, "actual");
-        if (!dates.length) continue;
-        const key = `${kind}-${record.id}`;
-        const previous = grouped.get(key);
-        grouped.set(key, {
-          entry: record,
-          kind,
-          amount:
-            (previous?.amount || 0) +
-            dates.reduce(
-              (amount, date) => amount + occurrenceAmount(record, date),
-              0,
-            ),
-          occurrences: (previous?.occurrences || 0) + dates.length,
-        });
-      }
-    }
-    return [...grouped.values()];
-  };
-  const selectedReportEntries: ReportDetailEntry[] =
-    selectedReport?.type === "period"
-      ? selectedReport.metric === "income"
-        ? periodEntries(s.incomes, "income")
-        : selectedReport.metric === "expense"
-          ? periodEntries(s.expenses, "expense")
-          : [
-              ...periodEntries(s.incomes, "income"),
-              ...periodEntries(s.expenses, "expense"),
-            ]
-      : selectedReport?.type === "month" || selectedReport?.type === "budget"
-        ? (selectedReport.type === "budget"
-            ? s.expenses.filter(
-                (item) =>
-                  expenseType(item) === "consumption" &&
-                  (s.budgets[selectedReport.month]?.[item.category] || 0) > 0,
-              )
-            : selectedReport.metric === "income"
-              ? s.incomes
-              : s.expenses
-          )
-            .filter(
-              (e) =>
-                occurrencesWithStatus(e, selectedReport.month, "actual")
-                  .length > 0,
-            )
-            .map((e) => {
-              const dates = occurrencesWithStatus(
-                e,
-                selectedReport.month,
-                "actual",
-              );
-              return {
-                entry: e,
-                kind:
-                  selectedReport.type === "budget"
-                    ? ("expense" as const)
-                    : selectedReport.metric,
-                amount: dates.reduce(
-                  (amount, date) => amount + occurrenceAmount(e, date),
-                  0,
-                ),
-              };
-            })
-        : selectedReport?.type === "category"
-          ? s.expenses
-              .filter(
-                (e) =>
-                  e.category === selectedReport.category &&
-                  expenseType(e) === "consumption",
-              )
-              .map((e) => {
-                const dates = history.flatMap((period) =>
-                  occurrencesWithStatus(e, period.key, "actual"),
-                );
-                return {
-                  entry: e,
-                  kind: "expense" as const,
-                  amount: dates.reduce(
-                    (amount, date) => amount + occurrenceAmount(e, date),
-                    0,
-                  ),
-                  occurrences: dates.length,
-                };
-              })
-              .filter((item) => item.occurrences > 0)
-          : selectedReport?.type === "day"
-            ? [
-                ...s.incomes
-                  .filter((e) =>
-                    history.some((period) =>
-                      occurrencesWithStatus(e, period.key, "actual").includes(
-                        selectedReport.date,
-                      ),
-                    ),
-                  )
-                  .map((e) => ({
-                    entry: e,
-                    kind: "income" as const,
-                    amount: occurrenceAmount(e, selectedReport.date),
-                  })),
-                ...s.expenses
-                  .filter((e) =>
-                    history.some((period) =>
-                      occurrencesWithStatus(e, period.key, "actual").includes(
-                        selectedReport.date,
-                      ),
-                    ),
-                  )
-                  .map((e) => ({
-                    entry: e,
-                    kind: "expense" as const,
-                    amount: occurrenceAmount(e, selectedReport.date),
-                  })),
-              ]
-            : [];
-  const selectedReportTotal =
-    selectedReport?.type === "budget"
-      ? selectedReport.actual
-      : selectedReport?.type === "period" && selectedReport.metric === "cash"
-        ? selectedReportEntries.reduce(
-            (value, item) =>
-              value + (item.kind === "income" ? item.amount : -item.amount),
-            0,
-          )
-        : selectedReportEntries.reduce((value, item) => value + item.amount, 0);
-  const selectedBudgetSummary =
-    selectedReport?.type === "budget"
-      ? budgetSummary(s, selectedReport.month)
-      : null;
+  const { currentAssets, currentInvestments, currentDebts, debtBalance, assetBalance, investmentBalance, netWorth, linkedOutlooks } =
+    reportWealth(snapshotState, assetChangeRate);
+  const { observedCashflowMonths, averageMonthlyConsumption, periodTotals, periodSavingRate, annualizedSpending, fireCalculation, periodLabel, reportHasData, reportArea, reportLine, incomeReportCoordinates, expenseReportCoordinates } =
+    useMemo(() => reportPeriod(history, investmentBalance, withdrawalRate), [history, investmentBalance, withdrawalRate]);
+  const { categoryReport, categoryTotal, maxCategoryExpense, pieColors, pieSlices } = useMemo(
+    () => reportCategories(s, page === 'reports' && reportView === 'categories' ? history.map(item => item.key) : []),
+    [s, page, reportView, history]);
+  const { dailyFlow, firstShortfall, recoveryDay, maxFlowMagnitude } = useMemo(
+    () => reportFlow(s, page === 'reports' && reportView === 'flow' ? history : []),
+    [s, history, page, reportView]);
+  const { filteredHistory, filteredCategoryReport, filteredDailyFlow, filteredBudgetReport, filteredWealthTableRows, filteredLinkedOutlooks, filteredFireMonths, reportTableVisibleCount, reportTableTotalCount } =
+    reportTables({ history, categoryReport, dailyFlow, budgetReport, currentAssets, currentInvestments, currentDebts, linkedOutlooks, observedCashflowMonths }, reportTableSearch, reportTableSort, reportView);
+  const { selectedReportEntries, selectedReportTotal, selectedBudgetSummary } =
+    reportSelection(s, history, selectedReport);
   const expCats = Array.from(
     new Set([
       ...s.categories
