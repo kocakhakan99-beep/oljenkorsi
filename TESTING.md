@@ -1,5 +1,14 @@
 # Testausraportti 13.11.2026
 
+## Raporttipaneelien erottaminen 19.11.2026
+
+- Yleiskuva, kulurakenne, budjettiraportti ja tietokortti erotettiin; valinnan/kuukausirivien tyypit siirrettiin yhteiseen report-model-moduuliin.
+- Tyypitys, lint, 226 yksikkötestiä ja tuotantobuild läpäisivät. Molemmat paikalliset selainregressiot läpäisivät.
+- Laajennettu raporttien selainkoe tarkistaa yleiskuvan 30 € tulokortin, tietokortin fokuksen/sulkemisen, zoomin, aluekaavion ja pisteen Enter-valinnan. Piirakkasektorin valinta avaa molemmat fiktiiviset menot ja tietueen katseluikkunan.
+- Kategoriataulukon kulutus on 15 €. JSON-palautuksella lisätty 20 € budjetti ja 18 € manuaalinen toteuma tuottavat budjettiraportissa 2 € erotuksen. Sekä pylväs että taulukon linkki avaavat erittelyn. FIRE käyttää edelleen kirjausten 15 € kulutusta, eikä manuaalinen budjettitoteuma muuta sitä.
+- Kaikkien seitsemän raporttipaneelin näkyvyys ja main-elementin vaakarajat tarkistetaan 390 px leveydellä. Muut kokeet käyttävät 1280 px näkymää. Tuotantotilin aineistoa tai tallennusta ei käytetty.
+
+
 ## Varallisuusraportit ja tietojenhallinta 19.11.2026
 
 - Varallisuus-, velka- ja FIRE-raporttipaneelit sekä tietojenhallinta-asetukset erotettiin. CategoryImage on nyt yhteinen komponentti.

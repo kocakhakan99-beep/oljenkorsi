@@ -42,3 +42,7 @@ Aikarajaus, kuukausivalitsin, taulukon kontrollit, rahavirran paneeli sekä aset
 ### Varallisuusraportit ja tietojenhallinta 19.11.2026
 
 Varallisuuden, velkojen ja FIREn paneelit sekä tietojenhallinta-asetukset on erotettu. Niiden laskenta ja tallennuksen ohjaus säilyvät yhteisinä. main.tsx on 6 923 riviä. Raporttien yleiskuva, kulurakenne, budjettiraportti ja valinnan erittely ovat vielä erottamatta. Laajennettu selainregressio varmistaa fiktiivisen omaisuus-/velka-aineiston luvut sekä poistovahvistuksen ja perumisen.
+
+### Raporttipaneelien erottaminen valmis 19.11.2026
+
+Myös yleiskuva, kulurakenne, budjettiraportti ja raporttivalinnan tietokortti ovat omissa komponenteissaan. Yhteiset valinta-/rivityypit ovat domain/report-model.ts-moduulissa. Kaikki raporttipaneelit on erotettu; raporttidatan koostaminen ja sovelluksen yhteinen ohjaus ovat yhä Appissa. main.tsx on nyt 5 906 riviä. Selainregressio kattaa kaikkien paneelien mobiilirajat ja uusien siirtojen valinta-/erittelypolut.

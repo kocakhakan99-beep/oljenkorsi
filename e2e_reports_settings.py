@@ -31,6 +31,35 @@ with sync_playwright() as p:
   page.locator('input[accept=".csv,text/csv"]').set_input_files({'name':'synthetic.csv','mimeType':'text/csv','buffer':('name;amount;category;date\n'+rows).encode()})
   page.get_by_role('button',name=f'Vahvista ja tuo {count} tietuetta',exact=True).click()
  navigate('Raportit')
+ overview=page.locator('#report-panel-overview')
+ expect(overview.locator('.report-kpi.income')).to_contain_text('30,00\u00a0€')
+ overview.locator('.report-kpi.income').click()
+ expect(page.locator('.report-detail')).to_contain_text('Testitulo')
+ expect(page.locator('.report-detail')).to_be_focused()
+ page.get_by_role('button',name='Sulje raportin tietokortti',exact=True).click()
+ expect(page.locator('.report-detail')).to_have_count(0)
+ overview.get_by_role('button',name='Suurenna kaaviota',exact=True).click()
+ expect(overview.get_by_label('Kaavion suurennusprosentti',exact=True)).to_have_value('1.1')
+ overview.get_by_role('button',name='Palauta kaavion oletuskoko',exact=True).click()
+ expect(overview.get_by_label('Kaavion suurennusprosentti',exact=True)).to_have_value('1')
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('area')
+ expect(overview.locator('.area-chart')).to_be_visible()
+ point=overview.locator('.income-point').first;point.focus();point.press('Enter')
+ expect(page.locator('.report-detail')).to_contain_text('Testitulo')
+ page.get_by_role('button',name='Sulje raportin tietokortti',exact=True).click()
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('table')
+ expect(overview.locator('tbody tr')).to_have_count(1)
+ page.get_by_role('tab',name='Kulurakenne',exact=True).click()
+ category=page.locator('#report-panel-categories')
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('pie')
+ slice=category.locator('.pie-slice').first;slice.focus();slice.press('Enter')
+ expect(page.locator('.report-detail')).to_contain_text('Testimeno A')
+ expect(page.locator('.report-detail')).to_contain_text('Testimeno B')
+ page.get_by_role('button',name='Avaa Testimeno A',exact=True).click()
+ expect(page.locator('dialog[open]')).to_be_visible()
+ page.locator('dialog[open]').get_by_role('button',name='Sulje',exact=True).click()
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('table')
+ expect(category.locator('tbody')).to_contain_text('15,00\u00a0€')
  page.get_by_role('tab',name='Rahavirran ajoitus',exact=True).click()
  expect(page.locator('.flow-day')).to_have_count(3)
  expect(page.locator('.flow-summary')).to_contain_text('Kertymä käy miinuksella')
@@ -84,6 +113,8 @@ with sync_playwright() as p:
  from uuid import uuid4
  asset_id=str(uuid4())
  template=state['expenses'][0]
+ state['budgets'][month]={'Ruoka':2000}
+ state['budgetActuals'][month]={'Ruoka':1800}
  state['assets']=[dict(template,id=asset_id,name='Testiasunto',amount=10000000,ownership=100,category='Asuminen')]
  state['investments']=[dict(template,id=str(uuid4()),name='Testisijoitus',amount=100000,quantity=1,category='Rahastot')]
  state['liabilities']=[dict(template,id=str(uuid4()),name='Testilaina',amount=4000000,payment=50000,rate=0,linkedAssetId=asset_id,category='Lainat')]
@@ -95,6 +126,17 @@ with sync_playwright() as p:
  page.locator('input[accept=".json"]').set_input_files({'name':'synthetic-backup.json','mimeType':'application/json','buffer':payload.encode()})
  page.get_by_role('button',name='Korvaa ja palauta',exact=True).click()
  navigate('Raportit')
+ page.get_by_role('tab',name='Budjetti',exact=True).click()
+ budget=page.locator('#report-panel-budget')
+ expect(budget.locator('.report-summary-strip')).to_contain_text('20,00\u00a0€')
+ expect(budget.locator('.report-summary-strip')).to_contain_text('18,00\u00a0€')
+ budget.locator('.budget-report-month').first.click()
+ expect(page.locator('.report-detail')).to_contain_text('18,00\u00a0€')
+ expect(page.locator('.report-detail')).to_be_focused()
+ page.get_by_label('Raportin esitysmuoto',exact=True).select_option('table')
+ expect(budget.locator('tbody tr').first).to_contain_text('2,00\u00a0€')
+ budget.locator('.report-table-link').first.click()
+ expect(page.locator('.report-detail')).to_contain_text('Testimeno A')
  page.get_by_role('tab',name='Varallisuus',exact=True).click()
  wealth=page.locator('#report-panel-wealth')
  expect(wealth.locator('.wealth-summary')).to_contain_text('61\u00a0000,00\u00a0€')
@@ -108,7 +150,7 @@ with sync_playwright() as p:
  page.get_by_role('tab',name='Säästöaste ja FIRE',exact=True).click()
  fire=page.locator('#report-panel-fire')
  expect(fire.locator('.fire-target-card')).to_contain_text('4\u00a0500,00\u00a0€')
- for tab,panel in [('Varallisuus','#report-panel-wealth'),('Velat ja oma pääoma','#report-panel-debt'),('Säästöaste ja FIRE','#report-panel-fire')]:
+ for tab,panel in [('Tulot ja menot','#report-panel-overview'),('Kulurakenne','#report-panel-categories'),('Rahavirran ajoitus','#report-panel-flow'),('Budjetti','#report-panel-budget'),('Varallisuus','#report-panel-wealth'),('Velat ja oma pääoma','#report-panel-debt'),('Säästöaste ja FIRE','#report-panel-fire')]:
   page.get_by_role('tab',name=tab,exact=True).click()
   page.set_viewport_size({'width':390,'height':844})
   assert page.locator('main').evaluate('(e)=>e.scrollWidth <= e.clientWidth+1')
@@ -130,7 +172,7 @@ with sync_playwright() as p:
  unchanged=json.load(open(d.value.path()))['data']
  assert len(unchanged['assets'])==1 and len(unchanged['liabilities'])==1
  assert not errors,errors
- print('Flow/wealth/debt/FIRE reports, filters, mobile controls, settings/JSON and delete confirmation cancellation: OK.')
+ print('All report panels, chart/detail selections, budget manual actuals, mobile controls, settings/JSON and deletion cancellation: OK.')
  b.close()
 server.shutdown()
 server.server_close()
