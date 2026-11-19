@@ -1,5 +1,14 @@
 # Testausraportti 13.11.2026
 
+## Auditoinnin korjauserä 19.11.2026
+
+- Tyypitys, lint ja 28 testitiedostoa / 226 testiä läpäisivät vanhan perhetallennuspolun poistamisen ja Transfer-näkymän siirron jälkeen.
+- Chromium 390/1280 px: synteettisen CSV-rivin tuonti, 12,34 euron summan säilyminen JSON-varmuuskopiossa, duplikaatin ohitus ja vaakaylivuodon puuttuminen.
+- Perhekomponentti erillisellä simuloidulla RPC-palvelulla: jäsenlistan lataus, kutsukoodin luonti ja peruminen. Kutsut rajoittuivat family_get, family_members, family_invite ja family_revoke_invites. Vanhoja manuaalisia lataus-/tallennuspainikkeita ei näy.
+- Koe ei muuttanut tuotantoperhettä eikä varmista oikeiden käyttäjätilien välistä tietokantaoikeutta. Tämä koe on edelleen avoin.
+- Poistettujen family-session- ja upcoming-moduulien kolme testiä poistettiin tuotantokoodin mukana; muita testejä ei ohitettu.
+
+
 ## Käytettävyyden jatkokehitys 17.11.2026
 
 - Tulevien menojen yksikkökoe tarkistaa toistuvan tapahtuman esiintymäkohtaisen päiväjärjestyksen, ohitukset, summapoikkeuksen ja yhteissumman.

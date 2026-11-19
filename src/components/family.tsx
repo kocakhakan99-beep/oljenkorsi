@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { State } from '../domain/model';
-import { familyBackup, restoreFamilyBackup } from '../services/family-backup';
-import type { FamilyRevisionSession } from '../services/family-session';
-import { revisionForFamilySession } from '../services/family-session';
 import { supabase } from '../services/supabase';
 
 type Family = { id: string; name: string; role: 'admin' | 'member'; state: unknown | null; revision: number };
 type Member = { user_id: string; role: 'admin' | 'member'; joined_at: string };
 
-// Saving and loading are deliberately explicit until automatic conflict handling is complete.
-export function Family({ state, onLoad, exportBackup, userId, revisionSession, cloudManaged = false }: { state: State; onLoad: (state: State) => boolean | undefined; exportBackup: () => void; userId: string; revisionSession: { current: FamilyRevisionSession | null }; cloudManaged?: boolean }) {
+// Household documents are loaded and saved by CloudSession; this component manages membership only.
+export function Family({ userId, cloudManaged = false }: { userId: string; cloudManaged?: boolean }) {
   const [family, setFamily] = useState<Family | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [ready, setReady] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
-  const [loadedRevision, setLoadedRevision] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [invite, setInvite] = useState('');
@@ -34,12 +29,6 @@ export function Family({ state, onLoad, exportBackup, userId, revisionSession, c
     } else setMembers([]);
     setFamily(current);
     setUnavailable(false);
-    if (!current) {
-      if (revisionSession.current?.userId === userId) revisionSession.current = null;
-      setLoadedRevision(null);
-    } else {
-      setLoadedRevision(revisionForFamilySession(revisionSession.current, userId, current.id, current.revision));
-    }
     setReady(true);
   }
   useEffect(() => { void refresh().catch(() => { setMessage('Perhetiliä ei voitu hakea.'); setUnavailable(true); setReady(true); }); }, []);
@@ -90,8 +79,6 @@ export function Family({ state, onLoad, exportBackup, userId, revisionSession, c
     const { data, error } = await supabase.rpc('family_delete');
     if (error) throw error;
     if (!data) throw new Error('Perhettä ei löytynyt.');
-    revisionSession.current = null;
-    setLoadedRevision(null);
     setFamily(null);
     setMembers([]);
     setInvite('');
@@ -107,50 +94,11 @@ export function Family({ state, onLoad, exportBackup, userId, revisionSession, c
     if (signOutError) throw new Error('Tili poistettiin, mutta paikallisen istunnon tyhjennys epäonnistui. Sulje välilehti.');
     window.location.replace(window.location.pathname);
   }
-  async function load() {
-    if (!confirm('Perheen tietojen lataus korvaa tässä välilehdessä olevat tiedot. Vie tarvittaessa ensin varmuuskopio. Jatketaanko?')) return;
-    const { data, error } = await supabase.rpc('family_get');
-    if (error) throw error;
-    const fresh = data as Family | null;
-    if (!fresh || fresh.id !== family?.id || !fresh.state) { setMessage('Perheessä ei ole vielä tallennettua taloutta.'); return; }
-    const restored = restoreFamilyBackup(fresh.state);
-    if (
-      restored.integrity === 'unverified-legacy' &&
-      !confirm('Tämä on vanhanmallinen perheen varmuuskopio. JSONB on järjestänyt tietojen avaimia uudelleen, joten alkuperäistä eheystarkistusta ei voida varmistaa. Tietorakenne tarkistetaan silti ennen latausta. Nykyisen välilehden tiedot korvataan. Jatketaanko?')
-    ) return;
-    if (onLoad(restored.state) === false) throw new Error('Tietojen lataaminen epäonnistui.');
-    revisionSession.current = { userId, familyId: fresh.id, revision: fresh.revision };
-    setFamily(fresh); setLoadedRevision(fresh.revision);
-    setMessage(restored.integrity === 'verified' ? 'Perheen tiedot ladattu.' : 'Vanhan varmuuskopion tiedot ladattiin. Tarkista tiedot ja vie varmuuskopio ennen tallennusta.');
-  }
-  async function save() {
-    if (!family) return;
-    if (family.state !== null && loadedRevision === null) { setMessage('Lataa ensin perheen tiedot tai vie tämä talous varmuuskopioksi.'); return; }
-    if (!confirm('Tallennetaanko tämän välilehden talous perheen yhteiseksi taloudeksi? Kaikki perheen jäsenet näkevät sen.')) return;
-    const { data, error } = await supabase.rpc('family_save', {
-      p_expected_revision: loadedRevision ?? family.revision,
-      p_state: familyBackup(state),
-    });
-    if (error) throw error;
-    const result = data as { ok: boolean; revision?: number };
-    if (!result.ok || result.revision === undefined) {
-      setLoadedRevision(null);
-      revisionSession.current = null;
-      setMessage('Perheen tiedot ovat muuttuneet toisella laitteella. Vie tämän välilehden tiedot varmuuskopioksi ja lataa perheen tiedot ennen uutta tallennusta.');
-      return;
-    }
-    revisionSession.current = { userId, familyId: family.id, revision: result.revision };
-    setFamily({ ...family, state: true, revision: result.revision });
-    setLoadedRevision(result.revision); setMessage('Talous tallennettu perheelle. Myöhemmät muutokset täytyy tallentaa uudelleen.');
-  }
   return <div>
     <h3>Perhetili</h3>
-    <p>Kaikki jäsenet näkevät ja voivat muokata perheen yhteistä taloutta. {cloudManaged ? 'Valitse aktiivinen talous yläpalkista.' : 'Tallennus ja lataus tehdään toistaiseksi erikseen; muutoksia ei synkronoida automaattisesti.'}</p>
+    <p>Kaikki jäsenet näkevät ja voivat muokata perheen yhteistä taloutta. {cloudManaged ? 'Valitse aktiivinen talous yläpalkista.' : 'Pilvitallennus ei ole käytössä tässä sovellusversiossa.'}</p>
     {!ready ? <p>Haetaan perhetiliä…</p> : unavailable ? <button disabled={busy} onClick={() => void run(refresh)}>Yritä uudelleen</button> : family ? <>
       <p>Perhe: {family.name} · {family.role === 'admin' ? 'ylläpitäjä' : 'jäsen'}</p>
-      {!cloudManaged && <><button disabled={busy} onClick={exportBackup}>Vie tämän välilehden varmuuskopio</button>{' '}
-      <button disabled={busy} onClick={() => void run(load)}>Lataa perheen talous</button>{' '}
-      <button disabled={busy} onClick={() => void run(save)}>Tallenna perheen talous</button></>}
       {family.role === 'admin' && <><p>Kertakäyttöinen kutsukoodi on voimassa 24 tuntia. Koodilla liittyvä näkee kaikki perheen tiedot.</p><button disabled={busy} onClick={() => void run(makeInvite)}>Luo kutsukoodi</button>{invite && <p>Kutsukoodi: <code>{invite}</code></p>}<button disabled={busy} onClick={() => void run(revokeInvites)}>Peru käyttämättömät kutsut</button></>}
       <h4>Jäsenet</h4><ul>{members.map(m => <li key={m.user_id}>{m.user_id === userId ? 'Sinä' : `Jäsen ${m.user_id.slice(0, 8)}`} · {m.role === 'admin' ? 'ylläpitäjä' : 'jäsen'} {(m.user_id === userId || family.role === 'admin') && <button disabled={busy || m.role === 'admin'} onClick={() => void run(() => removeMember(m.user_id))}>{m.user_id === userId ? 'Eroa' : 'Poista jäsen'}</button>} {family.role === 'admin' && m.user_id !== userId && m.role !== 'admin' && <button disabled={busy} onClick={() => void run(() => transferAdmin(m.user_id))}>Siirrä ylläpitäjyys</button>}</li>)}</ul>
       {family.role === 'admin' && <details className="danger-zone family-delete-zone"><summary>Poista perhe</summary><p>Poisto poistaa perheen pilveen tallennetun talouden, kutsut ja kaikkien jäsenten pääsyn. Avoimia tai aiemmin ladattuja kopioita ei voida poistaa etänä.</p><label>Kirjoita POISTA PERHE <input value={deleteFamilyText} onChange={event => setDeleteFamilyText(event.target.value)} autoComplete="off" /></label><button disabled={busy || deleteFamilyText !== 'POISTA PERHE'} onClick={() => void run(deleteFamily)}>Poista perhe pysyvästi</button></details>}

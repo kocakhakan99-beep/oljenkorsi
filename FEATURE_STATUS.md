@@ -23,3 +23,10 @@ Korjausten eteneminen ja hyväksyntäkriteerit: [toteutussuunnitelma](KORJAUSSUU
 - Vuosikellon, hintahistorian, budjettikopion ja kokeilun regressioita lisätty: nykyinen testiajo 30 tiedostoa / 229 testiä. Laajempi selain-/oikeusvarmennus on edelleen avoin.
 - Käyttämättömien symbolien TypeScript-tarkistus käytössä, käynnistysnäkymä erotettu komponentiksi ja tarkistava CI-työnkulku lisätty. CI:n GitHub-ajo vahvistetaan erikseen.
 - Laskuviivakoodin toteutus rajattu Suomeen; skanneria ei ole toteutettu.
+
+### Seuraava korjauserä 19.11.2026
+
+- Poistettu käytöstä estetty manuaalinen perheen lataus-/tallennuspolku ja sitä palvellut revisiotila. Nykyinen pilvijono ja vanhojen varmuuskopioiden palautustuki säilyvät.
+- Tuonti ja vienti -näkymä siirretty `components/transfer.tsx`-moduuliin.
+- Poistettu enää testeissä käytetty tulevien menojen laskentamoduuli sekä käytöstä poistettujen painikkeiden CSS-säännöt.
+- Testimäärä on nyt 28 tiedostoa / 226 testiä; kolmen testin poistuminen johtuu poistetuista tuotantomoduuleista.
