@@ -1,3 +1,4 @@
+import { StartupScreen } from "./components/startup-screen";
 import { SaveStatus } from "./components/save-status";
 import { UserRound, UsersRound } from "lucide-react";
 import { Account, GoogleButton } from "./components/account";
@@ -90,7 +91,6 @@ import {
 import { guidanceSources } from "./domain/guidance";
 import { contrastForeground } from "./domain/color";
 import {
-  compassDemoProfiles,
   createCompassDemoCases,
   demoMonthSummary,
   type CompassDemoId,
@@ -141,14 +141,11 @@ import {
   ReceiptText,
   Settings,
   Wallet,
-  ChartSpline,
   ZoomIn,
   ZoomOut,
   RotateCcw,
   Zap,
   Plus,
-  Minus,
-  X,
   Compass,
   Blocks,
   CircleGauge,
@@ -1890,15 +1887,6 @@ function CashEntryForm({
       <small className="quick-entry-shortcut">Vinkki: Ctrl/Cmd + Enter tallentaa.</small>
     </form>
   );
-}
-function StartupScreen({ exiting = false }: { exiting?: boolean }) {
-  return <div className={`startup-screen${exiting ? " is-exiting" : ""}`} role={exiting ? undefined : "status"} aria-live={exiting ? undefined : "polite"} aria-hidden={exiting || undefined}>
-    <div className="startup-content">
-      <div className="startup-mark" aria-hidden="true"><span /><span /><span /></div>
-      <strong>Valmistellaan talouttasi</strong>
-      <span>Hetki, avataan sovellus.</span>
-    </div>
-  </div>;
 }
 function App() {
   const auth = useAuth();

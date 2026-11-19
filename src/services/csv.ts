@@ -5,7 +5,7 @@ import {
   type EntrySource,
   type ExpenseType,
 } from "../domain/model";
-import { money, userTags, validDate } from "../domain/calculations";
+import { money, userTags } from "../domain/calculations";
 import { validateEntry } from "./validation";
 export function parseCSV(text: string, delimiter = ";"): string[][] {
   if (text.length > 5000000) throw Error("CSV ylittää 5 Mt rajan.");

@@ -80,7 +80,7 @@ E2E: asenna kehityskoneelle Python Playwright ja sen Chromium. Aja `python e2e.p
 
 ## Tallennus ja varmuuskopio
 
-Kirjautumattoman käyttäjän talous säilyy vain avoimen välilehden muistissa. Vie JSON ennen sulkemista tai päivittämistä; CSV ei ole täydellinen varmuuskopio. Supabase säilyttää kirjautumisistunnon selaimessa, mutta talousdataa ei tallenneta siellä automaattisesti. Vanhan version selaintallennus on erikseen vietävissä asetuksista.
+Kirjautumattoman käyttäjän talous säilyy vain avoimen välilehden muistissa. Vie JSON ennen sulkemista tai päivittämistä; CSV ei ole täydellinen varmuuskopio. Supabase säilyttää kirjautumisistunnon selaimessa. Kirjautuneen käyttäjän talousmuutokset tallennetaan automaattisesti pilveen; selaimen pysyvään tallennukseen ei kirjoiteta talouskopiota. Vanhan version selaintallennus on erikseen vietävissä asetuksista.
 
 JSON on koko talouden siirrettävä kopio. CSV on tietuelistojen siirtomuoto, ei koko sovelluksen varmuuskopio. JSON ja selaindata ovat salaamattomia.
 

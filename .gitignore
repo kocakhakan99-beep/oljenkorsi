@@ -6,3 +6,13 @@ __pycache__/
 *.pyc
 
 supabase/.temp/
+
+# Private uploads and local credentials never belong in Git.
+/*.pdf
+/*.PDF
+.env
+.env.*
+**/.env.local
+**/.env.*.local
+!src/.env.production
+private-uploads/

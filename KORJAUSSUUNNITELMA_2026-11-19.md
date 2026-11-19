@@ -1,7 +1,7 @@
 # Olennaisten puutteiden toteutussuunnitelma
 
 Päiväys: 19.11.2026. Lähtöversio: ed8ab41, sovellus 0.4.0.
-Tila: toteutus aloitettu. 19.11.: luotu ominaisuuslista ja lisätty rajattuja regressiotestejä; käynnistyksen häivytystä muutettu. Dokumentaation yksityiskohtainen päivitys, kattavammat testit ja selainvarmennus ovat kesken.
+Tila: toteutus aloitettu. 19.11.: luotu ominaisuuslista ja lisätty rajattuja regressiotestejä; käynnistyksen häivytystä muutettu. Dokumentaatiota päivitetty, CI-tarkistus lisätty ja käyttämättömien symbolien tarkistus otettu käyttöön. Vuosikellon/hintahistorian/kokeilun regressioita lisätty. Laajemmat käyttöliittymätestit, vanhan perhepolun poisto ja varsinainen näkymien moduulijako ovat kesken. Tietotarkistus ja historian puhdistus: REPOSITORY_SECURITY_2026-11-19.md.
 
 Lähtöaineisto: [auditointi](AUDIT_2026-11-19.md), nykyinen lähdekoodi ja [kehitysohje](CONTRIBUTING.md).
 Numerointi vastaa käyttäjälle esitettyä yhdeksän kohdan listaa. Auditointiraportin erillinen linttaushavainto sisältyy tämän suunnitelman kohtaan 6.

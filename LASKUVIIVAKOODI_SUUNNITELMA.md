@@ -1,6 +1,6 @@
 # Laskujen viivakoodiluku: selvitys ja toteutussuunnitelma
 
-Päiväys 19.11.2026. Tila: suunnitelma; skanneria ei vielä toteutettu. Ei maksullisia palveluja.
+Päiväys 19.11.2026. Tila: suunnitelma; skanneria ei vielä toteutettu. Käyttäjän rajaus: vain Suomi; EPC-/EU-tuki ei kuulu toteutukseen. Ei maksullisia palveluja.
 
 ## Suositus
 
@@ -70,12 +70,14 @@ Mikään koodi ei aloita maksua tai merkitse sitä pankissa suoritetuksi. AI:n j
 - Testikorpus: vektori- ja kuvallinen PDF, vinot ja pienet koodit, useat koodit, heikko kontrasti ja ei koodia. Tulosta raportoidaan tunnistusaste sekä väärät hyväksynnät; yleistä prosenttilupausta ei anneta pienellä aineistolla.
 - Hyväksyntä: virheellistä koodia ei hyväksytä validiksi laskuksi, käyttäjä voi aina täydentää tiedot, peruutus toimii eikä skanneri kuormita aloituslatausta.
 
-### 3. EPC QR
+### Myöhemmäksi rajattu: EPC QR
+
+Tämä osuus on taustaselvitystä, ei nykyisen toteutuksen työpaketti.
 
 - Oma parseri ja testit, QR-dekoodaus käyttää samaa adapteria.
 - Tarkista puuttuva summa ja eräpäivä, viite/viesti, merkistöt sekä QR, joka onkin verkkolinkki. Ei yleistä EU-yhteensopivuusväitettä.
 
-### 4. Kamera ja julkaisu
+### 3. Kamera ja julkaisu
 
 - Takakameran valinta, lupavirheet, kameran vapautus ja vaihtoehtoinen kuvan valinta.
 - Oikea iPhone Safari ja Android Chrome; lisäksi työpöydän kuva/PDF-polku. Pankkiviivakoodin leveys ja tarkennus vaativat fyysisen kamerakokeen.

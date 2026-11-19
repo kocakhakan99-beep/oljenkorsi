@@ -5,9 +5,9 @@
 ## Data ja tallennus
 
 - Ei salausta. JSON/CSV ja selaintallennus ovat luettavissa laitteen käyttäjille.
-- LocalStorage file:// ei ole yleisesti taattu; Edge/Firefox/Windows testaamatta.
-- Selaimen kiintiö voi täyttyä ennen tiedostokokorajaa. Virheessä tila jää muistiin ja on vietävä JSON:ksi.
-- Ei atomista monivälilehtilukitusta tai yhdistelyä. Käytä yhtä välilehteä. Kumoaminen palauttaa koko aiemman tilan.
+- Käyttötapa on HTTPS. Vieraan talous säilyy vain välilehden muistissa; offline-/file://-tukea ei luvata.
+- Pilvidokumentin kokoraja on 5 MB. Epäonnistuneen tallennuksen muutokset voivat jäädä vain muistiin ja ne tulee viedä JSON:ksi.
+- Pilvirevisiot tunnistavat kirjoitusristiriidan mutta eivät yhdistä muutoksia. Kumoaminen palauttaa koko aiemman tilan.
 - Tuntematon skeema hylätään; ei historiallisia migraatioita.
 - Backup-tarkiste ei ole kryptografinen.
 
@@ -19,11 +19,11 @@
 - Vain kategoriabudjetti; ei budjettipohjia, nollapohjaista/prosenttijakoa tai kuun lopun ennustetta.
 - Hätävara käyttää valittua 1/3/6/12 kuukauden jaksoa ja laskee keskiarvon vain käyttäjän vahvistamista päättyneistä kuukausista. Vahvistus ei ole pankkivarmennus, ja vanhojen varmuuskopioiden kattavuutta ei päätellä takautuvasti. Menojen välttämättömyys ja omaisuuden likvidiys perustuvat käyttäjän merkintöihin.
 - Tulokatkoksen stressitesti käyttää enintään kuuden vahvistetun kuukauden keskituloa ja yhtä tulojen menetysprosenttia kaikille tuloille. Se ei erottele kotitalouden tulolähteitä, brutto-/nettotuloa, tukia, veroja tai velkojen maksua; tulos on käyttäjän skenaario, ei ennuste tai tavoitesuositus.
-- Omaisuuden manuaalinen nykyarvo ja omistusosuus; ei arvostushistoriaa, automaattista arvonalenemaa tai auton erillismallia.
+- Omaisuuden omistusosuus ja laskennalliset arvonmuutosmallit, myös autoille, ovat käytössä. Toteutuneiden arvostusten historia puuttuu; mallit ovat arvioita.
 - Velkasaldo manuaalinen; erä ei generoi menoa eikä vähennä saldoa.
 - Sijoitukset vain EUR; ei ticker/ISIN/pörssi/valuutta-allokaatioita, erillisiä sijoitustapahtumia tai arvostushistoriaa. Hankinta-arvo näkyy, erilliset tuottoprosentit eivät.
-- Tavoitepäivä informatiivinen; arvio on säästökuukausia ilman tuottoa. Ei prioriteettien optimointia.
-- Rajatut laskurit: korkoa korolle, kulut, inflaatio ja velanmaksu. Ei nettovarallisuus-/budjettiprojektioita tai tulo-/menomuutoksen erillislaskuria.
+- Tavoitepäivään sidottu säästötahti lasketaan ilman tuottoa. Ei tavoitteiden prioriteettien optimointia.
+- Laskureihin kuuluu myös 12 kuukauden tulo-/menomuutoksen kokeilutila. Kokeilu ei muuta oikeaa taloutta eikä ole kattava nettovarallisuusennuste.
 - Raportti kattaa 1/3/6/12 kuukautta valittuun kuukauteen tai käyttäjän rajaaman enintään 120 kuukauden jakson; nettovarallisuuden historiakaaviota ei ole.
 
 ## UX ja laatu

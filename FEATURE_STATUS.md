@@ -16,3 +16,10 @@ Päivitetty 19.11.2026. Tämä lista kuvaa sovelluksen koodia; toiminnon toteutu
 | Offline/PWA ja pankkiyhteydet | Eivät kuulu nykyiseen toteutukseen. |
 
 Korjausten eteneminen ja hyväksyntäkriteerit: [toteutussuunnitelma](KORJAUSSUUNNITELMA_2026-11-19.md).
+
+## Korjauskierros 19.11.2026
+
+- Repositorion yksityisten kuittien historia puhdistettu julkaisuhaaroista; GitHubin PR-viitteiden poisto odottaa Supportia. Katso [tietotarkistus](REPOSITORY_SECURITY_2026-11-19.md).
+- Vuosikellon, hintahistorian, budjettikopion ja kokeilun regressioita lisätty: nykyinen testiajo 30 tiedostoa / 229 testiä. Laajempi selain-/oikeusvarmennus on edelleen avoin.
+- Käyttämättömien symbolien TypeScript-tarkistus käytössä, käynnistysnäkymä erotettu komponentiksi ja tarkistava CI-työnkulku lisätty. CI:n GitHub-ajo vahvistetaan erikseen.
+- Laskuviivakoodin toteutus rajattu Suomeen; skanneria ei ole toteutettu.

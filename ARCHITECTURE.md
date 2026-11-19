@@ -9,13 +9,13 @@
 - `domain/calculations.ts` sisältää puhtaat laskentafunktiot ilman Reactia tai tallennusta.
 - `services/validation.ts` validoi Zodilla tilan rakenteen ja tarkemmilla domain-tarkistuksilla tietueet.
 - `data/storage.ts` toteuttaa vierastilan muistissa olevan StorageProviderin. UI kutsuu provideria, ei tallennusavaimia normaalissa talouslogiikassa.
-- `services/supabase.ts` luo selainasiakkaan publishable-avaimella; perhetalous siirtyy RPC-kutsujen kautta vain käyttäjän erillisestä lataus- tai tallennustoiminnosta.
+- `services/supabase.ts` luo selainasiakkaan publishable-avaimella; kirjautuneen käyttäjän oma ja yhteinen talous ladataan CloudSessionin kautta ja muutokset tallennetaan automaattisesti validoivan cloud-save Edge Functionin kautta.
 - `services/family-backup.ts` säilyttää JSONB-avainten järjestystä kestävän varmuuskopion ja validoi vanhat tallennusmuodot.
 - `services/csv.ts` käsittelee paikallisen CSV:n ja Blob-lataukset.
 
 ## Tallennuksen kulku
 
-Vieraskäyttö: muutos → validointi → muistissa oleva tila. Sivun päivityksen yli säilyvää taloustallennusta ei ole. Kirjautuneena käyttäjä voi ladata perheen version muistissa olevaan tilaan tai tallentaa koko tilan erikseen Supabaseen; palvelimen revisio estää vanhaa versiota ohittamasta uudempaa. Kirjautumisistunto tallentuu selaimeen, mutta taloustietoja ei tallenneta automaattisesti selaimen pysyvään tallennukseen.
+Vieraskäyttö: muutos → validointi → muistissa oleva tila. Sivun päivityksen yli säilyvää taloustallennusta ei ole. Kirjautuneena CloudSession lataa aktiivisen talouden ja AutoSaveScheduler ajoittaa muutosten tallennuksen CloudSaveQueue-jonon kautta. Palvelimen revisio estää vanhaa versiota ohittamasta uudempaa ja mutationId ehkäisee saman kirjoituksen monistumisen. Henkilökohtaisilla asetuksilla on erillinen tallennusjono ja tietokanta-RPC:t. Kirjautumisistunto tallentuu selaimeen, mutta taloustietoja ei tallenneta automaattisesti selaimen pysyvään tallennukseen.
 
 ## UI-rakenne
 
@@ -25,9 +25,11 @@ Tyylit on vaiheistettu: nykyinen design system elää `src/styles.css`-tiedostos
 
 ## Tarkoituksellinen rajaus
 
-Ominaisuusnäkymät ovat vielä samassa `main.tsx`-tiedostossa. Ne tulee erottaa feature-hakemistoihin ennen merkittävää laajentamista. Automaattinen synkronointi ja Apple-kirjautuminen eivät ole käytössä. Perheen poisto, ylläpitäjyyden siirto ja käyttäjätilin poisto ovat toteutettu lähdekoodissa, mutta niiden migraatio ja Edge Function on vielä otettava käyttöön palvelussa ja oikeustestattava erillisillä tileillä.
+Ominaisuusnäkymät ovat vielä samassa `main.tsx`-tiedostossa. Ne tulee erottaa feature-hakemistoihin ennen merkittävää laajentamista. Automaattitallennus on käytössä; samanaikaisia muutoksia ei yhdistetä automaattisesti. Apple-kirjautumisen tuotantotoimivuutta ei ole varmennettu. Perhe- ja käyttäjätilin hallinta on toteutettu ja delete-account Edge Function aktiivinen; erillisten käyttäjätilien oikeuskokeet ovat edelleen tarpeen.
 
-## Pikainen ylläpito- ja suorituskykykatsaus 11.11.2026
+## Historiallinen ylläpito- ja suorituskykykatsaus 11.11.2026
+
+Ajantasainen korjaustyö: [suunnitelma](KORJAUSSUUNNITELMA_2026-11-19.md). Alla oleva päivätty katsaus ei kuvaa kaikkien korjausten nykytilaa.
 
 Havainnot perustuvat lähdekoodin tarkasteluun; käyttöliittymän vasteaikoja ei ole profiloitu. Ennen optimointia mittaa tyhjä talous ja suuri 4 480 kirjauksen demotalous samoilla laitteilla: ensimmäinen avaus, sivunvaihto, budjettisumman tallennus ja 120 kuukauden raportti. Vertaa tuloksia muutoksen jälkeen ja varmista laskentatulokset sekä tallennusvirheiden käsittely.
 
