@@ -50,3 +50,7 @@ Myös yleiskuva, kulurakenne, budjettiraportti ja raporttivalinnan tietokortti o
 ### Raporttidatan koostaminen erotettu 19.11.2026
 
 Aikasarjat, varallisuus-/FIRE-koosteet, kategoriat ja rahavirta ovat report-series.ts-moduulissa; taulukoiden suodatus/lajittelu report-tables.ts:ssä ja valinnan erittely report-selection.ts:ssä. App säilyttää rajauksen ja valintojen ohjauksen. main.tsx on 5 419 riviä. Kahdeksan uutta koostetestiä läpäisi, kokonaismäärä 29 tiedostoa / 234 testiä; molemmat selainregressiot läpäisivät. Yhteiset tapahtumien tilasäännöt käyttävät edelleen sovelluksen nykyhetkeä; asOf-parametri koskee arvostuspäivän valintaa, ei koko raportin aikamatkustussimulaatiota.
+
+### Kategoriat ja kuukausivahvistukset 19.11.2026
+
+Kategorioiden hallinta on nyt omassa komponentissaan. Kategorian nimeäminen ja kuukausivahvistusten avaaminen muutosten jälkeen on erotettu domain-moduuleihin. Korjattu virhe, jossa nimen reunavälilyönnit saattoivat poistaa saman kategorian budjetti- ja toteuma-avaimet. Tallennusskeema ja kategoriaviitteiden nimipohjaisuus säilyvät; pysyvien ID-viitteiden migraatio on edelleen tekemättä. main.tsx on 5 045 riviä. Kokonaismäärä on 31 testitiedostoa / 253 testiä.

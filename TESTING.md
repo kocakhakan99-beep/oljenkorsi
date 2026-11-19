@@ -1,5 +1,14 @@
 # Testausraportti 13.11.2026
 
+## Kategoriat ja kuukausivahvistukset 19.11.2026
+
+- Kategorioiden hallinta erotettu omaksi komponentiksi, nimeämisen viitesiirto category-management-moduuliin ja vahvistettujen kuukausien avaaminen month-coverage-moduuliin. Nykyinen tallennusskeema säilyy.
+- Korjattu havaittu tietojen häviämisvirhe: esimerkiksi Ruoka → " Ruoka " ei enää poista saman kategorian budjetti- ja toteuma-avaimia.
+- 19 uutta testiä suojaa kategorian identiteettiä, kirjausten ja kuukausisummien säilymistä, nollatoteumia, ryhmittelyohjetta, vanhan kohdeavaimen summaa, tulon/menon erottelua sekä virheellisiä nimiä. Kuukausivahvistusten testit kattavat taustatiedot, kertakirjauksen siirron/poiston, toistuvan sarjan aloituksen, hintahistorian lisäyksen/muutoksen/poiston, päiväpoikkeukset ja manuaalisen nollatoteuman.
+- 31 testitiedostoa / 253 testiä, tyypitys, lint ja tuotantobuild läpäisivät. Molemmat selainregressiot läpäisivät. Raportti-/asetuskokeeseen lisätty kategorian välilyöntimuutos, nimikonflikti ja onnistunut nimeäminen, käytössä olevan kategorian poiston esto, arkistointi/palautus ja dialogin vaakarajojen tarkistus 390 px leveydellä. JSON-vienti vahvistaa 20 € budjetin, 18 € toteuman, kahden menon summien sekä tulokirjausten säilymisen.
+- Testit käyttävät fiktiivisiä tietoja. Tuotantotilin tietoja tai Supabasen asetuksia ei muutettu. Suuren aloituspaketin build-varoitus säilyy; moduulijako ei itsessään pienennä ladattavaa JavaScriptiä.
+
+
 ## Raporttidatan domain-jako 19.11.2026
 
 - Report-series, report-tables ja report-selection sisältävät aiemmin Appissa olleen raporttidatan koostamisen. Arvostuksen nykykuukauden päivä välitetään eksplisiittisesti. Yhteisiä tapahtumatilojen nykyhetkisääntöjä ei muutettu.

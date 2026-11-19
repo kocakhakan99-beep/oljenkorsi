@@ -156,6 +156,38 @@ with sync_playwright() as p:
   assert page.locator('main').evaluate('(e)=>e.scrollWidth <= e.clientWidth+1')
   expect(page.locator(panel)).to_be_visible()
   page.set_viewport_size({'width':1280,'height':900})
+ # Category renaming must retain the manual budget and actual totals, including a whitespace-only edit.
+ navigate('Menot')
+ page.get_by_role('button',name='Hallitse kategorioita',exact=True).click()
+ categories=page.locator('dialog[open]')
+ field=categories.get_by_label('Kategorian Ruoka nimi',exact=True)
+ field.fill(' Ruoka ');field.press('Tab')
+ field=categories.get_by_label('Kategorian Ruoka nimi',exact=True)
+ field.fill('Asuminen');field.press('Tab')
+ expect(categories.get_by_role('alert')).to_contain_text('Anna yksilöllinen nimi')
+ field.fill('Ostokset');field.press('Tab')
+ expect(categories.get_by_label('Kategorian Ostokset nimi',exact=True)).to_have_value('Ostokset')
+ expect(categories.get_by_role('alert')).to_have_count(0)
+ row=categories.locator('.category-management-row').filter(has=page.get_by_label('Kategorian Ostokset nimi',exact=True))
+ row.get_by_role('button',name='Poista',exact=True).click()
+ expect(categories.get_by_role('alert')).to_contain_text('Kategoria on käytössä')
+ row.get_by_role('button',name='Arkistoi',exact=True).click()
+ expect(row).to_have_class(__import__('re').compile('archived'))
+ row.get_by_role('button',name='Palauta',exact=True).click()
+ expect(row.get_by_role('button',name='Arkistoi',exact=True)).to_be_visible()
+ page.set_viewport_size({'width':390,'height':844})
+ expect(categories.get_by_label('Kategorian Ostokset nimi',exact=True)).to_be_visible()
+ assert categories.evaluate('(e)=>e.scrollWidth <= e.clientWidth+1')
+ page.set_viewport_size({'width':1280,'height':900})
+ categories.get_by_role('button',name='Sulje',exact=True).click()
+ navigate('Tuonti ja vienti')
+ with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).click()
+ renamed=json.load(open(d.value.path()))['data']
+ assert renamed['budgets'][month]=={'Ostokset':2000},renamed['budgets']
+ assert renamed['budgetActuals'][month]=={'Ostokset':1800},renamed['budgetActuals']
+ assert [e['category'] for e in renamed['expenses']]==['Ostokset','Ostokset']
+ assert [e['amount'] for e in renamed['expenses']]==[1000,500]
+ assert renamed['incomes']==state['incomes']
  navigate('Asetukset');page.get_by_role('tab',name='Tiedot',exact=True).click()
  page.get_by_role('button',name='Varmuuskopiot, tuonti ja vienti',exact=True).click()
  expect(page.get_by_role('heading',name='JSON-varmuuskopio',exact=True)).to_be_visible()
@@ -172,7 +204,7 @@ with sync_playwright() as p:
  unchanged=json.load(open(d.value.path()))['data']
  assert len(unchanged['assets'])==1 and len(unchanged['liabilities'])==1
  assert not errors,errors
- print('All report panels, chart/detail selections, budget manual actuals, mobile controls, settings/JSON and deletion cancellation: OK.')
+ print('All report panels, chart/detail selections, budget manual actuals, mobile controls, category rename/archive, settings/JSON and deletion cancellation: OK.')
  b.close()
 server.shutdown()
 server.server_close()
