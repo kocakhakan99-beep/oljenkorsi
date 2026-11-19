@@ -34,3 +34,7 @@ Korjausten eteneminen ja hyväksyntäkriteerit: [toteutussuunnitelma](KORJAUSSUU
 ### Laskurinäkymän moduulijako 19.11.2026
 
 Laskurit ja yhteiset numerokontrollit, kalenteri sekä lainalaskelman erittely ovat omissa komponenteissaan. main.tsx pieneni tässä erässä noin 900 rivillä (jäljellä 8 039). Sivujen laiska lataus ja CSS:n laajempi ryhmittely ovat edelleen tekemättä; tiedostojakoa ei pidetä osoitettuna nopeusparannuksena.
+
+### Raporttien ja asetusten moduulijako 19.11.2026
+
+Aikarajaus, kuukausivalitsin, taulukon kontrollit, rahavirran paneeli sekä asetusten välilehdet/ulkoasu/budjettiraamit erotettu. main.tsx on nyt 7 423 riviä. Muiden raporttipaneelien ja tietojenhallinta-asetusten erottaminen jatkuu; raporttien laskenta säilyy vielä Appissa. Selainregressio: e2e_reports_settings.py.

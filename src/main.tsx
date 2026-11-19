@@ -1,3 +1,9 @@
+import { SettingsTabs, settingsTabFromHash, type SettingsTab } from './components/settings-tabs';
+import { FlowReport } from './components/flow-report';
+import { AppearanceSettings } from './components/appearance-settings';
+import { BudgetGuidanceSettingsPanel } from './components/budget-settings';
+import { MonthPicker, monthIndexKey } from './components/month-picker';
+import { ReportRangeControl, ReportTableControls, type ReportSortOption } from './components/report-controls';
 import { Empty } from "./components/empty";
 import { Calculators } from './components/calculators';
 import { MoneyInput, PercentField, formatMoneyCents, percentText } from './components/numeric-inputs';
@@ -32,7 +38,7 @@ import { AnnualCalendar } from "./components/annual-calendar";
 import { annualReserveSummary } from "./domain/annual-planning";
 import { TrialModePanel } from "./components/trial-mode-panel";
 import { emptyTrialAdjustments, trialBasisFingerprint, type TrialAdjustments } from "./domain/trial-mode";
-import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames, type BudgetGuidanceSettings, type BudgetGroup } from "./domain/budget-guidance";
+import { budgetGuidance, budgetCategoryPolicy, budgetGroupNames } from "./domain/budget-guidance";
 import { useForm } from "react-hook-form";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createRoot } from "react-dom/client";
@@ -217,11 +223,6 @@ type TrialSession = {
   fingerprint: string;
   adjustments: TrialAdjustments;
 };
-type SettingsTab = 'appearance' | 'finance' | 'account' | 'data';
-function settingsTabFromHash(hash: string): SettingsTab | null {
-  const tab = hash.startsWith('settings-') ? hash.slice('settings-'.length) : '';
-  return (['appearance', 'finance', 'account', 'data'] as string[]).includes(tab) ? tab as SettingsTab : null;
-}
 function pageFromHash(hash: string): string {
   return hash === 'scenarios' ? 'calculators' : settingsTabFromHash(hash) ? 'settings' : hash || 'dashboard';
 }
@@ -287,7 +288,6 @@ const reportFormats: Record<ReportView, { value: string; label: string }[]> = {
     { value: "table", label: "Taulukko" },
   ],
 };
-type ReportSortOption = { value: string; label: string };
 const reportTableSorts: Record<ReportView, ReportSortOption[]> = {
   overview: [
     { value: "date-desc", label: "Uusin kuukausi ensin" },
@@ -627,385 +627,6 @@ function HelpBox({
     <div className="inline-context-help"><ContextDetails title={title}>{children}</ContextDetails></div>
   );
 }
-function monthKey(year: number, monthIndex: number) {
-  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-}
-function monthIndexKey(index: number) {
-  return monthKey(Math.floor(index / 12), index % 12);
-}
-function MonthPicker({
-  value,
-  label,
-  ariaLabel,
-  onChange,
-  compact = false,
-}: {
-  value: string;
-  label: string;
-  ariaLabel?: string;
-  onChange: (value: string) => void;
-  compact?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(
-    Number(value.slice(0, 4)) || new Date().getFullYear(),
-  );
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [selectedYear, selectedMonth] = value.split("-").map(Number);
-  const textLabel = ariaLabel || label;
-  const monthName = (year: number, index: number) =>
-    new Intl.DateTimeFormat("fi-FI", { month: "long" }).format(
-      new Date(year, index, 1),
-    );
-  const display = new Intl.DateTimeFormat("fi-FI", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(selectedYear, selectedMonth - 1, 1));
-  useEffect(() => {
-    if (open) setViewYear(selectedYear);
-  }, [open, selectedYear]);
-  useEffect(() => {
-    if (!open) return;
-    const closeOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    return () => document.removeEventListener("pointerdown", closeOutside);
-  }, [open]);
-  useEffect(() => {
-    if (open)
-      rootRef.current
-        ?.querySelector<HTMLButtonElement>(
-          '.month-grid-button[aria-pressed="true"]',
-        )
-        ?.focus();
-  }, [open]);
-  const choose = (next: string) => {
-    onChange(next);
-    setOpen(false);
-    requestAnimationFrame(() => triggerRef.current?.focus());
-  };
-  return (
-    <div
-      className={`month-select${compact ? " month-select-compact" : ""}`}
-      ref={rootRef}
-    >
-      {!compact && <span className="month-select-label">{label}</span>}
-      <button
-        ref={triggerRef}
-        type="button"
-        className={compact ? "month-choice" : "month-select-trigger"}
-        aria-label={`${textLabel}: ${display}`}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        title={`${textLabel}: ${display}`}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <CalendarDays size={compact ? 18 : 17} aria-hidden="true" />
-        {compact ? (
-          <span className="month-choice-copy">
-            <small>VALITTU KUUKAUSI</small>
-            <strong>{display}</strong>
-          </span>
-        ) : (
-          <span>{display}</span>
-        )}
-        <ChevronDown
-          className={compact ? "month-choice-chevron" : undefined}
-          size={compact ? 15 : 16}
-          aria-hidden="true"
-        />
-      </button>
-      {open && (
-        <div
-          className="month-popover"
-          role="dialog"
-          aria-label={`${textLabel} kalenterivalitsin`}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setOpen(false);
-              triggerRef.current?.focus();
-            }
-          }}
-        >
-          <div className="month-popover-heading">
-            <button
-              type="button"
-              aria-label="Edellinen vuosi"
-              disabled={viewYear <= 1900}
-              onClick={() => setViewYear((year) => Math.max(1900, year - 1))}
-            >
-              <ChevronLeft size={18} aria-hidden="true" />
-            </button>
-            <strong>{viewYear}</strong>
-            <button
-              type="button"
-              aria-label="Seuraava vuosi"
-              disabled={viewYear >= 2200}
-              onClick={() => setViewYear((year) => Math.min(2200, year + 1))}
-            >
-              <ChevronRight size={18} aria-hidden="true" />
-            </button>
-          </div>
-          <div
-            className="month-picker-grid"
-            role="group"
-            aria-label={`Kuukaudet ${viewYear}`}
-          >
-            {Array.from({ length: 12 }, (_, index) => {
-              const key = monthKey(viewYear, index);
-              return (
-                <button
-                  type="button"
-                  key={key}
-                  className="month-grid-button"
-                  aria-pressed={key === value}
-                  onClick={() => choose(key)}
-                >
-                  {monthName(viewYear, index)}
-                </button>
-              );
-            })}
-          </div>
-          <label className="month-native-fallback">
-            Jos valitsin ei toimi, syötä kuukausi
-            <input
-              type="month"
-              aria-label={`${textLabel}, syötä kuukausi`}
-              min="1900-01"
-              max="2200-12"
-              value={value}
-              onChange={(event) =>
-                event.target.value && choose(event.target.value)
-              }
-            />
-          </label>
-        </div>
-      )}
-    </div>
-  );
-}
-function ReportRangeControl({
-  start,
-  end,
-  mode,
-  startIndex,
-  endIndex,
-  valid,
-  length,
-  months,
-  firstMonthIndex,
-  lastMonthIndex,
-  onStart,
-  onEnd,
-  onMode,
-  onShift,
-  onRailEnd,
-}: {
-  start: string;
-  end: string;
-  mode: "month" | "range";
-  startIndex: number | null;
-  endIndex: number | null;
-  valid: boolean;
-  length: number;
-  months: string[];
-  firstMonthIndex: number;
-  lastMonthIndex: number;
-  onStart: (month: string) => void;
-  onEnd: (month: string) => void;
-  onMode: (mode: "month" | "range") => void;
-  onShift: (offset: number) => void;
-  onRailEnd: (index: number) => void;
-}) {
-  const railRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!end) return;
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    requestAnimationFrame(() =>
-      railRef.current
-        ?.querySelector<HTMLElement>('[aria-pressed="true"]')
-        ?.scrollIntoView({
-          behavior: reduced ? "auto" : "smooth",
-          block: "nearest",
-          inline: "center",
-        }),
-    );
-  }, [end]);
-  const monthNumber = (value: string) => {
-    const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(value);
-    return match ? Number(match[1]) * 12 + Number(match[2]) - 1 : null;
-  };
-  const monthLabel = (value: string) => {
-    const [year, month] = value.split("-").map(Number);
-    return new Intl.DateTimeFormat("fi-FI", {
-      month: "long",
-      year: "numeric",
-    }).format(new Date(year, month - 1, 1));
-  };
-  return (
-    <div className={`report-range-control${mode === "month" ? " single-month" : ""}`}>
-      {mode === "range" && <div className="report-range-heading"><div><span className="eyebrow">RAPORTOINTIJAKSO</span><strong>{valid ? `${monthLabel(start)} – ${monthLabel(end)}` : "Tarkista aikaväli"}</strong></div><small>{valid ? `${length} ${length === 1 ? "kuukausi" : "kuukautta"}` : "Valitse alku ja loppu"}</small></div>}
-      <div className="report-period-mode" role="group" aria-label="Raportin aikarajaus">
-        <button
-          type="button"
-          aria-pressed={mode === "month"}
-          onClick={() => onMode("month")}
-        >
-          Kuukausi
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "range"}
-          onClick={() => onMode("range")}
-        >
-          Aikaväli
-        </button>
-      </div>
-      <div
-        className="report-range-navigator"
-        role="group"
-        aria-label={mode === "month" ? "Vaihda raportointikuukautta" : "Valitse raportin alku ja loppu"}
-      >
-        <button
-          type="button"
-          aria-label={mode === "month" ? "Edellinen raportointikuukausi" : "Siirrä aikaväliä kuukausi taaksepäin"}
-          title={mode === "month" ? "Edellinen kuukausi" : "Siirrä aikaväliä kuukausi taaksepäin"}
-          disabled={
-            !valid || startIndex === null || startIndex <= firstMonthIndex
-          }
-          onClick={() => onShift(-1)}
-        >
-          <ChevronLeft size={19} aria-hidden="true" />
-        </button>
-        <div className={`report-range-fields${mode === "month" ? " report-single-month-field" : ""}`}>
-          {mode === "month" ? (
-            <MonthPicker
-              value={end}
-              label="Kuukausi"
-              ariaLabel="Raportointikuukausi"
-              onChange={onEnd}
-            />
-          ) : (
-            <>
-              <MonthPicker
-                value={start}
-                label="Alku"
-                ariaLabel="Raportin alkukuukausi"
-                onChange={onStart}
-              />
-              <MonthPicker
-                value={end}
-                label="Loppu"
-                ariaLabel="Raportin loppukuukausi"
-                onChange={onEnd}
-              />
-            </>
-          )}
-        </div>
-        <button
-          type="button"
-          aria-label={mode === "month" ? "Seuraava raportointikuukausi" : "Siirrä aikaväliä kuukausi eteenpäin"}
-          title={mode === "month" ? "Seuraava kuukausi" : "Siirrä aikaväliä kuukausi eteenpäin"}
-          disabled={!valid || endIndex === null || endIndex >= lastMonthIndex}
-          onClick={() => onShift(1)}
-        >
-          <ChevronRight size={19} aria-hidden="true" />
-        </button>
-      </div>
-      {mode === "range" && <div
-        className="report-month-rail"
-        role="group"
-        aria-label="Siirry raportin päättymiskuukauteen"
-        ref={railRef}
-      >
-        {months.map((key) => {
-          const [year, monthPart] = key.split("-").map(Number);
-          const date = new Date(year, monthPart - 1, 1);
-          const short = new Intl.DateTimeFormat("fi-FI", {
-            month: "short",
-          }).format(date);
-          const label = monthLabel(key);
-          const index = monthNumber(key);
-          return (
-            <button
-              type="button"
-              key={key}
-              aria-label={`Päättymiskuukausi ${label}`}
-              aria-pressed={key === end}
-              title={label}
-              onClick={() => index !== null && onRailEnd(index)}
-            >
-              <span>{short}</span>
-              <small>{year}</small>
-            </button>
-          );
-        })}
-      </div>}
-      <ContextDetails title="Aikavalinnan ohje"><p className="report-range-hint">
-        {mode === "month"
-          ? "Valitse kuukausi kalenterista tai siirry nuolilla edelliseen ja seuraavaan."
-          : "Valitse alku ja loppu, siirrä aikaväliä nuolilla tai vieritä kuukausilistaa."}
-      </p></ContextDetails>
-      {!valid && (
-        <p className="alert warning" role="alert">
-          Aikavälin pitää olla enintään 120 kuukautta ja loppukuukausi ei voi
-          olla ennen alkua.
-        </p>
-      )}
-    </div>
-  );
-}
-function ReportTableControls({
-  query,
-  onQuery,
-  sort,
-  onSort,
-  sortOptions,
-  visible,
-  total,
-}: {
-  query: string;
-  onQuery: (value: string) => void;
-  sort: string;
-  onSort: (value: string) => void;
-  sortOptions: ReportSortOption[];
-  visible: number;
-  total: number;
-}) {
-  return (
-    <div className="report-table-controls" role="search">
-      <label>
-        <span>Suodata taulukkoa</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => onQuery(event.target.value)}
-          placeholder="Hae taulukon rivejä"
-          aria-label="Suodata raporttitaulukkoa"
-        />
-      </label>
-      <label>
-        <span>Lajittelu</span>
-        <select
-          value={sort}
-          onChange={(event) => onSort(event.target.value)}
-          aria-label="Lajittele raporttitaulukko"
-        >
-          {sortOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <small aria-live="polite">
-        {visible} / {total} riviä
-      </small>
-    </div>
-  );
-}
 type EmergencyPlannerProps = {
   estimate: number | null;
   historyEstimate: number | null;
@@ -1131,19 +752,6 @@ function EmergencyPlanner({
   );
 }
 
-function BudgetCategoryRuleEditor({ state, name, onSave }: { state: State; name: string; onSave: (key: string, value: BudgetGuidanceSettings["categories"][string]) => void }) {
-  const policy = budgetCategoryPolicy(state, name);
-  const [group, setGroup] = useState(policy.group);
-  const [cap, setCap] = useState(policy.maxPercent ?? 5);
-  const [enabled, setEnabled] = useState(policy.maxPercent !== null);
-  return <details className="budget-policy-editor">
-    <summary>{name} · {budgetGroupNames[policy.group]} · {policy.maxPercent === null ? "ei kategoriarajaa" : `${percentText(policy.maxPercent)} %`}</summary>
-    <label>Ryhmitys: {name}<select value={group} onChange={event => setGroup(event.target.value as typeof group)}>{Object.entries(budgetGroupNames).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-    <label className="check"><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Käytä kategoriakohtaista enimmäisosuutta</label>
-    {enabled && <PercentField label={`${name}, enimmäisosuus nettotuloista (%)`} value={cap} min={0} max={100} onChange={setCap} />}
-    <button type="button" onClick={() => onSave(policy.key, { group, maxPercent: enabled ? cap : null })}>Tallenna kategorian {name} ohje</button>
-  </details>;
-}
 function BudgetGuidancePanel({ state, month, euro, detailed, onCategory, onBudget, onSettings }: {
   state: State; month: string; euro: (amount: number) => string; detailed: boolean;
   onCategory: (name: string) => void; onBudget: () => void; onSettings: () => void;
@@ -1177,36 +785,6 @@ function BudgetGuidancePanel({ state, month, euro, detailed, onCategory, onBudge
         {unknown.length > 0 && <p>Luokittele vielä: {unknown.map(category => category.name).join(", ")} ({euro(result.groups.unclassified.allocated)}). Näitä ei ole oletettu välttämättömiksi tai valinnaisiksi.</p>}
       </div>
     </>}
-  </section>;
-}
-
-function BudgetGuidanceSettingsPanel({ state, onSave }: { state: State; onSave: (rule: BudgetGuidanceSettings) => void }) {
-  const rule = state.settings.budgetGuidance;
-  const [shares, setShares] = useState(rule);
-  const [error, setError] = useState("");
-  useEffect(() => { setShares(rule); }, [rule]);
-  const categoryNames = new Set<string>([
-    ...state.categories.filter(category => category.kind === "expenses").map(category => category.name),
-    ...state.expenses.map(item => item.category),
-    ...Object.values(state.budgets).flatMap(month => Object.keys(month)),
-    ...Object.values(state.budgetActuals).flatMap(month => Object.keys(month)),
-  ]);
-  for (const key of Object.keys(rule.categories)) {
-    const category = state.categories.find(item => item.id === key && item.kind === "expenses");
-    if (category) categoryNames.add(category.name);
-    else if (key.startsWith("name:")) categoryNames.add(key.slice(5));
-  }
-  const categories = [...categoryNames].filter(Boolean).sort((a, b) => a.localeCompare(b, "fi"));
-  return <section className="panel budget-rule-settings" aria-labelledby="budget-rule-settings-title">
-    <div className="section-head"><div><h2 id="budget-rule-settings-title">Budjetin suositukset</h2><p>Muokkaa prosenttiraameja ja kategoriakohtaisia ohjeita.</p></div></div>
-    <p className="ux-status-note">Sovita rajat omaan tilanteeseesi. Älä vaaranna välttämätöntä hoitoa tai velkaannu säästötavoitteen vuoksi.</p>
-    <ContextDetails title="Miten suositukset ja rajat toimivat?"><p>50/30/20 on Warrenin ja Tyagin (2005) käytännön kehikko. Kategoriakohtaiset rajat ovat sovelluksen aloitusarvoja, eivät suomalaisia keskiarvoja. Rajojen summa voi ylittää 100 %: ryhmien yhteinen budjetti ratkaisee.</p><p>Luokitus koskee budjettiraameja. Menon oma välttämättömyysvalinta vaikuttaa erikseen hätävaralaskentaan. Säästö- ja sijoitussiirron menotyyppi ohjaa sen aina säästämisryhmään. Luottokorttilaskua ei pidä kirjata uudelleen, jos ostokset on jo kirjattu. Lisälyhennys voidaan luokitella säästämisryhmään, mutta sovellus ei erittele siitä korkoa tai päivitä velkasaldoa.</p></ContextDetails>
-    <form onSubmit={event => { event.preventDefault(); if (Math.abs(shares.needs + shares.wants + shares.saving - 100) > 0.001) { setError("Ryhmien osuuksien summan pitää olla 100 %."); return; } setError(""); onSave({ ...rule, needs: shares.needs, wants: shares.wants, saving: shares.saving }); }}>
-      <div className="budget-rule-grid">{(["needs", "wants", "saving"] as BudgetGroup[]).map(group => <PercentField key={group} label={`${budgetGroupNames[group]}, tavoite (%)`} value={shares[group]} min={0} max={100} onChange={value => setShares(current => ({ ...current, [group]: value }))} />)}</div>
-      {error && <p role="alert">{error}</p>}<button type="submit">Tallenna ryhmien osuudet</button>
-    </form>
-    <h3>Kategoriakohtaiset suositukset</h3>
-    <div className="budget-category-rule-list">{categories.map(name => <BudgetCategoryRuleEditor key={name} state={state} name={name} onSave={(key, value) => onSave({ ...rule, categories: { ...rule.categories, [key]: value } })} />)}</div>
   </section>;
 }
 
@@ -5393,138 +4971,7 @@ function App() {
                   </section>
                 )}
                 {reportView === "flow" && (
-                  <section
-                    className="panel report-panel"
-                    id="report-panel-flow"
-                    role="tabpanel"
-                    aria-labelledby="report-tab-flow"
-                    tabIndex={0}
-                  >
-                    <h2>Tulojen ja menojen ajoitus</h2>
-                    <p className="muted">
-                      Kumulatiivinen kassavirta alkaa valitun aikavälin alussa
-                      nollasta. Alkusaldoa ja maksujen kellonaikoja ei tunneta;
-                      saman päivän tapahtumia ei järjestetä keskenään.
-                    </p>
-                    {dailyFlow.length ? (
-                      <>
-                        <div className="flow-summary">
-                          <strong>
-                            {firstShortfall
-                              ? `Kertymä käy miinuksella ${firstShortfall.date.split("-").reverse().join(".")}`
-                              : "Kertymä ei käy miinuksella kirjattuina tapahtumapäivinä"}
-                          </strong>
-                          <span>
-                            {recoveryDay
-                              ? `Kertymä palautuu plussalle ${recoveryDay.date.split("-").reverse().join(".")}`
-                              : firstShortfall
-                                ? "Kertymä jää negatiiviseksi kirjatuissa tapahtumapäivissä"
-                                : `Jakson lopun kertymä ${euro(dailyFlow.at(-1)!.balance)}`}
-                          </span>
-                        </div>
-                        <div
-                          className="flow-visual"
-                          role="group"
-                          aria-label="Päiväkohtainen kumulatiivinen kassavirta. Valitse päivä avataksesi sen kirjaukset."
-                          hidden={reportFormat !== "timeline"}
-                        >
-                          {dailyFlow.map((day) => (
-                            <button
-                              type="button"
-                              className={`flow-day${selectedReport?.type === "day" && selectedReport.date === day.date ? " selected-flow-day" : ""}`}
-                              key={day.date}
-                              aria-label={`${day.date.split("-").reverse().join(".")}: tulot ${euro(day.income)}, menot ${euro(day.expense)}, kertymä ${euro(day.balance)}. Avaa tietueet.`}
-                              title={`${day.date}: ${euro(day.balance)}`}
-                              onClick={() =>
-                                setSelectedReport({
-                                  type: "day",
-                                  date: day.date,
-                                })
-                              }
-                            >
-                              <div className="flow-day-plot">
-                                <span
-                                  className={`flow-bar ${day.balance < 0 ? "below-zero" : "above-zero"}`}
-                                  style={{
-                                    height: `${Math.max(2, (Math.abs(day.balance) / maxFlowMagnitude) * 46)}%`,
-                                    ...(day.balance < 0
-                                      ? { top: "50%" }
-                                      : { bottom: "50%" }),
-                                  }}
-                                />
-                                <i />
-                              </div>
-                              <small>
-                                {history.length === 1
-                                  ? Number(day.date.slice(-2))
-                                  : day.date.slice(5, 10)}
-                              </small>
-                            </button>
-                          ))}
-                        </div>
-                        <p
-                          className="muted flow-caption"
-                          hidden={reportFormat !== "timeline"}
-                        >
-                          Päivän lopun kumulatiivinen tulojen ja menojen erotus
-                          · positiivinen ylös, alijäämä alas. Päivät, joina ei
-                          ole kirjauksia, eivät näy.
-                        </p>
-                        <div
-                          className="table-wrap mobile-card-table flow-table"
-                          hidden={reportFormat !== "table"}
-                        >
-                          <table role="table">
-                            <thead role="rowgroup">
-                              <tr role="row">
-                                <th role="columnheader">Päivä</th>
-                                <th role="columnheader">Tulot</th>
-                                <th role="columnheader">Menot</th>
-                                <th role="columnheader">
-                                  Kumulatiivinen kassavirta
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody role="rowgroup">
-                              {filteredDailyFlow.map((day) => (
-                                <tr role="row" key={day.date}>
-                                  <th
-                                    role="rowheader"
-                                    scope="row"
-                                    data-label="Päivä"
-                                  >
-                                    {day.date.split("-").reverse().join(".")}
-                                  </th>
-                                  <td role="cell" data-label="Tulot">
-                                    {euro(day.income)}
-                                  </td>
-                                  <td role="cell" data-label="Menot">
-                                    {euro(day.expense)}
-                                  </td>
-                                  <td
-                                    role="cell"
-                                    data-label="Kertymä"
-                                    className={
-                                      day.balance < 0 ? "negative" : ""
-                                    }
-                                  >
-                                    {euro(day.balance)}
-                                  </td>
-                                </tr>
-                              ))}
-                              {filteredDailyFlow.length === 0 && (
-                                <tr>
-                                  <td colSpan={4}>Suodattimella ei löytynyt päiviä.</td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </>
-                    ) : (
-                      <Empty text="Valitussa kuussa ei ole toteutuneita tapahtumia." />
-                    )}
-                  </section>
+                  <FlowReport dailyFlow={dailyFlow} filteredDailyFlow={filteredDailyFlow} firstShortfall={firstShortfall} recoveryDay={recoveryDay} maxFlowMagnitude={maxFlowMagnitude} monthCount={history.length} reportFormat={reportFormat} selectedDate={selectedReport?.type === 'day' ? selectedReport.date : undefined} onSelectDay={date => setSelectedReport({ type: 'day', date })} euro={euro} />
                 )}
                 {reportView === "budget" && (
                   <section
@@ -6284,72 +5731,9 @@ function App() {
             )}
             {page === "settings" && (
               <>
-                <div role="tablist" aria-label="Asetukset" className="settings-tabs">
-                  {([['appearance', 'Ulkoasu ja käyttö'], ['finance', 'Talous'], ['account', 'Tili ja perhe'], ['data', 'Tiedot']] as const).map(([id, label], index, tabs) => <button key={id} type="button" role="tab" id={`settings-tab-${id}`} aria-controls={`settings-panel-${id}`} aria-selected={settingsTab === id} tabIndex={settingsTab === id ? 0 : -1} onClick={() => selectSettingsTab(id)} onKeyDown={event => { const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1; if (next >= 0) { event.preventDefault(); selectSettingsTab(tabs[next][0]); document.getElementById(`settings-tab-${tabs[next][0]}`)?.focus(); } }}>{label}</button>)}
-                </div>
+                <SettingsTabs value={settingsTab} onSelect={selectSettingsTab} />
                 <div role="tabpanel" id="settings-panel-appearance" aria-labelledby="settings-tab-appearance" hidden={settingsTab !== 'appearance'}>
-                <section className="panel panel-plan">
-                  <h2>Ulkoasu</h2>
-                  <div className="form-grid">
-                    <label>
-                      Teema
-                      <select
-                        aria-label="Teema"
-                        value={s.settings.theme}
-                        onChange={(e) => settings({ theme: e.target.value })}
-                      >
-                        <option value="neutral">Selkeä / neutraali</option>
-                        <option value="blue">Rauhallinen sininen</option>
-                        <option value="green">Luonnollinen vihreä</option>
-                        <option value="contrast">Korkea kontrasti</option>
-                        <option value="custom">Oma korostusväri</option>
-                      </select>
-                    </label>
-                    <label>
-                      Väritila
-                      <select
-                        aria-label="Väritila"
-                        value={s.settings.mode}
-                        onChange={(e) => settings({ mode: e.target.value })}
-                      >
-                        <option value="system">Järjestelmä</option>
-                        <option value="light">Vaalea</option>
-                        <option value="dark">Tumma</option>
-                      </select>
-                    </label>
-                    {s.settings.theme === "custom" && (
-                      <label>
-                        Korostusväri
-                        <input
-                          type="color"
-                          value={s.settings.accent}
-                          onChange={(e) => settings({ accent: e.target.value })}
-                        />
-                        <small>
-                          Tekstikontrasti säätyy automaattisesti.
-                        </small>
-                      </label>
-                    )}
-                  </div>
-                  <StatusBadge>EUR · Suomi</StatusBadge>
-                </section>
-                <section
-                  className="panel help-settings"
-                  aria-labelledby="help-settings-title"
-                >
-                  <div>
-                    <h2 id="help-settings-title">Ohjelaatikot</h2>
-
-                  </div>
-                  <button
-                    type="button"
-                    onClick={restoreHelp}
-                    disabled={!dismissedHelp.size}
-                  >
-                    Palauta piilotetut ohjeet ({dismissedHelp.size})
-                  </button>
-                  {legacyHelp.length > 0 && <button type="button" onClick={importLegacyHelp}>Tuo tämän selaimen vanhat ohjeasetukset</button>}
-                </section>
+                <AppearanceSettings value={s.settings} onChange={settings} dismissedCount={dismissedHelp.size} legacyHelpCount={legacyHelp.length} restoreHelp={restoreHelp} importLegacyHelp={importLegacyHelp} />
                 </div>
                 <div role="tabpanel" id="settings-panel-finance" aria-labelledby="settings-tab-finance" hidden={settingsTab !== 'finance'}><BudgetGuidanceSettingsPanel state={s} onSave={rule => settings({ budgetGuidance: rule })} /></div>
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={settingsTab !== 'account'}><Account exportBackup={exportBackup} auth={safeAuth} hasChanges={hasTemporaryChanges.current} cloudManaged={cloudEnabled} /></div>

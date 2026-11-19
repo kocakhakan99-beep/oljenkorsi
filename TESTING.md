@@ -1,5 +1,14 @@
 # Testausraportti 13.11.2026
 
+## Raporttien ja asetusten moduulijako 19.11.2026
+
+- Kuukausivalitsin, raportin aikarajaus/taulukon kontrollit, rahavirran raporttipaneeli, asetusten välilehdet sekä ulkoasu- ja budjettiasetusten sisältö erotettiin omiin moduuleihin.
+- Tyypitys, lint, 226 yksikkötestiä ja tuotantobuild läpäisivät.
+- Uusi `python3 e2e_reports_settings.py` käynnistää oman paikallisen HTTP-palvelimen ja fiktiivisen vierasistunnon. Se tuo kolme CSV-tapahtumaa ja tarkistaa rahavirran negatiivisen kertymän sekä palautumisen, päivävalinnan, taulukon lajittelun/haun ja mobiilin kuukausivalitsimen rajat/fokuksen.
+- Asetuskokeessa välilehtien Home/End-näppäimet, teeman ja väritilan vaihto, 100 prosentista poikkeavan budjettijaon esto ja korjatun jaon tallennus toimivat. JSON-viennistä tarkistettiin asetukset ja alkuperäiset tapahtumamäärät. 390/1280 px leveydellä ei ollut main-elementin vaakaylivuotoa.
+- Testi käyttää paikallista muistitaloutta. Se ei varmista oikean käyttäjän pilvipreferenssien tallentumista palvelimelle eikä muuta tuotantodataa.
+
+
 ## Laskurinäkymän moduulijako 19.11.2026
 
 - Laskurit, numerokontrollit, päivämäärävalitsin, lainalaskelman erittely ja tyhjän näkymän komponentti erotettiin pääkomponentista.
