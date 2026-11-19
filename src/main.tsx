@@ -3742,7 +3742,6 @@ function App() {
                   </button>
                 </div>
               )}
-              {page === "budget" && <><ReceiptScanButton onClick={() => openReceipt()} /><button type="button" className="receipt-scan-button invoice-scan-button" onClick={() => { setInvoiceOpen(true); navigate("expenses"); }} aria-haspopup="dialog"><FileText size={18} aria-hidden="true" />Lisää lasku</button></>}
               {kinds.includes(page as Kind) &&
                 page !== "incomes" &&
                 page !== "expenses" && (
@@ -4694,7 +4693,7 @@ function App() {
                               <td role="cell" data-label="Toteuma">
                                 <BudgetUsage actual={a} budget={b} label={`${c}, budjetin käyttö`} />
                               </td>
-                              <td role="cell" data-label="Toiminnot"><div className="budget-row-actions"><button type="button" aria-label={`Näytä kategorian ${c} menot`} title={`Avaa ${c}`} onClick={() => setBudgetCategory(c)}><Eye size={18} aria-hidden="true" /></button><button type="button" aria-label={`Lisää meno kategoriaan ${c}`} title={`Lisää meno kategoriaan ${c}`} onClick={() => beginQuickEntry("expenses", undefined, "once", c)}><span className="expense-add-icon" aria-hidden="true"><ReceiptText size={18} /><Plus size={10} /></span></button></div></td>
+                              <td role="cell" data-label="Toiminnot"><div className="budget-row-actions"><button type="button" aria-label={`Näytä kategorian ${c} menot`} title={`Avaa ${c}`} onClick={() => setBudgetCategory(c)}><Eye size={18} aria-hidden="true" /></button></div></td>
                             </tr>
                           );
                         })}
@@ -6727,7 +6726,6 @@ function App() {
                 s={s}
                 onBackup={exportBackup}
                 onRestore={importBackup}
-                onReceipts={() => openReceipt()}
                 onImport={(kind, es) => {
                   if (commit({ ...s, [kind]: [...s[kind], ...es] })) {
                     setUndo(s);
@@ -7167,10 +7165,7 @@ function App() {
               {stat("Kirjatut toteutuneet menot", euro(sum(events.filter((event) => event.status === "actual").map((event) => event.amount))))}
               {stat("Tulevat / suunnitellut menot", euro(sum(events.filter((event) => event.status === "planned").map((event) => event.amount))))}
             </div>
-            <div className="actions">
-              <button className="primary" onClick={() => { setBudgetCategory(null); beginQuickEntry("expenses", undefined, "once", category); }}><Plus size={16} aria-hidden="true" /> Kertaluonteinen meno</button>
-              <button onClick={() => { setBudgetCategory(null); beginQuickEntry("expenses", undefined, "monthly", category); }}><CalendarClock size={16} aria-hidden="true" /> Toistuva meno</button>
-            </div>
+
             {events.length ? <ul className="budget-event-list" aria-label={`${category}, kuukauden menot`}>
               {events.map(({ item, date, amount, status }) => <li key={`${item.id}-${date}`}>
                 <ReceiptText size={20} aria-hidden="true" />
@@ -8966,13 +8961,11 @@ function Transfer({
   onBackup,
   onRestore,
   onImport,
-  onReceipts,
 }: {
   s: State;
   onBackup: () => void;
   onRestore: (f: File) => void;
   onImport: (k: Kind, e: Entry[]) => void;
-  onReceipts: () => void;
 }) {
   const [kind, setKind] = useState<Kind>("expenses"),
     [text, setText] = useState(""),
@@ -9070,7 +9063,6 @@ function Transfer({
   }
   return (
     <>
-      <div className="transfer-shortcuts"><ReceiptScanButton onClick={onReceipts} label="Kuittiskannaus menoissa" /></div>
       <section className="panel">
         <h2>JSON-varmuuskopio</h2>
         <div className="entry-statuses"><StatusBadge>Koko talous</StatusBadge><StatusBadge>Salaamaton tiedosto</StatusBadge></div>
