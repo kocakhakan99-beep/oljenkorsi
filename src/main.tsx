@@ -1,3 +1,4 @@
+import { applyCsvReconciliation } from "./domain/csv-reconciliation";
 import { transferBudget } from "./domain/budget-transfer";
 import { coverageAfterEntryChanges } from "./domain/month-coverage";
 import { Categories } from "./components/categories";
@@ -3724,12 +3725,16 @@ function App() {
                 s={s}
                 onBackup={exportBackup}
                 onRestore={importBackup}
-                onImport={(kind, es) => {
-                  if (commit({ ...s, [kind]: [...s[kind], ...es] })) {
+                onImport={(kind, es, matches) => {
+                  try {
+                    const next = applyCsvReconciliation(s, kind, es, matches);
+                    if (!commit(next)) return false;
                     setUndo(s);
-                    setNotice(
-                      `${es.length} tietuetta tuotu. Tuonnin voi kumota.`,
-                    );
+                    setNotice(`${es.length} tietuetta tuotu, ${matches.length} tapahtumaa täsmäytetty. Tuonnin voi kumota.`);
+                    return true;
+                  } catch (error) {
+                    setNotice(error instanceof Error ? error.message : "Tuonti epäonnistui.");
+                    return false;
                   }
                 }}
               />

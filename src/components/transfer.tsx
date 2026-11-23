@@ -1,6 +1,7 @@
+import { reconciliationCandidates, type Reconciliation } from "../domain/csv-reconciliation";
 import { useState } from 'react';
 import { type State, type Entry, type Kind, kinds, today } from '../domain/model';
-import { money } from '../domain/calculations';
+import { money, occurrenceAmount, scheduledOccurrences, occurrenceStatus } from '../domain/calculations';
 import { parseCSV, exportCSV, csvEntry, csvFields, csvFieldLabels, mapCSVHeaders, download } from '../services/csv';
 import { ContextDetails, StatusBadge } from './summary';
 
@@ -15,7 +16,7 @@ export function Transfer({
   s: State;
   onBackup: () => void;
   onRestore: (f: File) => void;
-  onImport: (k: Kind, e: Entry[]) => void;
+  onImport: (k: Kind, e: Entry[], matches: Reconciliation[]) => boolean;
 }) {
   const [kind, setKind] = useState<Kind>("expenses"),
     [text, setText] = useState(""),
@@ -26,7 +27,11 @@ export function Transfer({
     [bytes, setBytes] = useState<ArrayBuffer | null>(null),
     [fileOptionsOpen, setFileOptionsOpen] = useState(false),
     [skipErrors, setSkipErrors] = useState(false),
-    [skipDuplicates, setSkipDuplicates] = useState(true);
+    [skipDuplicates, setSkipDuplicates] = useState(true),
+    [choices, setChoices] = useState<Record<number, string>>({}),
+    [choiceContext, setChoiceContext] = useState("");
+  const currentContext = JSON.stringify([kind, text, delimiter, map]);
+  const selectedChoices = choiceContext === currentContext ? choices : {};
   const primaryCSVFields = ["name", "amount", "category", "date"];
   const advancedCSVFields = csvFields.filter(
     (field) => !primaryCSVFields.includes(field),
@@ -64,12 +69,9 @@ export function Transfer({
           map,
           kind === "incomes" || kind === "expenses" ? kind : undefined,
         ),
-        duplicate = s[kind].some(
-          (x) =>
-            x.name === e.name &&
-            x.date === e.date &&
-            x.amount === e.amount &&
-            x.category === e.category,
+        duplicate = s[kind].some((x) =>
+          (x.name === e.name && x.date === e.date && x.amount === e.amount && x.category === e.category) ||
+          ((kind === "incomes" || kind === "expenses") && scheduledOccurrences(x, e.date.slice(0, 7)).includes(e.date) && occurrenceStatus(x, e.date) === "actual" && occurrenceAmount(x, e.date) === e.amount),
         );
       return { e, duplicate, line: i + 2, error: "" };
     } catch (e) {
@@ -88,11 +90,28 @@ export function Transfer({
       if (seen.has(key)) r.duplicate = true;
       seen.add(key);
     }
+  const matches: Reconciliation[] = [];
+  const selectedTargets = new Set<string>();
+  let selectionError = "";
+  const acceptedRows = evaluated.filter(row => {
+    if (!row.e) return false;
+    const selected = selectedChoices[row.line];
+    if (selected === "skip") return false;
+    if (selected && selected !== "add") {
+      const candidates = reconciliationCandidates(s, kind, row.e);
+      if (!candidates.some(candidate => candidate.id === selected)) { selectionError = "Valittu tapahtuma on muuttunut. Tarkista valinnat."; return false; }
+      const key = `${selected}|${row.e.date}`;
+      if (selectedTargets.has(key)) { selectionError = "Samaa tapahtumaa ei voi täsmäyttää kahdesti."; return false; }
+      selectedTargets.add(key);
+      matches.push({ imported: row.e, targetId: selected });
+      return false;
+    }
+    if (!selected && reconciliationCandidates(s, kind, row.e).length) return false;
+    return selected === "add" || !skipDuplicates || !row.duplicate;
+  });
   let errors = evaluated.filter((r) => r.error),
     dups = evaluated.filter((r) => r.duplicate),
-    accepted = evaluated
-      .filter((r) => r.e && (!skipDuplicates || !r.duplicate))
-      .map((r) => r.e!);
+    accepted = acceptedRows.map((r) => r.e!);
   function decode(b: ArrayBuffer, enc: string) {
     try {
       let t = new TextDecoder(enc, { fatal: enc === "utf-8" })
@@ -135,7 +154,7 @@ export function Transfer({
       </section>
       <section className="panel">
         <h2>CSV-tuonti ja vienti</h2>
-        <div className="entry-statuses"><StatusBadge>Tuonti lisää tietueita</StatusBadge><StatusBadge tone="warning">CSV ei ole koko talouden varmuuskopio</StatusBadge></div>
+        <div className="entry-statuses"><StatusBadge>Lisää tai täsmäytä tietueita</StatusBadge><StatusBadge tone="warning">CSV ei ole koko talouden varmuuskopio</StatusBadge></div>
         <ContextDetails title="CSV:n käyttö ja rajaukset"><p>Tuonnin voi kumota tämän istunnon aikana. Summat ovat euroina. CSV ei säilytä velkojen ja omaisuuserien välisiä linkkejä; käytä JSON-varmuuskopiota koko talouden siirtämiseen. Pankkiaineiston miinusmerkkiset menot tuodaan positiivisina menoina; tulorivit pitää tuoda Tulot-valinnalla. Virhe- ja duplikaattirivit tarkistetaan ennen tuontia.</p></ContextDetails>
         <div className="form-grid">
           <label>
@@ -343,6 +362,26 @@ export function Transfer({
               </table>
             </div>
             <div className="import-summary" role="status" aria-label="CSV-tuonnin yhteenveto"><StatusBadge>{evaluated.length} {evaluated.length === 1 ? "rivi" : "riviä"}</StatusBadge><StatusBadge tone={errors.length ? "warning" : "neutral"}>{errors.length} {errors.length === 1 ? "virhe" : "virhettä"}</StatusBadge><StatusBadge tone={dups.length ? "warning" : "neutral"}>{dups.length} {dups.length === 1 ? "mahdollinen duplikaatti" : "mahdollista duplikaattia"}</StatusBadge><StatusBadge tone="positive">{accepted.length} tuotavaa</StatusBadge></div>
+            {evaluated.map(row => {
+              if (!row.e) return null;
+              const candidates = reconciliationCandidates(s, kind, row.e);
+              if (!candidates.length && !row.duplicate) return null;
+              const value = selectedChoices[row.line] || "";
+              return <div key={row.line} className="csv-match-row">
+                <p>Rivi {row.line}: {row.e.name} · {(row.e.amount / 100).toFixed(2).replace(".", ",")} € · {row.e.date}{row.duplicate ? " · mahdollinen duplikaatti" : ""}</p>
+                <label>Rivin {row.line} käsittely<select value={value} onChange={event => {
+                  setChoices({ ...(choiceContext === currentContext ? choices : {}), [row.line]: event.target.value });
+                  setChoiceContext(currentContext);
+                }}>
+                  <option value="">{candidates.length ? "Valitse käsittely (oletus: ohita)" : row.duplicate && skipDuplicates ? "Ohita oletuksena" : "Lisää oletuksena"}</option>
+                  <option value="add">Lisää erillisenä</option>
+                  <option value="skip">Ohita</option>
+                  {candidates.map(item => <option key={item.id} value={item.id}>Merkitse toteutuneeksi: {item.name} · {item.category} · {row.e!.date}</option>)}
+                </select></label>
+              </div>;
+            })}
+            {matches.length > 0 && <p>{matches.length} suunniteltua tapahtumaa merkitään toteutuneeksi. Nimi, kategoria ja muut tiedot säilyvät.</p>}
+            {selectionError && <p role="alert">{selectionError}</p>}
             {errors.slice(0, 10).map((r) => (
               <p key={r.line} className="negative">
                 Rivi {r.line}: {r.error}
@@ -367,7 +406,8 @@ export function Transfer({
             <button
               className="primary"
               disabled={
-                !accepted.length ||
+                (!accepted.length && !matches.length) ||
+                !!selectionError ||
                 !!error ||
                 (!!errors.length && !skipErrors) ||
                 !(map.name >= 0) ||
@@ -375,14 +415,14 @@ export function Transfer({
                 !(map.date >= 0)
               }
               onClick={() => {
-                if (confirm(`Tuodaanko ${accepted.length} tietuetta?`)) {
-                  onImport(kind, accepted);
+                if (confirm(`Lisätäänkö ${accepted.length} tietuetta ja täsmäytetäänkö ${matches.length} tapahtumaa?`)) {
+                  if (!onImport(kind, accepted, matches)) return;
                   setText("");
                   setBytes(null);
                 }
               }}
             >
-              Vahvista ja tuo {accepted.length} tietuetta
+              Vahvista ja tuo {accepted.length} tietuetta{matches.length > 0 && `, täsmäytä ${matches.length}`}
             </button>
           </>
         )}

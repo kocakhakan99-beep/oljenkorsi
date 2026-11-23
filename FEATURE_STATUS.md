@@ -54,3 +54,7 @@ Aikasarjat, varallisuus-/FIRE-koosteet, kategoriat ja rahavirta ovat report-seri
 ### Kategoriat ja kuukausivahvistukset 19.11.2026
 
 Kategorioiden hallinta on nyt omassa komponentissaan. Kategorian nimeäminen ja kuukausivahvistusten avaaminen muutosten jälkeen on erotettu domain-moduuleihin. Korjattu virhe, jossa nimen reunavälilyönnit saattoivat poistaa saman kategorian budjetti- ja toteuma-avaimet. Tallennusskeema ja kategoriaviitteiden nimipohjaisuus säilyvät; pysyvien ID-viitteiden migraatio on edelleen tekemättä. main.tsx on 5 045 riviä. Kokonaismäärä on 31 testitiedostoa / 253 testiä.
+
+### CSV-täsmäytys 23.11.2026
+
+Tulo- ja menotuonti ehdottaa saman päivän ja summan suunniteltuja tapahtumia. Käyttäjä valitsee rivikohtaisesti lisäämisen, ohittamisen tai tapahtuman merkitsemisen toteutuneeksi. Toistuvan sarjan muutos koskee yhtä tapahtumaa. Mahdollinen vastaava toteutunut tapahtuma merkitään duplikaattiepäilyksi.
