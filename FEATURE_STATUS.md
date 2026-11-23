@@ -58,3 +58,7 @@ Kategorioiden hallinta on nyt omassa komponentissaan. Kategorian nimeäminen ja 
 ### CSV-täsmäytys 23.11.2026
 
 Tulo- ja menotuonti ehdottaa saman päivän ja summan suunniteltuja tapahtumia. Käyttäjä valitsee rivikohtaisesti lisäämisen, ohittamisen tai tapahtuman merkitsemisen toteutuneeksi. Toistuvan sarjan muutos koskee yhtä tapahtumaa. Mahdollinen vastaava toteutunut tapahtuma merkitään duplikaattiepäilyksi.
+
+### Yhteenvedon huomiot 23.11.2026
+
+Yhteenveto näyttää ennakoidut kategoriabudjetin ylitykset, 60 päivän sisällä erääntyvät vajaat varaukset ja valitun päättyneen kuukauden keskeneräisen tarkistuksen. Kuukausitarkistuksen yhteenvedosta pääsee budjettiin ja vuosikelloon. Toistuvan kulutusmenon tiedoista voi käynnistää hinnanmuutoskokeilun.

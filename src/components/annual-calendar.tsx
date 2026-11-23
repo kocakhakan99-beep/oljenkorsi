@@ -119,7 +119,7 @@ export function AnnualCalendar({
       <div className="annual-reserve-plan-list">{summary.items.map(item => {
         const next = item.nextDue;
         const hasReservations = (state.annualReservations || []).some(reservation => reservation.expenseId === item.expense.id);
-        return <article className="annual-reserve-plan" key={item.expense.id}>
+        return <article className="annual-reserve-plan" key={item.expense.id} id={`annual-plan-${item.expense.id}`} tabIndex={-1}>
           <div className="annual-reserve-plan-head"><div><h3>{item.expense.name}</h3><p>{item.expense.category} · {recurrenceName[item.expense.recurrence] || item.expense.recurrence}</p></div><button type="button" aria-label={`Poista ${item.expense.name} varaussuunnitelmasta`} onClick={() => onPlanChange(item.expense.id, false)}>{hasReservations ? "Poista suunnitelma ja varaukset" : "Poista suunnitelma"}</button></div>
           {!item.eligible ? <p className="ux-status-note">Tämä meno on keskeytetty tai merkitty säästöksi/sijoitukseksi. Se ei sisälly vuosikellon laskelmaan.</p> : <>
             {item.expense.recurrence !== "once" && <p className="annual-reserve-flat">Tasaus: <strong>{format(item.annualizedMonthly)} / kk</strong><small>Arvio perustuu seuraavan 12 kuukauden eriin. Sitä ei lisätä budjettiin automaattisesti.</small></p>}

@@ -1,3 +1,4 @@
+import { dashboardAttention } from "./domain/dashboard-attention";
 import { applyCsvReconciliation } from "./domain/csv-reconciliation";
 import { transferBudget } from "./domain/budget-transfer";
 import { coverageAfterEntryChanges } from "./domain/month-coverage";
@@ -1026,6 +1027,7 @@ function App() {
     [budgetCopyTarget, setBudgetCopyTarget] = useState(shiftMonth(loaded.data.settings.month, 1)),
     [budgetCopyMode, setBudgetCopyMode] = useState<BudgetCopyMode>("fill-missing"),
     [monthReviewOpen, setMonthReviewOpen] = useState(false),
+    [attentionReserveId, setAttentionReserveId] = useState<string | null>(null),
     [monthReviewStep, setMonthReviewStep] = useState(0),
     [reportStart, setReportStart] = useState(loaded.data.settings.month),
     [reportEnd, setReportEnd] = useState(loaded.data.settings.month),
@@ -1977,6 +1979,14 @@ function App() {
       return null;
     }
   }, [s, budgetCopySource, budgetCopyTarget, budgetCopyMode]);
+  const attention = useMemo(() => dashboardAttention(s, month, calculationDate), [s, month, calculationDate]);
+  useEffect(() => {
+    if (page !== "annual-calendar" || !attentionReserveId) return;
+    const target = document.getElementById(`annual-plan-${attentionReserveId}`);
+    target?.scrollIntoView({ block: "center" });
+    target?.focus({ preventScroll: true });
+    setAttentionReserveId(null);
+  }, [page, attentionReserveId]);
   const monthGuidance = useMemo(() => budgetGuidance(s, month), [s, month, calculationDate]);
   const monthBudgets = s.budgets[month] || {};
   const budgetCategoriesByName = new Map(
@@ -2889,6 +2899,14 @@ function App() {
                 </>
               ) : (
                 <>
+                  {(attention.budget.length > 0 || attention.reserves.length > 0 || attention.review) && <section className="panel dashboard-attention" aria-labelledby="dashboard-attention-title">
+                    <h2 id="dashboard-attention-title">Huomioitavaa</h2>
+                    <ul>
+                      {attention.budget.map(item => <li key={`budget-${item.category}`}><span>{item.category}: {item.actualOnly ? "budjetti ylitetty" : "ennakoitu budjetin ylitys"} {euro(item.shortfall)}</span><button type="button" onClick={() => { navigate("budget"); setBudgetCategory(item.category); }}>Avaa {item.category}</button></li>)}
+                      {attention.reserves.map(item => <li key={`reserve-${item.expense.id}`}><span>{item.expense.name}: erä {item.nextDue!.date}, varauksesta puuttuu {euro(item.shortfallForNextDue)}</span><button type="button" onClick={() => { setAttentionReserveId(item.expense.id); navigate("annual-calendar"); }}>Avaa {item.expense.name} vuosikellossa</button></li>)}
+                      {attention.review && <li><span>Kuukauden {month} tarkistus on kesken.</span><button type="button" onClick={openMonthReview}>Tarkista kuukausi</button></li>}
+                    </ul>
+                  </section>}
                   <div className="hero">
                     <div>
                       <span className="eyebrow">KUUKAUDEN KASSAVIRTA</span>
@@ -4057,6 +4075,10 @@ function App() {
                 <StatusBadge tone={s.coverage.incomeMonths.includes(month) ? "positive" : "warning"}>Tulot {s.coverage.incomeMonths.includes(month) ? "tarkistettu" : "vahvistamatta"}</StatusBadge>
                 <StatusBadge tone={s.coverage.expenseMonths.includes(month) ? "positive" : "warning"}>Menot {s.coverage.expenseMonths.includes(month) ? "tarkistettu" : "vahvistamatta"}</StatusBadge>
               </div>
+              {(attention.budget.length > 0 || attention.reserves.length > 0) && <div className="month-review-attention"><h4>Vielä huomioitavaa</h4>
+                {attention.budget.map(item => <p key={item.category}>{item.category}: {item.actualOnly ? "budjetti ylitetty" : "ennakoitu budjetin ylitys"} {euro(item.shortfall)}. <button type="button" onClick={() => { setMonthReviewOpen(false); navigate("budget"); setBudgetCategory(item.category); }}>Avaa kategoria</button></p>)}
+                {attention.reserves.map(item => <p key={item.expense.id}>{item.expense.name}: varauksesta puuttuu {euro(item.shortfallForNextDue)}. <button type="button" onClick={() => { setMonthReviewOpen(false); setAttentionReserveId(item.expense.id); navigate("annual-calendar"); }}>Avaa vuosikello</button></p>)}
+              </div>}
               <p>Kuukauden tarkistus ei lukitse tietoja. Jos muokkaat kirjauksia myöhemmin, sovellus avaa vaikutuksen alaisen vahvistuksen uudelleen.</p>
               <small>Vahvistus kertoo omasta tarkistuksesta, ei pankin varmistamasta maksusta.</small>
               <div className="actions">
@@ -4134,6 +4156,13 @@ function App() {
             {kind === "liabilities" && <small>Linkitys kohdistaa velan omaisuuden oman pääoman tarkasteluun. Kuukausierä ei luo menotapahtumaa eikä muuta saldoja automaattisesti.</small>}
             {kind === "goals" && <small>Kuukausisäästö on tallennettu suunnitelma ilman tuottoa. Muokkaus laskee sen uudelleen tavoitepäivästä; laskenta ei luo rahansiirtoja.</small>}
             {kind === "assets" && linkedDebts.length > 0 && <p>Linkitettyjen velkojen vuoksi omaisuuserän poisto edellyttää linkitysten poistamista velkojen muokkauksessa.</p>}
+            {kind === "expenses" && item.active && item.recurrence !== "once" && expenseType(item) === "consumption" && <button type="button" onClick={() => {
+              if (trialSession) { setNotice("Lopeta nykyinen kokeilu ennen uuden aloittamista."); return; }
+              const asOf = today();
+              setViewEntry(null);
+              navigate("calculators");
+              setTrialSession({ baseline: s, asOf, fingerprint: trialBasisFingerprint(s), adjustments: { ...emptyTrialAdjustments(), expense: { entryId: item.id, action: "price", amount: occurrenceAmount(item, asOf) } } });
+            }}>Kokeile hinnanmuutosta</button>}
             {(kind === "incomes" || kind === "expenses") && item.recurrence !== "once" && <PriceHistoryEditor item={item} format={euro} onSave={changes => {
               const updated: Entry = { ...item, updatedAt: new Date().toISOString() };
               if (changes.length) updated.priceHistory = changes;
