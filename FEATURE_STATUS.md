@@ -62,3 +62,7 @@ Tulo- ja menotuonti ehdottaa saman päivän ja summan suunniteltuja tapahtumia. 
 ### Yhteenvedon huomiot 23.11.2026
 
 Yhteenveto näyttää ennakoidut kategoriabudjetin ylitykset, 60 päivän sisällä erääntyvät vajaat varaukset ja valitun päättyneen kuukauden keskeneräisen tarkistuksen. Kuukausitarkistuksen yhteenvedosta pääsee budjettiin ja vuosikelloon. Toistuvan kulutusmenon tiedoista voi käynnistää hinnanmuutoskokeilun.
+
+### Keskeneräisen CSV-tuonnin jatkaminen 23.11.2026
+
+CSV-esikatselu ja rivikohtaiset valinnat säilyvät välilehden muistissa, kun siirrytään toiseen näkymään. Yhteenvedosta voi palata keskeneräiseen tuontiin. Luonnoksen voi hylätä ja se tyhjennetään talouden vaihtuessa.

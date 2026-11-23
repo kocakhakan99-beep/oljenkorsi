@@ -1141,6 +1141,9 @@ function App() {
     setUndo(null);
     setS(next);
   });
+  const draftOwner = JSON.stringify([auth.user?.id ?? "guest", cloud.active ?? "", s.createdAt]);
+  const [csvDraft, setCsvDraft] = useState<{ owner: string; pending: boolean }>({ owner: "", pending: false });
+  const hasCsvDraft = csvDraft.owner === draftOwner && csvDraft.pending;
   const activeHousehold = cloud.items.find(item => item.id === cloud.active);
   useEffect(() => { setCloudPreview(null); }, [auth.user?.id, cloud.active]);
   // Household loads must not dispose a user's in-flight preference save.
@@ -2842,6 +2845,11 @@ function App() {
                 </p>
               </section>
             )}
+            {page === "dashboard" && hasCsvDraft && <section className="panel" aria-labelledby="csv-draft-heading">
+              <h2 id="csv-draft-heading">Keskeneräinen CSV-tuonti</h2>
+              <p>Tuonnin esikatselu odottaa tarkistusta tässä välilehdessä.</p>
+              <button type="button" onClick={() => navigate("transfer")}>Jatka tuontia</button>
+            </section>}
             {page === "dashboard" &&
               (!hasDashboardData ? (
                 <>
@@ -3737,8 +3745,11 @@ function App() {
                 )}
               </>
             )}
-            {page === "transfer" && (
+            <div hidden={page !== "transfer"}>
               <Transfer
+                key={draftOwner}
+                draftOwner={draftOwner}
+                onDraftChange={setCsvDraft}
                 labels={names}
                 s={s}
                 onBackup={exportBackup}
@@ -3756,7 +3767,7 @@ function App() {
                   }
                 }}
               />
-            )}
+            </div>
             {page === "settings" && (
               <>
                 <SettingsTabs value={settingsTab} onSelect={selectSettingsTab} />

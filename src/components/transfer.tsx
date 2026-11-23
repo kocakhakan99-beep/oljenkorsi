@@ -1,5 +1,5 @@
 import { reconciliationCandidates, type Reconciliation } from "../domain/csv-reconciliation";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type State, type Entry, type Kind, kinds, today } from '../domain/model';
 import { money, occurrenceAmount, scheduledOccurrences, occurrenceStatus } from '../domain/calculations';
 import { parseCSV, exportCSV, csvEntry, csvFields, csvFieldLabels, mapCSVHeaders, download } from '../services/csv';
@@ -11,8 +11,12 @@ export function Transfer({
   onRestore,
   onImport,
   labels,
+  draftOwner,
+  onDraftChange,
 }: {
   labels: Record<Kind, string>;
+  draftOwner: string;
+  onDraftChange: (value: { owner: string; pending: boolean }) => void;
   s: State;
   onBackup: () => void;
   onRestore: (f: File) => void;
@@ -30,6 +34,9 @@ export function Transfer({
     [skipDuplicates, setSkipDuplicates] = useState(true),
     [choices, setChoices] = useState<Record<number, string>>({}),
     [choiceContext, setChoiceContext] = useState("");
+  useEffect(() => {
+    onDraftChange({ owner: draftOwner, pending: text.trim().length > 0 });
+  }, [text, draftOwner, onDraftChange]);
   const currentContext = JSON.stringify([kind, text, delimiter, map]);
   const selectedChoices = choiceContext === currentContext ? choices : {};
   const primaryCSVFields = ["name", "amount", "category", "date"];
@@ -335,6 +342,7 @@ export function Transfer({
                 ))}
               </div>
             </details>
+            <div className="actions"><button type="button" onClick={() => { setText(""); setBytes(null); setChoices({}); setError(""); }}>Hylkää keskeneräinen tuonti</button></div>
             <h3>Esikatselu (enintään 5 riviä)</h3>
             <div
               className="table-wrap csv-preview-table"

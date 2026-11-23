@@ -29,7 +29,14 @@ with sync_playwright() as p:
  for kind,rows,count in [('expenses',f'Testimeno A;10,00;Ruoka;{month}-01\nTestimeno B;5,00;Ruoka;{month}-03\n',2),('incomes',f'Testitulo;30,00;Palkka;{month}-02\n',1)]:
   page.get_by_label('Tietotyyppi',exact=True).select_option(kind)
   page.locator('input[accept=".csv,text/csv"]').set_input_files({'name':'synthetic.csv','mimeType':'text/csv','buffer':('name;amount;category;date\n'+rows).encode()})
+  if kind=='expenses':
+   navigate('Yhteenveto')
+   expect(page.get_by_role('heading',name='Keskeneräinen CSV-tuonti',exact=True)).to_be_visible()
+   page.get_by_role('button',name='Jatka tuontia',exact=True).click()
+   expect(page.get_by_role('button',name=f'Vahvista ja tuo {count} tietuetta',exact=True)).to_be_visible()
   page.get_by_role('button',name=f'Vahvista ja tuo {count} tietuetta',exact=True).click()
+ navigate('Yhteenveto')
+ expect(page.get_by_role('heading',name='Keskeneräinen CSV-tuonti',exact=True)).to_have_count(0)
  navigate('Budjetti')
  page.get_by_label('Ruoka budjetti euroina').fill('500')
  page.get_by_label('Ruoka budjetti euroina').press('Tab')
@@ -216,6 +223,11 @@ with sync_playwright() as p:
  with page.expect_download() as d:page.get_by_role('button',name='Vie varmuuskopio',exact=True).click()
  unchanged=json.load(open(d.value.path()))['data']
  assert len(unchanged['assets'])==1 and len(unchanged['liabilities'])==1
+ page.get_by_label('Tietotyyppi',exact=True).select_option('expenses')
+ page.locator('input[accept=".csv,text/csv"]').set_input_files({'name':'synthetic.csv','mimeType':'text/csv','buffer':f'name;amount;category;date\nLuonnos;1,00;Ruoka;{month}-01\n'.encode()})
+ page.get_by_role('button',name='Hylkää keskeneräinen tuonti',exact=True).click()
+ navigate('Yhteenveto')
+ expect(page.get_by_role('heading',name='Keskeneräinen CSV-tuonti',exact=True)).to_have_count(0)
  assert not errors,errors
  print('All report panels, chart/detail selections, budget manual actuals, mobile controls, category rename/archive, settings/JSON and deletion cancellation: OK.')
  b.close()
