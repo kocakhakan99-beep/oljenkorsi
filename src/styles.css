@@ -5951,3 +5951,7 @@ button.primary:hover { background: var(--soft); border-color: var(--accent); }
   .aside-top-actions { width: 100%; }
   .toolbar .cloud-status { width: auto; flex: 0 0 auto; }
 }
+
+.invoice-barcode-entry { display: grid; gap: .5rem; margin: 1rem 0; }
+.invoice-barcode-entry input { max-width: 100%; width: 100%; }
+.invoice-barcode-entry p { overflow-wrap: anywhere; }

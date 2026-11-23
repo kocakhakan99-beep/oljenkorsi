@@ -8,7 +8,7 @@ Päivitetty 19.11.2026. Tämä lista kuvaa sovelluksen koodia; toiminnon toteutu
 | Budjetti, vertailu ja kuukausitarkistus | Toteutettu; uusien toimintojen kattava regressiovarmennus kesken. |
 | Vuosikello ja hintahistoria | Toteutettu; varaus ei todista pankkimaksua. Reunatapauksia varmennetaan. |
 | Laskurit, raportit, kompassi ja kokeilutila | Toteutettu; kokeilu säilyy välilehden muistissa. |
-| Kuitti- ja laskutuonti | Tekstimuotoinen PDF ja käyttäjän tarkistamat AI-ehdotukset; OCR puuttuu. |
+| Kuitti- ja laskutuonti | Tekstimuotoinen PDF, käyttäjän tarkistamat AI-ehdotukset ja suomalaisen virtuaaliviivakoodin lukeminen selaimessa; OCR ja kameran viivakoodiluku puuttuvat. |
 | Kirjautuminen | Google käytössä; Apple-vaihtoehdon todellista tuotantotoimivuutta ei ole varmennettu. |
 | Pilvitallennus ja perhetilit | Automaattitallennus, revisiot, kutsut ja jäsenhallinta toteutettu. Kahden käyttäjän kokonaiskoe on avoin. |
 | Vieraskäyttö | Talous on välilehden muistissa; JSON on täydellinen varmuuskopio. |
@@ -22,7 +22,7 @@ Korjausten eteneminen ja hyväksyntäkriteerit: [toteutussuunnitelma](KORJAUSSUU
 - Repositorion yksityisten kuittien historia puhdistettu julkaisuhaaroista; GitHubin PR-viitteiden poisto odottaa Supportia. Katso [tietotarkistus](REPOSITORY_SECURITY_2026-11-19.md).
 - Vuosikellon, hintahistorian, budjettikopion ja kokeilun regressioita lisätty: nykyinen testiajo 30 tiedostoa / 229 testiä. Laajempi selain-/oikeusvarmennus on edelleen avoin.
 - Käyttämättömien symbolien TypeScript-tarkistus käytössä, käynnistysnäkymä erotettu komponentiksi ja tarkistava CI-työnkulku lisätty. CI:n GitHub-ajo vahvistetaan erikseen.
-- Laskuviivakoodin toteutus rajattu Suomeen; skanneria ei ole toteutettu.
+- Laskuviivakoodin toteutus rajattu Suomeen; myöhemmässä erässä lisättiin virtuaaliviivakoodin liittäminen.
 
 ### Seuraava korjauserä 19.11.2026
 

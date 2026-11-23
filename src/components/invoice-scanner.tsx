@@ -1,3 +1,4 @@
+import { parseFinnishBarcode } from "../domain/finnish-barcode";
 import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
 import { useSessionAPIKey } from "../services/session-api-key";
@@ -7,10 +8,12 @@ import { validDate } from '../domain/calculations';
 import { receiptFileError, importBatchError } from '../domain/receipts/files';
 import { analyzeInvoiceBatch, type InvoiceSuggestion } from '../services/invoice-ai';
 
-type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string; recurring?: boolean; category?: string; amountText?: string };
+type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string; recurring?: boolean; category?: string; amountText?: string; barcodeDetails?: { iban: string; reference: string } };
 export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { onClose: () => void; onBatch: (suggestions: { suggestion: InvoiceSuggestion; recurring: boolean; category: string }[], allowDuplicates: boolean) => string; categories: string[]; files?: File[] }) {
   const key = useSessionAPIKey();
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [barcode, setBarcode] = useState("");
+  const [barcodeError, setBarcodeError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -58,14 +61,27 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
     finally { setBusy(false); setProgress(''); }
   }
   const incomplete = documents.filter(d => d.suggestion && (!d.suggestion.name.trim() || !d.suggestion.amountCents || !validDate(d.suggestion.date))).length;
-  return <section className="panel invoice-scanner" aria-label="Laskun AI-analyysi">
+  return <section className="panel invoice-scanner" aria-label="Laskun lisäys">
     <div className="ai-card-heading"><h2>Lisää lasku</h2><APIKeyButton disabled={busy} /><button type="button" aria-label="Sulje laskun lisäys" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
+    <div className="invoice-barcode-entry">
+      <label>Virtuaaliviivakoodi<input value={barcode} inputMode="numeric" autoComplete="off" onChange={event => { setBarcode(event.target.value); setBarcodeError(""); }} /></label>
+      <button type="button" disabled={busy} onClick={() => {
+        try {
+          const result = parseFinnishBarcode(barcode);
+          setDocuments(old => [...old, { name: "Viivakoodista luettu lasku", text: "", suggestion: { name: "", amountCents: result.amountCents, date: result.date }, barcodeDetails: { iban: result.iban, reference: result.reference } }]);
+          setBarcode(""); setBarcodeError(""); setAllowDuplicates(false); setSuccess("");
+        } catch (reason) { setBarcodeError(reason instanceof Error ? reason.message : "Koodia ei voitu lukea."); }
+      }}>Lue viivakoodi</button>
+      <small>Koodi käsitellään selaimessa. Tarkista laskun tiedot ennen kirjaamista.</small>
+      {barcodeError && <p role="alert">{barcodeError}</p>}
+    </div>
     <p>Laskun teksti luetaan ensin tässä selaimessa. Analyysi ei käynnisty automaattisesti: painamalla lähetyspainiketta lähetät poimitun tekstin Cloudflare Workerille ja sieltä OpenRouterin AI-palveluun. Tekstissä voi olla henkilötietoja tai maksutietoja. Voit halutessasi avata tekstiesikatselun.</p>
     <label>Valitse laskujen PDF:t<input type="file" multiple accept="application/pdf,.pdf" disabled={busy} onChange={event => { void readFiles(Array.from(event.target.files || [])); event.target.value = ''; }} /></label>
-    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) && !incomplete ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (incomplete ? 'Täydennä vielä puuttuvat tiedot.' : documents.every(d => d.suggestion) ? 'Tarkista yhteenveto.' : 'Lisää avain tai yritä uudelleen.') : 'Valitse laskut aloittaaksesi.'} />}
+    {busy ? <DocumentProcessing kind="invoice" progress={progress} /> : <DocumentProcessing kind="invoice" stage={documents.length ? (documents.every(d => d.suggestion) && !incomplete ? 'review' : 'attention') : 'waiting'} progress={documents.length ? (incomplete ? 'Täydennä vielä puuttuvat tiedot.' : documents.every(d => d.suggestion) ? 'Tarkista yhteenveto.' : 'Lisää avain tai yritä uudelleen.') : 'Liitä viivakoodi tai valitse lasku.'} />}
     {!!incomplete && <div className="receipt-unresolved-heading invoice-review-attention"><span aria-hidden="true">✦</span><div><h3>Täydennä vielä nämä</h3><p>{incomplete} laskua vaatii tarkistuksen</p></div></div>}
     {documents.map((document, index) => <div className="invoice-review-card" key={index} onChangeCapture={() => setAllowDuplicates(false)}>
       {!busy && <div className="invoice-review-card-heading"><FileText size={20} aria-hidden="true" /><strong>{document.suggestion?.name || document.name}</strong>{document.suggestion?.amountCents != null && <strong>{new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(document.suggestion.amountCents / 100)}</strong>}</div>}
+      {document.barcodeDetails && <p>Tilinumero {document.barcodeDetails.iban} · viite {document.barcodeDetails.reference}. Näitä ei tallenneta menokirjaukseen.</p>}
       {document.error && <p role="alert">{document.error}</p>}
       {document.text && <details className="invoice-source-preview"><summary>Esikatsele AI:lle lähetettävä koko teksti</summary><pre>{document.text}</pre></details>}
       {document.suggestion && <div className="invoice-review-fields">
@@ -80,7 +96,7 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
     </div>)}
 
     {key && documents.some(d => d.text.trim() && !d.suggestion) && <button type="button" disabled={busy} onClick={() => void analyze()}>{error ? 'Yritä analyysiä uudelleen' : 'Lähetä teksti AI-analyysiin'}</button>}
-    {!key && <p>Lisää avain yläkulman avainpainikkeesta.</p>}
+    {!key && documents.some(d => d.text.trim() && !d.suggestion) && <p>Lisää avain yläkulman avainpainikkeesta AI-analyysiä varten.</p>}
     {documents.some(d => d.suggestion) && <div className="document-review document-review--invoice"><div className="document-review-heading"><CircleCheck size={23} aria-hidden="true" /><div><h3>Laskujen yhteenveto</h3><p>{documents.filter(d => d.suggestion).length} laskua</p></div><strong className="document-review-total">{new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(documents.reduce((n, d) => n + (d.suggestion?.amountCents || 0), 0) / 100)}</strong></div><button className="primary" disabled={busy || documents.some(d => !d.suggestion || !d.suggestion.name.trim() || !d.suggestion.amountCents || d.suggestion.amountCents > 10000000000 || !categories.length || !validDate(d.suggestion.date))} onClick={() => { const message = onBatch(documents.map(d => ({ suggestion: d.suggestion!, recurring: !!d.recurring, category: d.category || (categories.includes('Muu meno') ? 'Muu meno' : categories[0] || '') })), allowDuplicates); if (message) setError(message); else { setSuccess(`${documents.length} laskua kirjattu. Sulje ikkuna, jos haluat kumota erän.`); setDocuments([]); setError(''); setAllowDuplicates(false); } }}>Kirjaa laskut menoihin</button><p>Tarkista nimet, summat, eräpäivät ja toistuvuus ennen kirjaamista. Puuttuvat tiedot vaativat tarkistuksen.</p></div>}
     {error && <p role="alert">{error}</p>}{error.startsWith("Sama lasku") && <label><input type="checkbox" checked={allowDuplicates} onChange={e => setAllowDuplicates(e.target.checked)} />Olen tarkistanut, että samanlaiset laskut ovat erillisiä.</label>}{success && <p role="status">{success}</p>}
   </section>;
