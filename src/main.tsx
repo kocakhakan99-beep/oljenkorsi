@@ -1017,6 +1017,7 @@ function App() {
     [showAllConsumption, setShowAllConsumption] = useState(false),
     [budgetCategory, setBudgetCategory] = useState<string | null>(null),
     [budgetCopyOpen, setBudgetCopyOpen] = useState(false),
+    [reserveBudgetItem, setReserveBudgetItem] = useState<string | null>(null),
     [budgetTransferFrom, setBudgetTransferFrom] = useState<string | null>(null),
     [budgetTransferTo, setBudgetTransferTo] = useState(""),
     [budgetTransferAmount, setBudgetTransferAmount] = useState(""),
@@ -3149,7 +3150,8 @@ function App() {
                   <div><h2 id="budget-annual-reserve-title">Vuosikulujen varaus</h2><p>{s.annualReservePlans?.length ? "Valittujen tulevien toistuvien menojen tasaus seuraavalle 12 kuukaudelle." : "Valitse ennakoitavat laskut vuosikelloon ja tarkastele tarvittavaa tasausta."}</p></div>
                   {s.annualReservePlans?.length ? <strong>{euro(annualReserve.monthlyReserve)} / kk</strong> : <span>Ei valittuja menoja</span>}
                   <button type="button" onClick={() => navigate("annual-calendar")}>Avaa vuosikello <ArrowRight size={16} aria-hidden="true" /></button>
-                  {annualReserve.items.some(item => item.eligible && item.expense.recurrence !== "once") && <ul className="annual-reserve-budget-list">{annualReserve.items.filter(item => item.eligible && item.expense.recurrence !== "once").map(item => <li key={item.expense.id}><span>{item.expense.name}</span><strong>{euro(item.annualizedMonthly)} / kk</strong></li>)}</ul>}
+                  {annualReserve.items.some(item => item.eligible) && <ul className="annual-reserve-budget-list">{annualReserve.items.filter(item => item.eligible).map(item => <li key={item.expense.id}><div><strong>{item.expense.name}</strong> · {item.expense.category}{item.expense.recurrence !== "once" && <div>Tasaus {euro(item.annualizedMonthly)} / kk</div>}{item.nextDue ? <div>Erä {item.nextDue.date}: {euro(item.nextDue.amount)} · varattu {euro(item.reservedForNextDue)} · {item.neededPerMonth === null ? `varattavaa ${euro(item.shortfallForNextDue)}` : `tarve ${euro(item.neededPerMonth)} / kk`}</div> : <div>Seuraavaa erää ei löytynyt tarkastelujaksolta.</div>}</div>{month === calculationDate.slice(0, 7) && item.neededPerMonth !== null && item.neededPerMonth > 0 && <button type="button" onClick={() => setReserveBudgetItem(item.expense.id)}>Lisää ehdotus budjettiin</button>}</li>)}</ul>}
+                  {month !== calculationDate.slice(0, 7) && <small>Ehdotukset perustuvat tähän päivään ja niitä voi lisätä kuluvan kuukauden budjettiin.</small>}
                   <small>Erillinen suunnitteluluku. Se ei sisälly tämän kuun budjettiin tai toteutuneisiin menoihin.</small>
                 </section>
                 <section className="panel">
@@ -3900,6 +3902,24 @@ function App() {
           />
         </Modal>
       )}
+      {reserveBudgetItem !== null && (() => {
+        const item = annualReserve.items.find(value => value.expense.id === reserveBudgetItem);
+        if (!item || !item.nextDue || item.neededPerMonth === null || item.neededPerMonth <= 0 || month !== calculationDate.slice(0, 7)) return <Modal title="Varaus muuttui" onClose={() => setReserveBudgetItem(null)}><p>Ehdotusta ei voi enää lisätä. Tarkista vuosikello.</p></Modal>;
+        const current = s.budgets[month]?.[item.expense.category] || 0;
+        const next = current + item.neededPerMonth;
+        return <Modal title="Lisää varausehdotus budjettiin" onClose={() => setReserveBudgetItem(null)}>
+          <p>{item.expense.name} · {item.expense.category} · erä {item.nextDue.date}</p>
+          <p>Budjetti {euro(current)} + ehdotus {euro(item.neededPerMonth)} = {euro(next)}</p>
+          <p>Lisäys muuttaa tämän kuukauden kategoriabudjettia. Se ei kirjaa varausta, maksua tai tilisiirtoa. Jokainen vahvistus lisää summan uudelleen.</p>
+          {next > MAX ? <p role="alert">Budjetti ylittäisi sallitun enimmäismäärän.</p> : <button type="button" onClick={() => {
+            if (commit({ ...s, budgets: { ...s.budgets, [month]: { ...s.budgets[month], [item.expense.category]: next } } })) {
+              setReserveBudgetItem(null);
+              setNotice("Varausta varten lisätty summa kuukauden budjettiin.");
+            }
+          }}>Vahvista lisäys</button>}
+          <button type="button" onClick={() => setReserveBudgetItem(null)}>Peruuta</button>
+        </Modal>;
+      })()}
       {budgetTransferFrom !== null && (
         <Modal title="Siirrä budjettia" onClose={() => setBudgetTransferFrom(null)}>
           <p>Kuukausi {month} · Lähde {budgetTransferFrom}: {euro(monthBudgets[budgetTransferFrom] || 0)}</p>
