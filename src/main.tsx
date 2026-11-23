@@ -1,3 +1,4 @@
+import { transferBudget } from "./domain/budget-transfer";
 import { coverageAfterEntryChanges } from "./domain/month-coverage";
 import { Categories } from "./components/categories";
 import { reportHistory, reportBudgets, reportWealth, reportPeriod, reportCategories, reportFlow } from './domain/report-series';
@@ -1016,6 +1017,9 @@ function App() {
     [showAllConsumption, setShowAllConsumption] = useState(false),
     [budgetCategory, setBudgetCategory] = useState<string | null>(null),
     [budgetCopyOpen, setBudgetCopyOpen] = useState(false),
+    [budgetTransferFrom, setBudgetTransferFrom] = useState<string | null>(null),
+    [budgetTransferTo, setBudgetTransferTo] = useState(""),
+    [budgetTransferAmount, setBudgetTransferAmount] = useState(""),
     [budgetCopySource, setBudgetCopySource] = useState(loaded.data.settings.month),
     [budgetCopyTarget, setBudgetCopyTarget] = useState(shiftMonth(loaded.data.settings.month, 1)),
     [budgetCopyMode, setBudgetCopyMode] = useState<BudgetCopyMode>("fill-missing"),
@@ -1991,6 +1995,7 @@ function App() {
     (category) =>
       (monthBudgets[category] || 0) > 0 ||
       actualForBudgetCategory(category) > 0 ||
+      s.expenses.some(item => item.category === category && expenseType(item) === "consumption" && occurrenceSum(item, month, "planned") > 0) ||
       Object.hasOwn(s.budgetActuals[month] || {}, category),
   );
   const consumptionCategories = page === 'dashboard' ? expCats.map(category => ({
@@ -3163,7 +3168,7 @@ function App() {
                           <th role="columnheader">Suunniteltu €</th>
                           <th role="columnheader">Toteutunut kulutus €</th>
                           <th role="columnheader">Jäljellä</th>
-                          <th role="columnheader">Toteuma</th><th role="columnheader">Toiminnot</th>
+                          <th role="columnheader">Tulossa</th><th role="columnheader">Ennuste</th><th role="columnheader">Toteuma</th><th role="columnheader">Toiminnot</th>
                         </tr>
                       </thead>
                       <tbody role="rowgroup">
@@ -3185,6 +3190,8 @@ function App() {
                             a = hasManual
                               ? s.budgetActuals[month][c]
                               : observed;
+                          const upcoming = sum(s.expenses.filter(e => e.category === c && expenseType(e) === "consumption").map(e => occurrenceSum(e, month, "planned")));
+                          const forecast = b - a - upcoming;
                           return (
                             <tr role="row" key={month + c}>
                               <th
@@ -3222,10 +3229,12 @@ function App() {
                               >
                                 {b > 0 ? <SignedAmount amount={b - a} format={euro} label={`${c}, budjettia jäljellä`} /> : "—"}
                               </td>
+                              <td role="cell" data-label="Tulossa">{euro(upcoming)}</td>
+                              <td role="cell" data-label="Ennuste">{hasManual ? <span title="Oma kokonaistoteuma voi sisältää suunniteltuja menoja.">Ei lasketa</span> : b > 0 ? <span className={forecast < 0 ? "negative" : ""}>{forecast < 0 ? `Ennakoitu ylitys ${euro(-forecast)}` : euro(forecast)}</span> : "—"}</td>
                               <td role="cell" data-label="Toteuma">
                                 <BudgetUsage actual={a} budget={b} label={`${c}, budjetin käyttö`} />
                               </td>
-                              <td role="cell" data-label="Toiminnot"><div className="budget-row-actions"><button type="button" aria-label={`Näytä kategorian ${c} menot`} title={`Avaa ${c}`} onClick={() => setBudgetCategory(c)}><Eye size={18} aria-hidden="true" /></button></div></td>
+                              <td role="cell" data-label="Toiminnot"><div className="budget-row-actions"><button type="button" onClick={() => { setBudgetTransferFrom(c); setBudgetTransferTo(""); setBudgetTransferAmount(""); }}>Siirrä budjettia</button><button type="button" aria-label={`Näytä kategorian ${c} menot`} title={`Avaa ${c}`} onClick={() => setBudgetCategory(c)}><Eye size={18} aria-hidden="true" /></button></div></td>
                             </tr>
                           );
                         })}
@@ -3254,7 +3263,7 @@ function App() {
                   <ContextDetails title="Miten budjetin toteuma lasketaan?"><p>
                     Budjetoitujen kategorioiden erotus on suunnitelma miinus
                     toteuma. Budjetoimaton kulutus näkyy erikseen, eikä sitä
-                    lasketa budjettien ylitykseksi. Tässä versiossa budjettia ei
+                    lasketa budjettien ylitykseksi. Ennuste vähentää toteuman ja suunnitellut menot budjetista. Oman kokonaistoteuman kohdalla ennustetta ei lasketa, koska se voi sisältää suunniteltuja menoja. Tässä versiossa budjettia ei
                     jaeta automaattisesti kaikkiin tuloihin.
                   </p></ContextDetails>
                 </section>
@@ -3889,6 +3898,30 @@ function App() {
             hideNumbers={s.settings.private}
             onChoose={loadDemoHousehold}
           />
+        </Modal>
+      )}
+      {budgetTransferFrom !== null && (
+        <Modal title="Siirrä budjettia" onClose={() => setBudgetTransferFrom(null)}>
+          <p>Kuukausi {month} · Lähde {budgetTransferFrom}: {euro(monthBudgets[budgetTransferFrom] || 0)}</p>
+          <label>Kohdekategoria <select value={budgetTransferTo} onChange={event => setBudgetTransferTo(event.target.value)}>
+            <option value="">Valitse kategoria</option>
+            {expCats.filter(category => category !== budgetTransferFrom).map(category => <option key={category} value={category}>{category}</option>)}
+          </select></label>
+          <label>Siirrettävä summa (€) <MoneyInput defaultCents={null} onChange={event => setBudgetTransferAmount(event.target.value)} /></label>
+          {(() => {
+            try {
+              const amount = money(budgetTransferAmount);
+              const next = transferBudget(s, month, budgetTransferFrom, budgetTransferTo, amount);
+              const fromAfter = next.budgets[month][budgetTransferFrom];
+              const toAfter = next.budgets[month][budgetTransferTo];
+              const sourceActual = budgetCategoriesByName.get(budgetTransferFrom);
+              const sourceUpcoming = sum(s.expenses.filter(e => e.category === budgetTransferFrom && expenseType(e) === "consumption").map(e => occurrenceSum(e, month, "planned")));
+              return <><p>{budgetTransferFrom}: {euro(monthBudgets[budgetTransferFrom] || 0)} → {euro(fromAfter)}<br />{budgetTransferTo}: {euro(monthBudgets[budgetTransferTo] || 0)} → {euro(toAfter)}</p>
+                {sourceActual && !sourceActual.hasManualActual && fromAfter < sourceActual.actual + sourceUpcoming && <p role="status">Siirto aiheuttaa tai kasvattaa lähdekategorian ennakoitua ylitystä.</p>}
+                <button type="button" onClick={() => { if (commit(next)) { setBudgetTransferFrom(null); setNotice("Budjetti siirretty."); } }}>Vahvista siirto</button></>;
+            } catch (error) { return <p role="status">{budgetTransferAmount ? String(error).replace(/^Error: /, "") : "Valitse kohde ja anna summa."}</p>; }
+          })()}
+          <button type="button" onClick={() => setBudgetTransferFrom(null)}>Peruuta</button>
         </Modal>
       )}
       {budgetCopyOpen && (
