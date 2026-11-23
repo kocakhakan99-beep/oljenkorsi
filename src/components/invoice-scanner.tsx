@@ -1,3 +1,4 @@
+import { BarcodeCamera } from "./barcode-camera";
 import { parseFinnishBarcode } from "../domain/finnish-barcode";
 import { DocumentProcessing } from "./document-processing";
 import { APIKeyButton } from "./api-key-button";
@@ -9,7 +10,7 @@ import { receiptFileError, importBatchError } from '../domain/receipts/files';
 import { analyzeInvoiceBatch, type InvoiceSuggestion } from '../services/invoice-ai';
 
 type Document = { name: string; text: string; suggestion?: InvoiceSuggestion; error?: string; recurring?: boolean; category?: string; amountText?: string; barcodeDetails?: { iban: string; reference: string } };
-export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { onClose: () => void; onBatch: (suggestions: { suggestion: InvoiceSuggestion; recurring: boolean; category: string }[], allowDuplicates: boolean) => string; categories: string[]; files?: File[] }) {
+export function InvoiceScanner({ onBatch, onClose, categories, files = [], active }: { active: boolean; onClose: () => void; onBatch: (suggestions: { suggestion: InvoiceSuggestion; recurring: boolean; category: string }[], allowDuplicates: boolean) => string; categories: string[]; files?: File[] }) {
   const key = useSessionAPIKey();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [barcode, setBarcode] = useState("");
@@ -64,6 +65,7 @@ export function InvoiceScanner({ onBatch, onClose, categories, files = [] }: { o
   return <section className="panel invoice-scanner" aria-label="Laskun lisäys">
     <div className="ai-card-heading"><h2>Lisää lasku</h2><APIKeyButton disabled={busy} /><button type="button" aria-label="Sulje laskun lisäys" onClick={onClose}><X size={18} aria-hidden="true" /></button></div>
     <div className="invoice-barcode-entry">
+      <BarcodeCamera active={active} onRead={value => { setBarcode(value); setBarcodeError(""); }} />
       <label>Virtuaaliviivakoodi<input value={barcode} inputMode="numeric" autoComplete="off" onChange={event => { setBarcode(event.target.value); setBarcodeError(""); }} /></label>
       <button type="button" disabled={busy} onClick={() => {
         try {

@@ -3092,7 +3092,7 @@ function App() {
                   </div>
                 </>
               ))}
-            <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner onClose={closeInvoice} files={invoiceFiles} categories={cats("expenses")} onBatch={(batch, allowDuplicates) => {
+            <ScannerDialog open={invoiceOpen} onClose={closeInvoice} label="Lisää lasku"><InvoiceScanner active={invoiceOpen} onClose={closeInvoice} files={invoiceFiles} categories={cats("expenses")} onBatch={(batch, allowDuplicates) => {
               const seen = new Set<string>();
               for (const { suggestion } of batch) {
                 const fingerprint = `${suggestion.name.trim().toLocaleLowerCase("fi-FI")}|${suggestion.amountCents}|${suggestion.date}`;

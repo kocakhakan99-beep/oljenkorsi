@@ -5955,3 +5955,6 @@ button.primary:hover { background: var(--soft); border-color: var(--accent); }
 .invoice-barcode-entry { display: grid; gap: .5rem; margin: 1rem 0; }
 .invoice-barcode-entry input { max-width: 100%; width: 100%; }
 .invoice-barcode-entry p { overflow-wrap: anywhere; }
+
+.barcode-camera { display: grid; gap: .5rem; }
+.barcode-camera video { width: min(100%, 40rem); max-height: 22rem; object-fit: contain; background: #111; border-radius: .5rem; }

@@ -8,7 +8,7 @@ Päivitetty 19.11.2026. Tämä lista kuvaa sovelluksen koodia; toiminnon toteutu
 | Budjetti, vertailu ja kuukausitarkistus | Toteutettu; uusien toimintojen kattava regressiovarmennus kesken. |
 | Vuosikello ja hintahistoria | Toteutettu; varaus ei todista pankkimaksua. Reunatapauksia varmennetaan. |
 | Laskurit, raportit, kompassi ja kokeilutila | Toteutettu; kokeilu säilyy välilehden muistissa. |
-| Kuitti- ja laskutuonti | Tekstimuotoinen PDF, käyttäjän tarkistamat AI-ehdotukset ja suomalaisen virtuaaliviivakoodin lukeminen selaimessa; OCR ja kameran viivakoodiluku puuttuvat. |
+| Kuitti- ja laskutuonti | Tekstimuotoinen PDF, käyttäjän tarkistamat AI-ehdotukset ja suomalaisen pankkiviivakoodin lukeminen tekstistä, kamerasta tai kuvatiedostosta selaimessa; OCR puuttuu. |
 | Kirjautuminen | Google käytössä; Apple-vaihtoehdon todellista tuotantotoimivuutta ei ole varmennettu. |
 | Pilvitallennus ja perhetilit | Automaattitallennus, revisiot, kutsut ja jäsenhallinta toteutettu. Kahden käyttäjän kokonaiskoe on avoin. |
 | Vieraskäyttö | Talous on välilehden muistissa; JSON on täydellinen varmuuskopio. |
